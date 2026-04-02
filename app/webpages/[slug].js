@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { WebView } from 'react-native-webview';
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
 import { COLORS, SPACING } from '../../constants/theme';
+import SearchBar from '../components/SearchBar';
 
 const PAGE_CONFIG = {
   'learning-assessment': { title: 'Learning & Assessment' },
@@ -20,35 +21,67 @@ const PAGE_CONFIG = {
   'store': { title: 'Shreyartha Store' },
 };
 
+// Delays (ms) for retrying SPA navigation after the initial inject
+const NAVIGATION_RETRY_DELAY_MS = 500;
+const NAVIGATION_RETRY_FALLBACK_MS = 1500;
+
+// CSS injected before the page renders to suppress website chrome immediately
+const buildInjectedJSBefore = () => `
+  (function() {
+    var style = document.createElement('style');
+    style.id = '__app_hide_chrome__';
+    style.textContent = [
+      'header', 'nav', 'footer',
+      '.navbar', '.top-bar',
+      '.landing-header', '.la-header', '.sl-header', '.sp-header',
+      '.co-header', '.ps-header', '.sc-header', '.ce-header',
+      '.car-header', '.ll-header', '.go-header', '.pt-header',
+      '.global-search-section',
+      '.landing-tagline-section',
+      '.chatbot-widget', '.chatbot-container', '.floating-chatbot',
+      '[class*="chatbot"]', '[id*="chatbot"]',
+      '[class*="header"]', '[class*="navbar"]', '[class*="topbar"]',
+      '[class*="whatsapp"]', '.whatsapp-float',
+      '[class*="footer"]', '.footer'
+    ].map(function(s) { return s + ' { display: none !important; }'; }).join('\\n');
+    if (document.head) {
+      document.head.appendChild(style);
+    } else {
+      document.documentElement.appendChild(style);
+    }
+  })();
+  true;
+`;
+
 // Build the injected JS for a given slug — navigates SPA and hides redundant UI
 function buildInjectedJS(slug) {
   return `
     (function() {
       var TARGET_PATH = '/${slug}';
 
-      // Hide website headers, search bar, tagline, and chatbot — redundant in app
-      var HIDE_SELECTORS = [
-        '.landing-header', '.la-header', '.sl-header', '.sp-header',
-        '.co-header', '.ps-header', '.sc-header', '.ce-header',
-        '.car-header', '.ll-header',
-        '.global-search-section',
-        '.landing-tagline-section',
-        '.chatbot-widget', '.chatbot-container', '.floating-chatbot',
-        '[class*="chatbot"]', '[id*="chatbot"]'
-      ];
-
-      function hideElements() {
-        HIDE_SELECTORS.forEach(function(sel) {
-          try {
-            document.querySelectorAll(sel).forEach(function(el) {
-              el.style.setProperty('display', 'none', 'important');
-            });
-          } catch(e) {}
-        });
-        if (document.body) document.body.style.paddingTop = '0px';
+      // Ensure hide-chrome style is present
+      if (!document.getElementById('__app_hide_chrome__')) {
+        var style = document.createElement('style');
+        style.id = '__app_hide_chrome__';
+        style.textContent = [
+          'header', 'nav', 'footer',
+          '.navbar', '.top-bar',
+          '.landing-header', '.la-header', '.sl-header', '.sp-header',
+          '.co-header', '.ps-header', '.sc-header', '.ce-header',
+          '.car-header', '.ll-header', '.go-header', '.pt-header',
+          '.global-search-section',
+          '.landing-tagline-section',
+          '.chatbot-widget', '.chatbot-container', '.floating-chatbot',
+          '[class*="chatbot"]', '[id*="chatbot"]',
+          '[class*="header"]', '[class*="navbar"]', '[class*="topbar"]',
+          '[class*="whatsapp"]', '.whatsapp-float',
+          '[class*="footer"]', '.footer'
+        ].map(function(s) { return s + ' { display: none !important; }'; }).join('\\n');
+        document.head.appendChild(style);
       }
+      if (document.body) document.body.style.paddingTop = '0px';
 
-      // Navigate the React SPA to the target route
+      // Navigate the React SPA to the target route if not already there
       function navigateToRoute() {
         try {
           if (window.location.pathname !== TARGET_PATH) {
@@ -58,13 +91,24 @@ function buildInjectedJS(slug) {
         } catch(e) {}
       }
 
-      // Run hide + navigate now (React app should be mounted when injectedJavaScript fires)
-      hideElements();
       navigateToRoute();
 
-      // Keep hiding as React re-renders components
+      // Retry navigation after short delays to handle deferred React Router mounting
+      setTimeout(navigateToRoute, ${NAVIGATION_RETRY_DELAY_MS});
+      setTimeout(navigateToRoute, ${NAVIGATION_RETRY_FALLBACK_MS});
+
+      // Mutation observer to reapply body padding reset as React re-renders.
+      // Throttled with a flag to avoid redundant style writes on high-frequency mutations.
+      var _padPending = false;
       var observer = new MutationObserver(function() {
-        hideElements();
+        if (_padPending) return;
+        _padPending = true;
+        requestAnimationFrame(function() {
+          _padPending = false;
+          if (document.body && document.body.style.paddingTop !== '0px') {
+            document.body.style.paddingTop = '0px';
+          }
+        });
       });
       observer.observe(document.documentElement, { childList: true, subtree: true });
     })();
@@ -133,6 +177,9 @@ export default function WebPageScreen() {
         <View style={{ width: 50 }} />
       </View>
 
+      {/* App search bar — provides consistent search UX on WebView pages */}
+      <SearchBar />
+
       {/* WebView — loads SPA root then navigates client-side to the target route */}
       <WebView
         ref={webViewRef}
@@ -144,8 +191,21 @@ export default function WebPageScreen() {
         cacheEnabled
         cacheMode="LOAD_CACHE_ELSE_NETWORK"
         startInLoadingState
+        injectedJavaScriptBeforeContentLoaded={buildInjectedJSBefore()}
         injectedJavaScript={buildInjectedJS(slug)}
-        onLoadEnd={() => setIsLoading(false)}
+        onLoadEnd={() => {
+          setIsLoading(false);
+          // Re-inject after load to ensure navigation ran after React Router mounted
+          if (webViewRef.current) {
+            webViewRef.current.injectJavaScript(buildInjectedJS(slug));
+          }
+        }}
+        onNavigationStateChange={() => {
+          // Re-apply element hiding whenever the WebView URL changes
+          if (webViewRef.current) {
+            webViewRef.current.injectJavaScript(buildInjectedJS(slug));
+          }
+        }}
         onError={() => setLoadError(true)}
       />
 
