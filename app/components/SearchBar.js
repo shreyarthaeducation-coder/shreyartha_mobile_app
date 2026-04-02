@@ -16,10 +16,11 @@ const SEARCH_CATEGORIES = [
   { label: 'Psychometric Assessment', value: 'psychometric-assessment', icon: '🧠' },
   { label: 'Subject & Career', value: 'subject-career', icon: '📋' },
   { label: 'Competitive Examination', value: 'competitive-examination', icon: '🏆' },
-  { label: 'Coding', value: 'coding', icon: '💻' },
-  { label: 'AI', value: 'ai', icon: '🤖' },
-  { label: 'Robotics', value: 'robotics', icon: '⚙️' },
+  { label: 'AI/Robotics & Coding', value: 'coding-ai-robotics', icon: '🤖' },
   { label: 'Language Learning', value: 'language-learning', icon: '🌐' },
+  { label: 'Global Opportunities', value: 'global-opportunities', icon: '🌍' },
+  { label: 'Progress Tracking', value: 'progress-tracking', icon: '📊' },
+  { label: 'Shreyartha Store', value: 'store', icon: '🛒' },
 ];
 
 const ROUTE_MAP = {
@@ -30,10 +31,11 @@ const ROUTE_MAP = {
   'psychometric-assessment': 'psychometric-assessment',
   'subject-career': 'subject-career',
   'competitive-examination': 'competitive-examination',
-  'coding': 'coding-ai-robotics',
-  'ai': 'coding-ai-robotics',
-  'robotics': 'coding-ai-robotics',
+  'coding-ai-robotics': 'coding-ai-robotics',
   'language-learning': 'language-learning',
+  'global-opportunities': 'global-opportunities',
+  'progress-tracking': 'progress-tracking',
+  'store': 'store',
 };
 
 export default function SearchBar() {
