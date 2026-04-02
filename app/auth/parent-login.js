@@ -43,8 +43,14 @@ export default function ParentLoginScreen() {
         await AsyncStorage.setItem('userType', 'parent');
         setUserType('parent');
       }
-      Alert.alert('Success', 'Logged in successfully!');
-      router.replace('/');
+      router.replace({
+        pathname: '/webpages/dashboard',
+        params: {
+          url: 'https://the3cedge.com/parent/platform/dashboard',
+          tokenKey: 'parentUserToken',
+          title: 'Parent Dashboard',
+        },
+      });
     } catch (err) {
       setError(err?.message || 'Invalid credentials. Please try again.');
     } finally {

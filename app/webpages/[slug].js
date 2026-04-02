@@ -60,7 +60,7 @@ export default function WebPageScreen() {
   const title = config?.title || 'Page';
 
   // Load the target page URL directly — avoids loading the entire SPA at root first
-  const pageUrl = `https://shreyartha.com/${slug}`;
+  const pageUrl = `https://the3cedge.com/${slug}`;
 
   if (loadError) {
     return (

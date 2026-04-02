@@ -51,8 +51,23 @@ export default function SchoolLoginScreen() {
         await AsyncStorage.setItem('schoolUserType', responseData?.userType || '');
         setUserType('school');
       }
-      Alert.alert('Success', 'Logged in successfully!');
-      router.replace('/');
+      const userTypeRaw = (responseData?.userType || 'TEACHER').toUpperCase();
+      const rolePathMap = {
+        TEACHER: 'teacher',
+        COUNSELOR: 'counselor',
+        PRINCIPAL: 'principal',
+        VICE_PRINCIPAL: 'vice_principal',
+        ADMIN: 'admin',
+      };
+      const rolePath = rolePathMap[userTypeRaw] || 'teacher';
+      router.replace({
+        pathname: '/webpages/dashboard',
+        params: {
+          url: `https://the3cedge.com/school/platform/${rolePath}`,
+          tokenKey: 'schoolUserToken',
+          title: 'School Dashboard',
+        },
+      });
     } catch (err) {
       setError(err?.message || 'Invalid credentials. Please try again.');
     } finally {

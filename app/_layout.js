@@ -12,7 +12,9 @@ export default function RootLayout() {
         <Stack.Screen name="auth/student-login" />
         <Stack.Screen name="auth/school-login" />
         <Stack.Screen name="auth/parent-login" />
-        <Stack.Screen name="webpages/[slug]" options={{ headerShown: true }} />
+        <Stack.Screen name="auth/admin-login" />
+        <Stack.Screen name="webpages/[slug]" options={{ headerShown: false }} />
+        <Stack.Screen name="webpages/dashboard" options={{ headerShown: false }} />
       </Stack>
     </AuthProvider>
   );
