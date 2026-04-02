@@ -15,39 +15,61 @@ const PAGE_CONFIG = {
   'competitive-examination': { title: 'Competitive Exam' },
   'coding-ai-robotics': { title: 'Coding / AI / Robotics' },
   'language-learning': { title: 'Language Learning' },
+  'global-opportunities': { title: 'Global Opportunities' },
+  'progress-tracking': { title: 'Progress Tracking' },
 };
 
-// Hide only headers, tagline, and search bar — NOT footers (website footers remain visible)
-const injectedJS = `
-  (function() {
-    var HIDE_SELECTORS = [
-      '.landing-header', '.la-header', '.sl-header', '.sp-header',
-      '.co-header', '.ps-header', '.sc-header', '.ce-header',
-      '.car-header', '.ll-header',
-      '.global-search-section',
-      '.landing-tagline-section'
-    ];
+// Build the injected JS for a given slug — navigates SPA and hides redundant UI
+function buildInjectedJS(slug) {
+  return `
+    (function() {
+      var TARGET_PATH = '/${slug}';
 
-    function hideElements() {
-      HIDE_SELECTORS.forEach(function(sel) {
-        document.querySelectorAll(sel).forEach(function(el) {
-          el.style.display = 'none';
+      // Hide website headers, search bar, tagline, and chatbot — redundant in app
+      var HIDE_SELECTORS = [
+        '.landing-header', '.la-header', '.sl-header', '.sp-header',
+        '.co-header', '.ps-header', '.sc-header', '.ce-header',
+        '.car-header', '.ll-header',
+        '.global-search-section',
+        '.landing-tagline-section',
+        '.chatbot-widget', '.chatbot-container', '.floating-chatbot',
+        '[class*="chatbot"]', '[id*="chatbot"]'
+      ];
+
+      function hideElements() {
+        HIDE_SELECTORS.forEach(function(sel) {
+          try {
+            document.querySelectorAll(sel).forEach(function(el) {
+              el.style.setProperty('display', 'none', 'important');
+            });
+          } catch(e) {}
         });
-      });
-      document.body.style.paddingTop = '0px';
-    }
+        if (document.body) document.body.style.paddingTop = '0px';
+      }
 
-    // Hide immediately if elements already exist
-    hideElements();
+      // Navigate the React SPA to the target route
+      function navigateToRoute() {
+        try {
+          if (window.location.pathname !== TARGET_PATH) {
+            window.history.pushState({}, '', TARGET_PATH);
+            window.dispatchEvent(new PopStateEvent('popstate', { state: {} }));
+          }
+        } catch(e) {}
+      }
 
-    // Use MutationObserver to hide elements as soon as they are added to the DOM
-    var observer = new MutationObserver(function() {
+      // Run hide + navigate now (React app should be mounted when injectedJavaScript fires)
       hideElements();
-    });
-    observer.observe(document.documentElement, { childList: true, subtree: true });
-  })();
-  true;
-`;
+      navigateToRoute();
+
+      // Keep hiding as React re-renders components
+      var observer = new MutationObserver(function() {
+        hideElements();
+      });
+      observer.observe(document.documentElement, { childList: true, subtree: true });
+    })();
+    true;
+  `;
+}
 
 export default function WebPageScreen() {
   const { slug } = useLocalSearchParams();
@@ -59,8 +81,11 @@ export default function WebPageScreen() {
   const config = PAGE_CONFIG[slug];
   const title = config?.title || 'Page';
 
-  // Load the target page URL directly — avoids loading the entire SPA at root first
-  const pageUrl = `https://the3cedge.com/${slug}`;
+  // Always load the SPA root. The injectedJavaScript will navigate React Router
+  // to the target route after the app has mounted. Loading deep-linked URLs directly
+  // causes the server to return {"error":"Short URL not found"} since the backend
+  // treats unknown paths as short-URL lookups.
+  const pageUrl = 'https://the3cedge.com';
 
   if (loadError) {
     return (
@@ -107,7 +132,7 @@ export default function WebPageScreen() {
         <View style={{ width: 50 }} />
       </View>
 
-      {/* WebView — loads the target page directly for speed */}
+      {/* WebView — loads SPA root then navigates client-side to the target route */}
       <WebView
         ref={webViewRef}
         source={{ uri: pageUrl }}
@@ -118,7 +143,7 @@ export default function WebPageScreen() {
         cacheEnabled
         cacheMode="LOAD_CACHE_ELSE_NETWORK"
         startInLoadingState
-        injectedJavaScript={injectedJS}
+        injectedJavaScript={buildInjectedJS(slug)}
         onLoadEnd={() => setIsLoading(false)}
         onError={() => setLoadError(true)}
       />

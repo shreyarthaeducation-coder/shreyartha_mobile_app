@@ -18,6 +18,19 @@ export default function DashboardScreen() {
   const dashboardUrl = url || 'https://the3cedge.com';
   const pageTitle = title || 'Dashboard';
 
+  // Extract the path portion of the target URL for client-side navigation.
+  // We always load the SPA root (https://the3cedge.com) to avoid the server
+  // returning {"error":"Short URL not found"} for deep-linked SPA routes.
+  let targetPath = '/';
+  try {
+    const parsed = new URL(dashboardUrl);
+    targetPath = parsed.pathname || '/';
+  } catch {
+    targetPath = dashboardUrl.startsWith('/')
+      ? dashboardUrl
+      : `/${dashboardUrl}`;
+  }
+
   useEffect(() => {
     buildInjectedScript();
   }, [tokenKey]);
@@ -36,24 +49,51 @@ export default function DashboardScreen() {
       };
       const keys = localStorageKeyMap[storageKey] || ['studentToken'];
 
-      if (token) {
-        const setStorageLines = keys
-          .map(k => `localStorage.setItem(${JSON.stringify(k)}, ${JSON.stringify(token)});`)
-          .join('\n');
-        setInjectedScript(`
-          (function() {
-            try {
-              ${setStorageLines}
-            } catch(e) {}
-          })();
-          true;
-        `);
-      } else {
-        setInjectedScript('true;');
-      }
+      const setStorageLines = token
+        ? keys
+            .map(k => `localStorage.setItem(${JSON.stringify(k)}, ${JSON.stringify(token)});`)
+            .join('\n')
+        : '';
+
+      // injectedJavaScriptBeforeContentLoaded: set tokens before React app mounts
+      setInjectedScript(`
+        (function() {
+          try {
+            ${setStorageLines}
+          } catch(e) {}
+        })();
+        true;
+      `);
     } catch {
       setInjectedScript('true;');
     }
+  };
+
+  // Build the post-load JS that navigates the React SPA to the target route.
+  // This runs after the React app has mounted so history.pushState + popstate works.
+  const buildNavigationScript = () => {
+    return `
+      (function() {
+        try {
+          if (window.location.pathname !== ${JSON.stringify(targetPath)}) {
+            window.history.pushState({}, '', ${JSON.stringify(targetPath)});
+            window.dispatchEvent(new PopStateEvent('popstate', { state: {} }));
+          }
+          // Hide website-level header and chatbot (redundant inside the app)
+          var hideSelectors = [
+            '.landing-header', '[class*="chatbot"]', '[id*="chatbot"]'
+          ];
+          hideSelectors.forEach(function(sel) {
+            try {
+              document.querySelectorAll(sel).forEach(function(el) {
+                el.style.setProperty('display', 'none', 'important');
+              });
+            } catch(e2) {}
+          });
+        } catch(e) {}
+      })();
+      true;
+    `;
   };
 
   // Handle Android hardware back button
@@ -137,7 +177,7 @@ export default function DashboardScreen() {
 
       <WebView
         ref={webViewRef}
-        source={{ uri: dashboardUrl }}
+        source={{ uri: 'https://the3cedge.com' }}
         style={{ flex: 1 }}
         javaScriptEnabled
         domStorageEnabled
@@ -145,6 +185,7 @@ export default function DashboardScreen() {
         cacheEnabled
         startInLoadingState
         injectedJavaScriptBeforeContentLoaded={injectedScript}
+        injectedJavaScript={buildNavigationScript()}
         onLoadEnd={() => setIsLoading(false)}
         onError={() => setLoadError(true)}
         onNavigationStateChange={(navState) => setCanGoBack(navState.canGoBack)}

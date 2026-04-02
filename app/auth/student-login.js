@@ -40,7 +40,7 @@ export default function StudentLoginScreen() {
     setLoading(true);
     try {
       await AsyncStorage.multiRemove(['studentToken', 'userToken', 'adminToken', 'schoolUserToken', 'parentUserToken']);
-      const res = await api.post('/api/auth/login', loginData);
+      const res = await api.post('/api/students/auth/login', loginData);
       const token = res?.data?.token ?? res?.token;
       if (token) {
         await AsyncStorage.setItem('studentToken', token);
@@ -72,7 +72,7 @@ export default function StudentLoginScreen() {
     setForgotLoading(true);
     setError('');
     try {
-      await api.post('/api/auth/forgot-password', { email: forgotEmail });
+      await api.post('/api/students/auth/forgot-password', { email: forgotEmail });
       Alert.alert('Email Sent', 'Password reset instructions have been sent to your email.');
       setForgotMode(false);
       setForgotEmail('');
@@ -135,7 +135,7 @@ export default function StudentLoginScreen() {
       if (isNoneCode) {
         payload.schoolName = signupData.schoolName;
       }
-      await api.post('/api/auth/signup', payload);
+      await api.post('/api/students/auth/signup', payload);
       Alert.alert('Success', 'Account created! Please login.');
       setActiveTab('login');
       setLoginData({ email: signupData.email, password: '' });
