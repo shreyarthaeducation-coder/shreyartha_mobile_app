@@ -12,11 +12,12 @@ const PAGE_CONFIG = {
   'counselling': { title: 'Counselling' },
   'psychometric-assessment': { title: 'Psychometric Assessment' },
   'subject-career': { title: 'Subject & Career' },
-  'competitive-examination': { title: 'Competitive Exam' },
-  'coding-ai-robotics': { title: 'Coding / AI / Robotics' },
+  'competitive-examination': { title: 'Competitive Examination' },
+  'coding-ai-robotics': { title: 'AI/Robotics & Coding' },
   'language-learning': { title: 'Language Learning' },
   'global-opportunities': { title: 'Global Opportunities' },
   'progress-tracking': { title: 'Progress Tracking' },
+  'store': { title: 'Shreyartha Store' },
 };
 
 // Build the injected JS for a given slug — navigates SPA and hides redundant UI
