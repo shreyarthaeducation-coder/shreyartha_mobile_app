@@ -2,6 +2,7 @@ import { View, Text, ScrollView, TouchableOpacity, Image, StyleSheet, Dimensions
 import { useRouter } from 'expo-router';
 import { COLORS, SPACING } from '../constants/theme';
 import SearchBar from './components/SearchBar';
+import ChatbotWidget from './components/ChatbotWidget';
 
 const { width } = Dimensions.get('window');
 
@@ -40,10 +41,13 @@ export default function LandingScreen() {
     { title: 'Competitive Exam', slug: 'competitive-examination', icon: '🏆' },
     { title: 'Coding / AI / Robotics', slug: 'coding-ai-robotics', icon: '🤖' },
     { title: 'Language Learning', slug: 'language-learning', icon: '🌐' },
+    { title: 'Global Opportunities', slug: 'global-opportunities', icon: '🌍' },
+    { title: 'Progress Tracking', slug: 'progress-tracking', icon: '📈' },
   ];
 
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+    <View style={{ flex: 1 }}>
+      <ScrollView style={styles.container} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
       {/* Header */}
       <View style={styles.header}>
         <Image source={{ uri: 'https://the3cedge.com/assets/img/logo.png' }} style={styles.logo} resizeMode="contain" />
@@ -226,6 +230,8 @@ export default function LandingScreen() {
         <Text style={styles.footerCopy}>© 2026 The 3C Edge. All rights reserved.</Text>
       </View>
     </ScrollView>
+    <ChatbotWidget />
+    </View>
   );
 }
 

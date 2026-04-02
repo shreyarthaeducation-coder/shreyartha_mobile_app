@@ -9,6 +9,7 @@ export default function LoginSelectScreen() {
     { icon: '🎓', label: 'Student Login', route: '/auth/student-login', enabled: true },
     { icon: '🏫', label: 'School Staff Login', route: '/auth/school-login', enabled: true },
     { icon: '👨‍👩‍👧', label: 'Parents Login', route: '/auth/parent-login', enabled: true, badge: null },
+    { icon: '🔐', label: 'Admin Login', route: '/auth/admin-login', enabled: true },
   ];
 
   return (

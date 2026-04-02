@@ -49,8 +49,14 @@ export default function StudentLoginScreen() {
         await AsyncStorage.setItem('userType', 'student');
         setUserType('student');
       }
-      Alert.alert('Success', 'Logged in successfully!');
-      router.replace('/');
+      router.replace({
+        pathname: '/webpages/dashboard',
+        params: {
+          url: 'https://the3cedge.com/student/platform/dashboard',
+          tokenKey: 'studentToken',
+          title: 'Student Dashboard',
+        },
+      });
     } catch (err) {
       setError(err?.message || 'Invalid email or password. Please try again.');
     } finally {
