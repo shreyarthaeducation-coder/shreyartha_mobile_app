@@ -29,6 +29,8 @@ const ICON_COLOR = [
 export default function LandingScreen() {
   const router = useRouter();
   const [loginDropdownVisible, setLoginDropdownVisible] = useState(false);
+  const [headerLogoError, setHeaderLogoError] = useState(false);
+  const [footerLogoError, setFooterLogoError] = useState(false);
 
   // Contact form state
   const [contactForm, setContactForm] = useState({ name: '', email: '', phone: '', message: '' });
@@ -104,7 +106,11 @@ export default function LandingScreen() {
 
         {/* ── HEADER ── */}
         <View style={styles.header}>
-          <Image source={{ uri: LOGO_URL }} style={styles.logo} resizeMode="contain" />
+          {headerLogoError ? (
+            <Text style={styles.logoFallback}>The 3C Edge</Text>
+          ) : (
+            <Image source={{ uri: LOGO_URL }} style={styles.logo} resizeMode="contain" onError={() => setHeaderLogoError(true)} />
+          )}
           <TouchableOpacity style={styles.loginBtn} onPress={() => setLoginDropdownVisible(true)}>
             <Text style={styles.loginBtnText}>🔒 Login ▼</Text>
           </TouchableOpacity>
@@ -393,7 +399,11 @@ export default function LandingScreen() {
         <View style={styles.footer}>
           {/* Brand */}
           <View style={styles.footerBrand}>
-            <Image source={{ uri: LOGO_URL }} style={styles.footerLogo} resizeMode="contain" />
+            {footerLogoError ? (
+              <Text style={styles.logoFallback}>The 3C Edge</Text>
+            ) : (
+              <Image source={{ uri: LOGO_URL }} style={styles.footerLogo} resizeMode="contain" onError={() => setFooterLogoError(true)} />
+            )}
             <Text style={styles.footerDesc}>Empowering students to achieve their full potential through personalized education and career guidance.</Text>
             <View style={styles.socialRow}>
               {[
@@ -464,6 +474,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.white, borderBottomWidth: 1, borderBottomColor: COLORS.border,
   },
   logo: { width: 120, height: 40 },
+  logoFallback: { fontSize: 18, fontWeight: '800', color: COLORS.primary },
   loginBtn: {
     backgroundColor: COLORS.primary, paddingVertical: 10, paddingHorizontal: 18,
     borderRadius: 32,

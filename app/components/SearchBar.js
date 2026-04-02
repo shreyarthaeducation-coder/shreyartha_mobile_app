@@ -123,7 +123,8 @@ export default function SearchBar() {
               style={styles.dropdownList}
               nestedScrollEnabled
               keyboardShouldPersistTaps="handled"
-            >
+              showsVerticalScrollIndicator={true}
+>
               {filteredCategories.map((item) => (
                 <TouchableOpacity
                   key={item.value}
@@ -239,11 +240,10 @@ const styles = StyleSheet.create({
     shadowRadius: 24,
     elevation: 8,
     zIndex: 1000,
-    maxHeight: 320,
-    overflow: 'hidden',
   },
   dropdownList: {
     paddingVertical: 8,
+    maxHeight: 320,
   },
   dropdownItem: {
     flexDirection: 'row',
