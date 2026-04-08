@@ -1,251 +1,298 @@
-import { useState, useRef } from 'react';
-import { StyleSheet, ActivityIndicator, View, Text, TouchableOpacity } from 'react-native';
+import { useState, useEffect, useCallback } from 'react';
+import {
+  StyleSheet, View, Text, TouchableOpacity, ScrollView,
+  RefreshControl,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { WebView } from 'react-native-webview';
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
-import { COLORS, SPACING } from '../../constants/theme';
+import { COLORS, SPACING, SHADOWS, FONTS } from '../../constants/theme';
 import SearchBar from '../components/SearchBar';
 import ChatbotWidget from '../components/ChatbotWidget';
+import PageHero from '../components/PageHero';
+import FeatureCard from '../components/FeatureCard';
+import SectionHeader from '../components/SectionHeader';
+import LoadingScreen from '../components/LoadingScreen';
+import ErrorScreen from '../components/ErrorScreen';
+import { pageContentService } from '../../services/pageContentService';
 
-const PAGE_CONFIG = {
-  'learning-assessment': { title: 'Learning & Assessment' },
-  'skills-learning': { title: 'Skills Learning' },
-  'students-profile': { title: 'Students Profile' },
-  'counselling': { title: 'Counselling' },
-  'psychometric-assessment': { title: 'Psychometric Assessment' },
-  'subject-career': { title: 'Subject & Career' },
-  'competitive-examination': { title: 'Competitive Examination' },
-  'coding-ai-robotics': { title: 'AI/Robotics & Coding' },
-  'language-learning': { title: 'Language Learning' },
-  'global-opportunities': { title: 'Global Opportunities' },
-  'progress-tracking': { title: 'Progress Tracking' },
-  'store': { title: 'Shreyartha Store' },
+// One hero background colour per page slug for variety
+const PAGE_COLORS = {
+  'learning-assessment':       '#b0003a',
+  'skills-learning':           '#1a1a2e',
+  'students-profile':          '#4F46E5',
+  'counselling':               '#0d7377',
+  'psychometric-assessment':   '#6d28d9',
+  'subject-career':            '#b45309',
+  'competitive-examination':   '#b0003a',
+  'coding-ai-robotics':        '#0369a1',
+  'language-learning':         '#059669',
+  'global-opportunities':      '#1a1a2e',
+  'progress-tracking':         '#4F46E5',
+  'store':                     '#b0003a',
 };
 
-// Delays (ms) for retrying SPA navigation after the initial inject
-const NAVIGATION_RETRY_DELAY_MS = 500;
-const NAVIGATION_RETRY_FALLBACK_MS = 1500;
-
-// CSS injected before the page renders to suppress website chrome immediately
-const buildInjectedJSBefore = () => `
-  (function() {
-    var style = document.createElement('style');
-    style.id = '__app_hide_chrome__';
-    style.textContent = [
-      'header', 'nav', 'footer',
-      '.navbar', '.top-bar',
-      '.landing-header', '.la-header', '.sl-header', '.sp-header',
-      '.co-header', '.ps-header', '.sc-header', '.ce-header',
-      '.car-header', '.ll-header', '.go-header', '.pt-header',
-      '.global-search-section',
-      '.landing-tagline-section',
-      '.chatbot-widget', '.chatbot-container', '.floating-chatbot',
-      '[class*="chatbot"]', '[id*="chatbot"]',
-      '[class*="header"]', '[class*="navbar"]', '[class*="topbar"]',
-      '[class*="whatsapp"]', '.whatsapp-float',
-      '[class*="footer"]', '.footer'
-    ].map(function(s) { return s + ' { display: none !important; }'; }).join('\\n');
-    if (document.head) {
-      document.head.appendChild(style);
-    } else {
-      document.documentElement.appendChild(style);
-    }
-  })();
-  true;
-`;
-
-// Build the injected JS for a given slug — navigates SPA and hides redundant UI
-function buildInjectedJS(slug) {
-  return `
-    (function() {
-      var TARGET_PATH = '/${slug}';
-
-      // Ensure hide-chrome style is present
-      if (!document.getElementById('__app_hide_chrome__')) {
-        var style = document.createElement('style');
-        style.id = '__app_hide_chrome__';
-        style.textContent = [
-          'header', 'nav', 'footer',
-          '.navbar', '.top-bar',
-          '.landing-header', '.la-header', '.sl-header', '.sp-header',
-          '.co-header', '.ps-header', '.sc-header', '.ce-header',
-          '.car-header', '.ll-header', '.go-header', '.pt-header',
-          '.global-search-section',
-          '.landing-tagline-section',
-          '.chatbot-widget', '.chatbot-container', '.floating-chatbot',
-          '[class*="chatbot"]', '[id*="chatbot"]',
-          '[class*="header"]', '[class*="navbar"]', '[class*="topbar"]',
-          '[class*="whatsapp"]', '.whatsapp-float',
-          '[class*="footer"]', '.footer'
-        ].map(function(s) { return s + ' { display: none !important; }'; }).join('\\n');
-        document.head.appendChild(style);
-      }
-      if (document.body) document.body.style.paddingTop = '0px';
-
-      // Navigate the React SPA to the target route if not already there
-      function navigateToRoute() {
-        try {
-          if (window.location.pathname !== TARGET_PATH) {
-            window.history.pushState({}, '', TARGET_PATH);
-            window.dispatchEvent(new PopStateEvent('popstate', { state: {} }));
-          }
-        } catch(e) {}
-      }
-
-      navigateToRoute();
-
-      // Retry navigation after short delays to handle deferred React Router mounting
-      setTimeout(navigateToRoute, ${NAVIGATION_RETRY_DELAY_MS});
-      setTimeout(navigateToRoute, ${NAVIGATION_RETRY_FALLBACK_MS});
-
-      // Mutation observer to reapply body padding reset as React re-renders.
-      // Throttled with a flag to avoid redundant style writes on high-frequency mutations.
-      var _padPending = false;
-      var observer = new MutationObserver(function() {
-        if (_padPending) return;
-        _padPending = true;
-        requestAnimationFrame(function() {
-          _padPending = false;
-          if (document.body && document.body.style.paddingTop !== '0px') {
-            document.body.style.paddingTop = '0px';
-          }
-        });
-      });
-      observer.observe(document.documentElement, { childList: true, subtree: true });
-    })();
-    true;
-  `;
-}
-
-export default function WebPageScreen() {
+export default function NativePageScreen() {
   const { slug } = useLocalSearchParams();
   const router = useRouter();
-  const webViewRef = useRef(null);
-  const [loadError, setLoadError] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
 
-  const config = PAGE_CONFIG[slug];
-  const title = config?.title || 'Page';
+  const [pageData, setPageData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [refreshing, setRefreshing] = useState(false);
 
-  // Always load the SPA root. The injectedJavaScript will navigate React Router
-  // to the target route after the app has mounted. Loading deep-linked URLs directly
-  // causes the server to return {"error":"Short URL not found"} since the backend
-  // treats unknown paths as short-URL lookups.
-  const pageUrl = 'https://the3cedge.com';
+  const load = useCallback(async (isRefresh = false) => {
+    try {
+      if (!isRefresh) setLoading(true);
+      setError(null);
+      const data = await pageContentService.getPageContent(slug);
+      if (!data) throw new Error('Page not found');
+      setPageData(data);
+    } catch (e) {
+      setError(e?.message || 'Failed to load page content');
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, [slug]);
 
-  if (loadError) {
+  useEffect(() => { load(); }, [load]);
+
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    load(true);
+  }, [load]);
+
+  const heroColor = PAGE_COLORS[slug] || COLORS.primary;
+
+  if (loading) {
     return (
-      <SafeAreaView style={styles.container} edges={['top']}>
+      <SafeAreaView style={styles.root} edges={['top']}>
         <Stack.Screen options={{ headerShown: false }} />
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => router.back()}>
-            <Text style={styles.backText}>← Back</Text>
-          </TouchableOpacity>
-          <Text style={styles.headerTitle} numberOfLines={1}>{title}</Text>
-          <View style={{ width: 50 }} />
-        </View>
-        <View style={styles.errorContainer}>
-          <Text style={styles.errorIcon}>⚠️</Text>
-          <Text style={styles.errorTitle}>Unable to load page</Text>
-          <Text style={styles.errorMsg}>
-            Please check your internet connection and try again.
-          </Text>
-          <TouchableOpacity
-            style={styles.retryBtn}
-            onPress={() => {
-              setLoadError(false);
-              setIsLoading(true);
-            }}
-          >
-            <Text style={styles.retryBtnText}>Retry</Text>
-          </TouchableOpacity>
-        </View>
+        {renderHeader(pageData?.title || 'Loading…', router)}
+        <LoadingScreen message="Loading content…" />
       </SafeAreaView>
     );
   }
 
+  if (error) {
+    return (
+      <SafeAreaView style={styles.root} edges={['top']}>
+        <Stack.Screen options={{ headerShown: false }} />
+        {renderHeader('Error', router)}
+        <ErrorScreen message={error} onRetry={() => load()} />
+      </SafeAreaView>
+    );
+  }
+
+  const { title, subtitle, icon, description, features = [], sections = [], cta } = pageData;
+
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
-      {/* Hide expo-router's default header */}
+    <SafeAreaView style={styles.root} edges={['top']}>
       <Stack.Screen options={{ headerShown: false }} />
 
-      {/* Custom header bar */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()}>
-          <Text style={styles.backText}>← Back</Text>
-        </TouchableOpacity>
-        <Text style={styles.headerTitle} numberOfLines={1}>{title}</Text>
-        <View style={{ width: 50 }} />
-      </View>
+      {/* Header */}
+      {renderHeader(title, router)}
 
-      {/* App search bar — provides consistent search UX on WebView pages */}
+      {/* Search bar */}
       <SearchBar />
 
-      {/* WebView — loads SPA root then navigates client-side to the target route */}
-      <WebView
-        ref={webViewRef}
-        source={{ uri: pageUrl }}
-        style={{ flex: 1 }}
-        javaScriptEnabled
-        domStorageEnabled
-        sharedCookiesEnabled
-        cacheEnabled
-        cacheMode="LOAD_CACHE_ELSE_NETWORK"
-        startInLoadingState
-        injectedJavaScriptBeforeContentLoaded={buildInjectedJSBefore()}
-        injectedJavaScript={buildInjectedJS(slug)}
-        onLoadEnd={() => {
-          setIsLoading(false);
-          // Re-inject after load to ensure navigation ran after React Router mounted
-          if (webViewRef.current) {
-            webViewRef.current.injectJavaScript(buildInjectedJS(slug));
-          }
-        }}
-        onNavigationStateChange={() => {
-          // Re-apply element hiding whenever the WebView URL changes
-          if (webViewRef.current) {
-            webViewRef.current.injectJavaScript(buildInjectedJS(slug));
-          }
-        }}
-        onError={() => setLoadError(true)}
-      />
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={[COLORS.primary]}
+            tintColor={COLORS.primary}
+          />
+        }
+      >
+        {/* Hero banner */}
+        <PageHero
+          title={title}
+          subtitle={subtitle}
+          icon={icon}
+          backgroundColor={heroColor}
+        />
 
-      {/* Loading overlay — covers the full screen while the WebView initializes */}
-      {isLoading && (
-        <View style={styles.loader}>
-          <ActivityIndicator size="large" color={COLORS.primary} />
-          <Text style={styles.loadingText}>Loading {title}...</Text>
-        </View>
-      )}
+        {/* Description */}
+        {description ? (
+          <View style={styles.descContainer}>
+            <Text style={styles.desc}>{description}</Text>
+          </View>
+        ) : null}
 
-      {/* Floating chatbot — accessible from every web-page screen */}
+        {/* Features grid */}
+        {features.length > 0 ? (
+          <>
+            <SectionHeader title="Key Features" />
+            <View style={styles.featuresGrid}>
+              {features.map((feat, idx) => (
+                <View key={idx} style={styles.featureCol}>
+                  <FeatureCard
+                    icon={feat.icon}
+                    title={feat.title}
+                    description={feat.description}
+                    iconColor={heroColor}
+                  />
+                </View>
+              ))}
+            </View>
+          </>
+        ) : null}
+
+        {/* Content sections */}
+        {sections.map((section, idx) => (
+          <View key={idx} style={[styles.sectionCard, SHADOWS.sm]}>
+            <View style={styles.sectionTitleRow}>
+              {section.icon ? <Text style={styles.sectionIcon}>{section.icon}</Text> : null}
+              <Text style={styles.sectionTitle}>{section.title}</Text>
+            </View>
+            <Text style={styles.sectionContent}>{section.content}</Text>
+          </View>
+        ))}
+
+        {/* CTA block */}
+        {cta ? (
+          <View style={[styles.ctaCard, { backgroundColor: heroColor }]}>
+            <View style={[styles.ctaCircle, styles.ctaCircleLg]} />
+            <View style={[styles.ctaCircle, styles.ctaCircleSm]} />
+            <Text style={styles.ctaTitle}>{cta.title}</Text>
+            {cta.subtitle ? <Text style={styles.ctaSubtitle}>{cta.subtitle}</Text> : null}
+            <TouchableOpacity style={styles.ctaBtn} onPress={() => router.push('/auth/login-select')}>
+              <Text style={styles.ctaBtnText}>{cta.buttonText || 'Get Started'}</Text>
+            </TouchableOpacity>
+          </View>
+        ) : null}
+
+        <View style={{ height: SPACING.xxl }} />
+      </ScrollView>
+
+      {/* Floating chatbot */}
       <ChatbotWidget />
     </SafeAreaView>
   );
 }
 
+function renderHeader(title, router) {
+  return (
+    <View style={styles.header}>
+      <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
+        <Text style={styles.backText}>← Back</Text>
+      </TouchableOpacity>
+      <Text style={styles.headerTitle} numberOfLines={1}>{title}</Text>
+      <View style={{ width: 60 }} />
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.white },
+  root: { flex: 1, backgroundColor: COLORS.background },
   header: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: SPACING.md, paddingVertical: 12, borderBottomWidth: 1,
-    borderBottomColor: '#eee', backgroundColor: COLORS.white,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: SPACING.md,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
+    backgroundColor: COLORS.white,
   },
+  backBtn: { paddingVertical: 4, paddingRight: 8 },
   backText: { color: COLORS.primary, fontWeight: '600', fontSize: 15 },
-  headerTitle: { fontSize: 16, fontWeight: '700', color: COLORS.secondary, flex: 1, textAlign: 'center' },
-  loader: {
-    position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
-    justifyContent: 'center', alignItems: 'center', backgroundColor: COLORS.white,
+  headerTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: COLORS.secondary,
+    flex: 1,
+    textAlign: 'center',
   },
-  loadingText: { marginTop: 12, color: COLORS.textSecondary, fontSize: 14 },
-  errorContainer: {
-    flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 32,
+  scroll: { flex: 1 },
+  scrollContent: { paddingBottom: SPACING.xxl },
+  descContainer: {
+    marginHorizontal: SPACING.md,
+    marginTop: SPACING.md,
+    padding: SPACING.md,
+    backgroundColor: COLORS.surface,
+    borderRadius: 12,
   },
-  errorIcon: { fontSize: 48, marginBottom: 16 },
-  errorTitle: { fontSize: 20, fontWeight: 'bold', color: COLORS.secondary, marginBottom: 8 },
-  errorMsg: { fontSize: 14, color: COLORS.textSecondary, textAlign: 'center', lineHeight: 22, marginBottom: 24 },
-  retryBtn: {
-    backgroundColor: COLORS.primary, paddingVertical: 12, paddingHorizontal: 36, borderRadius: 24,
+  desc: {
+    ...FONTS.regular,
+    color: COLORS.textSecondary,
+    lineHeight: 24,
   },
-  retryBtnText: { color: COLORS.white, fontWeight: '700', fontSize: 15 },
+  featuresGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    paddingHorizontal: SPACING.sm,
+    paddingBottom: SPACING.sm,
+  },
+  featureCol: { width: '50%' },
+  sectionCard: {
+    marginHorizontal: SPACING.md,
+    marginTop: SPACING.md,
+    padding: SPACING.md,
+    backgroundColor: COLORS.white,
+    borderRadius: 16,
+  },
+  sectionTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: SPACING.sm,
+  },
+  sectionIcon: { fontSize: 20, marginRight: SPACING.sm },
+  sectionTitle: {
+    ...FONTS.bold,
+    fontSize: 16,
+    color: COLORS.secondary,
+    flex: 1,
+  },
+  sectionContent: {
+    ...FONTS.regular,
+    color: COLORS.textSecondary,
+    lineHeight: 24,
+  },
+  ctaCard: {
+    marginHorizontal: SPACING.md,
+    marginTop: SPACING.lg,
+    borderRadius: 20,
+    padding: SPACING.xl,
+    alignItems: 'center',
+    overflow: 'hidden',
+    position: 'relative',
+  },
+  ctaCircle: {
+    position: 'absolute',
+    borderRadius: 999,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+  },
+  ctaCircleLg: { width: 180, height: 180, top: -60, right: -40 },
+  ctaCircleSm: { width: 100, height: 100, bottom: -30, left: -20 },
+  ctaTitle: {
+    ...FONTS.bold,
+    fontSize: 20,
+    color: COLORS.white,
+    textAlign: 'center',
+    marginBottom: SPACING.sm,
+  },
+  ctaSubtitle: {
+    color: 'rgba(255,255,255,0.85)',
+    fontSize: 14,
+    textAlign: 'center',
+    marginBottom: SPACING.lg,
+    lineHeight: 20,
+  },
+  ctaBtn: {
+    backgroundColor: COLORS.white,
+    paddingVertical: 12,
+    paddingHorizontal: 36,
+    borderRadius: 24,
+  },
+  ctaBtnText: {
+    fontWeight: '700',
+    fontSize: 15,
+    color: COLORS.primary,
+  },
 });

@@ -37,14 +37,7 @@ export default function AdminLoginScreen() {
         await AsyncStorage.setItem('userType', 'admin');
         setUserType('admin');
       }
-      router.replace({
-        pathname: '/webpages/dashboard',
-        params: {
-          url: 'https://the3cedge.com/admin/dashboard',
-          tokenKey: 'adminToken',
-          title: 'Admin Dashboard',
-        },
-      });
+      router.replace('/screens/dashboard/AdminDashboard');
     } catch (err) {
       setError(err?.message || 'Invalid credentials. Please try again.');
     } finally {

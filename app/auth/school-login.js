@@ -63,14 +63,7 @@ export default function SchoolLoginScreen() {
         ADMIN: 'admin',
       };
       const rolePath = rolePathMap[userTypeRaw] || 'teacher';
-      router.replace({
-        pathname: '/webpages/dashboard',
-        params: {
-          url: `https://the3cedge.com/school/platform/${rolePath}`,
-          tokenKey: 'schoolUserToken',
-          title: 'School Dashboard',
-        },
-      });
+      router.replace('/screens/dashboard/SchoolDashboard');
     } catch (err) {
       setError(err?.message || 'Invalid credentials. Please try again.');
     } finally {
