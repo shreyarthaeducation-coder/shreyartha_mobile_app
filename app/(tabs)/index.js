@@ -1,5 +1,5 @@
 import {
-  View, Text, ScrollView, TouchableOpacity, Image, StyleSheet,
+  View, Text, ScrollView, TouchableOpacity, StyleSheet,
   Dimensions, Linking, Modal, TextInput, ActivityIndicator,
 } from 'react-native';
 import { useState } from 'react';
@@ -12,7 +12,7 @@ import { api } from '../../services/apiService';
 const { width } = Dimensions.get('window');
 const CARD_WIDTH = (width - SPACING.lg * 2 - SPACING.sm) / 2;
 
-const LOGO_URL = 'https://the3cedge.com/images/The3CEdge.png';
+const LOGO_URL = null; // Local asset not available; using text logo
 
 // Per-card icon background tints
 const ICON_BG = [
@@ -29,8 +29,6 @@ const ICON_COLOR = [
 export default function LandingScreen() {
   const router = useRouter();
   const [loginDropdownVisible, setLoginDropdownVisible] = useState(false);
-  const [headerLogoError, setHeaderLogoError] = useState(false);
-  const [footerLogoError, setFooterLogoError] = useState(false);
 
   // Contact form state
   const [contactForm, setContactForm] = useState({ name: '', email: '', phone: '', message: '' });
@@ -40,18 +38,17 @@ export default function LandingScreen() {
   const [contactError, setContactError] = useState('');
 
   const features = [
-    { icon: '📚', title: 'Learning & Assessment', description: 'Personalized learning paths tailored to your curriculum', slug: 'learning-assessment' },
+    { icon: '🎯', title: 'Academic Excellence', description: 'Cambridge-aligned standards and Ivy League benchmarking', slug: 'learning-assessment' },
     { icon: '🧠', title: 'Psychometric Assessment', description: 'Discover your strengths and ideal career paths', slug: 'psychometric-assessment' },
     { icon: '💼', title: 'Subject & Career', description: 'Expert counseling for informed career decisions', slug: 'subject-career' },
     { icon: '🌍', title: 'Global Opportunities', description: 'University placements in India and abroad', slug: 'global-opportunities' },
-    { icon: '🛠️', title: 'Skills Learning', description: 'Coding, languages, and future-ready competencies', slug: 'skills-learning' },
+    { icon: '🚀', title: 'Skills Learning', description: 'Future-ready skills aligned with NEP 2020 and WEF', slug: 'skills-learning' },
     { icon: '📊', title: 'Progress Tracking', description: 'Real-time analytics and performance insights', slug: 'progress-tracking' },
     { icon: '👤', title: 'Students Profile', description: 'Build a comprehensive academic profile', slug: 'students-profile' },
-    { icon: '🤝', title: 'Counselling', description: 'One-on-one guidance from expert counselors', slug: 'counselling' },
-    { icon: '🏆', title: 'Competitive Exam', description: 'Prepare for national and international exams', slug: 'competitive-examination' },
+    { icon: '🤗', title: 'Counselling', description: '24/7 AI-empowered support and guidance', slug: 'counselling' },
+    { icon: '🏆', title: 'Competitive Examination', description: 'Prepare for national and international exams', slug: 'competitive-examination' },
     { icon: '🤖', title: 'AI/Robotics & Coding', description: 'Hands-on AI, robotics, and coding skills', slug: 'coding-ai-robotics' },
     { icon: '🌐', title: 'Language Learning', description: 'Master new languages with interactive tools', slug: 'language-learning' },
-    { icon: '🛒', title: 'Shreyartha Store', description: 'Educational resources and premium content', slug: 'store' },
   ];
 
   const stats = [
@@ -106,11 +103,9 @@ export default function LandingScreen() {
 
         {/* ── HEADER ── */}
         <View style={styles.header}>
-          {headerLogoError ? (
-            <Text style={styles.logoFallback}>The 3C Edge</Text>
-          ) : (
-            <Image source={{ uri: LOGO_URL }} style={styles.logo} resizeMode="contain" onError={() => setHeaderLogoError(true)} />
-          )}
+          <View style={styles.logoContainer}>
+            <Text style={styles.logoText}>The <Text style={styles.logoHighlight}>3C</Text> Edge</Text>
+          </View>
           <TouchableOpacity style={styles.loginBtn} onPress={() => setLoginDropdownVisible(true)}>
             <Text style={styles.loginBtnText}>🔒 Login ▼</Text>
           </TouchableOpacity>
@@ -157,9 +152,6 @@ export default function LandingScreen() {
           <View style={styles.heroCircle1} />
           <View style={styles.heroCircle2} />
 
-          <View style={styles.heroBadge}>
-            <Text style={styles.heroBadgeText}>🏆 Trusted by 500+ Schools Worldwide</Text>
-          </View>
           <Text style={styles.heroTitle}>
             Unlock Your{'\n'}<Text style={styles.heroHighlight}>Potential</Text>
           </Text>
@@ -191,7 +183,7 @@ export default function LandingScreen() {
         <View style={styles.section}>
           <Text style={styles.sectionEyebrow}>OUR PLATFORM</Text>
           <Text style={styles.sectionTitle}>Why Choose The 3C Edge?</Text>
-          <Text style={styles.sectionSubtitle}>12 comprehensive tools and expert guidance to help you succeed.</Text>
+          <Text style={styles.sectionSubtitle}>11 comprehensive tools and expert guidance to help you succeed.</Text>
           <View style={styles.featuresGrid}>
             {features.map((feature, idx) => (
               <TouchableOpacity
@@ -399,11 +391,7 @@ export default function LandingScreen() {
         <View style={styles.footer}>
           {/* Brand */}
           <View style={styles.footerBrand}>
-            {footerLogoError ? (
-              <Text style={styles.logoFallback}>The 3C Edge</Text>
-            ) : (
-              <Image source={{ uri: LOGO_URL }} style={styles.footerLogo} resizeMode="contain" onError={() => setFooterLogoError(true)} />
-            )}
+            <Text style={styles.footerLogoText}>The <Text style={styles.footerLogoHighlight}>3C</Text> Edge</Text>
             <Text style={styles.footerDesc}>Empowering students to achieve their full potential through personalized education and career guidance.</Text>
             <View style={styles.socialRow}>
               {[
@@ -473,7 +461,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: SPACING.lg, paddingTop: 50, paddingBottom: SPACING.md,
     backgroundColor: COLORS.white, borderBottomWidth: 1, borderBottomColor: COLORS.border,
   },
-  logo: { width: 120, height: 40 },
+  logoContainer: { flexDirection: 'row', alignItems: 'center' },
+  logoText: { fontSize: 18, fontWeight: '800', color: COLORS.secondary },
+  logoHighlight: { color: COLORS.primary },
   logoFallback: { fontSize: 18, fontWeight: '800', color: COLORS.primary },
   loginBtn: {
     backgroundColor: COLORS.primary, paddingVertical: 10, paddingHorizontal: 18,
@@ -535,12 +525,6 @@ const styles = StyleSheet.create({
     position: 'absolute', width: 180, height: 180, borderRadius: 90,
     backgroundColor: 'rgba(176,0,58,0.08)', bottom: -40, left: -40,
   },
-  heroBadge: {
-    backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: 20,
-    paddingVertical: 6, paddingHorizontal: 14, marginBottom: SPACING.lg,
-    borderWidth: 1, borderColor: 'rgba(255,255,255,0.2)',
-  },
-  heroBadgeText: { color: '#ffe8b0', fontSize: 12, fontWeight: '600' },
   heroTitle: {
     color: COLORS.white, fontSize: 34, fontWeight: '800',
     textAlign: 'center', marginBottom: 16, lineHeight: 42,
@@ -741,6 +725,8 @@ const styles = StyleSheet.create({
   // ── Footer ──
   footer: { backgroundColor: COLORS.secondary, padding: SPACING.xl },
   footerBrand: { alignItems: 'center', marginBottom: SPACING.lg },
+  footerLogoText: { fontSize: 20, fontWeight: '800', color: COLORS.white, marginBottom: 12 },
+  footerLogoHighlight: { color: COLORS.primaryLight },
   footerLogo: { width: 110, height: 38, marginBottom: 12 },
   footerDesc: {
     color: 'rgba(255,255,255,0.55)', fontSize: 13,

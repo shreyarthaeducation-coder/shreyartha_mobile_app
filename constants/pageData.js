@@ -452,46 +452,4 @@ export const PAGE_DATA = {
       buttonText: 'Set Up Dashboard',
     },
   },
-
-  'store': {
-    title: 'Shreyartha Store',
-    subtitle: 'Premium learning materials, kits and merchandise',
-    icon: '🛒',
-    description:
-      'The Shreyartha Store brings together curated books, robotics kits, stationery, branded merchandise and digital resource bundles — all vetted by our education experts.',
-    features: [
-      { icon: '📚', title: 'Curated Books', description: 'Expert-picked titles for every grade and subject' },
-      { icon: '🤖', title: 'Robotics Kits', description: 'Ready-to-use kits paired with Shreyartha courses' },
-      { icon: '🎨', title: 'Art Supplies', description: 'Quality supplies for the visual and performing arts' },
-      { icon: '💻', title: 'Digital Bundles', description: 'Discounted course packs and subscription upgrades' },
-      { icon: '👕', title: 'Merchandise', description: 'Shreyartha branded apparel, bags and accessories' },
-      { icon: '🚚', title: 'Fast Delivery', description: 'Pan-India delivery within 5–7 business days' },
-    ],
-    sections: [
-      {
-        title: 'How to Order',
-        icon: '🛍️',
-        content:
-          'Browse the store, add items to your cart, apply coupon codes, and check out securely via UPI, net banking, debit/credit card or cash on delivery for eligible pin codes.',
-      },
-      {
-        title: 'School Bulk Orders',
-        icon: '🏫',
-        content:
-          'Schools can place bulk orders for kits and books at institutional pricing. A dedicated account manager will help you customise bundles and manage delivery logistics.',
-      },
-      {
-        title: 'Returns & Warranty',
-        icon: '🔄',
-        content:
-          'Physical products come with a 7-day no-questions-asked return policy. Robotics kits include a 6-month manufacturer warranty against defects.',
-      },
-    ],
-    cta: {
-      title: 'Shop the Shreyartha Store',
-      subtitle: 'Free shipping on orders over ₹999',
-      buttonText: 'Shop Now',
-    },
-  },
 };
-
