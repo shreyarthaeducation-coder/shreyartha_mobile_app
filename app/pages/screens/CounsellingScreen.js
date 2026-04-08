@@ -92,7 +92,7 @@ export default function CounsellingScreen() {
           </View>
           {[
             { area: 'Career Guidance', caps: 'Personality & aptitude matching, career path modeling', impact: 'Reduces career uncertainty, aligns with NEP 2020' },
-            { area: 'Academic Counselling', caps: 'Learning gap analysis, personalized study plans', impact: 'Improves academic outcomes by 40%' },
+            { area: 'Academic Counselling', caps: 'Learning gap analysis, personalized study plans', impact: 'Measurable improvement in academic performance' },
             { area: 'Emotional Support', caps: 'Sentiment analysis, mood tracking, wellness tips', impact: 'Reduces student stress and anxiety' },
             { area: 'Clinical Counselling', caps: 'Screening tools, professional referral system', impact: 'Early intervention, mental health support' },
             { area: 'Special Care', caps: 'Adaptive interfaces, customized learning paths', impact: 'Inclusive education for all learners' },
