@@ -5,22 +5,22 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { COLORS, SPACING, SHADOWS, FONTS } from '../../../constants/theme';
-import { dashboardService } from '../../../services/dashboardService';
-import { useAuth } from '../../../context/AuthContext';
-import LoadingScreen from '../../components/LoadingScreen';
-import EmptyState from '../../components/EmptyState';
+import { COLORS, SPACING, SHADOWS, FONTS } from '../../constants/theme';
+import { dashboardService } from '../../services/dashboardService';
+import { useAuth } from '../../context/AuthContext';
+import LoadingScreen from '../components/LoadingScreen';
+import EmptyState from '../components/EmptyState';
 
 const PLACEHOLDER = {
   stats: [
-    { label: 'Children', value: '—', icon: '👶' },
-    { label: 'Avg. Score', value: '—', icon: '📊' },
-    { label: 'Sessions', value: '—', icon: '🗓️' },
-    { label: 'Alerts', value: '—', icon: '🔔' },
+    { label: 'Total Users', value: '—', icon: '👥' },
+    { label: 'Schools', value: '—', icon: '🏫' },
+    { label: 'Active Sessions', value: '—', icon: '📡' },
+    { label: 'Revenue', value: '—', icon: '💰' },
   ],
 };
 
-export default function ParentDashboard() {
+export default function AdminDashboard() {
   const router = useRouter();
   const { user, logout } = useAuth();
 
@@ -33,7 +33,7 @@ export default function ParentDashboard() {
     try {
       if (!isRefresh) setLoading(true);
       setError(null);
-      const result = await dashboardService.getParentDashboard();
+      const result = await dashboardService.getAdminDashboard();
       setData(result);
     } catch (e) {
       if (!isRefresh) setError(e?.message || 'Could not load dashboard data');
@@ -50,21 +50,21 @@ export default function ParentDashboard() {
 
   const handleLogout = async () => {
     await logout();
-    router.replace('/');
+    router.replace('/(tabs)');
   };
 
-  const displayName = user?.name || user?.email || 'Parent';
+  const displayName = user?.name || user?.email || 'Administrator';
   const stats = data?.stats || PLACEHOLDER.stats;
-  const children = data?.children || [];
-  const alerts = data?.alerts || [];
+  const recentUsers = data?.recent_users || data?.recentUsers || [];
+  const recentSchools = data?.recent_schools || data?.recentSchools || [];
 
-  if (loading) return <LoadingScreen message="Loading parent dashboard…" />;
+  if (loading) return <LoadingScreen message="Loading admin dashboard…" />;
 
   return (
     <SafeAreaView style={styles.root} edges={['top']}>
-      <View style={[styles.header, { backgroundColor: '#0d7377' }]}>
+      <View style={[styles.header, { backgroundColor: '#4F46E5' }]}>
         <View>
-          <Text style={styles.greeting}>Parent Dashboard</Text>
+          <Text style={styles.greeting}>Admin Dashboard</Text>
           <Text style={styles.userName}>{displayName}</Text>
         </View>
         <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout}>
@@ -86,7 +86,7 @@ export default function ParentDashboard() {
           </View>
         ) : null}
 
-        <Text style={styles.sectionLabel}>Family Overview</Text>
+        <Text style={styles.sectionLabel}>Platform Overview</Text>
         <View style={styles.statsGrid}>
           {stats.map((stat, i) => (
             <View key={i} style={[styles.statCard, SHADOWS.sm]}>
@@ -97,48 +97,46 @@ export default function ParentDashboard() {
           ))}
         </View>
 
-        <Text style={styles.sectionLabel}>My Children</Text>
-        {children.length === 0 ? (
-          <EmptyState icon="👶" title="No children linked" message="Contact the school to link your child's profile." />
+        <Text style={styles.sectionLabel}>Recent Schools</Text>
+        {recentSchools.length === 0 ? (
+          <EmptyState icon="🏫" title="No school data" message="School registrations will appear here." />
         ) : (
-          children.map((child, i) => (
+          recentSchools.map((school, i) => (
             <View key={i} style={[styles.listCard, SHADOWS.sm]}>
-              <Text style={styles.listIcon}>🎒</Text>
+              <Text style={styles.listIcon}>🏫</Text>
               <View style={styles.listInfo}>
-                <Text style={styles.listTitle}>{child.name}</Text>
-                {child.class ? <Text style={styles.listSub}>Class {child.class} • {child.school || ''}</Text> : null}
+                <Text style={styles.listTitle}>{school.name}</Text>
+                {school.city ? <Text style={styles.listSub}>{school.city}</Text> : null}
               </View>
-              {child.score !== undefined ? (
-                <Text style={[styles.listBadge, { color: child.score >= 75 ? COLORS.success : COLORS.primary }]}>
-                  {child.score}%
-                </Text>
+              {school.students !== undefined ? (
+                <Text style={styles.listBadge}>{school.students} students</Text>
               ) : null}
             </View>
           ))
         )}
 
-        {alerts.length > 0 ? (
-          <>
-            <Text style={styles.sectionLabel}>Alerts & Notifications</Text>
-            {alerts.map((alert, i) => (
-              <View key={i} style={[styles.alertCard, SHADOWS.sm]}>
-                <Text style={styles.alertIcon}>{alert.icon || '🔔'}</Text>
-                <View style={styles.listInfo}>
-                  <Text style={styles.listTitle}>{alert.title || alert.message}</Text>
-                  {alert.date ? <Text style={styles.listSub}>{alert.date}</Text> : null}
-                </View>
+        <Text style={styles.sectionLabel}>Recent Users</Text>
+        {recentUsers.length === 0 ? (
+          <EmptyState icon="👥" title="No recent users" message="New user registrations will appear here." />
+        ) : (
+          recentUsers.map((u, i) => (
+            <View key={i} style={[styles.listCard, SHADOWS.sm]}>
+              <Text style={styles.listIcon}>{u.type === 'school' ? '🏫' : u.type === 'parent' ? '👨‍👩‍👧' : '🎓'}</Text>
+              <View style={styles.listInfo}>
+                <Text style={styles.listTitle}>{u.name || u.email}</Text>
+                {u.type ? <Text style={styles.listSub}>{u.type} • {u.date || ''}</Text> : null}
               </View>
-            ))}
-          </>
-        ) : null}
+            </View>
+          ))
+        )}
 
-        <Text style={styles.sectionLabel}>Quick Actions</Text>
+        <Text style={styles.sectionLabel}>Admin Actions</Text>
         <View style={styles.quickGrid}>
           {[
-            { label: 'Progress Tracking', icon: '📈', route: '/webpages/progress-tracking' },
-            { label: 'Counselling', icon: '🧭', route: '/webpages/counselling' },
-            { label: 'Global Opportunities', icon: '✈️', route: '/webpages/global-opportunities' },
-            { label: 'Shreyartha Store', icon: '🛒', route: '/webpages/store' },
+            { label: 'Manage Users', icon: '👥', route: '/pages/students-profile' },
+            { label: 'All Schools', icon: '🏫', route: '/pages/counselling' },
+            { label: 'View Reports', icon: '📊', route: '/pages/progress-tracking' },
+            { label: 'Store Management', icon: '🛒', route: '/pages/store' },
           ].map((item, i) => (
             <TouchableOpacity key={i} style={[styles.quickCard, SHADOWS.sm]} onPress={() => router.push(item.route)}>
               <Text style={styles.quickIcon}>{item.icon}</Text>
@@ -171,16 +169,14 @@ const styles = StyleSheet.create({
   statsGrid: { flexDirection: 'row', flexWrap: 'wrap', paddingHorizontal: SPACING.sm },
   statCard: { width: '47%', margin: '1.5%', backgroundColor: COLORS.white, borderRadius: 16, padding: SPACING.md, alignItems: 'center' },
   statIcon: { fontSize: 28, marginBottom: SPACING.xs },
-  statValue: { ...FONTS.bold, fontSize: 24, color: '#0d7377', marginBottom: 2 },
+  statValue: { ...FONTS.bold, fontSize: 24, color: '#4F46E5', marginBottom: 2 },
   statLabel: { ...FONTS.small, textAlign: 'center', color: COLORS.textSecondary },
   listCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.white, marginHorizontal: SPACING.md, marginBottom: SPACING.sm, borderRadius: 14, padding: SPACING.md },
-  alertCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff8e1', marginHorizontal: SPACING.md, marginBottom: SPACING.sm, borderRadius: 14, padding: SPACING.md },
   listIcon: { fontSize: 28, marginRight: SPACING.md },
-  alertIcon: { fontSize: 28, marginRight: SPACING.md },
   listInfo: { flex: 1 },
   listTitle: { ...FONTS.bold, fontSize: 14, color: COLORS.secondary },
   listSub: { ...FONTS.small, color: COLORS.textLight, marginTop: 2 },
-  listBadge: { fontWeight: '700', fontSize: 15 },
+  listBadge: { fontWeight: '600', fontSize: 12, color: COLORS.textSecondary },
   quickGrid: { flexDirection: 'row', flexWrap: 'wrap', paddingHorizontal: SPACING.sm },
   quickCard: { width: '47%', margin: '1.5%', backgroundColor: COLORS.white, borderRadius: 14, padding: SPACING.md, alignItems: 'center' },
   quickIcon: { fontSize: 28, marginBottom: SPACING.xs },

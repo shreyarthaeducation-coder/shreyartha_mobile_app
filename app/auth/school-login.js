@@ -63,7 +63,7 @@ export default function SchoolLoginScreen() {
         ADMIN: 'admin',
       };
       const rolePath = rolePathMap[userTypeRaw] || 'teacher';
-      router.replace('/screens/dashboard/SchoolDashboard');
+      router.replace('/dashboard/school');
     } catch (err) {
       setError(err?.message || 'Invalid credentials. Please try again.');
     } finally {

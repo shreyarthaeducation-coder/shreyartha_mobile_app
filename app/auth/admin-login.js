@@ -37,7 +37,7 @@ export default function AdminLoginScreen() {
         await AsyncStorage.setItem('userType', 'admin');
         setUserType('admin');
       }
-      router.replace('/screens/dashboard/AdminDashboard');
+      router.replace('/dashboard/admin');
     } catch (err) {
       setError(err?.message || 'Invalid credentials. Please try again.');
     } finally {

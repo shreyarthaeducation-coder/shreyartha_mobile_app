@@ -52,7 +52,7 @@ export default function StudentLoginScreen() {
         await AsyncStorage.setItem('userType', 'student');
         setUserType('student');
       }
-      router.replace('/screens/dashboard/StudentDashboard');
+      router.replace('/dashboard/student');
     } catch (err) {
       setError(err?.message || 'Invalid email or password. Please try again.');
     } finally {

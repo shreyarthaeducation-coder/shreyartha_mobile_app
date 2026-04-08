@@ -5,11 +5,11 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { COLORS, SPACING, SHADOWS, FONTS } from '../../../constants/theme';
-import { dashboardService } from '../../../services/dashboardService';
-import { useAuth } from '../../../context/AuthContext';
-import LoadingScreen from '../../components/LoadingScreen';
-import EmptyState from '../../components/EmptyState';
+import { COLORS, SPACING, SHADOWS, FONTS } from '../../constants/theme';
+import { dashboardService } from '../../services/dashboardService';
+import { useAuth } from '../../context/AuthContext';
+import LoadingScreen from '../components/LoadingScreen';
+import EmptyState from '../components/EmptyState';
 
 const PLACEHOLDER = {
   stats: [
@@ -50,7 +50,7 @@ export default function SchoolDashboard() {
 
   const handleLogout = async () => {
     await logout();
-    router.replace('/');
+    router.replace('/(tabs)');
   };
 
   const displayName = user?.school_name || user?.name || user?.email || 'School';
@@ -133,10 +133,10 @@ export default function SchoolDashboard() {
         <Text style={styles.sectionLabel}>Quick Actions</Text>
         <View style={styles.quickGrid}>
           {[
-            { label: 'Progress Reports', icon: '📈', route: '/webpages/progress-tracking' },
-            { label: 'Counselling', icon: '🧭', route: '/webpages/counselling' },
-            { label: 'Competitive Exams', icon: '🏆', route: '/webpages/competitive-examination' },
-            { label: 'AI & Coding', icon: '🤖', route: '/webpages/coding-ai-robotics' },
+            { label: 'Progress Reports', icon: '📈', route: '/pages/progress-tracking' },
+            { label: 'Counselling', icon: '🧭', route: '/pages/counselling' },
+            { label: 'Competitive Exams', icon: '🏆', route: '/pages/competitive-examination' },
+            { label: 'AI & Coding', icon: '🤖', route: '/pages/coding-ai-robotics' },
           ].map((item, i) => (
             <TouchableOpacity key={i} style={[styles.quickCard, SHADOWS.sm]} onPress={() => router.push(item.route)}>
               <Text style={styles.quickIcon}>{item.icon}</Text>

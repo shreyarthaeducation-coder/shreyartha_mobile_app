@@ -46,7 +46,7 @@ export default function ParentLoginScreen() {
         await AsyncStorage.setItem('userType', 'parent');
         setUserType('parent');
       }
-      router.replace('/screens/dashboard/ParentDashboard');
+      router.replace('/dashboard/parent');
     } catch (err) {
       setError(err?.message || 'Invalid credentials. Please try again.');
     } finally {
