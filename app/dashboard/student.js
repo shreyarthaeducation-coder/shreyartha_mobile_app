@@ -5,12 +5,12 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { COLORS, SPACING, SHADOWS, FONTS } from '../../../constants/theme';
-import { dashboardService } from '../../../services/dashboardService';
-import { useAuth } from '../../../context/AuthContext';
-import LoadingScreen from '../../components/LoadingScreen';
-import ErrorScreen from '../../components/ErrorScreen';
-import EmptyState from '../../components/EmptyState';
+import { COLORS, SPACING, SHADOWS, FONTS } from '../../constants/theme';
+import { dashboardService } from '../../services/dashboardService';
+import { useAuth } from '../../context/AuthContext';
+import LoadingScreen from '../components/LoadingScreen';
+import ErrorScreen from '../components/ErrorScreen';
+import EmptyState from '../components/EmptyState';
 
 const PLACEHOLDER = {
   stats: [
@@ -53,7 +53,7 @@ export default function StudentDashboard() {
 
   const handleLogout = async () => {
     await logout();
-    router.replace('/');
+    router.replace('/(tabs)');
   };
 
   const displayName = user?.name || user?.email || 'Student';
@@ -150,10 +150,10 @@ export default function StudentDashboard() {
         <Text style={styles.sectionLabel}>Quick Access</Text>
         <View style={styles.quickGrid}>
           {[
-            { label: 'Explore Services', icon: '🔍', route: '/' },
-            { label: 'Progress Tracking', icon: '📈', route: '/webpages/progress-tracking' },
-            { label: 'Assessments', icon: '📝', route: '/webpages/learning-assessment' },
-            { label: 'Counselling', icon: '🧭', route: '/webpages/counselling' },
+            { label: 'Explore Services', icon: '🔍', route: '/(tabs)' },
+            { label: 'Progress Tracking', icon: '📈', route: '/pages/progress-tracking' },
+            { label: 'Assessments', icon: '📝', route: '/pages/learning-assessment' },
+            { label: 'Counselling', icon: '🧭', route: '/pages/counselling' },
           ].map((item, i) => (
             <TouchableOpacity
               key={i}

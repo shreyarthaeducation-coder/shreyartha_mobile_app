@@ -57,7 +57,7 @@ export default function SearchBar() {
 
     const slug = ROUTE_MAP[category.value];
     if (slug) {
-      router.push(`/webpages/${slug}`);
+      router.push(`/pages/${slug}`);
     }
   };
 
@@ -69,7 +69,7 @@ export default function SearchBar() {
       if (matched) {
         const slug = ROUTE_MAP[matched.value];
         if (slug) {
-          router.push(`/webpages/${slug}`);
+          router.push(`/pages/${slug}`);
         }
       }
     }
