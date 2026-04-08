@@ -7,7 +7,7 @@ import LoadingScreen from '../components/LoadingScreen';
  * Native dashboard router.
  * Reads userType from route params (set by auth screens) or falls back
  * to AsyncStorage, then redirects to the correct native dashboard screen.
- * No WebView is used.
+ * Replaces the previous WebView-based dashboard with a native routing layer.
  */
 export default function DashboardRouter() {
   const { userType: paramUserType } = useLocalSearchParams();
