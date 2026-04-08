@@ -144,18 +144,6 @@ const CHATBOT_DATA = [
       { title: 'AI Recommendations', description: 'Personalised next steps' },
     ],
   },
-  {
-    id: 'store',
-    label: 'Shreyartha Store',
-    icon: '🛒',
-    link: '/store',
-    subOptions: [
-      { title: 'Premium Courses', description: 'Expert-led learning programmes' },
-      { title: 'Study Material Packs', description: 'Curated resources for every need' },
-      { title: 'Certification Programs', description: 'Boost your credentials' },
-      { title: 'Merchandise', description: 'Shreyartha branded products' },
-    ],
-  },
 ];
 
 const STEP = {

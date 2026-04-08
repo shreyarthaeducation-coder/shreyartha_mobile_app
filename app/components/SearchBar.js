@@ -20,7 +20,6 @@ const SEARCH_CATEGORIES = [
   { label: 'Language Learning', value: 'language-learning', icon: '🌐' },
   { label: 'Global Opportunities', value: 'global-opportunities', icon: '🌍' },
   { label: 'Progress Tracking', value: 'progress-tracking', icon: '📊' },
-  { label: 'Shreyartha Store', value: 'store', icon: '🛒' },
 ];
 
 const ROUTE_MAP = {
@@ -35,7 +34,6 @@ const ROUTE_MAP = {
   'language-learning': 'language-learning',
   'global-opportunities': 'global-opportunities',
   'progress-tracking': 'progress-tracking',
-  'store': 'store',
 };
 
 export default function SearchBar() {
@@ -51,8 +49,8 @@ export default function SearchBar() {
     : SEARCH_CATEGORIES;
 
   const handleCategorySelect = (category) => {
-    setSelectedCategory(category.label);
-    setSearchTerm(category.label);
+    setSelectedCategory('');
+    setSearchTerm('');
     setIsDropdownOpen(false);
 
     const slug = ROUTE_MAP[category.value];

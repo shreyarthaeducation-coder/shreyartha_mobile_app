@@ -19,18 +19,17 @@ const ICON_BG = [
 ];
 
 const SERVICES = [
-  { icon: '📚', title: 'Learning & Assessment', description: 'Personalized learning paths tailored to your curriculum', slug: 'learning-assessment' },
+  { icon: '🎯', title: 'Academic Excellence', description: 'Cambridge-aligned standards and Ivy League benchmarking', slug: 'learning-assessment' },
   { icon: '🧠', title: 'Psychometric Assessment', description: 'Discover your strengths and ideal career paths', slug: 'psychometric-assessment' },
   { icon: '💼', title: 'Subject & Career', description: 'Expert counseling for informed career decisions', slug: 'subject-career' },
   { icon: '🌍', title: 'Global Opportunities', description: 'University placements in India and abroad', slug: 'global-opportunities' },
-  { icon: '🛠️', title: 'Skills Learning', description: 'Coding, languages, and future-ready competencies', slug: 'skills-learning' },
+  { icon: '🚀', title: 'Skills Learning', description: 'Future-ready skills aligned with NEP 2020 and WEF', slug: 'skills-learning' },
   { icon: '📊', title: 'Progress Tracking', description: 'Real-time analytics and performance insights', slug: 'progress-tracking' },
   { icon: '👤', title: 'Students Profile', description: 'Build a comprehensive academic profile', slug: 'students-profile' },
-  { icon: '🤝', title: 'Counselling', description: 'One-on-one guidance from expert counselors', slug: 'counselling' },
-  { icon: '🏆', title: 'Competitive Exam', description: 'Prepare for national and international exams', slug: 'competitive-examination' },
+  { icon: '🤗', title: 'Counselling', description: '24/7 AI-empowered support and guidance', slug: 'counselling' },
+  { icon: '🏆', title: 'Competitive Examination', description: 'Prepare for national and international exams', slug: 'competitive-examination' },
   { icon: '🤖', title: 'AI/Robotics & Coding', description: 'Hands-on AI, robotics, and coding skills', slug: 'coding-ai-robotics' },
   { icon: '🌐', title: 'Language Learning', description: 'Master new languages with interactive tools', slug: 'language-learning' },
-  { icon: '🛒', title: 'Shreyartha Store', description: 'Educational resources and premium content', slug: 'store' },
 ];
 
 export default function ExploreScreen() {
@@ -47,7 +46,7 @@ export default function ExploreScreen() {
       {/* Header */}
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Explore Services</Text>
-        <Text style={styles.headerSubtitle}>Discover all 12 educational services</Text>
+        <Text style={styles.headerSubtitle}>Discover all 11 educational services</Text>
       </View>
 
       {/* Search */}

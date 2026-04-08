@@ -28,7 +28,6 @@ const PAGE_COLORS = {
   'language-learning':         '#059669',
   'global-opportunities':      '#1a1a2e',
   'progress-tracking':         '#4F46E5',
-  'store':                     '#b0003a',
 };
 
 export default function NativePageScreen() {
