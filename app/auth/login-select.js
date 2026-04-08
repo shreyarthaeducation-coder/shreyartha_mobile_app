@@ -1,6 +1,7 @@
 import { View, Text, TouchableOpacity, StyleSheet, Image, SafeAreaView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { COLORS, SPACING, SHADOWS } from '../../constants/theme';
+import ChatbotWidget from '../components/ChatbotWidget';
 
 const LOGO_URL = 'https://the3cedge.com/images/The3CEdge.png';
 
@@ -48,6 +49,7 @@ export default function LoginSelectScreen() {
           </TouchableOpacity>
         ))}
       </View>
+      <ChatbotWidget />
     </View>
   );
 }
