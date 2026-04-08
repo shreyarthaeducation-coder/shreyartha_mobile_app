@@ -133,8 +133,8 @@ export default function AdminDashboard() {
         <Text style={styles.sectionLabel}>Admin Actions</Text>
         <View style={styles.quickGrid}>
           {[
-            { label: 'Manage Users', icon: '👥', route: '/' },
-            { label: 'All Schools', icon: '🏫', route: '/' },
+            { label: 'Manage Users', icon: '👥', route: '/webpages/students-profile' },
+            { label: 'All Schools', icon: '🏫', route: '/webpages/counselling' },
             { label: 'View Reports', icon: '📊', route: '/webpages/progress-tracking' },
             { label: 'Store Management', icon: '🛒', route: '/webpages/store' },
           ].map((item, i) => (

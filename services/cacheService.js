@@ -11,7 +11,7 @@ export const cacheService = {
       };
       await AsyncStorage.setItem(CACHE_KEY_PREFIX + key, JSON.stringify(entry));
     } catch (e) {
-      console.warn('Cache set failed:', e);
+      console.warn('Cache set failed for key:', key, e);
     }
   },
 
@@ -26,7 +26,7 @@ export const cacheService = {
       }
       return entry.data;
     } catch (e) {
-      console.warn('Cache get failed:', e);
+      console.warn('Cache get failed for key:', key, e);
       return null;
     }
   },
@@ -35,7 +35,7 @@ export const cacheService = {
     try {
       await AsyncStorage.removeItem(CACHE_KEY_PREFIX + key);
     } catch (e) {
-      console.warn('Cache clear failed:', e);
+      console.warn('Cache clear failed for key:', key, e);
     }
   },
 

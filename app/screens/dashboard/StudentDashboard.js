@@ -151,7 +151,7 @@ export default function StudentDashboard() {
         <View style={styles.quickGrid}>
           {[
             { label: 'Explore Services', icon: '🔍', route: '/' },
-            { label: 'My Profile', icon: '👤', route: '/auth/student-login' },
+            { label: 'Progress Tracking', icon: '📈', route: '/webpages/progress-tracking' },
             { label: 'Assessments', icon: '📝', route: '/webpages/learning-assessment' },
             { label: 'Counselling', icon: '🧭', route: '/webpages/counselling' },
           ].map((item, i) => (
