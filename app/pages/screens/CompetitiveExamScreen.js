@@ -43,7 +43,7 @@ export default function CompetitiveExamScreen() {
           <View style={styles.heroCircle2} />
           <Text style={styles.heroIcon}>🏆</Text>
           <Text style={styles.heroTitle}>Competitive Examination</Text>
-          <Text style={styles.heroSubtitle}>"Shreyratha Competitive Excellence"</Text>
+          <Text style={styles.heroSubtitle}>"Shreyartha Competitive Excellence"</Text>
           <Text style={styles.heroDesc}>
             Comprehensive preparation for India's most competitive entrance examinations. Our
             integrated approach combines curriculum alignment, mock tests, and personalized

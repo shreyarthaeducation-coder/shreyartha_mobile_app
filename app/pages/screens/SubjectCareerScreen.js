@@ -43,7 +43,7 @@ export default function SubjectCareerScreen() {
           <View style={styles.heroCircle2} />
           <Text style={styles.heroIcon}>📋</Text>
           <Text style={styles.heroTitle}>Subject & Career</Text>
-          <Text style={styles.heroSubtitle}>"Shreyratha Global Navigator"</Text>
+          <Text style={styles.heroSubtitle}>"Shreyartha Global Navigator"</Text>
           <Text style={styles.heroDesc}>
             Our intelligent Subject & Career navigation system helps students chart personalized
             pathways from current subjects to future careers using data-driven insights and global
