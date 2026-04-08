@@ -8,6 +8,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { api } from '../../services/apiService';
 import { useAuth } from '../../context/AuthContext';
 import { COLORS, SPACING } from '../../constants/theme';
+import ChatbotWidget from '../components/ChatbotWidget';
 
 const LOGO_URL = 'https://the3cedge.com/images/The3CEdge.png';
 
@@ -102,6 +103,7 @@ export default function AdminLoginScreen() {
           <View style={{ height: 40 }} />
         </View>
       </ScrollView>
+      <ChatbotWidget />
     </KeyboardAvoidingView>
   );
 }

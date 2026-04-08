@@ -1,33 +1,19 @@
-{
-  "expo": {
-    "name": "Shreyartha",
-    "slug": "shreyartha-mobile-app",
-    "version": "1.0.0",
-    "scheme": "shreyartha",
-    "orientation": "portrait",
-    "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
-    "platforms": ["ios", "android"],
-    "splash": {
-      "image": "./assets/splash-icon.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
-    },
-    "ios": {
-      "bundleIdentifier": "com.shreyartha.mobileapp",
-      "supportsTablet": true
-    },
-    "android": {
-      "package": "com.shreyartha.mobileapp",
-      "versionCode": 1,
-      "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
-      }
-    },
-    "web": {
-      "bundler": "metro"
-    },
-    "plugins": ["expo-router"]
-  }
+// App.js
+// The active entry point for this project is expo-router/entry (see "main" in
+// package.json). This file is kept as a conventional React Native export for
+// tooling compatibility; it is not executed by the Expo runtime when
+// expo-router/entry is the main entry.
+import { View, Text, StyleSheet } from 'react-native';
+
+export default function App() {
+  return (
+    <View style={styles.container}>
+      <Text style={styles.text}>Shreyartha Education</Text>
+    </View>
+  );
 }
+
+const styles = StyleSheet.create({
+  container: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#fff' },
+  text: { fontSize: 18, fontWeight: '700', color: '#1a1a2e' },
+});

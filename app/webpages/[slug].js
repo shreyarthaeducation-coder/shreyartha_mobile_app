@@ -5,6 +5,7 @@ import { WebView } from 'react-native-webview';
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
 import { COLORS, SPACING } from '../../constants/theme';
 import SearchBar from '../components/SearchBar';
+import ChatbotWidget from '../components/ChatbotWidget';
 
 const PAGE_CONFIG = {
   'learning-assessment': { title: 'Learning & Assessment' },
@@ -209,13 +210,16 @@ export default function WebPageScreen() {
         onError={() => setLoadError(true)}
       />
 
-      {/* Loading overlay */}
+      {/* Loading overlay — covers the full screen while the WebView initializes */}
       {isLoading && (
         <View style={styles.loader}>
           <ActivityIndicator size="large" color={COLORS.primary} />
           <Text style={styles.loadingText}>Loading {title}...</Text>
         </View>
       )}
+
+      {/* Floating chatbot — accessible from every web-page screen */}
+      <ChatbotWidget />
     </SafeAreaView>
   );
 }
@@ -230,7 +234,7 @@ const styles = StyleSheet.create({
   backText: { color: COLORS.primary, fontWeight: '600', fontSize: 15 },
   headerTitle: { fontSize: 16, fontWeight: '700', color: COLORS.secondary, flex: 1, textAlign: 'center' },
   loader: {
-    position: 'absolute', top: 60, left: 0, right: 0, bottom: 0,
+    position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
     justifyContent: 'center', alignItems: 'center', backgroundColor: COLORS.white,
   },
   loadingText: { marginTop: 12, color: COLORS.textSecondary, fontSize: 14 },
