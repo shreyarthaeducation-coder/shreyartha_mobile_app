@@ -113,6 +113,14 @@ export default function SearchBar() {
         </TouchableOpacity>
       </View>
 
+      {/* Backdrop to close dropdown when tapping outside */}
+      {isDropdownOpen && (
+        <Pressable
+          style={styles.backdrop}
+          onPress={() => setIsDropdownOpen(false)}
+        />
+      )}
+
       {/* Dropdown */}
       {isDropdownOpen && (
         <View style={styles.dropdown}>
@@ -122,6 +130,7 @@ export default function SearchBar() {
               nestedScrollEnabled
               keyboardShouldPersistTaps="handled"
               showsVerticalScrollIndicator={true}
+              bounces={true}
 >
               {filteredCategories.map((item) => (
                 <TouchableOpacity
@@ -150,14 +159,6 @@ export default function SearchBar() {
             </View>
           )}
         </View>
-      )}
-
-      {/* Backdrop to close dropdown when tapping outside */}
-      {isDropdownOpen && (
-        <Pressable
-          style={styles.backdrop}
-          onPress={() => setIsDropdownOpen(false)}
-        />
       )}
     </View>
   );
@@ -238,6 +239,7 @@ const styles = StyleSheet.create({
     shadowRadius: 24,
     elevation: 8,
     zIndex: 1000,
+    maxHeight: 350,
   },
   dropdownList: {
     paddingVertical: 8,
