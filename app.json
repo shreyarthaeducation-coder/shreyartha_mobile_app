@@ -17,11 +17,11 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "bundleIdentifier": "com.shreyartha.mobileapp",
+      "bundleIdentifier": "com.the3cedge.app",
       "supportsTablet": true
     },
     "android": {
-      "package": "com.shreyartha.mobileapp",
+      "package": "com.the3cedge.app",
       "versionCode": 3,
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
