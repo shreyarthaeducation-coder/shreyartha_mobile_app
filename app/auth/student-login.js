@@ -14,15 +14,16 @@ const LOGO_URL = 'https://the3cedge.com/images/The3CEdge.png';
 
 export default function StudentLoginScreen() {
   const router = useRouter();
-  const { setUser, setUserType } = useAuth();
+  const { setUserType } = useAuth();
   const [activeTab, setActiveTab] = useState('login');
   const [loginData, setLoginData] = useState({ email: '', password: '' });
   const [signupData, setSignupData] = useState({
-    fullName: '', email: '', mobile: '', schoolCode: '', schoolName: '', password: '', terms: false,
+    fullName: '', email: '', mobile: '', schoolCode: '', password: '', terms: false,
   });
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
 
   // Forgot password state
   const [forgotMode, setForgotMode] = useState(false);
@@ -34,24 +35,56 @@ export default function StudentLoginScreen() {
   const [verifiedSchoolName, setVerifiedSchoolName] = useState('');
   const [codeError, setCodeError] = useState('');
 
+  const clearCachedStudentRole = async () => {
+    await AsyncStorage.multiRemove(['studentRole', 'cachedStudentRole']);
+  };
+
+  const extractRoleFromResponse = (res) => {
+    const responseData = res?.data?.data ?? res?.data ?? res ?? {};
+    const roles = responseData?.roles;
+    if (Array.isArray(roles) && roles.length > 0) return roles[0];
+    if (typeof responseData?.role === 'string') return responseData.role;
+    if (typeof responseData?.userRole === 'string') return responseData.userRole;
+    if (typeof responseData?.authority === 'string') return responseData.authority;
+    return null;
+  };
+
+  const cacheStudentRole = async (role) => {
+    await AsyncStorage.multiSet([
+      ['studentRole', role],
+      ['cachedStudentRole', role],
+    ]);
+  };
+
   const handleLogin = async () => {
     setError('');
+    setSuccess('');
     if (!loginData.email || !loginData.password) {
       setError('Please fill in all fields');
       return;
     }
     setLoading(true);
     try {
-      await AsyncStorage.multiRemove(['studentToken', 'userToken', 'adminToken', 'schoolUserToken', 'parentUserToken']);
+      await AsyncStorage.multiRemove([
+        'studentToken',
+        'userToken',
+        'token',
+        'adminToken',
+        'schoolUserToken',
+        'parentUserToken',
+      ]);
+      await clearCachedStudentRole();
       const res = await api.post('/api/auth/login', loginData);
       const token = res?.data?.token ?? res?.token;
       if (token) {
         await AsyncStorage.setItem('studentToken', token);
         await AsyncStorage.setItem('userToken', token);
-        await AsyncStorage.setItem('studentLoggedIn', 'true');
-        await AsyncStorage.setItem('userType', 'student');
-        setUserType('student');
       }
+      const role = extractRoleFromResponse(res);
+      if (role) await cacheStudentRole(role);
+      await AsyncStorage.setItem('studentLoggedIn', 'true');
+      await AsyncStorage.setItem('userType', 'student');
+      setUserType('student');
       router.replace('/dashboard/student');
     } catch (err) {
       setError(err?.message || 'Invalid email or password. Please try again.');
@@ -67,6 +100,7 @@ export default function StudentLoginScreen() {
     }
     setForgotLoading(true);
     setError('');
+    setSuccess('');
     try {
       await api.post('/api/auth/forgot-password', { email: forgotEmail });
       Alert.alert('Email Sent', 'Password reset instructions have been sent to your email.');
@@ -102,8 +136,13 @@ export default function StudentLoginScreen() {
 
   const handleSignup = async () => {
     setError('');
+    setSuccess('');
     if (!signupData.fullName || !signupData.email || !signupData.mobile || !signupData.password) {
       setError('Please fill in all required fields');
+      return;
+    }
+    if (signupData.password.length < 6) {
+      setError('Password must be at least 6 characters');
       return;
     }
     if (!signupData.terms) {
@@ -114,38 +153,30 @@ export default function StudentLoginScreen() {
       setError('Please fix the school code error before submitting');
       return;
     }
-    const isNoneCode = signupData.schoolCode.trim().toLowerCase() === 'none';
-    if (isNoneCode && !signupData.schoolName.trim()) {
-      setError('Please enter your school name');
-      return;
-    }
     setLoading(true);
     try {
       const payload = {
         fullName: signupData.fullName,
         email: signupData.email,
         mobile: signupData.mobile,
-        schoolCode: signupData.schoolCode,
+        schoolCode: signupData.schoolCode.trim(),
+        schoolName: '',
         password: signupData.password,
       };
-      if (isNoneCode) {
-        payload.schoolName = signupData.schoolName;
-      }
       await api.post('/api/auth/signup', payload);
       Alert.alert('Success', 'Account created! Please login.');
       setActiveTab('login');
       setLoginData({ email: signupData.email, password: '' });
-      setSignupData({ fullName: '', email: '', mobile: '', schoolCode: '', schoolName: '', password: '', terms: false });
+      setSignupData({ fullName: '', email: '', mobile: '', schoolCode: '', password: '', terms: false });
       setVerifiedSchoolName('');
       setCodeError('');
+      setSuccess('Account created successfully. Please login.');
     } catch (err) {
       setError(err?.message || 'Signup failed. Please try again.');
     } finally {
       setLoading(false);
     }
   };
-
-  const isNoneCode = signupData.schoolCode.trim().toLowerCase() === 'none';
 
   return (
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
@@ -156,13 +187,16 @@ export default function StudentLoginScreen() {
           <View style={styles.headerCircle2} />
           <TouchableOpacity
             style={styles.backBtnHeader}
-            onPress={() => { if (forgotMode) { setForgotMode(false); setError(''); } else { router.back(); } }}
+            onPress={() => { if (forgotMode) { setForgotMode(false); setError(''); setSuccess(''); } else { router.back(); } }}
           >
             <Text style={styles.backBtnHeaderText}>← Back</Text>
           </TouchableOpacity>
           <Image source={{ uri: LOGO_URL }} style={styles.headerLogo} resizeMode="contain" />
           <Text style={styles.headerTitle}>🎓 Student Portal</Text>
           <Text style={styles.headerSubtitle}>{forgotMode ? 'Reset your password' : activeTab === 'login' ? 'Sign in to your account' : 'Create a new account'}</Text>
+          <TouchableOpacity style={styles.backHomeBtn} onPress={() => router.replace('/(tabs)')}>
+            <Text style={styles.backHomeBtnText}>Back to Home</Text>
+          </TouchableOpacity>
         </View>
 
         <View style={styles.formContainer}>
@@ -171,6 +205,7 @@ export default function StudentLoginScreen() {
               <Text style={styles.title}>Forgot Password</Text>
               <Text style={styles.subtitle}>Enter your email to receive reset instructions</Text>
               {error ? <Text style={styles.error}>{error}</Text> : null}
+              {success ? <Text style={styles.success}>{success}</Text> : null}
               <Text style={styles.label}>Email</Text>
               <TextInput
                 style={styles.input} placeholder="Enter your email" placeholderTextColor="#bbb"
@@ -185,36 +220,37 @@ export default function StudentLoginScreen() {
             <>
               {/* Tabs */}
               <View style={styles.tabs}>
-                <TouchableOpacity style={[styles.tab, activeTab === 'login' && styles.tabActive]} onPress={() => { setActiveTab('login'); setError(''); }}>
+                <TouchableOpacity style={[styles.tab, activeTab === 'login' && styles.tabActive]} onPress={() => { setActiveTab('login'); setError(''); setSuccess(''); }}>
                   <Text style={[styles.tabText, activeTab === 'login' && styles.tabTextActive]}>Login</Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={[styles.tab, activeTab === 'signup' && styles.tabActive]} onPress={() => { setActiveTab('signup'); setError(''); }}>
+                <TouchableOpacity style={[styles.tab, activeTab === 'signup' && styles.tabActive]} onPress={() => { setActiveTab('signup'); setError(''); setSuccess(''); }}>
                   <Text style={[styles.tabText, activeTab === 'signup' && styles.tabTextActive]}>Sign Up</Text>
                 </TouchableOpacity>
               </View>
 
               {error ? <Text style={styles.error}>{error}</Text> : null}
+              {success ? <Text style={styles.success}>{success}</Text> : null}
 
               {activeTab === 'login' ? (
                 <>
                   <Text style={styles.label}>Email</Text>
                   <TextInput
                     style={styles.input} placeholder="Enter your email" placeholderTextColor="#bbb"
-                    value={loginData.email} onChangeText={(v) => { setError(''); setLoginData({ ...loginData, email: v }); }}
+                    value={loginData.email} onChangeText={(v) => { setError(''); setSuccess(''); setLoginData({ ...loginData, email: v }); }}
                     keyboardType="email-address" autoCapitalize="none"
                   />
                   <Text style={styles.label}>Password</Text>
                   <View style={styles.passwordRow}>
                     <TextInput
                       style={[styles.input, { flex: 1, marginBottom: 0 }]} placeholder="Enter your password" placeholderTextColor="#bbb"
-                      value={loginData.password} onChangeText={(v) => { setError(''); setLoginData({ ...loginData, password: v }); }}
+                      value={loginData.password} onChangeText={(v) => { setError(''); setSuccess(''); setLoginData({ ...loginData, password: v }); }}
                       secureTextEntry={!showPassword}
                     />
                     <TouchableOpacity style={styles.eyeBtn} onPress={() => setShowPassword(v => !v)}>
                       <Text style={{ fontSize: 20 }}>{showPassword ? '🙈' : '👁️'}</Text>
                     </TouchableOpacity>
                   </View>
-                  <TouchableOpacity onPress={() => { setForgotMode(true); setError(''); setForgotEmail(loginData.email); }}>
+                  <TouchableOpacity onPress={() => { setForgotMode(true); setError(''); setSuccess(''); setForgotEmail(loginData.email); }}>
                     <Text style={styles.forgotText}>Forgot Password?</Text>
                   </TouchableOpacity>
                   <TouchableOpacity style={styles.primaryBtn} onPress={handleLogin} disabled={loading}>
@@ -239,7 +275,7 @@ export default function StudentLoginScreen() {
                     placeholderTextColor="#bbb"
                     value={signupData.schoolCode}
                     onChangeText={(v) => {
-                      setSignupData({ ...signupData, schoolCode: v.toUpperCase(), schoolName: '' });
+                      setSignupData({ ...signupData, schoolCode: v.toUpperCase() });
                       setVerifiedSchoolName('');
                       setCodeError('');
                     }}
@@ -249,16 +285,6 @@ export default function StudentLoginScreen() {
                   {codeVerifying && <Text style={styles.codeStatus}>Verifying school code...</Text>}
                   {verifiedSchoolName ? <Text style={styles.codeSuccess}>{verifiedSchoolName}</Text> : null}
                   {codeError ? <Text style={styles.codeError}>{codeError}</Text> : null}
-
-                  {isNoneCode && (
-                    <>
-                      <Text style={styles.label}>School Name *</Text>
-                      <TextInput
-                        style={styles.input} placeholder="Enter your school name" placeholderTextColor="#bbb"
-                        value={signupData.schoolName} onChangeText={(v) => setSignupData({ ...signupData, schoolName: v })}
-                      />
-                    </>
-                  )}
 
                   <Text style={styles.label}>Password *</Text>
                   <TextInput style={styles.input} placeholder="Create a password" placeholderTextColor="#bbb" value={signupData.password} onChangeText={(v) => setSignupData({ ...signupData, password: v })} secureTextEntry />
@@ -273,6 +299,14 @@ export default function StudentLoginScreen() {
                   </TouchableOpacity>
                 </>
               )}
+              <View style={styles.footerRow}>
+                <Text style={styles.footerText}>
+                  {activeTab === 'login' ? "Don't have an account? " : 'Already have an account? '}
+                </Text>
+                <TouchableOpacity onPress={() => { setActiveTab(activeTab === 'login' ? 'signup' : 'login'); setError(''); setSuccess(''); }}>
+                  <Text style={styles.footerLink}>{activeTab === 'login' ? 'Sign Up' : 'Login'}</Text>
+                </TouchableOpacity>
+              </View>
             </>
           )}
           <View style={{ height: 40 }} />
@@ -304,6 +338,11 @@ const styles = StyleSheet.create({
   headerLogo: { width: 120, height: 40, marginBottom: SPACING.md },
   headerTitle: { color: COLORS.white, fontSize: 22, fontWeight: '800', marginBottom: 4 },
   headerSubtitle: { color: 'rgba(255,255,255,0.6)', fontSize: 13 },
+  backHomeBtn: {
+    marginTop: SPACING.md, borderWidth: 1, borderColor: 'rgba(255,255,255,0.45)',
+    borderRadius: 20, paddingHorizontal: 14, paddingVertical: 8,
+  },
+  backHomeBtnText: { color: COLORS.white, fontSize: 13, fontWeight: '700' },
 
   // Form container
   formContainer: {
@@ -339,9 +378,16 @@ const styles = StyleSheet.create({
     backgroundColor: '#fce4ec', color: COLORS.error, padding: 12,
     borderRadius: 10, marginBottom: 12, textAlign: 'center', fontSize: 13,
   },
+  success: {
+    backgroundColor: '#e8f8ef', color: COLORS.success, padding: 12,
+    borderRadius: 10, marginBottom: 12, textAlign: 'center', fontSize: 13,
+  },
   checkboxRow: { flexDirection: 'row', alignItems: 'center', marginTop: 10, marginBottom: 8 },
   checkboxText: { marginLeft: 8, fontSize: 13, color: COLORS.textSecondary },
   codeStatus: { fontSize: 12, color: COLORS.textSecondary, marginBottom: 8 },
   codeSuccess: { fontSize: 12, color: COLORS.success, fontWeight: '600', marginBottom: 8 },
   codeError: { fontSize: 12, color: COLORS.error, marginBottom: 8 },
+  footerRow: { marginTop: SPACING.lg, flexDirection: 'row', justifyContent: 'center', alignItems: 'center' },
+  footerText: { color: COLORS.textSecondary, fontSize: 13 },
+  footerLink: { color: COLORS.primary, fontSize: 13, fontWeight: '700' },
 });
