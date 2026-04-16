@@ -23,6 +23,7 @@ export default function ParentLoginScreen() {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
 
   // Forgot password state
   const [forgotMode, setForgotMode] = useState(false);
@@ -31,6 +32,7 @@ export default function ParentLoginScreen() {
 
   const handleLogin = async () => {
     setError('');
+    setSuccess('');
     if (!loginData.emailOrMobile || !loginData.password) {
       setError('Please fill in all fields');
       return;
@@ -43,10 +45,16 @@ export default function ParentLoginScreen() {
       if (token) {
         await AsyncStorage.setItem('parentUserToken', token);
         await AsyncStorage.setItem('parentLoggedIn', 'true');
+        await AsyncStorage.setItem('parentUserVerified', String(responseData?.verified ?? false));
+        await AsyncStorage.setItem('parentUserName', responseData?.fullName ?? 'Parent');
+        await AsyncStorage.setItem('linkedStudentName', responseData?.studentName ?? '');
+        await AsyncStorage.setItem('linkedStudentEmail', responseData?.studentEmail ?? '');
         await AsyncStorage.setItem('userType', 'parent');
         setUserType('parent');
+        router.replace('/dashboard/parent');
+        return;
       }
-      router.replace('/dashboard/parent');
+      setError('Invalid credentials. Please try again.');
     } catch (err) {
       setError(err?.message || 'Invalid credentials. Please try again.');
     } finally {
@@ -61,6 +69,7 @@ export default function ParentLoginScreen() {
     }
     setForgotLoading(true);
     setError('');
+    setSuccess('');
     try {
       await api.post('/api/parent/auth/forgot-password', { email: forgotEmail });
       Alert.alert('Email Sent', 'Password reset instructions have been sent to your email.');
@@ -75,8 +84,13 @@ export default function ParentLoginScreen() {
 
   const handleSignup = async () => {
     setError('');
+    setSuccess('');
     if (!signupData.fullName || !signupData.email || !signupData.mobile || !signupData.studentMobileOrEmail || !signupData.password) {
       setError('Please fill in all required fields');
+      return;
+    }
+    if (signupData.password.length < 6) {
+      setError('Password must be at least 6 characters');
       return;
     }
     if (!signupData.terms) {
@@ -93,8 +107,11 @@ export default function ParentLoginScreen() {
         password: signupData.password,
       });
       Alert.alert('Success', 'Account created! Please login.');
-      setActiveTab('login');
-      setSignupData({ fullName: '', email: '', mobile: '', studentMobileOrEmail: '', password: '', terms: false });
+      setSuccess('Account created successfully. Switching to login...');
+      setTimeout(() => {
+        setActiveTab('login');
+        setSignupData((prev) => ({ ...prev, password: '', terms: false }));
+      }, 2000);
     } catch (err) {
       setError(err?.message || 'Signup failed. Please try again.');
     } finally {
@@ -111,7 +128,7 @@ export default function ParentLoginScreen() {
           <View style={styles.headerCircle2} />
           <TouchableOpacity
             style={styles.backBtnHeader}
-            onPress={() => { if (forgotMode) { setForgotMode(false); setError(''); } else { router.back(); } }}
+            onPress={() => { if (forgotMode) { setForgotMode(false); setError(''); setSuccess(''); } else { router.back(); } }}
           >
             <Text style={styles.backBtnHeaderText}>← Back</Text>
           </TouchableOpacity>
@@ -126,6 +143,7 @@ export default function ParentLoginScreen() {
               <Text style={styles.title}>Forgot Password</Text>
               <Text style={styles.subtitle}>Enter your email to receive reset instructions</Text>
               {error ? <Text style={styles.error}>{error}</Text> : null}
+              {success ? <Text style={styles.success}>{success}</Text> : null}
               <Text style={styles.label}>Email</Text>
               <TextInput
                 style={styles.input} placeholder="Enter your email" placeholderTextColor="#bbb"
@@ -140,15 +158,16 @@ export default function ParentLoginScreen() {
             <>
               {/* Tabs */}
               <View style={styles.tabs}>
-                <TouchableOpacity style={[styles.tab, activeTab === 'login' && styles.tabActive]} onPress={() => { setActiveTab('login'); setError(''); }}>
+                <TouchableOpacity style={[styles.tab, activeTab === 'login' && styles.tabActive]} onPress={() => { setActiveTab('login'); setError(''); setSuccess(''); }}>
                   <Text style={[styles.tabText, activeTab === 'login' && styles.tabTextActive]}>Login</Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={[styles.tab, activeTab === 'signup' && styles.tabActive]} onPress={() => { setActiveTab('signup'); setError(''); }}>
+                <TouchableOpacity style={[styles.tab, activeTab === 'signup' && styles.tabActive]} onPress={() => { setActiveTab('signup'); setError(''); setSuccess(''); }}>
                   <Text style={[styles.tabText, activeTab === 'signup' && styles.tabTextActive]}>Sign Up</Text>
                 </TouchableOpacity>
               </View>
 
               {error ? <Text style={styles.error}>{error}</Text> : null}
+              {success ? <Text style={styles.success}>{success}</Text> : null}
 
               {activeTab === 'login' ? (
                 <>
@@ -156,7 +175,7 @@ export default function ParentLoginScreen() {
                   <TextInput
                     style={styles.input} placeholder="Enter email or mobile" placeholderTextColor="#bbb"
                     value={loginData.emailOrMobile}
-                    onChangeText={(v) => { setError(''); setLoginData({ ...loginData, emailOrMobile: v }); }}
+                    onChangeText={(v) => { setError(''); setSuccess(''); setLoginData({ ...loginData, emailOrMobile: v }); }}
                     autoCapitalize="none"
                   />
                   <Text style={styles.label}>Password</Text>
@@ -164,14 +183,14 @@ export default function ParentLoginScreen() {
                     <TextInput
                       style={[styles.input, { flex: 1, marginBottom: 0 }]} placeholder="Enter password" placeholderTextColor="#bbb"
                       value={loginData.password}
-                      onChangeText={(v) => { setError(''); setLoginData({ ...loginData, password: v }); }}
+                      onChangeText={(v) => { setError(''); setSuccess(''); setLoginData({ ...loginData, password: v }); }}
                       secureTextEntry={!showPassword}
                     />
                     <TouchableOpacity style={styles.eyeBtn} onPress={() => setShowPassword(v => !v)}>
                       <Text style={{ fontSize: 20 }}>{showPassword ? '🙈' : '👁️'}</Text>
                     </TouchableOpacity>
                   </View>
-                  <TouchableOpacity onPress={() => { setForgotMode(true); setError(''); }}>
+                  <TouchableOpacity onPress={() => { setForgotMode(true); setError(''); setSuccess(''); }}>
                     <Text style={styles.forgotText}>Forgot Password?</Text>
                   </TouchableOpacity>
                   <TouchableOpacity style={styles.primaryBtn} onPress={handleLogin} disabled={loading}>
@@ -190,6 +209,7 @@ export default function ParentLoginScreen() {
                   <TextInput style={styles.input} placeholder="Enter mobile number" placeholderTextColor="#bbb" value={signupData.mobile} onChangeText={(v) => setSignupData({ ...signupData, mobile: v })} keyboardType="phone-pad" />
 
                   <Text style={styles.label}>Child's Mobile or Email *</Text>
+                  <Text style={styles.hintText}>This helps us link your account to your child's profile</Text>
                   <TextInput
                     style={styles.input} placeholder="Enter child's mobile or email" placeholderTextColor="#bbb"
                     value={signupData.studentMobileOrEmail}
@@ -271,6 +291,11 @@ const styles = StyleSheet.create({
     backgroundColor: '#fce4ec', color: COLORS.error, padding: 12,
     borderRadius: 10, marginBottom: 12, textAlign: 'center', fontSize: 13,
   },
+  success: {
+    backgroundColor: '#e8f8ef', color: COLORS.success, padding: 12,
+    borderRadius: 10, marginBottom: 12, textAlign: 'center', fontSize: 13,
+  },
+  hintText: { fontSize: 12, color: COLORS.textSecondary, marginTop: -2, marginBottom: 8 },
   checkboxRow: { flexDirection: 'row', alignItems: 'center', marginTop: 10, marginBottom: 8 },
   checkboxText: { marginLeft: 8, fontSize: 13, color: COLORS.textSecondary },
 });

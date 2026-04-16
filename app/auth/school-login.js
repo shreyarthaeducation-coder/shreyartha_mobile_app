@@ -50,20 +50,26 @@ export default function SchoolLoginScreen() {
       if (token) {
         await AsyncStorage.setItem('schoolUserToken', token);
         await AsyncStorage.setItem('schoolLoggedIn', 'true');
-        await AsyncStorage.setItem('userType', 'school');
         await AsyncStorage.setItem('schoolUserType', responseData?.userType || '');
+        await AsyncStorage.setItem('schoolUserVerified', String(responseData?.verified ?? false));
+        await AsyncStorage.setItem('schoolUserName', responseData?.fullName ?? 'User');
+        await AsyncStorage.setItem('schoolUserEmail', responseData?.email ?? '');
+        await AsyncStorage.setItem('schoolCode', responseData?.schoolCode ?? '');
+        await AsyncStorage.setItem('userType', 'school');
         setUserType('school');
+        const userTypeRaw = (responseData?.userType || 'TEACHER').toUpperCase();
+        const rolePathMap = {
+          TEACHER: '/dashboard/school',
+          COUNSELOR: '/dashboard/school',
+          PRINCIPAL: '/dashboard/school',
+          VICE_PRINCIPAL: '/dashboard/school',
+          ADMIN: '/dashboard/school',
+        };
+        const dashboardPath = rolePathMap[userTypeRaw] || '/dashboard/school';
+        router.replace(dashboardPath);
+        return;
       }
-      const userTypeRaw = (responseData?.userType || 'TEACHER').toUpperCase();
-      const rolePathMap = {
-        TEACHER: 'teacher',
-        COUNSELOR: 'counselor',
-        PRINCIPAL: 'principal',
-        VICE_PRINCIPAL: 'vice_principal',
-        ADMIN: 'admin',
-      };
-      const rolePath = rolePathMap[userTypeRaw] || 'teacher';
-      router.replace('/dashboard/school');
+      setError('Invalid credentials. Please try again.');
     } catch (err) {
       setError(err?.message || 'Invalid credentials. Please try again.');
     } finally {
@@ -117,6 +123,10 @@ export default function SchoolLoginScreen() {
       setError('Please fill in all required fields');
       return;
     }
+    if (signupData.password.length < 6) {
+      setError('Password must be at least 6 characters');
+      return;
+    }
     if (!signupData.terms) {
       setError('Please accept the terms and conditions');
       return;
@@ -131,7 +141,7 @@ export default function SchoolLoginScreen() {
         fullName: signupData.fullName,
         email: signupData.email,
         mobile: signupData.mobile,
-        schoolCode: signupData.schoolCode,
+        schoolCode: signupData.schoolCode.trim(),
         userType: signupData.userType,
         password: signupData.password,
       });

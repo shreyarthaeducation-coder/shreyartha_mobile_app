@@ -28,16 +28,30 @@ export default function AdminLoginScreen() {
     }
     setLoading(true);
     try {
-      await AsyncStorage.multiRemove(['studentToken', 'userToken', 'adminToken', 'schoolUserToken', 'parentUserToken']);
-      const res = await api.post('/api/auth/login', loginData);
-      const responseData = res?.data?.data ?? res?.data ?? res;
-      const token = responseData?.token ?? res?.token;
-      if (token) {
-        await AsyncStorage.setItem('adminToken', token);
+      const data = await api.post('/api/auth/login', loginData);
+      const responseData = data?.data?.data ?? data?.data ?? data ?? {};
+      const rawRoles = responseData?.roles || data?.roles || [];
+      const roles = Array.isArray(rawRoles) ? rawRoles : [rawRoles];
+      if (roles.includes('ROLE_ADMIN')) {
+        await AsyncStorage.multiRemove([
+          'studentToken',
+          'userToken',
+          'schoolUserToken',
+          'parentUserToken',
+          'studentLoggedIn',
+          'schoolLoggedIn',
+          'parentLoggedIn',
+        ]);
+        if (responseData?.token) {
+          await AsyncStorage.setItem('adminToken', responseData.token);
+        }
+        await AsyncStorage.setItem('adminLoggedIn', 'true');
         await AsyncStorage.setItem('userType', 'admin');
         setUserType('admin');
+        router.replace('/dashboard/admin');
+        return;
       }
-      router.replace('/dashboard/admin');
+      setError('Access denied: you are not an admin.');
     } catch (err) {
       setError(err?.message || 'Invalid credentials. Please try again.');
     } finally {
@@ -56,8 +70,8 @@ export default function AdminLoginScreen() {
             <Text style={styles.backBtnHeaderText}>← Back</Text>
           </TouchableOpacity>
           <Image source={{ uri: LOGO_URL }} style={styles.headerLogo} resizeMode="contain" />
-          <Text style={styles.headerTitle}>🔐 Admin Portal</Text>
-          <Text style={styles.headerSubtitle}>Platform administration & management</Text>
+          <Text style={styles.headerTitle}>Admin Login</Text>
+          <Text style={styles.headerSubtitle}>Sign in to access the admin dashboard</Text>
         </View>
 
         <View style={styles.formContainer}>
