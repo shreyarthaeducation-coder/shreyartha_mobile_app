@@ -29,7 +29,7 @@ export default function AdminLoginScreen() {
     setLoading(true);
     try {
       await AsyncStorage.multiRemove(['studentToken', 'userToken', 'adminToken', 'schoolUserToken', 'parentUserToken']);
-      const res = await api.post('/api/admin/auth/login', loginData);
+      const res = await api.post('/api/auth/login', loginData);
       const responseData = res?.data?.data ?? res?.data ?? res;
       const token = responseData?.token ?? res?.token;
       if (token) {
