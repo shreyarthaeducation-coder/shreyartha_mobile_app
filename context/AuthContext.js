@@ -17,10 +17,11 @@ export function AuthProvider({ children }) {
       const studentToken = await AsyncStorage.getItem('studentToken');
       const schoolToken = await AsyncStorage.getItem('schoolUserToken');
       const parentToken = await AsyncStorage.getItem('parentUserToken');
+      const adminToken = await AsyncStorage.getItem('adminToken');
       const storedUserType = await AsyncStorage.getItem('userType');
       const storedUser = await AsyncStorage.getItem('userData');
 
-      if (studentToken || schoolToken || parentToken) {
+      if (studentToken || schoolToken || parentToken || adminToken) {
         setUserType(storedUserType);
         if (storedUser) setUser(JSON.parse(storedUser));
       }
@@ -36,7 +37,7 @@ export function AuthProvider({ children }) {
       await AsyncStorage.multiRemove([
         'studentToken', 'userToken', 'adminToken',
         'schoolUserToken', 'parentUserToken',
-        'studentLoggedIn', 'schoolLoggedIn', 'parentLoggedIn',
+        'studentLoggedIn', 'schoolLoggedIn', 'parentLoggedIn', 'adminLoggedIn',
         'userType', 'userData', 'schoolUserType',
       ]);
       setUser(null);
