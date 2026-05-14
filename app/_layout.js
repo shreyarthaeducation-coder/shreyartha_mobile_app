@@ -20,7 +20,10 @@ export default function RootLayout() {
         {/* Individual service pages */}
         <Stack.Screen name="pages/[slug]" options={{ headerShown: false }} />
 
-        {/* Dashboard screens */}
+        {/* Native student panel (tab group) */}
+        <Stack.Screen name="student" options={{ headerShown: false }} />
+
+        {/* Legacy dashboard redirect screens */}
         <Stack.Screen name="dashboard/student" options={{ headerShown: false }} />
         <Stack.Screen name="dashboard/school" options={{ headerShown: false }} />
         <Stack.Screen name="dashboard/parent" options={{ headerShown: false }} />

@@ -86,7 +86,7 @@ export default function StudentLoginScreen() {
       }
 
       setUserType('student');
-      router.replace('/dashboard/student');
+      router.replace('/student/');
     } catch {
       // Ignore malformed payloads posted by website scripts.
     }
