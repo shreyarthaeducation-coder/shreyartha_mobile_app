@@ -45,3 +45,32 @@ export const SHADOWS = {
     shadowOffset: { width: 0, height: 6 }, shadowRadius: 16, elevation: 6,
   },
 };
+
+// Dark futuristic student panel theme
+export const STUDENT = {
+  bg: '#0a0f1e',
+  bgCard: '#111827',
+  bgCardAlt: '#1a2236',
+  bgCardGlow: '#1e2d4a',
+  accent: '#4F46E5',
+  accentCyan: '#06b6d4',
+  accentGold: '#f59e0b',
+  accentGreen: '#10b981',
+  accentRose: '#f43f5e',
+  border: 'rgba(79, 70, 229, 0.25)',
+  borderCyan: 'rgba(6, 182, 212, 0.25)',
+  glow: 'rgba(79, 70, 229, 0.15)',
+  glowCyan: 'rgba(6, 182, 212, 0.12)',
+  textPrimary: '#ffffff',
+  textSecondary: 'rgba(255, 255, 255, 0.7)',
+  textMuted: 'rgba(255, 255, 255, 0.4)',
+  tabBar: '#0f1729',
+  tabBarBorder: 'rgba(79, 70, 229, 0.3)',
+  shadow: {
+    shadowColor: '#4F46E5',
+    shadowOpacity: 0.2,
+    shadowOffset: { width: 0, height: 4 },
+    shadowRadius: 12,
+    elevation: 6,
+  },
+};
