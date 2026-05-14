@@ -250,7 +250,7 @@ export default function StudentDashboardScreen() {
           </Text>
           {announcements.length > 0 ? (
             announcements.slice(0, 5).map((item, i) => (
-              <AnnouncementCard key={i} item={item} />
+              <AnnouncementCard key={item.id || item.notificationId || i} item={item} />
             ))
           ) : (
             <View style={styles.emptyCard}>

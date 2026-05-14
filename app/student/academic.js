@@ -228,7 +228,7 @@ export default function AcademicScreen() {
             subjects.length > 0 ? (
               subjects.map((s, i) => (
                 <SubjectGradeCard
-                  key={i}
+                  key={s.id || s.subject || s.name || i}
                   subject={s.subject || s.name || `Subject ${i + 1}`}
                   score={s.score ?? s.marks}
                   maxScore={s.maxScore ?? s.total ?? s.maxMarks}
@@ -244,7 +244,7 @@ export default function AcademicScreen() {
             )
           ) : (
             Array.isArray(assessments) && assessments.length > 0 ? (
-              assessments.map((a, i) => <AssessmentCard key={i} item={a} />)
+              assessments.map((a, i) => <AssessmentCard key={a.id || a.assessmentId || i} item={a} />)
             ) : (
               <View style={styles.emptyCard}>
                 <Text style={styles.emptyIcon}>📋</Text>

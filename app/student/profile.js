@@ -261,7 +261,7 @@ export default function ProfileScreen() {
                     {profile?.skills?.length > 0 && (
                       <View style={styles.tagsWrap}>
                         {profile.skills.map((s, i) => (
-                          <View key={i} style={styles.tag}>
+                          <View key={s || i} style={styles.tag}>
                             <Text style={styles.tagText}>{s}</Text>
                           </View>
                         ))}
@@ -269,7 +269,7 @@ export default function ProfileScreen() {
                     )}
                     {profile?.achievements?.length > 0 && (
                       profile.achievements.map((a, i) => (
-                        <View key={i} style={styles.achievementRow}>
+                        <View key={a.id || i} style={styles.achievementRow}>
                           <Text style={styles.achievementIcon}>🏆</Text>
                           <Text style={styles.achievementText}>{a.title || a}</Text>
                         </View>

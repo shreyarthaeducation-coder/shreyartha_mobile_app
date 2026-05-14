@@ -203,7 +203,7 @@ export default function ResourcesScreen() {
             ) : null}
 
             {filtered.length > 0 ? (
-              filtered.map((item, i) => <ResourceCard key={i} item={item} />)
+              filtered.map((item, i) => <ResourceCard key={item.id || item.resourceId || i} item={item} />)
             ) : (
               <View style={styles.emptyCard}>
                 <Text style={styles.emptyIcon}>📂</Text>
