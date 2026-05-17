@@ -1,7 +1,3 @@
-// app/student/_layout.js
-// Bottom-tab navigator for the native student panel.
-// Uses a custom dark/futuristic tab bar matching the student panel design.
-
 import { Tabs } from 'expo-router';
 import { View, Text, StyleSheet } from 'react-native';
 import { STUDENT } from '../../constants/theme';
@@ -29,38 +25,20 @@ export default function StudentLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Dashboard',
+          title: 'Home',
           tabBarIcon: ({ focused }) => <TabIcon emoji="🏠" focused={focused} />,
-        }}
-      />
-      <Tabs.Screen
-        name="academic"
-        options={{
-          title: 'Academic IQ',
-          tabBarIcon: ({ focused }) => <TabIcon emoji="🧠" focused={focused} />,
-        }}
-      />
-      <Tabs.Screen
-        name="resources"
-        options={{
-          title: 'Resources',
-          tabBarIcon: ({ focused }) => <TabIcon emoji="📚" focused={focused} />,
-        }}
-      />
-      <Tabs.Screen
-        name="profile"
-        options={{
-          title: 'Profile',
-          tabBarIcon: ({ focused }) => <TabIcon emoji="👤" focused={focused} />,
         }}
       />
       <Tabs.Screen
         name="account"
         options={{
-          title: 'Account',
-          tabBarIcon: ({ focused }) => <TabIcon emoji="⚙️" focused={focused} />,
+          title: 'Support',
+          tabBarIcon: ({ focused }) => <TabIcon emoji="🛟" focused={focused} />,
         }}
       />
+      <Tabs.Screen name="academic" options={{ href: null }} />
+      <Tabs.Screen name="resources" options={{ href: null }} />
+      <Tabs.Screen name="profile" options={{ href: null }} />
     </Tabs>
   );
 }

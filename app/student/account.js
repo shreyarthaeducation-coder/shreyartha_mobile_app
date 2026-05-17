@@ -1,8 +1,4 @@
-// app/student/account.js
-// Native account / settings screen for the student panel.
-// Covers: password change, notification preferences, and logout.
-
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -17,12 +13,16 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuth } from '../../context/AuthContext';
 import { studentService } from '../../services/studentService';
 import { cacheService } from '../../services/cacheService';
 import { STUDENT } from '../../constants/theme';
 
-// ─── Sub-components ───────────────────────────────────────────────────────────
+const STUDENT_LANGUAGE_PREFERENCE_KEY = 'studentPreferredLanguage';
+const DEFAULT_LANGUAGE = 'English';
+const SUPPORTED_LANGUAGES = [DEFAULT_LANGUAGE, 'Hindi'];
+const SUPPORT_TAB_TITLE = 'Support';
 
 function SectionCard({ title, children }) {
   return (
@@ -70,13 +70,10 @@ function PasswordField({ label, value, onChange, show, onToggle }) {
   );
 }
 
-// ─── Main screen ──────────────────────────────────────────────────────────────
-
 export default function AccountScreen() {
   const router = useRouter();
-  const { logout } = useAuth();
+  const { logout, user } = useAuth();
 
-  // Password change form
   const [pwdForm, setPwdForm] = useState({
     currentPassword: '',
     newPassword: '',
@@ -84,9 +81,34 @@ export default function AccountScreen() {
   });
   const [showPwd, setShowPwd] = useState({ current: false, newPwd: false, confirm: false });
   const [pwdLoading, setPwdLoading] = useState(false);
-
-  // Panel for which section is expanded
   const [expanded, setExpanded] = useState(null);
+  const [language, setLanguage] = useState(DEFAULT_LANGUAGE);
+
+  useEffect(() => {
+    let mounted = true;
+
+    const resolveLanguage = async () => {
+      try {
+        const savedLanguage = await AsyncStorage.getItem(STUDENT_LANGUAGE_PREFERENCE_KEY);
+        if (!mounted) return;
+
+        if (savedLanguage) {
+          setLanguage(savedLanguage);
+          return;
+        }
+
+        setLanguage(user?.language || DEFAULT_LANGUAGE);
+      } catch {
+        if (mounted) setLanguage(user?.language || DEFAULT_LANGUAGE);
+      }
+    };
+
+    resolveLanguage();
+
+    return () => {
+      mounted = false;
+    };
+  }, [user?.language]);
 
   const handlePasswordChange = async () => {
     if (!pwdForm.currentPassword || !pwdForm.newPassword || !pwdForm.confirmPassword) {
@@ -118,53 +140,57 @@ export default function AccountScreen() {
     }
   };
 
+  const handleLanguageChange = async () => {
+    const currentIndex = SUPPORTED_LANGUAGES.indexOf(language);
+    const next = SUPPORTED_LANGUAGES[(currentIndex + 1) % SUPPORTED_LANGUAGES.length];
+    setLanguage(next);
+    try {
+      await AsyncStorage.setItem(STUDENT_LANGUAGE_PREFERENCE_KEY, next);
+      Alert.alert('Language Updated', `Selected language: ${next}`);
+    } catch {
+      Alert.alert('Update Failed', 'Could not save language preference right now.');
+    }
+  };
+
   const handleLogout = () => {
-    Alert.alert(
-      'Sign Out',
-      'Are you sure you want to sign out?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Sign Out',
-          style: 'destructive',
-          onPress: async () => {
-            await cacheService.clearAll();
-            await logout();
-            router.replace('/(tabs)');
-          },
+    Alert.alert('Log Out', 'Are you sure you want to log out?', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Log Out',
+        style: 'destructive',
+        onPress: async () => {
+          await cacheService.clearAll();
+          await logout();
+          router.replace('/(tabs)');
         },
-      ]
-    );
+      },
+    ]);
   };
 
   const toggleExpand = (key) => setExpanded((v) => (v === key ? null : key));
 
   return (
     <SafeAreaView style={styles.root} edges={['top', 'left', 'right']}>
-      {/* ── Header ── */}
       <View style={styles.screenHeader}>
-        <Text style={styles.screenTitle}>Account</Text>
-        <Text style={styles.screenSub}>Settings & Preferences</Text>
+        <Text style={styles.screenTitle}>{SUPPORT_TAB_TITLE}</Text>
+        <Text style={styles.screenSub}>Account help & settings</Text>
       </View>
 
-      <KeyboardAvoidingView
-        style={{ flex: 1 }}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      >
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView
           style={styles.scroll}
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
-          {/* ── Security ── */}
-          <SectionCard title="🔐  Security">
+          <SectionCard title="Support Options">
             <SettingRow
               icon="🔑"
               label="Change Password"
               sublabel="Update your account password"
               onPress={() => toggleExpand('password')}
             />
+
             {expanded === 'password' && (
               <View style={styles.expandedPanel}>
                 <PasswordField
@@ -188,6 +214,7 @@ export default function AccountScreen() {
                   show={showPwd.confirm}
                   onToggle={() => setShowPwd((s) => ({ ...s, confirm: !s.confirm }))}
                 />
+
                 <TouchableOpacity
                   style={[styles.actionBtn, pwdLoading && styles.actionBtnDisabled]}
                   onPress={handlePasswordChange}
@@ -201,51 +228,32 @@ export default function AccountScreen() {
                 </TouchableOpacity>
               </View>
             )}
-          </SectionCard>
 
-          {/* ── App Info ── */}
-          <SectionCard title="ℹ️  About">
             <SettingRow
-              icon="🏫"
-              label="Shreyartha Education"
-              sublabel="The 3C Edge — Curriculum, Counselling & Career"
-              onPress={() => {}}
+              icon="🌐"
+              label="Change Language"
+              sublabel={`Current: ${language}`}
+              onPress={handleLanguageChange}
             />
-            <SettingRow
-              icon="📋"
-              label="App Version"
-              sublabel="1.1.0"
-              onPress={() => {}}
-            />
-          </SectionCard>
 
-          {/* ── Support ── */}
-          <SectionCard title="🤝  Support">
             <SettingRow
-              icon="💬"
-              label="Contact Support"
-              sublabel="Reach out to our team for help"
-              onPress={() => router.push('/(tabs)')}
+              icon="🚪"
+              label="Log Out"
+              sublabel="Sign out from this device"
+              onPress={handleLogout}
+              danger
             />
           </SectionCard>
 
-          {/* ── Logout ── */}
-          <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout} activeOpacity={0.8}>
-            <Text style={styles.logoutIcon}>🚪</Text>
-            <Text style={styles.logoutText}>Sign Out</Text>
-          </TouchableOpacity>
-
-          <View style={{ height: 32 }} />
+          <View style={{ height: 24 }} />
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
 
-// ─── Styles ───────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: STUDENT.bg },
-
   screenHeader: {
     paddingHorizontal: 20,
     paddingVertical: 14,
@@ -254,11 +262,8 @@ const styles = StyleSheet.create({
   },
   screenTitle: { fontSize: 22, fontWeight: '800', color: STUDENT.textPrimary },
   screenSub: { fontSize: 13, color: STUDENT.textMuted, marginTop: 2 },
-
   scroll: { flex: 1 },
   scrollContent: { paddingHorizontal: 16, paddingTop: 16 },
-
-  // Section card
   sectionCard: {
     backgroundColor: STUDENT.bgCard,
     borderRadius: 16,
@@ -277,8 +282,6 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
-
-  // Setting row
   settingRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -304,8 +307,6 @@ const styles = StyleSheet.create({
   settingLabelDanger: { color: '#f43f5e' },
   settingSublabel: { fontSize: 12, color: STUDENT.textMuted },
   chevron: { fontSize: 22, color: STUDENT.textMuted, marginLeft: 8 },
-
-  // Expanded panel
   expandedPanel: {
     backgroundColor: STUDENT.bgCardAlt,
     marginHorizontal: 12,
@@ -315,8 +316,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: STUDENT.border,
   },
-
-  // Password fields
   pwdFieldWrap: { marginBottom: 12 },
   pwdLabel: { fontSize: 12, color: STUDENT.textMuted, marginBottom: 6, fontWeight: '600' },
   pwdInputRow: {
@@ -336,8 +335,6 @@ const styles = StyleSheet.create({
   },
   eyeBtn: { padding: 4 },
   eyeIcon: { fontSize: 18 },
-
-  // Action button
   actionBtn: {
     backgroundColor: STUDENT.accent,
     borderRadius: 10,
@@ -348,20 +345,4 @@ const styles = StyleSheet.create({
   },
   actionBtnDisabled: { opacity: 0.6 },
   actionBtnText: { color: '#fff', fontSize: 14, fontWeight: '700' },
-
-  // Logout
-  logoutBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'rgba(244, 63, 94, 0.12)',
-    borderWidth: 1,
-    borderColor: 'rgba(244, 63, 94, 0.35)',
-    borderRadius: 14,
-    paddingVertical: 16,
-    gap: 10,
-    marginBottom: 8,
-  },
-  logoutIcon: { fontSize: 20 },
-  logoutText: { fontSize: 16, fontWeight: '700', color: '#f43f5e' },
 });
