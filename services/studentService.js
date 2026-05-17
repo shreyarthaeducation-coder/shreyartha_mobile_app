@@ -22,6 +22,7 @@ export const studentService = {
   // ── Resources ──────────────────────────────────────────────────────────────
   getResources: () => api.get('/api/students/resources'),
   getResourceCategories: () => api.get('/api/students/resources/categories'),
+  createCounselorQuery: (data) => api.post('/api/student/counselor-queries', data),
 
   // ── Notifications ──────────────────────────────────────────────────────────
   getNotifications: () => api.get('/api/students/notifications'),
