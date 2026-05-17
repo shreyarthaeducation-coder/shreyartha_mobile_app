@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import {
   Image,
+  Pressable,
   ScrollView,
   StyleSheet,
   Text,
@@ -16,20 +17,52 @@ import { STUDENT } from '../../constants/theme';
 const DEFAULT_STUDENT_NAME = 'Demo Student';
 
 const DASHBOARD_CARDS = [
-  { label: 'Student Profile', icon: '👤', route: '/student/profile' },
-  { label: 'Academic IQ', icon: '🧠', route: '/student/academic' },
-  { label: 'Psychometric Assessment', icon: '🧩', route: '/student/academic' },
-  { label: 'Subject & Career', icon: '🎯', route: '/student/resources' },
-  { label: 'Skill Edge', icon: '🚀', route: '/student/resources' },
-  { label: 'Language Pro', icon: '🌐', route: '/student/resources' },
-  { label: 'Coding', icon: '💻', route: '/student/resources' },
-  { label: 'Events & Info', icon: '📣', route: '/student/resources' },
+  {
+    label: 'Student Profile',
+    icon: require('../../assets/images/student-profile.png'),
+    route: '/student/profile',
+  },
+  {
+    label: 'Academic IQ',
+    icon: require('../../assets/images/academiciq.png'),
+    route: '/student/academic',
+  },
+  {
+    label: 'Psychometric Assessment',
+    icon: require('../../assets/images/psychometric-assessment.png'),
+    route: '/student/academic',
+  },
+  {
+    label: 'Subject & Career',
+    icon: require('../../assets/images/subject-career.png'),
+    route: '/student/resources',
+  },
+  {
+    label: 'Skill Edge',
+    icon: require('../../assets/images/skill-edge.png'),
+    route: '/student/resources',
+  },
+  {
+    label: 'Language Pro',
+    icon: require('../../assets/images/language-pro.png'),
+    route: '/student/resources',
+  },
+  {
+    label: 'Coding',
+    icon: require('../../assets/images/coding.png'),
+    route: '/student/resources',
+  },
+  {
+    label: 'Events & Info',
+    icon: require('../../assets/images/events-info.png'),
+    route: '/student/resources',
+  },
 ];
 
 function DashboardCard({ item, onPress }) {
   return (
     <TouchableOpacity style={styles.card} activeOpacity={0.85} onPress={onPress}>
-      <Text style={styles.cardIcon}>{item.icon}</Text>
+      <Image source={item.icon} style={styles.cardIcon} resizeMode="contain" />
       <Text style={styles.cardLabel}>{item.label}</Text>
     </TouchableOpacity>
   );
@@ -66,7 +99,11 @@ export default function StudentDashboardScreen() {
 
       <View style={styles.headerRow}>
         <View style={styles.leftHeader}>
-          <Image source={require('../../assets/icon.png')} style={styles.logo} resizeMode="contain" />
+          <Image
+            source={require('../../assets/images/ShreyarthaLogo.png')}
+            style={styles.logo}
+            resizeMode="contain"
+          />
           {avatarUri ? (
             <Image source={{ uri: avatarUri }} style={styles.avatar} />
           ) : (
@@ -76,13 +113,15 @@ export default function StudentDashboardScreen() {
           )}
         </View>
 
-        <TouchableOpacity
-          style={styles.counsellorBtn}
-          activeOpacity={0.9}
-          onPress={() => router.push('/student/resources')}
+        <Pressable
+          style={({ pressed }) => [
+            styles.counsellorBtn,
+            pressed && styles.counsellorBtnPressed,
+          ]}
+          onPress={() => router.push('/student/speak-to-counsellor')}
         >
           <Text style={styles.counsellorText}>Speak to Counsellor</Text>
-        </TouchableOpacity>
+        </Pressable>
 
         <TouchableOpacity
           style={styles.analyticsBtn}
@@ -140,10 +179,10 @@ const styles = StyleSheet.create({
   headerRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 12,
+    paddingHorizontal: 10,
     paddingTop: 8,
     paddingBottom: 10,
-    gap: 8,
+    gap: 6,
   },
   leftHeader: {
     flexDirection: 'row',
@@ -151,9 +190,8 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   logo: {
-    width: 34,
+    width: 44,
     height: 34,
-    borderRadius: 8,
   },
   avatar: {
     width: 34,
@@ -181,12 +219,13 @@ const styles = StyleSheet.create({
     flex: 1,
     minHeight: 34,
     borderRadius: 18,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.35)',
-    backgroundColor: 'rgba(255,255,255,0.12)',
+    backgroundColor: '#4caf50',
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 10,
+  },
+  counsellorBtnPressed: {
+    backgroundColor: '#45a049',
   },
   counsellorText: {
     color: '#fff',
@@ -212,7 +251,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingHorizontal: 14,
+    paddingHorizontal: 10,
     paddingTop: 8,
     paddingBottom: 20,
   },
@@ -227,25 +266,27 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'space-between',
-    rowGap: 12,
+    rowGap: 8,
   },
   card: {
-    width: '48%',
-    minHeight: 102,
+    width: '48.6%',
+    minHeight: 88,
     backgroundColor: '#fff',
-    borderRadius: 16,
+    borderRadius: 14,
     paddingHorizontal: 12,
-    paddingVertical: 14,
-    justifyContent: 'space-between',
+    paddingVertical: 12,
+    justifyContent: 'flex-start',
     borderWidth: 1,
     borderColor: '#e7eaf2',
   },
   cardIcon: {
-    fontSize: 26,
+    width: 34,
+    height: 34,
+    marginBottom: 10,
   },
   cardLabel: {
     fontSize: 13,
-    lineHeight: 18,
+    lineHeight: 17,
     color: '#0f172a',
     fontWeight: '700',
   },
