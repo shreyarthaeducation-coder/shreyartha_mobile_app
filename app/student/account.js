@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -13,10 +13,16 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuth } from '../../context/AuthContext';
 import { studentService } from '../../services/studentService';
 import { cacheService } from '../../services/cacheService';
 import { STUDENT } from '../../constants/theme';
+
+const STUDENT_LANGUAGE_PREFERENCE_KEY = 'studentPreferredLanguage';
+const DEFAULT_LANGUAGE = 'English';
+const SUPPORTED_LANGUAGES = [DEFAULT_LANGUAGE, 'Hindi'];
+const SUPPORT_TAB_TITLE = 'Support';
 
 function SectionCard({ title, children }) {
   return (
@@ -66,7 +72,7 @@ function PasswordField({ label, value, onChange, show, onToggle }) {
 
 export default function AccountScreen() {
   const router = useRouter();
-  const { logout } = useAuth();
+  const { logout, user } = useAuth();
 
   const [pwdForm, setPwdForm] = useState({
     currentPassword: '',
@@ -76,7 +82,33 @@ export default function AccountScreen() {
   const [showPwd, setShowPwd] = useState({ current: false, newPwd: false, confirm: false });
   const [pwdLoading, setPwdLoading] = useState(false);
   const [expanded, setExpanded] = useState(null);
-  const [language, setLanguage] = useState('English');
+  const [language, setLanguage] = useState(DEFAULT_LANGUAGE);
+
+  useEffect(() => {
+    let mounted = true;
+
+    const resolveLanguage = async () => {
+      try {
+        const savedLanguage = await AsyncStorage.getItem(STUDENT_LANGUAGE_PREFERENCE_KEY);
+        if (!mounted) return;
+
+        if (savedLanguage) {
+          setLanguage(savedLanguage);
+          return;
+        }
+
+        setLanguage(user?.language || DEFAULT_LANGUAGE);
+      } catch {
+        if (mounted) setLanguage(user?.language || DEFAULT_LANGUAGE);
+      }
+    };
+
+    resolveLanguage();
+
+    return () => {
+      mounted = false;
+    };
+  }, [user?.language]);
 
   const handlePasswordChange = async () => {
     if (!pwdForm.currentPassword || !pwdForm.newPassword || !pwdForm.confirmPassword) {
@@ -108,10 +140,16 @@ export default function AccountScreen() {
     }
   };
 
-  const handleLanguageChange = () => {
-    const next = language === 'English' ? 'Hindi' : 'English';
+  const handleLanguageChange = async () => {
+    const currentIndex = SUPPORTED_LANGUAGES.indexOf(language);
+    const next = SUPPORTED_LANGUAGES[(currentIndex + 1) % SUPPORTED_LANGUAGES.length];
     setLanguage(next);
-    Alert.alert('Language Updated', `Selected language: ${next}`);
+    try {
+      await AsyncStorage.setItem(STUDENT_LANGUAGE_PREFERENCE_KEY, next);
+      Alert.alert('Language Updated', `Selected language: ${next}`);
+    } catch {
+      Alert.alert('Update Failed', 'Could not save language preference right now.');
+    }
   };
 
   const handleLogout = () => {
@@ -134,7 +172,7 @@ export default function AccountScreen() {
   return (
     <SafeAreaView style={styles.root} edges={['top', 'left', 'right']}>
       <View style={styles.screenHeader}>
-        <Text style={styles.screenTitle}>Support</Text>
+        <Text style={styles.screenTitle}>{SUPPORT_TAB_TITLE}</Text>
         <Text style={styles.screenSub}>Account help & settings</Text>
       </View>
 

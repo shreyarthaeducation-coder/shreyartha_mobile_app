@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
   Image,
   ScrollView,
@@ -12,6 +12,8 @@ import { useRouter } from 'expo-router';
 import { useAuth } from '../../context/AuthContext';
 import { studentService } from '../../services/studentService';
 import { STUDENT } from '../../constants/theme';
+
+const DEFAULT_STUDENT_NAME = 'Demo Student';
 
 const DASHBOARD_CARDS = [
   { label: 'Student Profile', icon: '👤', route: '/student/profile' },
@@ -51,10 +53,9 @@ export default function StudentDashboardScreen() {
     fetchDashboard();
   }, [fetchDashboard]);
 
-  const studentName = useMemo(() => {
-    const name = dashData?.student?.name || dashData?.name || user?.name || 'Demo Student';
-    return String(name).trim() || 'Demo Student';
-  }, [dashData, user?.name]);
+  const studentNameRaw = dashData?.student?.name || dashData?.name || user?.name || DEFAULT_STUDENT_NAME;
+  const normalizedStudentName = String(studentNameRaw ?? '').trim();
+  const studentName = normalizedStudentName || DEFAULT_STUDENT_NAME;
 
   const avatarUri = dashData?.student?.avatar || dashData?.avatar || user?.profilePicture || user?.avatar;
 
@@ -75,11 +76,19 @@ export default function StudentDashboardScreen() {
           )}
         </View>
 
-        <TouchableOpacity style={styles.counsellorBtn} activeOpacity={0.9}>
+        <TouchableOpacity
+          style={styles.counsellorBtn}
+          activeOpacity={0.9}
+          onPress={() => router.push('/student/resources')}
+        >
           <Text style={styles.counsellorText}>Speak to Counsellor</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.analyticsBtn} activeOpacity={0.9}>
+        <TouchableOpacity
+          style={styles.analyticsBtn}
+          activeOpacity={0.9}
+          onPress={() => router.push('/student/academic')}
+        >
           <Text style={styles.analyticsText}>My Analytics</Text>
         </TouchableOpacity>
       </View>
