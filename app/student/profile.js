@@ -35,44 +35,73 @@ const COUNTRIES = ['India', 'USA', 'UK', 'Canada', 'Australia', 'Germany', 'Sing
 const MAX_IMPORTANT_SKILLS = 2;
 const canSelectImportantSkills = (count) => count < MAX_IMPORTANT_SKILLS;
 
+const GENDER_OPTIONS = ['Male', 'Female', 'Non-Binary', 'Prefer not to say'];
+const CLASS_OPTIONS = [6, 7, 8, 9, 10, 11, 12];
+const SECTION_OPTIONS = ['A', 'B', 'C', 'D', 'E'];
+const STREAM_OPTIONS = ['Science', 'Commerce', 'Arts'];
+const STREAM_SUBJECTS = {
+  Science: ['Mathematics', 'Physics', 'Chemistry', 'Biology', 'Computer Science', 'English'],
+  Commerce: ['Economics', 'Business Studies', 'Accountancy', 'Mathematics', 'English'],
+  Arts: ['History', 'Geography', 'Political Science', 'Economics', 'English'],
+};
+const PERSONAL_REQUIRED = ['fullName', 'email', 'gender', 'dob', 'mobile', 'currentClass', 'strengths', 'weakness'];
+
 const unwrap = (value) => (value?.data && typeof value.data === 'object' ? value.data : value || {});
 const arr = (value) => (Array.isArray(value) ? value : value ? [value] : []);
 
-function Field({ label, required, ...props }) {
+function SectionHeader({ title, dark }) {
+  return <Text style={dark ? styles.sectionHeaderDark : styles.sectionHeader}>{title}</Text>;
+}
+
+function Field({ label, required, errorKey, errors, ...props }) {
+  const hasError = Boolean(errorKey && errors && errors[errorKey]);
   return (
     <View style={styles.group}>
-      <Text style={styles.label}>
+      <Text style={[styles.label, hasError && styles.labelError]}>
         {label}
         {required ? <Text style={styles.required}> *</Text> : null}
       </Text>
       <TextInput
         {...props}
-        style={[styles.input, props.multiline && styles.multiline]}
+        style={[styles.input, props.multiline && styles.multiline, hasError && styles.inputError]}
         placeholderTextColor={STUDENT.textMuted}
       />
     </View>
   );
 }
 
-function Select({ label, value, setValue, options, required }) {
+function Select({ label, value, setValue, options, required, errorKey, errors, disabled }) {
+  const hasError = Boolean(errorKey && errors && errors[errorKey]);
   return (
     <View style={styles.group}>
-      <Text style={styles.label}>
+      <Text style={[styles.label, hasError && styles.labelError]}>
         {label}
         {required ? <Text style={styles.required}> *</Text> : null}
       </Text>
-      <View style={styles.selectWrap}>
+      <View style={[styles.selectWrap, hasError && styles.inputError, disabled && { opacity: 0.6 }]}>
         <Picker
           selectedValue={value}
-          onValueChange={(next) => setValue(next)}
+          onValueChange={(next) => { if (!disabled) setValue(next); }}
           style={styles.picker}
           dropdownIconColor={STUDENT.textPrimary}
+          enabled={!disabled}
         >
           <Picker.Item label="Select" value="" />
           {options.map((option) => (
-            <Picker.Item key={String(option.value ?? option)} label={option.label ?? option} value={option.value ?? option} />
+            <Picker.Item key={String(option.value ?? option ?? '')} label={String(option.label ?? option ?? '')} value={option.value ?? option ?? ''} />
           ))}
         </Picker>
+      </View>
+    </View>
+  );
+}
+
+function ReadOnly({ label, value }) {
+  return (
+    <View style={styles.group}>
+      <Text style={styles.label}>{label}</Text>
+      <View style={[styles.input, styles.readOnly]}>
+        <Text style={styles.readOnlyText}>{value || '—'}</Text>
       </View>
     </View>
   );
@@ -135,11 +164,29 @@ export default function StudentProfileScreen() {
   const [showDob, setShowDob] = useState(false);
   const [personalLocked, setPersonalLocked] = useState(false);
   const [error, setError] = useState('');
+  const [personalErrors, setPersonalErrors] = useState({});
   const [media, setMedia] = useState({ pictureUrl: '', videoUrl: '' });
 
-  const [personal, setPersonal] = useState({ fullName: '', email: '', mobile: '', dob: '', gender: '', schoolName: '', board: '', className: '', address: '', curriculum: '', studentType: '' });
-  const [survey, setSurvey] = useState({ queryFor: '', queryDetails: '' });
-  const [academic, setAcademic] = useState({ id: null, curriculum: '', className: '', selectedChapterIds: [], selectedTopicIds: [], competitiveExamIds: [], targetYear: '' });
+  const [personal, setPersonal] = useState({
+    fullName: '', email: '', mobile: '', dob: '', gender: '',
+    schoolName: '', curriculum: '',
+    currentClass: '', section: '',
+    strengths: '', weakness: '', stream: '', favSubjects: [], hobbies: '',
+    studentType: '',
+  });
+  const [surveyQuestions, setSurveyQuestions] = useState([]);
+  const [surveyAnswers, setSurveyAnswers] = useState({});
+  const [academic, setAcademic] = useState({
+    id: null,
+    curriculumId: null,
+    classId: null,
+    challengingSubjectIds: [],
+    chapters: {},
+    topics: {},
+    preparingCompetitiveExam: null,
+    competitiveExamId: null,
+    entranceExamIds: [],
+  });
   const [skills, setSkills] = useState({ id: null, selectedSkillIds: [], importantSkillIds: [] });
   const [university, setUniversity] = useState({ id: null, preferredCountries: [], intendedCourse: '', intakeYear: '', budgetRange: '' });
   const [education, setEducation] = useState({ id: null, class10School: '', class10Year: '', class10Percentage: '', class12School: '', class12Year: '', class12Percentage: '', englishTestTaken: '', englishCertificateNumber: '' });
@@ -147,14 +194,14 @@ export default function StudentProfileScreen() {
   const [completed, setCompleted] = useState({ personal: false, academic: false, skillsedge: false, university: false, education: false, additional: false });
 
   const [tree, setTree] = useState([]);
-  const [chapters, setChapters] = useState([]);
-  const [topics, setTopics] = useState([]);
   const [exams, setExams] = useState([]);
-  const [hiddenTopicIds, setHiddenTopicIds] = useState([]);
+  const [hiddenNodeIds, setHiddenNodeIds] = useState([]);
   const [hiddenExamIds, setHiddenExamIds] = useState([]);
   const [skillsTree, setSkillsTree] = useState([]);
 
   const progress = useMemo(() => (Object.values(completed).filter(Boolean).length / TABS.length) * 100, [completed]);
+
+  const isSchoolStudent = personal.studentType?.toUpperCase() === 'SCHOOL';
 
   const fetchCompletion = useCallback(async () => {
     const [p, a, s, u, e, ad] = await Promise.all([
@@ -168,7 +215,7 @@ export default function StudentProfileScreen() {
     const pD = unwrap(p); const aD = unwrap(a); const sD = unwrap(s); const uD = unwrap(u); const eD = unwrap(e); const adD = unwrap(ad);
     setCompleted({
       personal: Boolean((pD.fullName || pD.name || pD.studentName) && (pD.mobile || pD.phone) && pD.email),
-      academic: Boolean((aD.curriculum || aD.curriculumName) && (aD.className || aD.class) && arr(aD.selectedTopicIds || aD.topicIds).length),
+      academic: Boolean((aD.curriculumId || aD.curriculum || aD.curriculumName) && (aD.classId || aD.className || aD.class) && (arr(aD.challengingSubjectIds).length || arr(aD.selectedTopicIds || aD.topicIds).length)),
       skillsedge: Boolean(arr(sD.selectedSkillIds || sD.skillIds).length && arr(sD.importantSkillIds || sD.topSkillIds).length),
       university: Boolean(arr(uD.preferredCountries || uD.countries).length && uD.intendedCourse),
       education: Boolean(eD.class10School && eD.class10Year && eD.class10Percentage && (eD.englishTestTaken !== 'Yes' || eD.englishCertificateNumber)),
@@ -179,7 +226,7 @@ export default function StudentProfileScreen() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const [pRes, surveyRes, aTreeRes, examRes, aRes, sTreeRes, sRes, uRes, eRes, adRes, hTopicRes, hExamRes] = await Promise.all([
+      const [pRes, surveyRes, aTreeRes, examRes, aRes, sTreeRes, sRes, uRes, eRes, adRes, hNodeRes, hExamRes] = await Promise.all([
         studentService.getProfile(),
         studentService.getStudentSurvey().catch(() => ({})),
         studentService.getAcademicIQTree().catch(() => ({})),
@@ -196,46 +243,84 @@ export default function StudentProfileScreen() {
 
       const p = unwrap(pRes); const sv = unwrap(surveyRes); const aTree = unwrap(aTreeRes); const a = unwrap(aRes); const sTree = unwrap(sTreeRes);
       const s = unwrap(sRes); const u = unwrap(uRes); const e = unwrap(eRes); const ad = unwrap(adRes);
+
+      const favSubjectsRaw = p.favSubjects || p.favoriteSubjects || '';
+      const favSubjectsArr = typeof favSubjectsRaw === 'string'
+        ? favSubjectsRaw.split(',').map((x) => x.trim()).filter(Boolean)
+        : arr(favSubjectsRaw);
+
       setPersonal({
         fullName: p.fullName || p.name || p.studentName || '',
         email: p.email || '',
         mobile: p.mobile || p.phone || '',
         dob: p.dob || p.dateOfBirth || '',
         gender: p.gender || '',
-        schoolName: p.schoolName || p.school || '',
-        board: p.board || '',
-        className: p.className || p.class || '',
-        address: p.address || '',
-        curriculum: p.curriculum || '', studentType: p.studentType || '',
+        schoolName: p.schoolName || (p.school && typeof p.school === 'object' ? p.school.name : p.school) || '',
+        curriculum: p.schoolBoard || p.board || (p.school && typeof p.school === 'object' ? p.school.board : '') || '',
+        currentClass: p.currentClass ? String(p.currentClass) : (p.className || p.class || ''),
+        section: p.section || '',
+        strengths: p.strengths || '',
+        weakness: p.weakness || '',
+        stream: p.stream || '',
+        favSubjects: favSubjectsArr,
+        hobbies: p.hobbies || '',
+        studentType: p.studentType || '',
       });
       setPersonalLocked(Boolean(p.personalLocked || p.personalDetailsSaved || p.isProfileSubmitted));
       setMedia({ pictureUrl: p.profilePictureUrl || p.pictureUrl || p.avatar || '', videoUrl: p.profileVideoUrl || p.videoUrl || '' });
-      setSurvey({ queryFor: sv.queryFor || '', queryDetails: sv.queryDetails || '' });
+
+      // Survey questions — handle both flat array and wrapped { questions, answers } format
+      const questions = arr(sv.questions || sv.surveyQuestions || (Array.isArray(sv) ? sv : []));
+      const rawAnswers = sv.answers || {};
+      if (questions.length > 0) {
+        setSurveyQuestions(questions);
+        const answerMap = {};
+        questions.forEach((q) => {
+          const qId = String(q.id || q.questionId);
+          answerMap[qId] = rawAnswers[qId] || q.answer || '';
+        });
+        setSurveyAnswers(answerMap);
+      } else {
+        setSurveyQuestions([]);
+        setSurveyAnswers({});
+      }
 
       const curriculumNodes = arr(aTree.curriculums || aTree.nodes || aTree.children || aTree).filter(Boolean);
       setTree(curriculumNodes);
-      const selectedCurriculum = curriculumNodes.find((x) => (x.name || x.title) === (a.curriculum || p.curriculum));
-      const classNodes = arr(selectedCurriculum?.classes || selectedCurriculum?.children);
-      const selectedClassNode = classNodes.find((x) => (x.name || x.title) === (a.className || p.className || p.class));
-      setChapters(arr(selectedClassNode?.chapters || selectedClassNode?.children || []));
-      setTopics(arr(selectedClassNode?.topics || selectedClassNode?.children || []));
       setExams(arr(unwrap(examRes).exams || unwrap(examRes)));
-      setHiddenTopicIds(arr(unwrap(hTopicRes).hiddenNodeIds || unwrap(hTopicRes)));
+      setHiddenNodeIds(arr(unwrap(hNodeRes).hiddenNodeIds || unwrap(hNodeRes)));
       setHiddenExamIds(arr(unwrap(hExamRes).hiddenNodeIds || unwrap(hExamRes)));
 
+      // Map academic profile — support both new ID-based and legacy name-based shapes
+      const chapterMap = {};
+      if (a.chapters && typeof a.chapters === 'object' && !Array.isArray(a.chapters)) {
+        Object.assign(chapterMap, a.chapters);
+      }
+      const topicMap = {};
+      if (a.topics && typeof a.topics === 'object' && !Array.isArray(a.topics)) {
+        Object.assign(topicMap, a.topics);
+      }
+      const competitiveExamId = a.competitiveExamId || arr(a.competitiveExamIds || a.examIds)[0] || null;
       setAcademic({
-        id: a.id || null, curriculum: a.curriculum || p.curriculum || '', className: a.className || p.className || p.class || '',
-        selectedChapterIds: arr(a.selectedChapterIds || a.chapterIds), selectedTopicIds: arr(a.selectedTopicIds || a.topicIds),
-        competitiveExamIds: arr(a.competitiveExamIds || a.examIds), targetYear: a.targetYear ? String(a.targetYear) : '',
+        id: a.id || null,
+        curriculumId: a.curriculumId || null,
+        classId: a.classId || null,
+        challengingSubjectIds: arr(a.challengingSubjectIds || a.subjectIds),
+        chapters: chapterMap,
+        topics: topicMap,
+        preparingCompetitiveExam: a.preparingCompetitiveExam != null ? Boolean(a.preparingCompetitiveExam) : (competitiveExamId ? true : null),
+        competitiveExamId,
+        entranceExamIds: arr(a.entranceExamIds),
       });
+
       setSkills({ id: s.id || null, selectedSkillIds: arr(s.selectedSkillIds || s.skillIds), importantSkillIds: arr(s.importantSkillIds || s.topSkillIds) });
-      setSkillsTree(arr(sTree.skills || sTree.nodes || sTree.children || sTree));
+      setSkillsTree(arr(sTree.skills || sTree.categories || sTree.nodes || sTree.children || sTree));
       setUniversity({ id: u.id || null, preferredCountries: arr(u.preferredCountries || u.countries), intendedCourse: u.intendedCourse || '', intakeYear: u.intakeYear ? String(u.intakeYear) : '', budgetRange: u.budgetRange || '' });
       setEducation({ id: e.id || null, class10School: e.class10School || '', class10Year: e.class10Year ? String(e.class10Year) : '', class10Percentage: e.class10Percentage ? String(e.class10Percentage) : '', class12School: e.class12School || '', class12Year: e.class12Year ? String(e.class12Year) : '', class12Percentage: e.class12Percentage ? String(e.class12Percentage) : '', englishTestTaken: e.englishTestTaken || '', englishCertificateNumber: e.englishCertificateNumber || '' });
       setAdditional({ id: ad.id || null, hobbies: ad.hobbies || '', achievements: ad.achievements || '', volunteerWork: ad.volunteerWork || '', linkedinUrl: ad.linkedinUrl || '', portfolioUrl: ad.portfolioUrl || '', aboutMe: ad.aboutMe || '' });
       await fetchCompletion();
-    } catch (e) {
-      Alert.alert('Error', e?.message || 'Unable to load profile');
+    } catch (err) {
+      Alert.alert('Error', err?.message || 'Unable to load profile');
     } finally {
       setLoading(false);
     }
@@ -271,35 +356,108 @@ export default function StudentProfileScreen() {
 
   const save = async () => {
     setError('');
+    setPersonalErrors({});
+
+    if (active === 'personal') {
+      const errs = {};
+      PERSONAL_REQUIRED.forEach((key) => {
+        const val = personal[key];
+        if (!val || (typeof val === 'string' && !val.trim())) errs[key] = true;
+      });
+      if (!personal.favSubjects || personal.favSubjects.length === 0) errs.favSubjects = true;
+      if (personal.mobile && !/^[0-9]{10,15}$/.test(personal.mobile.trim())) errs.mobile = true;
+      if (Object.keys(errs).length > 0) {
+        setPersonalErrors(errs);
+        setError('Please fill in all required fields correctly.');
+        return;
+      }
+      setSaving(true);
+      try {
+        const payload = {
+          fullName: personal.fullName,
+          email: personal.email,
+          mobile: personal.mobile,
+          dob: personal.dob,
+          gender: personal.gender,
+          stream: personal.stream,
+          currentClass: personal.currentClass,
+          section: personal.section,
+          strengths: personal.strengths,
+          weakness: personal.weakness,
+          favSubjects: personal.favSubjects.join(','),
+          hobbies: personal.hobbies,
+        };
+        await studentService.updateProfile(payload);
+        if (surveyQuestions.length > 0) {
+          await studentService.saveStudentSurvey(surveyAnswers);
+        }
+        if (personal.fullName && personal.gender && personal.dob && personal.currentClass) {
+          setPersonalLocked(true);
+        }
+        await fetchCompletion();
+        Alert.alert('Updated!', 'Personal details saved successfully.');
+      } catch (err) {
+        Alert.alert('Save failed', err?.message || 'Could not save personal details.');
+      } finally {
+        setSaving(false);
+      }
+      return;
+    }
+
     if (active === 'skillsedge' && skills.importantSkillIds.length > MAX_IMPORTANT_SKILLS) {
       return setError(`Choose at most ${MAX_IMPORTANT_SKILLS} important skills.`);
     }
     if (active === 'education' && education.englishTestTaken === 'Yes' && !education.englishCertificateNumber.trim()) return setError('English certificate number is required.');
     setSaving(true);
     try {
-      if (active === 'personal') {
-        await studentService.updateProfile(personal);
-        await studentService.saveStudentSurvey(survey);
-        setPersonalLocked(true);
+      if (active === 'academic') {
+        const payload = {
+          curriculumId: academic.curriculumId,
+          classId: academic.classId,
+          challengingSubjectIds: academic.challengingSubjectIds,
+          chapters: academic.chapters,
+          topics: academic.topics,
+          preparingCompetitiveExam: academic.preparingCompetitiveExam,
+          competitiveExamId: academic.preparingCompetitiveExam ? academic.competitiveExamId : null,
+          entranceExamIds: academic.preparingCompetitiveExam ? academic.entranceExamIds : [],
+        };
+        await (academic.id ? studentService.updateAcademicProfile(payload) : studentService.createAcademicProfile(payload));
       }
-      if (active === 'academic') await (academic.id ? studentService.updateAcademicProfile(academic) : studentService.createAcademicProfile(academic));
       if (active === 'skillsedge') await (skills.id ? studentService.updateSkillsProfile(skills) : studentService.createSkillsProfile(skills));
       if (active === 'university') await (university.id ? studentService.updateUniversityProfile(university) : studentService.createUniversityProfile(university));
       if (active === 'education') await (education.id ? studentService.updateEducationProfile(education) : studentService.createEducationProfile(education));
       if (active === 'additional') await (additional.id ? studentService.updateAdditionalProfile(additional) : studentService.createAdditionalProfile(additional));
       await fetchCompletion();
       Alert.alert('Saved', 'Section saved successfully.');
-    } catch (e) {
-      Alert.alert('Save failed', e?.message || 'Could not save this section.');
+    } catch (err) {
+      Alert.alert('Save failed', err?.message || 'Could not save this section.');
     } finally {
       setSaving(false);
     }
   };
 
-  const autoAcademicLocked = personal.studentType?.toUpperCase() === 'SCHOOL' && personal.curriculum && personal.className;
-  const skillNodes = arr(skillsTree.flatMap((x) => arr(x.children?.length ? x.children : x))).filter(Boolean);
-  const selectedCurriculumNode = tree.find((x) => (x.name || x.title) === academic.curriculum);
-  const selectedClassOptions = arr(selectedCurriculumNode?.classes || selectedCurriculumNode?.children);
+  const selectedCurriculumNode = tree.find((x) => x.id === academic.curriculumId);
+  const filteredCurriculums = tree.filter((c) => !hiddenNodeIds.includes(c.id));
+  const filteredClasses = arr(selectedCurriculumNode?.classes || selectedCurriculumNode?.children).filter((c) => !hiddenNodeIds.includes(c.id));
+  const selectedClassNode = filteredClasses.find((c) => c.id === academic.classId);
+  const classSubjects = arr(selectedClassNode?.subjects || selectedClassNode?.children).filter((s) => !hiddenNodeIds.includes(s.id));
+  const filteredExams = arr(exams).filter((x) => !hiddenExamIds.includes(x.id));
+  const selectedExam = filteredExams.find((x) => x.id === academic.competitiveExamId);
+  const entranceExamOptions = arr(selectedExam?.entranceExams || selectedExam?.exams || []);
+
+  const skillCategories = useMemo(() => {
+    const cats = arr(skillsTree);
+    // If tree is a list of categories (each with skills/children), use as-is
+    const hasCategories = cats.some((c) => arr(c.skills || c.children).length > 0);
+    if (hasCategories) {
+      return cats.map((cat) => ({
+        ...cat,
+        skills: arr(cat.skills || cat.children || []),
+      })).filter((cat) => cat.skills.length > 0);
+    }
+    // Flat list fallback
+    return [{ id: '_all', name: '', skills: cats }];
+  }, [skillsTree]);
 
   return (
     <SafeAreaView style={styles.root} edges={['top', 'left', 'right']}>
@@ -333,123 +491,421 @@ export default function StudentProfileScreen() {
           </ScrollView>
 
           <ScrollView style={styles.body} contentContainerStyle={styles.bodyContent}>
+            {/* ─── Personal Details ─────────────────────────────────── */}
             {active === 'personal' ? (
               <>
-                <Field label="Full Name" required editable={!personalLocked} value={personal.fullName} onChangeText={(v) => setPersonal((p) => ({ ...p, fullName: v }))} />
-                <Field label="Email" required editable={!personalLocked} value={personal.email} onChangeText={(v) => setPersonal((p) => ({ ...p, email: v }))} />
-                <Field label="Mobile Number" required editable={!personalLocked} maxLength={15} keyboardType="phone-pad" value={personal.mobile} onChangeText={(v) => setPersonal((p) => ({ ...p, mobile: v }))} />
-                <TouchableOpacity
-                  style={styles.input}
-                  onPress={() => setShowDob(true)}
+                <SectionHeader title="Personal Information" />
+                <Field
+                  label="Full Name" required
+                  errorKey="fullName" errors={personalErrors}
+                  editable={!personalLocked}
+                  value={personal.fullName}
+                  onChangeText={(v) => setPersonal((p) => ({ ...p, fullName: v }))}
+                />
+                <Field
+                  label="Email ID" required
+                  errorKey="email" errors={personalErrors}
+                  editable
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  value={personal.email}
+                  onChangeText={(v) => setPersonal((p) => ({ ...p, email: v }))}
+                />
+                <Select
+                  label="Gender" required
+                  errorKey="gender" errors={personalErrors}
+                  value={personal.gender}
+                  setValue={(v) => setPersonal((p) => ({ ...p, gender: v }))}
+                  options={GENDER_OPTIONS}
                   disabled={personalLocked}
-                  accessibilityRole="button"
-                  accessibilityLabel="Select date of birth"
-                >
-                  <Text style={styles.dateText}>{personal.dob || 'Date of Birth'}</Text>
-                </TouchableOpacity>
-                {showDob ? (
-                  <DateTimePicker
-                    value={personal.dob ? new Date(personal.dob) : new Date()}
-                    mode="date"
-                    maximumDate={new Date()}
-                    onChange={(_, d) => {
-                      setShowDob(Platform.OS === 'ios');
-                      if (d) {
-                        setPersonal((p) => ({ ...p, dob: d.toISOString().slice(0, 10) }));
-                      }
-                    }}
+                />
+                <View style={styles.group}>
+                  <Text style={[styles.label, personalErrors.dob && styles.labelError]}>
+                    Date of Birth <Text style={styles.required}>*</Text>
+                  </Text>
+                  <TouchableOpacity
+                    style={[styles.input, personalErrors.dob && styles.inputError]}
+                    onPress={() => { if (!personalLocked) setShowDob(true); }}
+                    disabled={personalLocked}
+                    accessibilityRole="button"
+                    accessibilityLabel="Select date of birth"
+                  >
+                    <Text style={personal.dob ? styles.dateText : { color: STUDENT.textMuted }}>
+                      {personal.dob || 'Select date of birth'}
+                    </Text>
+                  </TouchableOpacity>
+                  {showDob ? (
+                    <DateTimePicker
+                      value={personal.dob ? new Date(personal.dob) : new Date()}
+                      mode="date"
+                      maximumDate={new Date()}
+                      onChange={(_, d) => {
+                        setShowDob(Platform.OS === 'ios');
+                        if (d) setPersonal((p) => ({ ...p, dob: d.toISOString().slice(0, 10) }));
+                      }}
+                    />
+                  ) : null}
+                </View>
+                <Field
+                  label="Mobile No." required
+                  errorKey="mobile" errors={personalErrors}
+                  editable
+                  keyboardType="phone-pad"
+                  maxLength={15}
+                  value={personal.mobile}
+                  onChangeText={(v) => setPersonal((p) => ({ ...p, mobile: v }))}
+                />
+                <Select
+                  label="Current Class" required
+                  errorKey="currentClass" errors={personalErrors}
+                  value={personal.currentClass ? String(personal.currentClass) : ''}
+                  setValue={(v) => setPersonal((p) => ({ ...p, currentClass: v }))}
+                  options={CLASS_OPTIONS.map((c) => ({ label: `Class ${c}`, value: String(c) }))}
+                  disabled={personalLocked}
+                />
+                {isSchoolStudent ? (
+                  <Select
+                    label="Section"
+                    value={personal.section}
+                    setValue={(v) => setPersonal((p) => ({ ...p, section: v }))}
+                    options={SECTION_OPTIONS}
+                    disabled={personalLocked}
                   />
                 ) : null}
-                <Select label="Gender" value={personal.gender} setValue={(v) => setPersonal((p) => ({ ...p, gender: v }))} options={['Male', 'Female', 'Other']} />
-                <Field label="School Name" value={personal.schoolName} onChangeText={(v) => setPersonal((p) => ({ ...p, schoolName: v }))} />
-                <Field label="Board" value={personal.board} onChangeText={(v) => setPersonal((p) => ({ ...p, board: v }))} />
-                <Field label="Class" value={personal.className} onChangeText={(v) => setPersonal((p) => ({ ...p, className: v }))} />
-                <Field label="Address" value={personal.address} onChangeText={(v) => setPersonal((p) => ({ ...p, address: v }))} multiline />
-                <Select label="Query For" value={survey.queryFor} setValue={(v) => setSurvey((s) => ({ ...s, queryFor: v }))} options={['Profile', 'Academic', 'Career', 'Financial Aid']} />
-                <Field label="Query Details" value={survey.queryDetails} onChangeText={(v) => setSurvey((s) => ({ ...s, queryDetails: v }))} multiline />
+                <ReadOnly label="Your School Name" value={personal.schoolName} />
+                <ReadOnly label="Curriculum" value={personal.curriculum} />
+
+                <SectionHeader title="Student Reflection" dark />
+                <Field
+                  label="Mention two of your strengths." required
+                  errorKey="strengths" errors={personalErrors}
+                  editable={!personalLocked}
+                  multiline
+                  maxLength={120}
+                  numberOfLines={2}
+                  value={personal.strengths}
+                  onChangeText={(v) => setPersonal((p) => ({ ...p, strengths: v }))}
+                />
+                <Field
+                  label="Mention one weakness or area of improvement." required
+                  errorKey="weakness" errors={personalErrors}
+                  editable={!personalLocked}
+                  multiline
+                  maxLength={120}
+                  numberOfLines={2}
+                  value={personal.weakness}
+                  onChangeText={(v) => setPersonal((p) => ({ ...p, weakness: v }))}
+                />
+                <Select
+                  label="Stream" required
+                  errorKey="stream" errors={personalErrors}
+                  value={personal.stream}
+                  setValue={(v) => setPersonal((p) => ({ ...p, stream: v, favSubjects: [] }))}
+                  options={STREAM_OPTIONS}
+                  disabled={personalLocked}
+                />
+                <View style={styles.group}>
+                  <Text style={[styles.label, personalErrors.favSubjects && styles.labelError]}>
+                    What are your favourite subjects? <Text style={styles.required}>*</Text>
+                  </Text>
+                  {personal.stream && STREAM_SUBJECTS[personal.stream] ? (
+                    STREAM_SUBJECTS[personal.stream].map((subj) => {
+                      const checked = personal.favSubjects.includes(subj);
+                      return (
+                        <Tick
+                          key={subj}
+                          checked={checked}
+                          label={subj}
+                          onPress={() => {
+                            if (personalLocked) return;
+                            setPersonal((p) => ({
+                              ...p,
+                              favSubjects: checked
+                                ? p.favSubjects.filter((x) => x !== subj)
+                                : [...p.favSubjects, subj],
+                            }));
+                          }}
+                        />
+                      );
+                    })
+                  ) : (
+                    <Text style={styles.mutedHint}>Select a stream to choose subjects</Text>
+                  )}
+                </View>
+                <Field
+                  label="What are your hobbies or interests?"
+                  editable={!personalLocked}
+                  value={personal.hobbies}
+                  onChangeText={(v) => setPersonal((p) => ({ ...p, hobbies: v }))}
+                />
+                {surveyQuestions.map((q) => {
+                  const qId = String(q.id || q.questionId);
+                  const questionText = q.questionText || q.question || q.text || '';
+                  return (
+                    <Field
+                      key={qId}
+                      label={questionText}
+                      value={surveyAnswers[qId] || ''}
+                      onChangeText={(v) => setSurveyAnswers((prev) => ({ ...prev, [qId]: v }))}
+                      multiline
+                    />
+                  );
+                })}
                 {personalLocked ? <Text style={styles.tip}>Core personal fields are locked after first save.</Text> : null}
               </>
             ) : null}
 
+            {/* ─── Academic IQ ──────────────────────────────────────── */}
             {active === 'academic' ? (
               <>
                 <Text style={styles.subHeader}>Curriculum</Text>
                 <View style={styles.chips}>
-                  {tree.map((node) => {
-                    const label = node.name || node.title || String(node.id);
-                    return (
+                  {isSchoolStudent ? (
+                    <View style={[styles.chip, styles.chipOn]}>
+                      <Text style={[styles.chipTxt, styles.chipTxtOn]}>{personal.curriculum || 'School Curriculum'}</Text>
+                    </View>
+                  ) : (
+                    filteredCurriculums.map((node) => (
                       <TouchableOpacity
-                        key={String(node.id || label)}
-                        style={[styles.chip, academic.curriculum === label && styles.chipOn, autoAcademicLocked && styles.disabled]}
-                        disabled={autoAcademicLocked}
-                        onPress={() => setAcademic((a) => ({ ...a, curriculum: label }))}
-                      ><Text style={[styles.chipTxt, academic.curriculum === label && styles.chipTxtOn]}>{label}</Text></TouchableOpacity>
-                    );
-                  })}
+                        key={String(node.id)}
+                        style={[styles.chip, academic.curriculumId === node.id && styles.chipOn]}
+                        onPress={() => setAcademic((a) => ({
+                          ...a, curriculumId: node.id,
+                          classId: null, challengingSubjectIds: [], chapters: {}, topics: {},
+                        }))}
+                      >
+                        <Text style={[styles.chipTxt, academic.curriculumId === node.id && styles.chipTxtOn]}>
+                          {node.name || node.title}
+                        </Text>
+                      </TouchableOpacity>
+                    ))
+                  )}
                 </View>
+
                 <Text style={styles.subHeader}>Class</Text>
                 <View style={styles.chips}>
-                  {selectedClassOptions.map((cls) => {
-                    const label = cls.name || cls.title || String(cls.id);
+                  {isSchoolStudent ? (
+                    <View style={[styles.chip, styles.chipOn]}>
+                      <Text style={[styles.chipTxt, styles.chipTxtOn]}>
+                        {personal.currentClass ? `Class ${personal.currentClass}` : 'My Class'}
+                      </Text>
+                    </View>
+                  ) : (
+                    filteredClasses.map((cls) => (
+                      <TouchableOpacity
+                        key={String(cls.id)}
+                        style={[styles.chip, academic.classId === cls.id && styles.chipOn]}
+                        onPress={() => setAcademic((a) => ({
+                          ...a, classId: cls.id,
+                          challengingSubjectIds: [], chapters: {}, topics: {},
+                        }))}
+                      >
+                        <Text style={[styles.chipTxt, academic.classId === cls.id && styles.chipTxtOn]}>
+                          {cls.name || cls.title}
+                        </Text>
+                      </TouchableOpacity>
+                    ))
+                  )}
+                </View>
+
+                {classSubjects.length > 0 ? (
+                  <>
+                    <Text style={styles.subHeader}>Challenging Subjects (max 2)</Text>
+                    {classSubjects.map((subj) => {
+                      const id = subj.id;
+                      const checked = academic.challengingSubjectIds.includes(id);
+                      return (
+                        <Tick
+                          key={String(id)}
+                          checked={checked}
+                          label={subj.name || subj.title || String(id)}
+                          onPress={() => {
+                            if (!checked && academic.challengingSubjectIds.length >= 2) {
+                              setError('You can select up to 2 subjects');
+                              return;
+                            }
+                            setError('');
+                            setAcademic((a) => {
+                              const next = checked
+                                ? a.challengingSubjectIds.filter((x) => x !== id)
+                                : [...a.challengingSubjectIds, id];
+                              const newChapters = { ...a.chapters };
+                              if (checked) delete newChapters[String(id)];
+                              return { ...a, challengingSubjectIds: next, chapters: newChapters };
+                            });
+                          }}
+                        />
+                      );
+                    })}
+                    {academic.challengingSubjectIds.map((subjectId) => {
+                      const subj = classSubjects.find((s) => s.id === subjectId);
+                      if (!subj) return null;
+                      const subjChapters = arr(subj.chapters || subj.children).filter((ch) => !hiddenNodeIds.includes(ch.id));
+                      if (!subjChapters.length) return null;
+                      return (
+                        <View key={String(subjectId)}>
+                          <Text style={styles.subHeaderSm}>{subj.name || subj.title} — Chapters</Text>
+                          {subjChapters.map((ch) => {
+                            const chId = ch.id;
+                            const subjKey = String(subjectId);
+                            const selectedChIds = arr(academic.chapters[subjKey]);
+                            const checked = selectedChIds.includes(chId);
+                            return (
+                              <Tick
+                                key={String(chId)}
+                                checked={checked}
+                                label={ch.name || ch.title || String(chId)}
+                                onPress={() => {
+                                  setAcademic((a) => {
+                                    const prev = arr(a.chapters[subjKey]);
+                                    const next = checked ? prev.filter((x) => x !== chId) : [...prev, chId];
+                                    const newChapters = { ...a.chapters, [subjKey]: next };
+                                    const newTopics = { ...a.topics };
+                                    if (checked) delete newTopics[String(chId)];
+                                    return { ...a, chapters: newChapters, topics: newTopics };
+                                  });
+                                }}
+                              />
+                            );
+                          })}
+                          {arr(academic.chapters[String(subjectId)]).map((chapterId) => {
+                            const ch = subjChapters.find((c) => c.id === chapterId);
+                            if (!ch) return null;
+                            const chTopics = arr(ch.topics || ch.children).filter((t) => !hiddenNodeIds.includes(t.id));
+                            if (!chTopics.length) return null;
+                            const chKey = String(chapterId);
+                            return (
+                              <View key={chKey}>
+                                <Text style={styles.subHeaderSm}>{ch.name || ch.title} — Topics</Text>
+                                {chTopics.map((topic) => {
+                                  const tId = topic.id;
+                                  const selTopics = arr(academic.topics[chKey]);
+                                  const tchecked = selTopics.includes(tId);
+                                  return (
+                                    <Tick
+                                      key={String(tId)}
+                                      checked={tchecked}
+                                      label={topic.name || topic.title || String(tId)}
+                                      onPress={() => {
+                                        setAcademic((a) => {
+                                          const prev = arr(a.topics[chKey]);
+                                          const next = tchecked ? prev.filter((x) => x !== tId) : [...prev, tId];
+                                          return { ...a, topics: { ...a.topics, [chKey]: next } };
+                                        });
+                                      }}
+                                    />
+                                  );
+                                })}
+                              </View>
+                            );
+                          })}
+                        </View>
+                      );
+                    })}
+                  </>
+                ) : null}
+
+                <Text style={styles.subHeader}>Are you preparing for a competitive exam?</Text>
+                <View style={styles.yesNoRow}>
+                  {['Yes', 'No'].map((opt) => {
+                    const isYes = opt === 'Yes';
+                    const isActive = academic.preparingCompetitiveExam === isYes;
                     return (
                       <TouchableOpacity
-                        key={String(cls.id || label)}
-                        style={[
-                          styles.chip,
-                          academic.className === label && styles.chipOn,
-                          autoAcademicLocked && styles.disabled,
-                        ]}
-                        disabled={autoAcademicLocked}
-                        onPress={() => setAcademic((a) => ({ ...a, className: label }))}
+                        key={opt}
+                        style={[styles.chip, isActive && styles.chipOn, { marginRight: 8 }]}
+                        onPress={() => setAcademic((a) => ({
+                          ...a,
+                          preparingCompetitiveExam: isYes,
+                          competitiveExamId: isYes ? a.competitiveExamId : null,
+                          entranceExamIds: isYes ? a.entranceExamIds : [],
+                        }))}
                       >
-                        <Text style={[styles.chipTxt, academic.className === label && styles.chipTxtOn]}>{label}</Text>
+                        <Text style={[styles.chipTxt, isActive && styles.chipTxtOn]}>{opt}</Text>
                       </TouchableOpacity>
                     );
                   })}
                 </View>
-                <Text style={styles.subHeader}>Chapters</Text>
-                {arr(chapters).map((ch) => {
-                  const id = ch.id || ch.name; const checked = academic.selectedChapterIds.includes(id);
-                  return <Tick key={String(id)} checked={checked} label={ch.name || ch.title || String(id)} onPress={() => setAcademic((a) => ({ ...a, selectedChapterIds: checked ? a.selectedChapterIds.filter((x) => x !== id) : [...a.selectedChapterIds, id] }))} />;
-                })}
-                <Text style={styles.subHeader}>Topics</Text>
-                {arr(topics).filter((t) => !hiddenTopicIds.includes(t.id || t.name)).map((topic) => {
-                  const id = topic.id || topic.name; const checked = academic.selectedTopicIds.includes(id);
-                  return <Tick key={String(id)} checked={checked} label={topic.name || topic.title || String(id)} onPress={() => setAcademic((a) => ({ ...a, selectedTopicIds: checked ? a.selectedTopicIds.filter((x) => x !== id) : [...a.selectedTopicIds, id] }))} />;
-                })}
-                <Select label="Target Year" value={academic.targetYear} setValue={(v) => setAcademic((a) => ({ ...a, targetYear: v }))} options={YEAR_OPTIONS} />
-                <Text style={styles.subHeader}>Competitive Exams</Text>
-                {arr(exams).filter((x) => !hiddenExamIds.includes(x.id || x.name)).map((exam) => {
-                  const id = exam.id || exam.name; const checked = academic.competitiveExamIds.includes(id);
-                  return <Tick key={String(id)} checked={checked} label={exam.name || exam.title || String(id)} onPress={() => setAcademic((a) => ({ ...a, competitiveExamIds: checked ? a.competitiveExamIds.filter((x) => x !== id) : [...a.competitiveExamIds, id] }))} />;
-                })}
+
+                {academic.preparingCompetitiveExam === true ? (
+                  <>
+                    <Select
+                      label="Which competitive exam?"
+                      value={academic.competitiveExamId ? String(academic.competitiveExamId) : ''}
+                      setValue={(v) => setAcademic((a) => ({ ...a, competitiveExamId: v || null, entranceExamIds: [] }))}
+                      options={filteredExams.map((x) => ({ label: x.name || x.title || String(x.id), value: String(x.id) }))}
+                    />
+                    {entranceExamOptions.length > 0 ? (
+                      <>
+                        <Text style={styles.subHeader}>Which entrance exams?</Text>
+                        {entranceExamOptions.map((ee) => {
+                          const id = ee.id;
+                          const checked = academic.entranceExamIds.includes(id);
+                          return (
+                            <Tick
+                              key={String(id)}
+                              checked={checked}
+                              label={ee.name || ee.title || String(id)}
+                              onPress={() => setAcademic((a) => ({
+                                ...a,
+                                entranceExamIds: checked
+                                  ? a.entranceExamIds.filter((x) => x !== id)
+                                  : [...a.entranceExamIds, id],
+                              }))}
+                            />
+                          );
+                        })}
+                      </>
+                    ) : null}
+                  </>
+                ) : null}
               </>
             ) : null}
 
+            {/* ─── Skills Edge ──────────────────────────────────────── */}
             {active === 'skillsedge' ? (
               <>
-                {skillNodes.map((node) => {
-                  const id = node.id || node.name;
-                  const selected = skills.selectedSkillIds.includes(id);
-                  const important = skills.importantSkillIds.includes(id);
-                  return (
-                    <View key={String(id)}>
-                      <Tick checked={selected} label={node.name || node.title || String(id)} onPress={() => setSkills((s) => ({ ...s, selectedSkillIds: selected ? s.selectedSkillIds.filter((x) => x !== id) : [...s.selectedSkillIds, id], importantSkillIds: selected ? s.importantSkillIds.filter((x) => x !== id) : s.importantSkillIds }))} />
-                      <TouchableOpacity
-                        disabled={!selected}
-                        style={[styles.important, important && styles.importantOn, !selected && styles.disabled]}
-                        onPress={() => setSkills((s) => {
-                          if (important) return { ...s, importantSkillIds: s.importantSkillIds.filter((x) => x !== id) };
-                          if (!canSelectImportantSkills(s.importantSkillIds.length)) {
-                            setError(`Choose at most ${MAX_IMPORTANT_SKILLS} important skills.`);
-                            return s;
-                          }
-                          return { ...s, importantSkillIds: [...s.importantSkillIds, id] };
-                        })}
-                      ><Text style={[styles.importantTxt, important && styles.importantTxtOn]}>Important</Text></TouchableOpacity>
-                    </View>
-                  );
-                })}
+                {skillCategories.map((cat) => (
+                  <View key={String(cat.id || cat.name || '_all')}>
+                    {cat.name || cat.title ? (
+                      <Text style={styles.subHeader}>{cat.name || cat.title}</Text>
+                    ) : null}
+                    {cat.skills.map((node) => {
+                      const id = node.id || node.name;
+                      const selected = skills.selectedSkillIds.includes(id);
+                      const important = skills.importantSkillIds.includes(id);
+                      return (
+                        <View key={String(id)}>
+                          <Tick
+                            checked={selected}
+                            label={node.name || node.title || String(id)}
+                            onPress={() => setSkills((s) => ({
+                              ...s,
+                              selectedSkillIds: selected
+                                ? s.selectedSkillIds.filter((x) => x !== id)
+                                : [...s.selectedSkillIds, id],
+                              importantSkillIds: selected
+                                ? s.importantSkillIds.filter((x) => x !== id)
+                                : s.importantSkillIds,
+                            }))}
+                          />
+                          <TouchableOpacity
+                            disabled={!selected}
+                            style={[styles.important, important && styles.importantOn, !selected && styles.disabled]}
+                            onPress={() => setSkills((s) => {
+                              if (important) return { ...s, importantSkillIds: s.importantSkillIds.filter((x) => x !== id) };
+                              if (!canSelectImportantSkills(s.importantSkillIds.length)) {
+                                setError(`Choose at most ${MAX_IMPORTANT_SKILLS} important skills.`);
+                                return s;
+                              }
+                              return { ...s, importantSkillIds: [...s.importantSkillIds, id] };
+                            })}
+                          ><Text style={[styles.importantTxt, important && styles.importantTxtOn]}>Important</Text></TouchableOpacity>
+                        </View>
+                      );
+                    })}
+                  </View>
+                ))}
                 <Text style={styles.tip}>Choose up to {MAX_IMPORTANT_SKILLS} important skills.</Text>
               </>
             ) : null}
@@ -493,7 +949,11 @@ export default function StudentProfileScreen() {
 
             {error ? <Text style={styles.err}>{error}</Text> : null}
             <TouchableOpacity style={[styles.save, saving && styles.disabled]} disabled={saving} onPress={save}>
-              {saving ? <ActivityIndicator color="#fff" /> : <Text style={styles.saveTxt}>Save</Text>}
+              {saving ? <ActivityIndicator color="#fff" /> : (
+                <Text style={styles.saveTxt}>
+                  {active === 'personal' ? 'Save & Continue to University Preference' : 'Save'}
+                </Text>
+              )}
             </TouchableOpacity>
           </ScrollView>
         </>
@@ -519,18 +979,27 @@ const styles = StyleSheet.create({
   bodyContent: { paddingHorizontal: 12, paddingBottom: 24 },
   group: { marginBottom: 12 },
   label: { color: STUDENT.textSecondary, marginBottom: 4, fontWeight: '600', fontSize: 13 },
+  labelError: { color: '#a80036' },
   required: { color: '#a80036' },
   input: { borderWidth: 1, borderColor: STUDENT.border, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 11, color: STUDENT.textPrimary, backgroundColor: STUDENT.bgCard },
+  inputError: { borderColor: '#a80036' },
   dateText: { color: STUDENT.textPrimary },
-  multiline: { minHeight: 82, textAlignVertical: 'top' },
+  multiline: { minHeight: 72, textAlignVertical: 'top' },
   selectWrap: { borderWidth: 1, borderColor: STUDENT.border, borderRadius: 10, backgroundColor: STUDENT.bgCard, overflow: 'hidden' },
   picker: { color: STUDENT.textPrimary },
+  readOnly: { justifyContent: 'center' },
+  readOnlyText: { color: STUDENT.textMuted },
+  sectionHeader: { color: '#ffffff', fontWeight: '800', fontSize: 15, marginBottom: 10, marginTop: 6, backgroundColor: '#162a6a', padding: 8, borderRadius: 8 },
+  sectionHeaderDark: { color: '#ffffff', fontWeight: '800', fontSize: 15, marginBottom: 10, marginTop: 6, backgroundColor: '#162a6a', padding: 8, borderRadius: 8, borderLeftWidth: 4, borderLeftColor: STUDENT.accentCyan },
   subHeader: { color: STUDENT.accentCyan, fontWeight: '700', marginBottom: 6, marginTop: 4 },
+  subHeaderSm: { color: STUDENT.accentGold, fontWeight: '600', fontSize: 12, marginBottom: 4, marginTop: 4, paddingLeft: 8 },
+  mutedHint: { color: STUDENT.textMuted, fontStyle: 'italic', fontSize: 13, marginTop: 4 },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 8 },
   chip: { borderWidth: 1, borderColor: STUDENT.border, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 6, backgroundColor: STUDENT.bgCard },
   chipOn: { borderColor: STUDENT.accent, backgroundColor: 'rgba(79,70,229,0.35)' },
   chipTxt: { color: STUDENT.textSecondary, fontSize: 12 },
   chipTxtOn: { color: '#fff', fontWeight: '700' },
+  yesNoRow: { flexDirection: 'row', marginBottom: 8 },
   tickRow: { flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: STUDENT.border, borderRadius: 10, backgroundColor: STUDENT.bgCard, padding: 10, marginBottom: 8 },
   tickRowActive: { borderColor: STUDENT.accentCyan },
   tickBox: { width: 20, height: 20, borderWidth: 1, borderColor: STUDENT.textMuted, borderRadius: 6, alignItems: 'center', justifyContent: 'center', marginRight: 8 },
