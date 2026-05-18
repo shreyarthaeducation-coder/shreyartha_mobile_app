@@ -40,12 +40,12 @@ const DASHBOARD_CARDS = [
   {
     label: 'Skill Edge',
     icon: require('../../assets/images/skill-edge.png'),
-    route: '/student/resources',
+    route: '/student/skills-edge',
   },
   {
     label: 'Language Pro',
     icon: require('../../assets/images/language-pro.png'),
-    route: '/student/resources',
+    route: '/student/language-pro',
   },
   {
     label: 'Coding',
