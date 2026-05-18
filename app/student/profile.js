@@ -55,7 +55,6 @@ const SKILLS_EDGE_OPTIONS = [
 ];
 const COMMUNICATION_ROWS = ['Listening', 'Speaking', 'Reading', 'Writing'];
 const COMMUNICATION_LEVELS = ['Beginner', 'Average', 'Proficient'];
-const ACADEMIC_CLASS_OPTIONS = ['9', '10', '11', '12', '4', '1', '2', '3', '5'];
 const ACADEMIC_CHALLENGING_SUBJECT_OPTIONS = [
   'Science',
   'Mathematics',
@@ -74,6 +73,7 @@ const ACADEMIC_COMPETITIVE_EXAM_OPTIONS = [
 ];
 // Keeps card height aligned for one- and two-line skill labels in the grid.
 const SKILL_LABEL_MIN_HEIGHT = 34;
+const DEFAULT_SKILL_EMOJI = '✨';
 const SKILL_ALIAS_MAP = SKILLS_EDGE_OPTIONS.reduce((acc, skill) => {
   const variants = [
     skill.id.toLowerCase(),
@@ -95,7 +95,7 @@ const STREAM_SUBJECTS = {
   Commerce: ['Economics', 'Business Studies', 'Accountancy', 'Mathematics', 'English'],
   Arts: ['History', 'Geography', 'Political Science', 'Economics', 'English'],
 };
-const PERSONAL_REQUIRED = ['fullName', 'email', 'gender', 'dob', 'mobile', 'currentClass', 'strengths', 'weakness'];
+const PERSONAL_REQUIRED = ['fullName', 'email', 'gender', 'dob', 'mobile', 'currentClass', 'strengths', 'weakness', 'stream'];
 
 const unwrap = (value) => (value?.data && typeof value.data === 'object' ? value.data : value || {});
 const arr = (value) => (Array.isArray(value) ? value : value ? [value] : []);
@@ -110,6 +110,29 @@ const normalizeSkillId = (raw) => {
   const text = String(raw).trim().toLowerCase();
   return SKILL_ALIAS_MAP[text] || SKILL_ALIAS_MAP[text.replace(/&/g, 'and')] || SKILL_ALIAS_MAP[text.replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '')] || '';
 };
+const resolveSkillOptionId = (raw) => normalizeSkillId(raw)
+  || String(raw || '')
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '_')
+    .replace(/^_|_$/g, '');
+const skillOptionFromNode = (node) => {
+  const label = String(node?.name || node?.title || node?.label || '').trim();
+  if (!label) return null;
+  const aliasId = resolveSkillOptionId(node?.id || node?.key || node?.slug || label);
+  const fallbackMatch = SKILLS_EDGE_OPTIONS.find((skill) => normalizeText(skill.label) === normalizeText(label));
+  return {
+    id: aliasId || fallbackMatch?.id,
+    label,
+    emoji: node?.emoji || node?.icon || fallbackMatch?.emoji || DEFAULT_SKILL_EMOJI,
+  };
+};
+const flattenSkillOptions = (nodes) => arr(nodes).flatMap((node) => {
+  const children = arr(node?.skills || node?.children || node?.items || node?.subskills || node?.categories);
+  if (children.length > 0) return flattenSkillOptions(children);
+  const option = skillOptionFromNode(node);
+  return option ? [option] : [];
+});
 
 function SectionHeader({ title, dark }) {
   return <Text style={dark ? styles.sectionHeaderDark : styles.sectionHeader}>{title}</Text>;
@@ -305,15 +328,49 @@ export default function StudentProfileScreen() {
       studentService.getAdditionalProfile().catch(() => ({})),
     ]);
     const pD = unwrap(p); const aD = unwrap(a); const sD = unwrap(s); const uD = unwrap(u); const eD = unwrap(e); const adD = unwrap(ad);
+    const personalFavoriteSubjects = typeof (pD.favSubjects || pD.favoriteSubjects) === 'string'
+      ? (pD.favSubjects || pD.favoriteSubjects).split(',').map((item) => item.trim()).filter(Boolean)
+      : arr(pD.favSubjects || pD.favoriteSubjects);
+    const academicPreparing = aD.preparingCompetitiveExam != null
+      ? Boolean(aD.preparingCompetitiveExam)
+      : Boolean(aD.competitiveExamId || aD.competitiveExamName || arr(aD.entranceExamIds).length);
     setCompleted({
-      personal: Boolean((pD.fullName || pD.name || pD.studentName) && (pD.mobile || pD.phone) && pD.email),
-      academic: Boolean((aD.curriculumId || aD.curriculum || aD.curriculumName) && (aD.classId || aD.className || aD.class) && (arr(aD.challengingSubjectIds).length || arr(aD.challengingSubjects || aD.subjectNames).length || arr(aD.selectedTopicIds || aD.topicIds).length)),
+      personal: Boolean(
+        (pD.fullName || pD.name || pD.studentName)
+        && pD.email
+        && (pD.mobile || pD.phone)
+        && pD.gender
+        && (pD.dob || pD.dateOfBirth)
+        && (pD.currentClass || pD.className || pD.class)
+        && pD.strengths
+        && pD.weakness
+        && pD.stream
+        && personalFavoriteSubjects.length > 0
+      ),
+      academic: Boolean(
+        (aD.curriculumId || aD.curriculum || aD.curriculumName)
+        && (aD.classId || aD.className || aD.class)
+        && (arr(aD.challengingSubjectIds).length || arr(aD.challengingSubjects || aD.subjectNames).length || arr(aD.selectedTopicIds || aD.topicIds).length)
+        && (
+          aD.preparingCompetitiveExam != null
+          || aD.competitiveExamId
+          || aD.competitiveExamName
+          || arr(aD.entranceExamIds).length
+        )
+        && (
+          !academicPreparing
+          || aD.competitiveExamId
+          || aD.competitiveExamName
+        )
+        && arr(aD.entranceExamIds).length <= 2
+      ),
       skillsedge: Boolean(arr(sD.selectedSkillIds || sD.skillIds || sD.selectedSkills).length),
       university: Boolean(
         (uD.universityPreference1 || uD.preferredUniversity1)
         && (uD.coursePreference1 || uD.intendedCourse)
         && countWords(uD.personalStatement || uD.statementOfPurpose || '') >= 250
         && countWords(uD.personalStatement || uD.statementOfPurpose || '') <= 500
+        && countWords(uD.careerReason || uD.courseCareerReason || uD.whyThisCourse || '') >= 1
         && countWords(uD.careerReason || uD.courseCareerReason || uD.whyThisCourse || '') <= 200
       ),
       education: Boolean(eD.class10School && eD.class10Year && eD.class10Percentage && (eD.englishTestTaken !== 'Yes' || eD.ieltsScore || eD.toeflScore || eD.englishCertificateNumber)),
@@ -418,11 +475,14 @@ export default function StudentProfileScreen() {
         entranceExamIds: arr(a.entranceExamIds),
       });
 
+      const loadedSkillsTree = arr(sTree.skills || sTree.categories || sTree.nodes || sTree.children || sTree);
+      const availableSkillOptions = flattenSkillOptions(loadedSkillsTree);
+      const availableSkillIds = new Set((availableSkillOptions.length > 0 ? availableSkillOptions : SKILLS_EDGE_OPTIONS).map((option) => option.id));
       const selectedSkillIds = arr(s.selectedSkillIds || s.skillIds || s.selectedSkills).map((item) => {
         if (typeof item === 'string') return item;
         if (item && typeof item === 'object') return item.id || item.key || item.name || item.label;
         return item;
-      }).map(normalizeSkillId).filter((id) => SKILLS_EDGE_OPTIONS.some((skillOpt) => skillOpt.id === id));
+      }).map(resolveSkillOptionId).filter((id) => availableSkillIds.has(id));
       const communicationRatings = {
         Listening: s.communicationRatings?.Listening || s.englishCommunicationRating?.Listening || s.listeningRating || '',
         Speaking: s.communicationRatings?.Speaking || s.englishCommunicationRating?.Speaking || s.speakingRating || '',
@@ -442,7 +502,7 @@ export default function StudentProfileScreen() {
           || s.isSelectionSaved
         ),
       });
-      setSkillsTree(arr(sTree.skills || sTree.categories || sTree.nodes || sTree.children || sTree));
+      setSkillsTree(loadedSkillsTree);
       setUniversity({
         id: u.id || null,
         country: u.country || arr(u.preferredCountries || u.countries)[0] || '',
@@ -476,29 +536,33 @@ export default function StudentProfileScreen() {
   useEffect(() => { load(); }, [load]);
 
   const pickMedia = async (kind) => {
-    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!permission.granted) return Alert.alert('Permission denied', 'Media permission is required.');
-    const mediaTypes = kind === 'video'
-      ? ImagePicker.MediaTypeOptions.Videos
-      : ImagePicker.MediaTypeOptions.Images;
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes,
-      allowsEditing: kind === 'image',
-      quality: 0.8,
-    });
-    if (result.canceled || !result.assets?.[0]) return;
-    const asset = result.assets[0];
-    const form = new FormData();
-    const extension = asset.fileName?.split('.').pop()
-      || asset.mimeType?.split('/').pop()
-      || (kind === 'video' ? 'mp4' : 'jpg');
-    form.append('file', {
-      uri: asset.uri,
-      name: asset.fileName || `${kind}-${Date.now()}.${extension}`,
-      type: asset.mimeType || (kind === 'video' ? 'video/mp4' : 'image/jpeg'),
-    });
-    await (kind === 'video' ? studentService.uploadProfileVideo(form) : studentService.uploadProfilePicture(form));
-    await load();
+    try {
+      const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!permission.granted) return Alert.alert('Permission denied', 'Media permission is required.');
+      const mediaTypes = kind === 'video'
+        ? ImagePicker.MediaTypeOptions.Videos
+        : ImagePicker.MediaTypeOptions.Images;
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes,
+        allowsEditing: kind === 'image',
+        quality: 0.8,
+      });
+      if (result.canceled || !result.assets?.[0]) return;
+      const asset = result.assets[0];
+      const form = new FormData();
+      const extension = asset.fileName?.split('.').pop()
+        || asset.mimeType?.split('/').pop()
+        || (kind === 'video' ? 'mp4' : 'jpg');
+      form.append('file', {
+        uri: asset.uri,
+        name: asset.fileName || `${kind}-${Date.now()}.${extension}`,
+        type: asset.mimeType || (kind === 'video' ? 'video/mp4' : 'image/jpeg'),
+      });
+      await (kind === 'video' ? studentService.uploadProfileVideo(form) : studentService.uploadProfilePicture(form));
+      await load();
+    } catch (err) {
+      Alert.alert('Upload failed', err?.message || `Could not ${kind === 'video' ? 'upload the video' : 'change the photo'}.`);
+    }
   };
 
   const save = async () => {
@@ -512,6 +576,7 @@ export default function StudentProfileScreen() {
         if (!val || (typeof val === 'string' && !val.trim())) errs[key] = true;
       });
       if (!personal.favSubjects || personal.favSubjects.length === 0) errs.favSubjects = true;
+      if (personal.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(personal.email.trim())) errs.email = true;
       if (personal.mobile && !/^[0-9]{10,15}$/.test(personal.mobile.trim())) errs.mobile = true;
       if (Object.keys(errs).length > 0) {
         setPersonalErrors(errs);
@@ -538,9 +603,7 @@ export default function StudentProfileScreen() {
         if (surveyQuestions.length > 0) {
           await studentService.saveStudentSurvey(surveyAnswers);
         }
-        if (personal.fullName && personal.gender && personal.dob && personal.currentClass) {
-          setPersonalLocked(true);
-        }
+        setPersonalLocked(true);
         await fetchCompletion();
         Alert.alert('Updated!', 'Personal details saved successfully.');
       } catch (err) {
@@ -551,6 +614,17 @@ export default function StudentProfileScreen() {
       return;
     }
 
+    if (active === 'academic') {
+      if (!academic.curriculumId) return setError('Please select a curriculum.');
+      if (!academic.classId && !academic.classLabel) return setError('Please select a class.');
+      if (!academic.challengingSubjects.length && !academic.challengingSubjectIds.length) return setError('Please select at least one challenging subject.');
+      if ((academic.challengingSubjects.length + academic.challengingSubjectIds.length) > 2) return setError('You can select up to 2 challenging subjects.');
+      if (academic.preparingCompetitiveExam == null) return setError('Please select whether you are preparing for a competitive examination.');
+      if (academic.preparingCompetitiveExam && !academic.competitiveExamId && !academic.competitiveExamName) {
+        return setError('Please choose a competitive examination category.');
+      }
+      if (academic.entranceExamIds.length > 2) return setError('You can select up to 2 entrance exams.');
+    }
     if (active === 'skillsedge') {
       if (!skills.selectedSkillIds.length) return setError('Please select at least one skill.');
       if (COMMUNICATION_ROWS.some((row) => !skills.communicationRatings[row])) {
@@ -564,6 +638,7 @@ export default function StudentProfileScreen() {
       if (university.country === 'India' && !university.state) return setError('Please select a state.');
       if (!university.universityPreference1.trim() || !university.coursePreference1.trim()) return setError('University Preference 1 and Course Preference 1 are required.');
       if (personalStatementWords < 250 || personalStatementWords > 500) return setError('Personal Statement must be between 250 and 500 words.');
+      if (!university.careerReason.trim()) return setError('Please provide a reason for why you want to pursue this course/career.');
       if (careerReasonWords > 200) return setError('Why do you want to pursue this course/career? must be 200 words or less.');
     }
     if (active === 'education') {
@@ -651,10 +726,16 @@ export default function StudentProfileScreen() {
   const selectedCurriculumNode = tree.find((x) => x.id === academic.curriculumId);
   const filteredCurriculums = tree.filter((c) => !hiddenNodeIds.includes(c.id));
   const filteredClasses = arr(selectedCurriculumNode?.classes || selectedCurriculumNode?.children).filter((c) => !hiddenNodeIds.includes(c.id));
-  const orderedClassOptions = ACADEMIC_CLASS_OPTIONS.map((label) => {
-    const node = filteredClasses.find((c) => classToken(c.name || c.title) === label);
-    return { label, id: node?.id || null };
-  });
+  const orderedClassOptions = filteredClasses.length > 0
+    ? filteredClasses
+      .map((node) => ({ label: classToken(node.name || node.title), id: node?.id || null }))
+      .sort((a, b) => {
+        const aNum = Number(a.label);
+        const bNum = Number(b.label);
+        if (!Number.isNaN(aNum) && !Number.isNaN(bNum)) return aNum - bNum;
+        return String(a.label).localeCompare(String(b.label));
+      })
+    : Array.from({ length: 12 }, (_, i) => ({ label: String(i + 1), id: null }));
   const selectedClassNode = filteredClasses.find((c) => c.id === academic.classId)
     || filteredClasses.find((c) => classToken(c.name || c.title) === classToken(academic.classLabel));
   const classSubjects = arr(selectedClassNode?.subjects || selectedClassNode?.children).filter((s) => !hiddenNodeIds.includes(s.id));
@@ -672,6 +753,22 @@ export default function StudentProfileScreen() {
   const selectedExam = filteredExams.find((x) => x.id === academic.competitiveExamId)
     || examByName[normalizeText(academic.competitiveExamName)];
   const entranceExamOptions = arr(selectedExam?.entranceExams || selectedExam?.exams || []);
+  const challengingSubjectOptions = classSubjects.length > 0
+    ? classSubjects.map((subject) => ({ id: subject?.id, label: subject?.name || subject?.title || String(subject?.id) }))
+    : ACADEMIC_CHALLENGING_SUBJECT_OPTIONS.map((label) => ({ id: subjectByName[normalizeText(label)]?.id, label }));
+  const competitiveExamOptions = filteredExams.length > 0
+    ? filteredExams.map((exam) => ({ id: exam?.id, label: exam?.name || exam?.title || String(exam?.id) }))
+    : ACADEMIC_COMPETITIVE_EXAM_OPTIONS.map((label) => ({ id: examByName[normalizeText(label)]?.id, label }));
+  const skillsEdgeOptions = useMemo(() => {
+    const resolvedSkillOptions = flattenSkillOptions(skillsTree);
+    const source = resolvedSkillOptions.length > 0 ? resolvedSkillOptions : SKILLS_EDGE_OPTIONS;
+    const seen = new Set();
+    return source.filter((option) => {
+      if (seen.has(option.id)) return false;
+      seen.add(option.id);
+      return true;
+    });
+  }, [skillsTree]);
 
   return (
     <SafeAreaView style={styles.root} edges={['top', 'left', 'right']}>
@@ -681,9 +778,23 @@ export default function StudentProfileScreen() {
         progress={progress}
         media={media}
         onPhotoPick={() => pickMedia('image')}
-        onPhotoDelete={async () => { await studentService.deleteProfilePicture(); await load(); }}
+        onPhotoDelete={async () => {
+          try {
+            await studentService.deleteProfilePicture();
+            await load();
+          } catch (err) {
+            Alert.alert('Delete failed', err?.message || 'Could not remove the profile photo.');
+          }
+        }}
         onVideoPick={() => pickMedia('video')}
-        onVideoDelete={async () => { await studentService.deleteProfileVideo(); await load(); }}
+        onVideoDelete={async () => {
+          try {
+            await studentService.deleteProfileVideo();
+            await load();
+          } catch (err) {
+            Alert.alert('Delete failed', err?.message || 'Could not remove the profile video.');
+          }
+        }}
       />
 
       <View style={styles.header}>
@@ -922,14 +1033,14 @@ export default function StudentProfileScreen() {
 
                 <Text style={styles.subHeader}>Subjects you find challenging (Max 2)</Text>
                 {(() => {
-                  const selectedSubjectCount = ACADEMIC_CHALLENGING_SUBJECT_OPTIONS.filter((subjectName) => {
+                  const selectedSubjectCount = challengingSubjectOptions.filter(({ label: subjectName }) => {
                     const subjectNode = subjectByName[normalizeText(subjectName)];
                     return academic.challengingSubjects.includes(subjectName)
                       || (subjectNode?.id && academic.challengingSubjectIds.includes(subjectNode.id));
                   }).length;
-                  return ACADEMIC_CHALLENGING_SUBJECT_OPTIONS.map((subjectName) => {
+                  return challengingSubjectOptions.map(({ id: optionId, label: subjectName }) => {
                     const subjectNode = subjectByName[normalizeText(subjectName)];
-                    const subjectId = subjectNode?.id;
+                    const subjectId = subjectNode?.id || optionId;
                     const checked = academic.challengingSubjects.includes(subjectName)
                       || (subjectId && academic.challengingSubjectIds.includes(subjectId));
                     const disableNew = !checked && selectedSubjectCount >= 2;
@@ -988,8 +1099,8 @@ export default function StudentProfileScreen() {
                 {academic.preparingCompetitiveExam === true ? (
                   <>
                     <Text style={styles.subHeader}>Which Competitive Examination are you preparing for? (Max 1)</Text>
-                    {ACADEMIC_COMPETITIVE_EXAM_OPTIONS.map((examName) => {
-                      const examNode = examByName[normalizeText(examName)];
+                    {competitiveExamOptions.map(({ id, label: examName }) => {
+                      const examNode = filteredExams.find((exam) => exam.id === id) || examByName[normalizeText(examName)];
                       const selected = normalizeText(academic.competitiveExamName) === normalizeText(examName)
                         || (examNode?.id && academic.competitiveExamId === examNode.id);
                       return (
@@ -1016,11 +1127,14 @@ export default function StudentProfileScreen() {
                         {entranceExamOptions.map((ee) => {
                           const id = ee.id;
                           const checked = academic.entranceExamIds.includes(id);
+                          const disableNew = !checked && academic.entranceExamIds.length >= 2;
                           return (
                             <Tick
                               key={String(id)}
                               checked={checked}
                               label={ee.name || ee.title || String(id)}
+                              disabled={disableNew}
+                              accessibilityHint={disableNew ? 'Maximum 2 entrance exams can be selected' : undefined}
                               onPress={() => setAcademic((a) => ({
                                 ...a,
                                 entranceExamIds: checked
@@ -1042,7 +1156,7 @@ export default function StudentProfileScreen() {
               <>
                 <Text style={styles.subHeader}>Which of these skills are important for your future career? <Text style={styles.required}>*</Text></Text>
                 <View style={styles.skillsGrid}>
-                  {SKILLS_EDGE_OPTIONS.map((skillOpt) => {
+                  {skillsEdgeOptions.map((skillOpt) => {
                     const selected = skills.selectedSkillIds.includes(skillOpt.id);
                     return (
                       <TouchableOpacity
@@ -1156,7 +1270,7 @@ export default function StudentProfileScreen() {
               {saving ? <ActivityIndicator color="#fff" /> : (
                 <Text style={styles.saveTxt}>
                   {active === 'personal'
-                    ? 'Save & Continue to University Preference'
+                    ? 'Save & Continue'
                     : active === 'skillsedge'
                       ? (skills.locked ? 'Selections Saved' : 'Save & Continue')
                       : 'Save & Continue'}
