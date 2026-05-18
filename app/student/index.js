@@ -30,12 +30,12 @@ const DASHBOARD_CARDS = [
   {
     label: 'Psychometric Assessment',
     icon: require('../../assets/images/psychometric-assessment.png'),
-    route: '/student/academic',
+    route: '/student/psychometric-assessment',
   },
   {
     label: 'Subject & Career',
     icon: require('../../assets/images/subject-career.png'),
-    route: '/student/resources',
+    route: '/student/subject-career',
   },
   {
     label: 'Skill Edge',

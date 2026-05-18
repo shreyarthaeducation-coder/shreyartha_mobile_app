@@ -52,6 +52,22 @@ export const studentService = {
   createAdditionalProfile: (data) => api.post('/api/additional/profile', data),
   updateAdditionalProfile: (data) => api.put('/api/additional/profile', data),
 
+  // ── Psychometric Assessment ───────────────────────────────────────────────
+  getPsychometricCategories: () => api.get('/api/psychometric/categories'),
+  getPsychometricIntro: (categoryId) => api.get(`/api/psychometric/categories/${encodeURIComponent(categoryId)}`),
+  getPsychometricQuestions: (categoryId) => api.get(`/api/psychometric/categories/${encodeURIComponent(categoryId)}/questions`),
+  submitPsychometricAssessment: (categoryId, data) => api.post(`/api/psychometric/categories/${encodeURIComponent(categoryId)}/submit`, data),
+  getPsychometricResult: (categoryId) => api.get(`/api/psychometric/categories/${encodeURIComponent(categoryId)}/result`),
+
+  // ── Subject & Career ──────────────────────────────────────────────────────
+  getSubjectCareerStreams: () => api.get('/api/subject-career/streams'),
+  getSubjectCareerMajors: (streamId) => api.get(`/api/subject-career/streams/${encodeURIComponent(streamId)}/majors`),
+  getSubjectCareerOptics: (streamId, majorId) => api.get(`/api/subject-career/streams/${encodeURIComponent(streamId)}/majors/${encodeURIComponent(majorId)}/careers`),
+  getSubjectCareerContent: ({ streamId, majorId, careerId, section }) =>
+    api.get(
+      `/api/subject-career/content?streamId=${encodeURIComponent(streamId)}&majorId=${encodeURIComponent(majorId)}&careerId=${encodeURIComponent(careerId)}&section=${encodeURIComponent(section)}`,
+    ),
+
   // ── Resources ──────────────────────────────────────────────────────────────
   getResources: () => api.get('/api/students/resources'),
   getResourceCategories: () => api.get('/api/students/resources/categories'),
