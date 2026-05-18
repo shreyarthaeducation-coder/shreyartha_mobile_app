@@ -30,6 +30,7 @@ const arr = (value) => (Array.isArray(value) ? value : value ? [value] : []);
 const unwrap = (value) => (value?.data && typeof value.data === 'object' ? value.data : value || {});
 const nodeLabel = (node, fallback = '') => String(node?.name || node?.title || node?.label || fallback || '').trim();
 const normalize = (value) => String(value || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+const asText = (value) => String(value ?? '').trim();
 
 function levelBadge(levelRaw) {
   const level = String(levelRaw || 'Beginner');
@@ -261,10 +262,7 @@ export default function LanguageProScreen() {
             ) : (
               <>
                 <Text style={styles.topicContentText}>
-                  {String(topicContent?.content || topicContent?.text || topicContent?.description || topicContent?.body || 'No content is available for this topic yet.')
-                    .replace(/<[^>]*>/g, ' ')
-                    .replace(/\s+/g, ' ')
-                    .trim()}
+                  {asText(topicContent?.content || topicContent?.text || topicContent?.description || topicContent?.body || 'No content is available for this topic yet.')}
                 </Text>
                 {arr(topicContent?.attachments || topicContent?.resources || topicContent?.files || topicContent?.media).map((item, index) => {
                   const label = item?.title || item?.name || item?.url || item?.link || `Attachment ${index + 1}`;

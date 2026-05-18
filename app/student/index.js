@@ -38,7 +38,7 @@ const DASHBOARD_CARDS = [
     route: '/student/subject-career',
   },
   {
-    label: 'Skill Edge',
+    label: 'Skills Edge',
     icon: require('../../assets/images/skill-edge.png'),
     route: '/student/skills-edge',
   },

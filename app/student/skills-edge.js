@@ -24,6 +24,7 @@ const arr = (value) => (Array.isArray(value) ? value : value ? [value] : []);
 const unwrap = (value) => (value?.data && typeof value.data === 'object' ? value.data : value || {});
 const nodeLabel = (node, fallback = '') => String(node?.name || node?.title || node?.label || fallback || '').trim();
 const normalize = (value) => String(value || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+const asText = (value) => String(value ?? '').trim();
 
 async function requestWithFallbacks(candidates) {
   let lastError;
@@ -456,7 +457,7 @@ export default function SkillsEdgeScreen() {
           <View style={styles.modalCard}>
             <Text style={styles.sectionTitle}>{moduleModal?.title || 'Module'}</Text>
             <ScrollView style={{ maxHeight: 360 }}>
-              {moduleModal?.content ? <Text style={styles.objectiveDetail}>{String(moduleModal.content).replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim()}</Text> : null}
+              {moduleModal?.content ? <Text style={styles.objectiveDetail}>{asText(moduleModal.content)}</Text> : null}
               {arr(moduleModal?.attachments).map((item, index) => {
                 const label = item?.title || item?.name || item?.url || item?.link || `Attachment ${index + 1}`;
                 const link = item?.url || item?.link || item?.src || item?.fileUrl;
