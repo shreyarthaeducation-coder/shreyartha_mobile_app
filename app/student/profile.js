@@ -32,8 +32,35 @@ const TABS = [
 
 const YEAR_OPTIONS = Array.from({ length: 20 }, (_, i) => String(new Date().getFullYear() + 5 - i));
 const COUNTRIES = ['India', 'USA', 'UK', 'Canada', 'Australia', 'Germany', 'Singapore'];
-const MAX_IMPORTANT_SKILLS = 2;
-const canSelectImportantSkills = (count) => count < MAX_IMPORTANT_SKILLS;
+const INDIAN_STATES = [
+  'Andhra Pradesh', 'Arunachal Pradesh', 'Assam', 'Bihar', 'Chhattisgarh', 'Goa', 'Gujarat', 'Haryana', 'Himachal Pradesh',
+  'Jharkhand', 'Karnataka', 'Kerala', 'Madhya Pradesh', 'Maharashtra', 'Manipur', 'Meghalaya', 'Mizoram', 'Nagaland',
+  'Odisha', 'Punjab', 'Rajasthan', 'Sikkim', 'Tamil Nadu', 'Telangana', 'Tripura', 'Uttar Pradesh', 'Uttarakhand', 'West Bengal',
+  'Delhi', 'Jammu and Kashmir', 'Ladakh',
+];
+const SKILLS_EDGE_OPTIONS = [
+  { id: 'financial_awareness', label: 'Financial Awareness', emoji: '💰' },
+  { id: 'entrepreneurship', label: 'Entrepreneurship', emoji: '🚀' },
+  { id: 'art_craft', label: 'Art & Craft', emoji: '🎨' },
+  { id: 'coding_technology', label: 'Coding & Technology', emoji: '💻' },
+  { id: 'digital_arts', label: 'Digital Arts', emoji: '🎭' },
+  { id: 'life_skills', label: 'Life Skills', emoji: '🌱' },
+  { id: 'performing_arts', label: 'Performing Arts', emoji: '🎤' },
+  { id: 'world_languages', label: 'World Languages', emoji: '🌍' },
+  { id: 'sports_yoga', label: 'Sports & Yoga', emoji: '⚽' },
+  { id: 'toefl', label: 'TOEFL', emoji: '📘' },
+  { id: 'beauty_wellness', label: 'Beauty & Wellness', emoji: '💄' },
+  { id: 'ielts', label: 'IELTS', emoji: '📗' },
+  { id: 'fashion_design', label: 'Fashion Design', emoji: '👗' },
+];
+const COMMUNICATION_ROWS = ['Listening', 'Speaking', 'Reading', 'Writing'];
+const COMMUNICATION_LEVELS = ['Beginner', 'Average', 'Proficient'];
+const SKILL_ALIAS_MAP = SKILLS_EDGE_OPTIONS.reduce((acc, skill) => {
+  acc[skill.id.toLowerCase()] = skill.id;
+  acc[skill.label.toLowerCase()] = skill.id;
+  acc[`${skill.emoji} ${skill.label}`.toLowerCase()] = skill.id;
+  return acc;
+}, {});
 
 const GENDER_OPTIONS = ['Male', 'Female', 'Non-Binary', 'Prefer not to say'];
 const CLASS_OPTIONS = [6, 7, 8, 9, 10, 11, 12];
@@ -48,6 +75,12 @@ const PERSONAL_REQUIRED = ['fullName', 'email', 'gender', 'dob', 'mobile', 'curr
 
 const unwrap = (value) => (value?.data && typeof value.data === 'object' ? value.data : value || {});
 const arr = (value) => (Array.isArray(value) ? value : value ? [value] : []);
+const countWords = (text) => (text || '').trim().split(/\s+/).filter(Boolean).length;
+const normalizeSkillId = (raw) => {
+  if (raw == null) return '';
+  const text = String(raw).trim().toLowerCase();
+  return SKILL_ALIAS_MAP[text] || text.replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '');
+};
 
 function SectionHeader({ title, dark }) {
   return <Text style={dark ? styles.sectionHeaderDark : styles.sectionHeader}>{title}</Text>;
@@ -187,9 +220,28 @@ export default function StudentProfileScreen() {
     competitiveExamId: null,
     entranceExamIds: [],
   });
-  const [skills, setSkills] = useState({ id: null, selectedSkillIds: [], importantSkillIds: [] });
-  const [university, setUniversity] = useState({ id: null, preferredCountries: [], intendedCourse: '', intakeYear: '', budgetRange: '' });
-  const [education, setEducation] = useState({ id: null, class10School: '', class10Year: '', class10Percentage: '', class12School: '', class12Year: '', class12Percentage: '', englishTestTaken: '', englishCertificateNumber: '' });
+  const [skills, setSkills] = useState({ id: null, selectedSkillIds: [], communicationRatings: { Listening: '', Speaking: '', Reading: '', Writing: '' }, locked: false });
+  const [university, setUniversity] = useState({
+    id: null,
+    country: '',
+    state: '',
+    universityPreference1: '',
+    coursePreference1: '',
+    universityPreference2: '',
+    coursePreference2: '',
+    personalStatement: '',
+    careerReason: '',
+  });
+  const [education, setEducation] = useState({
+    id: null,
+    class10School: '',
+    class10Year: '',
+    class10Percentage: '',
+    englishTestTaken: '',
+    ieltsScore: '',
+    toeflScore: '',
+    englishCertificateNumber: '',
+  });
   const [additional, setAdditional] = useState({ id: null, hobbies: '', achievements: '', volunteerWork: '', linkedinUrl: '', portfolioUrl: '', aboutMe: '' });
   const [completed, setCompleted] = useState({ personal: false, academic: false, skillsedge: false, university: false, education: false, additional: false });
 
@@ -216,9 +268,9 @@ export default function StudentProfileScreen() {
     setCompleted({
       personal: Boolean((pD.fullName || pD.name || pD.studentName) && (pD.mobile || pD.phone) && pD.email),
       academic: Boolean((aD.curriculumId || aD.curriculum || aD.curriculumName) && (aD.classId || aD.className || aD.class) && (arr(aD.challengingSubjectIds).length || arr(aD.selectedTopicIds || aD.topicIds).length)),
-      skillsedge: Boolean(arr(sD.selectedSkillIds || sD.skillIds).length && arr(sD.importantSkillIds || sD.topSkillIds).length),
-      university: Boolean(arr(uD.preferredCountries || uD.countries).length && uD.intendedCourse),
-      education: Boolean(eD.class10School && eD.class10Year && eD.class10Percentage && (eD.englishTestTaken !== 'Yes' || eD.englishCertificateNumber)),
+      skillsedge: Boolean(arr(sD.selectedSkillIds || sD.skillIds || sD.selectedSkills).length),
+      university: Boolean((uD.universityPreference1 || uD.preferredUniversity1) && (uD.coursePreference1 || uD.intendedCourse) && (uD.personalStatement || uD.statementOfPurpose) && (uD.careerReason || uD.courseCareerReason || uD.whyThisCourse)),
+      education: Boolean(eD.class10School && eD.class10Year && eD.class10Percentage && (eD.englishTestTaken !== 'Yes' || eD.ieltsScore || eD.toeflScore || eD.englishCertificateNumber)),
       additional: Boolean(adD.hobbies || adD.achievements || adD.aboutMe),
     });
   }, []);
@@ -313,10 +365,53 @@ export default function StudentProfileScreen() {
         entranceExamIds: arr(a.entranceExamIds),
       });
 
-      setSkills({ id: s.id || null, selectedSkillIds: arr(s.selectedSkillIds || s.skillIds), importantSkillIds: arr(s.importantSkillIds || s.topSkillIds) });
+      const selectedSkillIds = arr(s.selectedSkillIds || s.skillIds || s.selectedSkills).map((item) => {
+        if (typeof item === 'string') return item;
+        if (item && typeof item === 'object') return item.id || item.key || item.name || item.label;
+        return item;
+      }).map(normalizeSkillId).filter((id) => SKILLS_EDGE_OPTIONS.some((skillOpt) => skillOpt.id === id));
+      const communicationRatings = {
+        Listening: s.communicationRatings?.Listening || s.englishCommunicationRating?.Listening || s.listeningRating || '',
+        Speaking: s.communicationRatings?.Speaking || s.englishCommunicationRating?.Speaking || s.speakingRating || '',
+        Reading: s.communicationRatings?.Reading || s.englishCommunicationRating?.Reading || s.readingRating || '',
+        Writing: s.communicationRatings?.Writing || s.englishCommunicationRating?.Writing || s.writingRating || '',
+      };
+      setSkills({
+        id: s.id || null,
+        selectedSkillIds,
+        communicationRatings,
+        locked: Boolean(
+          s.locked
+          || s.isLocked
+          || s.selectionsLocked
+          || s.selectionLocked
+          || s.selectionsSaved
+          || s.isSelectionSaved
+          || ((s.id || s._id) && selectedSkillIds.length > 0)
+        ),
+      });
       setSkillsTree(arr(sTree.skills || sTree.categories || sTree.nodes || sTree.children || sTree));
-      setUniversity({ id: u.id || null, preferredCountries: arr(u.preferredCountries || u.countries), intendedCourse: u.intendedCourse || '', intakeYear: u.intakeYear ? String(u.intakeYear) : '', budgetRange: u.budgetRange || '' });
-      setEducation({ id: e.id || null, class10School: e.class10School || '', class10Year: e.class10Year ? String(e.class10Year) : '', class10Percentage: e.class10Percentage ? String(e.class10Percentage) : '', class12School: e.class12School || '', class12Year: e.class12Year ? String(e.class12Year) : '', class12Percentage: e.class12Percentage ? String(e.class12Percentage) : '', englishTestTaken: e.englishTestTaken || '', englishCertificateNumber: e.englishCertificateNumber || '' });
+      setUniversity({
+        id: u.id || null,
+        country: u.country || arr(u.preferredCountries || u.countries)[0] || '',
+        state: u.state || u.indiaState || '',
+        universityPreference1: u.universityPreference1 || u.preferredUniversity1 || '',
+        coursePreference1: u.coursePreference1 || u.intendedCourse || '',
+        universityPreference2: u.universityPreference2 || u.preferredUniversity2 || '',
+        coursePreference2: u.coursePreference2 || '',
+        personalStatement: u.personalStatement || u.statementOfPurpose || '',
+        careerReason: u.careerReason || u.courseCareerReason || u.whyThisCourse || '',
+      });
+      setEducation({
+        id: e.id || null,
+        class10School: e.class10School || '',
+        class10Year: e.class10Year ? String(e.class10Year) : '',
+        class10Percentage: e.class10Percentage ? String(e.class10Percentage) : '',
+        englishTestTaken: e.englishTestTaken || '',
+        ieltsScore: e.ieltsScore ? String(e.ieltsScore) : '',
+        toeflScore: e.toeflScore ? String(e.toeflScore) : '',
+        englishCertificateNumber: e.englishCertificateNumber || '',
+      });
       setAdditional({ id: ad.id || null, hobbies: ad.hobbies || '', achievements: ad.achievements || '', volunteerWork: ad.volunteerWork || '', linkedinUrl: ad.linkedinUrl || '', portfolioUrl: ad.portfolioUrl || '', aboutMe: ad.aboutMe || '' });
       await fetchCompletion();
     } catch (err) {
@@ -404,10 +499,32 @@ export default function StudentProfileScreen() {
       return;
     }
 
-    if (active === 'skillsedge' && skills.importantSkillIds.length > MAX_IMPORTANT_SKILLS) {
-      return setError(`Choose at most ${MAX_IMPORTANT_SKILLS} important skills.`);
+    if (active === 'skillsedge') {
+      if (!skills.selectedSkillIds.length) return setError('Please select at least one skill.');
+      if (COMMUNICATION_ROWS.some((row) => !skills.communicationRatings[row])) {
+        return setError('Please select English communication rating for all skills.');
+      }
     }
-    if (active === 'education' && education.englishTestTaken === 'Yes' && !education.englishCertificateNumber.trim()) return setError('English certificate number is required.');
+    if (active === 'university') {
+      const personalStatementWords = countWords(university.personalStatement);
+      const careerReasonWords = countWords(university.careerReason);
+      if (!university.country) return setError('Please select a country.');
+      if (university.country === 'India' && !university.state) return setError('Please select a state.');
+      if (!university.universityPreference1.trim() || !university.coursePreference1.trim()) return setError('University Preference 1 and Course Preference 1 are required.');
+      if (personalStatementWords < 250 || personalStatementWords > 500) return setError('Personal Statement must be between 250 and 500 words.');
+      if (careerReasonWords > 200) return setError('Why do you want to pursue this course/career? must be 200 words or less.');
+    }
+    if (active === 'education') {
+      if (!education.class10School.trim() || !education.class10Year.trim() || !education.class10Percentage.trim()) {
+        return setError('Class 10 School Name, Year of Passing and Percentage are required.');
+      }
+      if (!/^\d{4}$/.test(education.class10Year.trim())) return setError('Class 10 Year of Passing must be a valid 4-digit year.');
+      if (!/^\d+(\.\d+)?$/.test(education.class10Percentage.trim())) return setError('Class 10 Percentage must be numeric.');
+      if (!education.englishTestTaken) return setError('Please select if you have taken an English proficiency test.');
+      if (education.englishTestTaken === 'Yes' && !education.ieltsScore.trim() && !education.toeflScore.trim() && !education.englishCertificateNumber.trim()) {
+        return setError('Please provide IELTS/TOEFL score details.');
+      }
+    }
     setSaving(true);
     try {
       if (active === 'academic') {
@@ -423,9 +540,40 @@ export default function StudentProfileScreen() {
         };
         await (academic.id ? studentService.updateAcademicProfile(payload) : studentService.createAcademicProfile(payload));
       }
-      if (active === 'skillsedge') await (skills.id ? studentService.updateSkillsProfile(skills) : studentService.createSkillsProfile(skills));
-      if (active === 'university') await (university.id ? studentService.updateUniversityProfile(university) : studentService.createUniversityProfile(university));
-      if (active === 'education') await (education.id ? studentService.updateEducationProfile(education) : studentService.createEducationProfile(education));
+      if (active === 'skillsedge') {
+        const payload = {
+          ...skills,
+          selectedSkills: skills.selectedSkillIds,
+          englishCommunicationRating: skills.communicationRatings,
+          listeningRating: skills.communicationRatings.Listening,
+          speakingRating: skills.communicationRatings.Speaking,
+          readingRating: skills.communicationRatings.Reading,
+          writingRating: skills.communicationRatings.Writing,
+        };
+        await (skills.id ? studentService.updateSkillsProfile(payload) : studentService.createSkillsProfile(payload));
+        setSkills((prev) => ({ ...prev, locked: true }));
+      }
+      if (active === 'university') {
+        const payload = {
+          ...university,
+          preferredCountries: university.country ? [university.country] : [],
+          countries: university.country ? [university.country] : [],
+          intendedCourse: university.coursePreference1,
+          preferredUniversity1: university.universityPreference1,
+          preferredUniversity2: university.universityPreference2,
+          state: university.country === 'India' ? university.state : '',
+        };
+        await (university.id ? studentService.updateUniversityProfile(payload) : studentService.createUniversityProfile(payload));
+      }
+      if (active === 'education') {
+        const payload = {
+          ...education,
+          ieltsScore: education.englishTestTaken === 'Yes' ? education.ieltsScore : '',
+          toeflScore: education.englishTestTaken === 'Yes' ? education.toeflScore : '',
+          englishCertificateNumber: education.englishTestTaken === 'Yes' ? education.englishCertificateNumber : '',
+        };
+        await (education.id ? studentService.updateEducationProfile(payload) : studentService.createEducationProfile(payload));
+      }
       if (active === 'additional') await (additional.id ? studentService.updateAdditionalProfile(additional) : studentService.createAdditionalProfile(additional));
       await fetchCompletion();
       Alert.alert('Saved', 'Section saved successfully.');
@@ -444,20 +592,6 @@ export default function StudentProfileScreen() {
   const filteredExams = arr(exams).filter((x) => !hiddenExamIds.includes(x.id));
   const selectedExam = filteredExams.find((x) => x.id === academic.competitiveExamId);
   const entranceExamOptions = arr(selectedExam?.entranceExams || selectedExam?.exams || []);
-
-  const skillCategories = useMemo(() => {
-    const cats = arr(skillsTree);
-    // If tree is a list of categories (each with skills/children), use as-is
-    const hasCategories = cats.some((c) => arr(c.skills || c.children).length > 0);
-    if (hasCategories) {
-      return cats.map((cat) => ({
-        ...cat,
-        skills: arr(cat.skills || cat.children || []),
-      })).filter((cat) => cat.skills.length > 0);
-    }
-    // Flat list fallback
-    return [{ id: '_all', name: '', skills: cats }];
-  }, [skillsTree]);
 
   return (
     <SafeAreaView style={styles.root} edges={['top', 'left', 'right']}>
@@ -865,74 +999,103 @@ export default function StudentProfileScreen() {
             {/* ─── Skills Edge ──────────────────────────────────────── */}
             {active === 'skillsedge' ? (
               <>
-                {skillCategories.map((cat) => (
-                  <View key={String(cat.id || cat.name || '_all')}>
-                    {cat.name || cat.title ? (
-                      <Text style={styles.subHeader}>{cat.name || cat.title}</Text>
-                    ) : null}
-                    {cat.skills.map((node) => {
-                      const id = node.id || node.name;
-                      const selected = skills.selectedSkillIds.includes(id);
-                      const important = skills.importantSkillIds.includes(id);
-                      return (
-                        <View key={String(id)}>
-                          <Tick
-                            checked={selected}
-                            label={node.name || node.title || String(id)}
-                            onPress={() => setSkills((s) => ({
-                              ...s,
-                              selectedSkillIds: selected
-                                ? s.selectedSkillIds.filter((x) => x !== id)
-                                : [...s.selectedSkillIds, id],
-                              importantSkillIds: selected
-                                ? s.importantSkillIds.filter((x) => x !== id)
-                                : s.importantSkillIds,
-                            }))}
-                          />
+                <Text style={styles.subHeader}>Which of these skills are important for your future career? <Text style={styles.required}>*</Text></Text>
+                <View style={styles.skillsGrid}>
+                  {SKILLS_EDGE_OPTIONS.map((skillOpt) => {
+                    const selected = skills.selectedSkillIds.includes(skillOpt.id);
+                    return (
+                      <TouchableOpacity
+                        key={skillOpt.id}
+                        style={[styles.skillCard, selected && styles.skillCardOn, skills.locked && styles.disabled]}
+                        disabled={skills.locked}
+                        onPress={() => setSkills((prev) => ({
+                          ...prev,
+                          selectedSkillIds: selected
+                            ? prev.selectedSkillIds.filter((x) => x !== skillOpt.id)
+                            : [...prev.selectedSkillIds, skillOpt.id],
+                        }))}
+                      >
+                        <Text style={styles.skillEmoji}>{skillOpt.emoji}</Text>
+                        <Text style={styles.skillLabel}>{skillOpt.label}</Text>
+                        <View style={[styles.tickBox, selected && styles.tickBoxActive]}>{selected ? <Text style={styles.tickText}>✓</Text> : null}</View>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+
+                <Text style={styles.subHeader}>English Communication Rating</Text>
+                {COMMUNICATION_ROWS.map((row) => (
+                  <View key={row} style={styles.ratingRow}>
+                    <Text style={styles.ratingLabel}>{row}</Text>
+                    <View style={styles.ratingOptions}>
+                      {COMMUNICATION_LEVELS.map((level) => {
+                        const activeRating = skills.communicationRatings[row] === level;
+                        return (
                           <TouchableOpacity
-                            disabled={!selected}
-                            style={[styles.important, important && styles.importantOn, !selected && styles.disabled]}
-                            onPress={() => setSkills((s) => {
-                              if (important) return { ...s, importantSkillIds: s.importantSkillIds.filter((x) => x !== id) };
-                              if (!canSelectImportantSkills(s.importantSkillIds.length)) {
-                                setError(`Choose at most ${MAX_IMPORTANT_SKILLS} important skills.`);
-                                return s;
-                              }
-                              return { ...s, importantSkillIds: [...s.importantSkillIds, id] };
-                            })}
-                          ><Text style={[styles.importantTxt, important && styles.importantTxtOn]}>Important</Text></TouchableOpacity>
-                        </View>
-                      );
-                    })}
+                            key={level}
+                            style={[styles.ratingOption, activeRating && styles.ratingOptionOn, skills.locked && styles.disabled]}
+                            disabled={skills.locked}
+                            onPress={() => setSkills((prev) => ({
+                              ...prev,
+                              communicationRatings: { ...prev.communicationRatings, [row]: level },
+                            }))}
+                          >
+                            <View style={[styles.radioOuter, activeRating && styles.radioOuterOn]}>
+                              {activeRating ? <View style={styles.radioInner} /> : null}
+                            </View>
+                            <Text style={styles.ratingText}>{level}</Text>
+                          </TouchableOpacity>
+                        );
+                      })}
+                    </View>
                   </View>
                 ))}
-                <Text style={styles.tip}>Choose up to {MAX_IMPORTANT_SKILLS} important skills.</Text>
+                <Text style={styles.tip}>{skills.locked ? 'Selections locked' : 'Selections not saved yet'}</Text>
               </>
             ) : null}
 
             {active === 'university' ? (
               <>
-                <Text style={styles.subHeader}>Preferred Countries</Text>
-                {COUNTRIES.map((country) => {
-                  const selected = university.preferredCountries.includes(country);
-                  return <Tick key={country} checked={selected} label={country} onPress={() => setUniversity((u) => ({ ...u, preferredCountries: selected ? u.preferredCountries.filter((x) => x !== country) : [...u.preferredCountries, country] }))} />;
-                })}
-                <Field label="Preferred Course" required value={university.intendedCourse} onChangeText={(v) => setUniversity((u) => ({ ...u, intendedCourse: v }))} />
-                <Select label="Preferred Intake Year" value={university.intakeYear} setValue={(v) => setUniversity((u) => ({ ...u, intakeYear: v }))} options={YEAR_OPTIONS} />
-                <Field label="Budget Range" value={university.budgetRange} onChangeText={(v) => setUniversity((u) => ({ ...u, budgetRange: v }))} />
+                <Select label="Where do you want to study?" required value={university.country} setValue={(v) => setUniversity((u) => ({ ...u, country: v, state: v === 'India' ? u.state : '' }))} options={COUNTRIES} />
+                {university.country === 'India' ? (
+                  <Select label="Select State (India)" required value={university.state} setValue={(v) => setUniversity((u) => ({ ...u, state: v }))} options={INDIAN_STATES} />
+                ) : null}
+                <Field label="University Preference 1" required value={university.universityPreference1} onChangeText={(v) => setUniversity((u) => ({ ...u, universityPreference1: v }))} />
+                <Field label="Course Preference 1" required value={university.coursePreference1} onChangeText={(v) => setUniversity((u) => ({ ...u, coursePreference1: v }))} />
+                <Field label="University Preference 2" value={university.universityPreference2} onChangeText={(v) => setUniversity((u) => ({ ...u, universityPreference2: v }))} />
+                <Field label="Course Preference 2" value={university.coursePreference2} onChangeText={(v) => setUniversity((u) => ({ ...u, coursePreference2: v }))} />
+                <Field
+                  label="Personal Statement (250 – 500 words)" required
+                  multiline
+                  numberOfLines={6}
+                  value={university.personalStatement}
+                  onChangeText={(v) => setUniversity((u) => ({ ...u, personalStatement: v }))}
+                />
+                <Text style={styles.counter}>Words: {countWords(university.personalStatement)} / 500</Text>
+                <Field
+                  label="Why do you want to pursue this course/career? (max 200 words)" required
+                  multiline
+                  numberOfLines={5}
+                  value={university.careerReason}
+                  onChangeText={(v) => setUniversity((u) => ({ ...u, careerReason: v }))}
+                />
+                <Text style={styles.counter}>Words: {countWords(university.careerReason)} / 200</Text>
               </>
             ) : null}
 
             {active === 'education' ? (
               <>
-                <Field label="Class 10 School" required value={education.class10School} onChangeText={(v) => setEducation((e) => ({ ...e, class10School: v }))} />
-                <Field label="Class 10 Year" required maxLength={4} keyboardType="number-pad" value={education.class10Year} onChangeText={(v) => setEducation((e) => ({ ...e, class10Year: v }))} />
+                <Field label="Class 10 School Name" required value={education.class10School} onChangeText={(v) => setEducation((e) => ({ ...e, class10School: v }))} />
+                <Field label="Class 10 Year of Passing" required maxLength={4} keyboardType="number-pad" value={education.class10Year} onChangeText={(v) => setEducation((e) => ({ ...e, class10Year: v }))} />
                 <Field label="Class 10 Percentage" required keyboardType="decimal-pad" value={education.class10Percentage} onChangeText={(v) => setEducation((e) => ({ ...e, class10Percentage: v }))} />
-                <Field label="Class 12 School" value={education.class12School} onChangeText={(v) => setEducation((e) => ({ ...e, class12School: v }))} />
-                <Field label="Class 12 Year" maxLength={4} keyboardType="number-pad" value={education.class12Year} onChangeText={(v) => setEducation((e) => ({ ...e, class12Year: v }))} />
-                <Field label="Class 12 Percentage" keyboardType="decimal-pad" value={education.class12Percentage} onChangeText={(v) => setEducation((e) => ({ ...e, class12Percentage: v }))} />
-                <Select label="English Test Taken" required value={education.englishTestTaken} setValue={(v) => setEducation((e) => ({ ...e, englishTestTaken: v }))} options={['Yes', 'No']} />
-                {education.englishTestTaken === 'Yes' ? <Field label="English Certificate Number" required value={education.englishCertificateNumber} onChangeText={(v) => setEducation((e) => ({ ...e, englishCertificateNumber: v }))} /> : null}
+                <Select label="Have you taken any English Proficiency Test (IELTS/TOEFL)?" required value={education.englishTestTaken} setValue={(v) => setEducation((e) => ({ ...e, englishTestTaken: v }))} options={['Yes', 'No']} />
+                {education.englishTestTaken === 'Yes' ? (
+                  <>
+                    <Field label="IELTS Score" keyboardType="decimal-pad" value={education.ieltsScore} onChangeText={(v) => setEducation((e) => ({ ...e, ieltsScore: v }))} />
+                    <Field label="TOEFL Score" keyboardType="number-pad" value={education.toeflScore} onChangeText={(v) => setEducation((e) => ({ ...e, toeflScore: v }))} />
+                    <Field label="English Certificate Number" value={education.englishCertificateNumber} onChangeText={(v) => setEducation((e) => ({ ...e, englishCertificateNumber: v }))} />
+                  </>
+                ) : null}
               </>
             ) : null}
 
@@ -948,10 +1111,14 @@ export default function StudentProfileScreen() {
             ) : null}
 
             {error ? <Text style={styles.err}>{error}</Text> : null}
-            <TouchableOpacity style={[styles.save, saving && styles.disabled]} disabled={saving} onPress={save}>
+            <TouchableOpacity style={[styles.save, (saving || (active === 'skillsedge' && skills.locked)) && styles.disabled]} disabled={saving || (active === 'skillsedge' && skills.locked)} onPress={save}>
               {saving ? <ActivityIndicator color="#fff" /> : (
                 <Text style={styles.saveTxt}>
-                  {active === 'personal' ? 'Save & Continue to University Preference' : 'Save'}
+                  {active === 'personal'
+                    ? 'Save & Continue to University Preference'
+                    : active === 'skillsedge'
+                      ? (skills.locked ? 'Selections Saved' : 'Save & Continue')
+                      : 'Save & Continue'}
                 </Text>
               )}
             </TouchableOpacity>
@@ -1000,6 +1167,20 @@ const styles = StyleSheet.create({
   chipTxt: { color: STUDENT.textSecondary, fontSize: 12 },
   chipTxtOn: { color: '#fff', fontWeight: '700' },
   yesNoRow: { flexDirection: 'row', marginBottom: 8 },
+  skillsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 10 },
+  skillCard: { width: '48%', borderWidth: 1, borderColor: STUDENT.border, borderRadius: 10, backgroundColor: STUDENT.bgCard, padding: 10 },
+  skillCardOn: { borderColor: STUDENT.accentCyan },
+  skillEmoji: { fontSize: 18, marginBottom: 6 },
+  skillLabel: { color: STUDENT.textPrimary, fontWeight: '600', marginBottom: 8, minHeight: 34 },
+  ratingRow: { borderWidth: 1, borderColor: STUDENT.border, borderRadius: 10, backgroundColor: STUDENT.bgCard, padding: 10, marginBottom: 8 },
+  ratingLabel: { color: STUDENT.textPrimary, fontWeight: '700', marginBottom: 6 },
+  ratingOptions: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  ratingOption: { flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: STUDENT.border, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 6, backgroundColor: STUDENT.bg },
+  ratingOptionOn: { borderColor: STUDENT.accentCyan, backgroundColor: 'rgba(22,163,74,0.18)' },
+  ratingText: { color: STUDENT.textPrimary, fontSize: 12 },
+  radioOuter: { width: 14, height: 14, borderRadius: 999, borderWidth: 1, borderColor: STUDENT.textMuted, marginRight: 6, alignItems: 'center', justifyContent: 'center' },
+  radioOuterOn: { borderColor: STUDENT.accentCyan },
+  radioInner: { width: 7, height: 7, borderRadius: 999, backgroundColor: STUDENT.accentCyan },
   tickRow: { flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: STUDENT.border, borderRadius: 10, backgroundColor: STUDENT.bgCard, padding: 10, marginBottom: 8 },
   tickRowActive: { borderColor: STUDENT.accentCyan },
   tickBox: { width: 20, height: 20, borderWidth: 1, borderColor: STUDENT.textMuted, borderRadius: 6, alignItems: 'center', justifyContent: 'center', marginRight: 8 },
@@ -1010,6 +1191,7 @@ const styles = StyleSheet.create({
   importantOn: { borderColor: '#f59e0b', backgroundColor: 'rgba(245,158,11,0.2)' },
   importantTxt: { color: STUDENT.textMuted, fontSize: 12 },
   importantTxtOn: { color: '#f59e0b', fontWeight: '700' },
+  counter: { color: STUDENT.textMuted, fontSize: 12, marginTop: -8, marginBottom: 10, textAlign: 'right' },
   tip: { color: '#f59e0b', fontSize: 12, marginBottom: 8 },
   err: { color: '#a80036', marginBottom: 10, fontSize: 12 },
   save: { borderRadius: 10, backgroundColor: STUDENT.accentGreen, alignItems: 'center', paddingVertical: 13, marginTop: 6 },
