@@ -67,6 +67,8 @@ export default function StudentLoginScreen() {
         return;
       }
 
+      // Expected response: { token, accessToken, studentToken, or userToken } plus optional
+      // name/fullName/username/email fields. Accept any of the common Spring Boot JWT shapes.
       const data = await response.json();
       const token =
         data.token || data.accessToken || data.studentToken || data.userToken || data.jwtToken;
@@ -92,8 +94,8 @@ export default function StudentLoginScreen() {
 
       setUserType('student');
       router.replace('/student/');
-    } catch (err) {
-      setError(err.message || 'Network error. Please check your connection and try again.');
+    } catch {
+      setError('Unable to connect. Please check your connection and try again.');
     } finally {
       setLoading(false);
     }
