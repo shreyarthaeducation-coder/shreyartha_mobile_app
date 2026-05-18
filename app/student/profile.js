@@ -32,6 +32,8 @@ const TABS = [
 
 const YEAR_OPTIONS = Array.from({ length: 20 }, (_, i) => String(new Date().getFullYear() + 5 - i));
 const COUNTRIES = ['India', 'USA', 'UK', 'Canada', 'Australia', 'Germany', 'Singapore'];
+const MAX_IMPORTANT_SKILLS = 2;
+const canSelectImportantSkills = (count) => count < MAX_IMPORTANT_SKILLS;
 
 const unwrap = (value) => (value?.data && typeof value.data === 'object' ? value.data : value || {});
 const arr = (value) => (Array.isArray(value) ? value : value ? [value] : []);
@@ -195,8 +197,15 @@ export default function StudentProfileScreen() {
       const p = unwrap(pRes); const sv = unwrap(surveyRes); const aTree = unwrap(aTreeRes); const a = unwrap(aRes); const sTree = unwrap(sTreeRes);
       const s = unwrap(sRes); const u = unwrap(uRes); const e = unwrap(eRes); const ad = unwrap(adRes);
       setPersonal({
-        fullName: p.fullName || p.name || p.studentName || '', email: p.email || '', mobile: p.mobile || p.phone || '', dob: p.dob || p.dateOfBirth || '',
-        gender: p.gender || '', schoolName: p.schoolName || p.school || '', board: p.board || '', className: p.className || p.class || '', address: p.address || '',
+        fullName: p.fullName || p.name || p.studentName || '',
+        email: p.email || '',
+        mobile: p.mobile || p.phone || '',
+        dob: p.dob || p.dateOfBirth || '',
+        gender: p.gender || '',
+        schoolName: p.schoolName || p.school || '',
+        board: p.board || '',
+        className: p.className || p.class || '',
+        address: p.address || '',
         curriculum: p.curriculum || '', studentType: p.studentType || '',
       });
       setPersonalLocked(Boolean(p.personalLocked || p.personalDetailsSaved || p.isProfileSubmitted));
@@ -207,8 +216,9 @@ export default function StudentProfileScreen() {
       setTree(curriculumNodes);
       const selectedCurriculum = curriculumNodes.find((x) => (x.name || x.title) === (a.curriculum || p.curriculum));
       const classNodes = arr(selectedCurriculum?.classes || selectedCurriculum?.children);
-      setChapters(arr(classNodes.find((x) => (x.name || x.title) === (a.className || p.className || p.class))?.chapters || []));
-      setTopics(arr(classNodes.flatMap((x) => arr(x.topics || x.children || []))));
+      const selectedClassNode = classNodes.find((x) => (x.name || x.title) === (a.className || p.className || p.class));
+      setChapters(arr(selectedClassNode?.chapters || selectedClassNode?.children || []));
+      setTopics(arr(selectedClassNode?.topics || selectedClassNode?.children || []));
       setExams(arr(unwrap(examRes).exams || unwrap(examRes)));
       setHiddenTopicIds(arr(unwrap(hTopicRes).hiddenNodeIds || unwrap(hTopicRes)));
       setHiddenExamIds(arr(unwrap(hExamRes).hiddenNodeIds || unwrap(hExamRes)));
@@ -236,17 +246,23 @@ export default function StudentProfileScreen() {
   const pickMedia = async (kind) => {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!permission.granted) return Alert.alert('Permission denied', 'Media permission is required.');
+    const mediaTypes = kind === 'video'
+      ? ImagePicker.MediaTypeOptions.Videos
+      : ImagePicker.MediaTypeOptions.Images;
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: kind === 'video' ? ['videos'] : ['images'],
+      mediaTypes,
       allowsEditing: kind === 'image',
       quality: 0.8,
     });
     if (result.canceled || !result.assets?.[0]) return;
     const asset = result.assets[0];
     const form = new FormData();
+    const extension = asset.fileName?.split('.').pop()
+      || asset.mimeType?.split('/').pop()
+      || (kind === 'video' ? 'mp4' : 'jpg');
     form.append('file', {
       uri: asset.uri,
-      name: asset.fileName || `${kind}-${Date.now()}.${kind === 'video' ? 'mp4' : 'jpg'}`,
+      name: asset.fileName || `${kind}-${Date.now()}.${extension}`,
       type: asset.mimeType || (kind === 'video' ? 'video/mp4' : 'image/jpeg'),
     });
     await (kind === 'video' ? studentService.uploadProfileVideo(form) : studentService.uploadProfilePicture(form));
@@ -255,7 +271,9 @@ export default function StudentProfileScreen() {
 
   const save = async () => {
     setError('');
-    if (active === 'skillsedge' && skills.importantSkillIds.length > 2) return setError('Choose at most 2 important skills.');
+    if (active === 'skillsedge' && skills.importantSkillIds.length > MAX_IMPORTANT_SKILLS) {
+      return setError(`Choose at most ${MAX_IMPORTANT_SKILLS} important skills.`);
+    }
     if (active === 'education' && education.englishTestTaken === 'Yes' && !education.englishCertificateNumber.trim()) return setError('English certificate number is required.');
     setSaving(true);
     try {
@@ -280,6 +298,8 @@ export default function StudentProfileScreen() {
 
   const autoAcademicLocked = personal.studentType?.toUpperCase() === 'SCHOOL' && personal.curriculum && personal.className;
   const skillNodes = arr(skillsTree.flatMap((x) => arr(x.children?.length ? x.children : x))).filter(Boolean);
+  const selectedCurriculumNode = tree.find((x) => (x.name || x.title) === academic.curriculum);
+  const selectedClassOptions = arr(selectedCurriculumNode?.classes || selectedCurriculumNode?.children);
 
   return (
     <SafeAreaView style={styles.root} edges={['top', 'left', 'right']}>
@@ -318,9 +338,27 @@ export default function StudentProfileScreen() {
                 <Field label="Full Name" required editable={!personalLocked} value={personal.fullName} onChangeText={(v) => setPersonal((p) => ({ ...p, fullName: v }))} />
                 <Field label="Email" required editable={!personalLocked} value={personal.email} onChangeText={(v) => setPersonal((p) => ({ ...p, email: v }))} />
                 <Field label="Mobile Number" required editable={!personalLocked} maxLength={15} keyboardType="phone-pad" value={personal.mobile} onChangeText={(v) => setPersonal((p) => ({ ...p, mobile: v }))} />
-                <TouchableOpacity style={styles.input} onPress={() => setShowDob(true)} disabled={personalLocked}><Text style={styles.dateText}>{personal.dob || 'Date of Birth'}</Text></TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.input}
+                  onPress={() => setShowDob(true)}
+                  disabled={personalLocked}
+                  accessibilityRole="button"
+                  accessibilityLabel="Select date of birth"
+                >
+                  <Text style={styles.dateText}>{personal.dob || 'Date of Birth'}</Text>
+                </TouchableOpacity>
                 {showDob ? (
-                  <DateTimePicker value={personal.dob ? new Date(personal.dob) : new Date()} mode="date" maximumDate={new Date()} onChange={(_, d) => { setShowDob(Platform.OS === 'ios'); if (d) setPersonal((p) => ({ ...p, dob: d.toISOString().slice(0, 10) })); }} />
+                  <DateTimePicker
+                    value={personal.dob ? new Date(personal.dob) : new Date()}
+                    mode="date"
+                    maximumDate={new Date()}
+                    onChange={(_, d) => {
+                      setShowDob(Platform.OS === 'ios');
+                      if (d) {
+                        setPersonal((p) => ({ ...p, dob: d.toISOString().slice(0, 10) }));
+                      }
+                    }}
+                  />
                 ) : null}
                 <Select label="Gender" value={personal.gender} setValue={(v) => setPersonal((p) => ({ ...p, gender: v }))} options={['Male', 'Female', 'Other']} />
                 <Field label="School Name" value={personal.schoolName} onChangeText={(v) => setPersonal((p) => ({ ...p, schoolName: v }))} />
@@ -351,10 +389,21 @@ export default function StudentProfileScreen() {
                 </View>
                 <Text style={styles.subHeader}>Class</Text>
                 <View style={styles.chips}>
-                  {arr(tree.find((x) => (x.name || x.title) === academic.curriculum)?.classes || tree.find((x) => (x.name || x.title) === academic.curriculum)?.children).map((cls) => {
+                  {selectedClassOptions.map((cls) => {
                     const label = cls.name || cls.title || String(cls.id);
                     return (
-                      <TouchableOpacity key={String(cls.id || label)} style={[styles.chip, academic.className === label && styles.chipOn, autoAcademicLocked && styles.disabled]} disabled={autoAcademicLocked} onPress={() => setAcademic((a) => ({ ...a, className: label }))}><Text style={[styles.chipTxt, academic.className === label && styles.chipTxtOn]}>{label}</Text></TouchableOpacity>
+                      <TouchableOpacity
+                        key={String(cls.id || label)}
+                        style={[
+                          styles.chip,
+                          academic.className === label && styles.chipOn,
+                          autoAcademicLocked && styles.disabled,
+                        ]}
+                        disabled={autoAcademicLocked}
+                        onPress={() => setAcademic((a) => ({ ...a, className: label }))}
+                      >
+                        <Text style={[styles.chipTxt, academic.className === label && styles.chipTxtOn]}>{label}</Text>
+                      </TouchableOpacity>
                     );
                   })}
                 </View>
@@ -391,14 +440,17 @@ export default function StudentProfileScreen() {
                         style={[styles.important, important && styles.importantOn, !selected && styles.disabled]}
                         onPress={() => setSkills((s) => {
                           if (important) return { ...s, importantSkillIds: s.importantSkillIds.filter((x) => x !== id) };
-                          if (s.importantSkillIds.length >= 2) return s;
+                          if (!canSelectImportantSkills(s.importantSkillIds.length)) {
+                            setError(`Choose at most ${MAX_IMPORTANT_SKILLS} important skills.`);
+                            return s;
+                          }
                           return { ...s, importantSkillIds: [...s.importantSkillIds, id] };
                         })}
                       ><Text style={[styles.importantTxt, important && styles.importantTxtOn]}>Important</Text></TouchableOpacity>
                     </View>
                   );
                 })}
-                <Text style={styles.tip}>Choose up to 2 important skills.</Text>
+                <Text style={styles.tip}>Choose up to {MAX_IMPORTANT_SKILLS} important skills.</Text>
               </>
             ) : null}
 
