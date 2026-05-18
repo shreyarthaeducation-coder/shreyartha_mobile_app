@@ -55,10 +55,17 @@ const SKILLS_EDGE_OPTIONS = [
 ];
 const COMMUNICATION_ROWS = ['Listening', 'Speaking', 'Reading', 'Writing'];
 const COMMUNICATION_LEVELS = ['Beginner', 'Average', 'Proficient'];
+// Keeps card height aligned for one- and two-line skill labels in the grid.
+const SKILL_LABEL_MIN_HEIGHT = 34;
 const SKILL_ALIAS_MAP = SKILLS_EDGE_OPTIONS.reduce((acc, skill) => {
-  acc[skill.id.toLowerCase()] = skill.id;
-  acc[skill.label.toLowerCase()] = skill.id;
-  acc[`${skill.emoji} ${skill.label}`.toLowerCase()] = skill.id;
+  const variants = [
+    skill.id.toLowerCase(),
+    skill.label.toLowerCase(),
+    `${skill.emoji} ${skill.label}`.toLowerCase(),
+    skill.label.toLowerCase().replace(/&/g, 'and'),
+    skill.label.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, ''),
+  ];
+  variants.forEach((v) => { acc[v] = skill.id; });
   return acc;
 }, {});
 
@@ -79,7 +86,7 @@ const countWords = (text) => (text || '').trim().split(/\s+/).filter(Boolean).le
 const normalizeSkillId = (raw) => {
   if (raw == null) return '';
   const text = String(raw).trim().toLowerCase();
-  return SKILL_ALIAS_MAP[text] || text.replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '');
+  return SKILL_ALIAS_MAP[text] || SKILL_ALIAS_MAP[text.replace(/&/g, 'and')] || SKILL_ALIAS_MAP[text.replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '')] || '';
 };
 
 function SectionHeader({ title, dark }) {
@@ -269,7 +276,13 @@ export default function StudentProfileScreen() {
       personal: Boolean((pD.fullName || pD.name || pD.studentName) && (pD.mobile || pD.phone) && pD.email),
       academic: Boolean((aD.curriculumId || aD.curriculum || aD.curriculumName) && (aD.classId || aD.className || aD.class) && (arr(aD.challengingSubjectIds).length || arr(aD.selectedTopicIds || aD.topicIds).length)),
       skillsedge: Boolean(arr(sD.selectedSkillIds || sD.skillIds || sD.selectedSkills).length),
-      university: Boolean((uD.universityPreference1 || uD.preferredUniversity1) && (uD.coursePreference1 || uD.intendedCourse) && (uD.personalStatement || uD.statementOfPurpose) && (uD.careerReason || uD.courseCareerReason || uD.whyThisCourse)),
+      university: Boolean(
+        (uD.universityPreference1 || uD.preferredUniversity1)
+        && (uD.coursePreference1 || uD.intendedCourse)
+        && countWords(uD.personalStatement || uD.statementOfPurpose || '') >= 250
+        && countWords(uD.personalStatement || uD.statementOfPurpose || '') <= 500
+        && countWords(uD.careerReason || uD.courseCareerReason || uD.whyThisCourse || '') <= 200
+      ),
       education: Boolean(eD.class10School && eD.class10Year && eD.class10Percentage && (eD.englishTestTaken !== 'Yes' || eD.ieltsScore || eD.toeflScore || eD.englishCertificateNumber)),
       additional: Boolean(adD.hobbies || adD.achievements || adD.aboutMe),
     });
@@ -387,7 +400,6 @@ export default function StudentProfileScreen() {
           || s.selectionLocked
           || s.selectionsSaved
           || s.isSelectionSaved
-          || ((s.id || s._id) && selectedSkillIds.length > 0)
         ),
       });
       setSkillsTree(arr(sTree.skills || sTree.categories || sTree.nodes || sTree.children || sTree));
@@ -502,7 +514,7 @@ export default function StudentProfileScreen() {
     if (active === 'skillsedge') {
       if (!skills.selectedSkillIds.length) return setError('Please select at least one skill.');
       if (COMMUNICATION_ROWS.some((row) => !skills.communicationRatings[row])) {
-        return setError('Please select English communication rating for all skills.');
+        return setError('Please select an English communication rating for Listening, Speaking, Reading, and Writing.');
       }
     }
     if (active === 'university') {
@@ -519,7 +531,14 @@ export default function StudentProfileScreen() {
         return setError('Class 10 School Name, Year of Passing and Percentage are required.');
       }
       if (!/^\d{4}$/.test(education.class10Year.trim())) return setError('Class 10 Year of Passing must be a valid 4-digit year.');
-      if (!/^\d+(\.\d+)?$/.test(education.class10Percentage.trim())) return setError('Class 10 Percentage must be numeric.');
+      const yearValue = Number(education.class10Year.trim());
+      if (Number.isNaN(yearValue)) return setError('Class 10 Year of Passing must be numeric.');
+      const currentYear = new Date().getFullYear();
+      if (yearValue < 1950 || yearValue > currentYear + 1) return setError('Class 10 Year of Passing must be within a valid range.');
+      const percentageRaw = education.class10Percentage.trim();
+      if (!percentageRaw) return setError('Class 10 Percentage is required.');
+      const percentageValue = Number(percentageRaw);
+      if (Number.isNaN(percentageValue) || percentageValue < 0 || percentageValue > 100) return setError('Class 10 Percentage must be between 0 and 100.');
       if (!education.englishTestTaken) return setError('Please select if you have taken an English proficiency test.');
       if (education.englishTestTaken === 'Yes' && !education.ieltsScore.trim() && !education.toeflScore.trim() && !education.englishCertificateNumber.trim()) {
         return setError('Please provide IELTS/TOEFL score details.');
@@ -1171,7 +1190,7 @@ const styles = StyleSheet.create({
   skillCard: { width: '48%', borderWidth: 1, borderColor: STUDENT.border, borderRadius: 10, backgroundColor: STUDENT.bgCard, padding: 10 },
   skillCardOn: { borderColor: STUDENT.accentCyan },
   skillEmoji: { fontSize: 18, marginBottom: 6 },
-  skillLabel: { color: STUDENT.textPrimary, fontWeight: '600', marginBottom: 8, minHeight: 34 },
+  skillLabel: { color: STUDENT.textPrimary, fontWeight: '600', marginBottom: 8, minHeight: SKILL_LABEL_MIN_HEIGHT },
   ratingRow: { borderWidth: 1, borderColor: STUDENT.border, borderRadius: 10, backgroundColor: STUDENT.bgCard, padding: 10, marginBottom: 8 },
   ratingLabel: { color: STUDENT.textPrimary, fontWeight: '700', marginBottom: 6 },
   ratingOptions: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
