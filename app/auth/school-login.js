@@ -96,61 +96,100 @@ export default function SchoolLoginScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.topBar}>
+    <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
+      <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
           <Text style={styles.backText}>← Back</Text>
         </TouchableOpacity>
+        <Text style={styles.headerTitle}>School Staff Login</Text>
+        <View style={styles.headerSpacer} />
       </View>
 
-      <WebView
-        ref={webViewRef}
-        source={{ uri: LOGIN_URL }}
-        userAgent={MOBILE_USER_AGENT}
-        javaScriptEnabled
-        domStorageEnabled
-        mixedContentMode="always"
-        originWhitelist={['*']}
-        setSupportMultipleWindows={false}
-        injectedJavaScript={LOGIN_POLL_JS}
-        onMessage={onMessage}
-        onNavigationStateChange={onNavigationStateChange}
-        onLoadStart={() => setLoading(true)}
-        onLoadEnd={() => setLoading(false)}
-      />
+      <View style={styles.webViewContainer}>
+        <WebView
+          ref={webViewRef}
+          source={{ uri: LOGIN_URL }}
+          userAgent={MOBILE_USER_AGENT}
+          javaScriptEnabled
+          domStorageEnabled
+          mixedContentMode="always"
+          originWhitelist={['*']}
+          setSupportMultipleWindows={false}
+          injectedJavaScript={LOGIN_POLL_JS}
+          onMessage={onMessage}
+          onNavigationStateChange={onNavigationStateChange}
+          onLoadStart={() => setLoading(true)}
+          onLoadEnd={() => setLoading(false)}
+          renderError={() => (
+            <View style={styles.errorView}>
+              <Text style={styles.errorText}>Failed to load page.</Text>
+              <TouchableOpacity style={styles.retryBtn} onPress={() => webViewRef.current?.reload()}>
+                <Text style={styles.retryText}>Retry</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+        />
 
-      {loading ? (
-        <View style={styles.loaderOverlay}>
-          <ActivityIndicator size="large" color="#B0003A" />
-        </View>
-      ) : null}
+        {loading ? (
+          <View style={styles.loaderOverlay}>
+            <ActivityIndicator size="large" color="#b0003a" />
+          </View>
+        ) : null}
+      </View>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff' },
-  topBar: {
-    position: 'absolute',
-    top: 12,
-    left: 12,
-    zIndex: 10,
+  container: { flex: 1, backgroundColor: '#1a1a2e' },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#1a1a2e',
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255,255,255,0.1)',
   },
   backButton: {
-    backgroundColor: 'rgba(0,0,0,0.55)',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 16,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+    backgroundColor: 'rgba(255,255,255,0.1)',
   },
   backText: {
     color: '#fff',
     fontWeight: '700',
     fontSize: 13,
   },
+  headerTitle: {
+    flex: 1,
+    textAlign: 'center',
+    color: '#fff',
+    fontWeight: '700',
+    fontSize: 15,
+  },
+  headerSpacer: { width: 56 },
+  webViewContainer: { flex: 1 },
   loaderOverlay: {
     ...StyleSheet.absoluteFillObject,
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: 'rgba(255,255,255,0.5)',
   },
+  errorView: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+    backgroundColor: '#fff',
+  },
+  errorText: { fontSize: 15, color: '#333', marginBottom: 16 },
+  retryBtn: {
+    backgroundColor: '#b0003a',
+    paddingHorizontal: 24,
+    paddingVertical: 10,
+    borderRadius: 8,
+  },
+  retryText: { color: '#fff', fontWeight: '700', fontSize: 14 },
 });
