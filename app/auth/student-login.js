@@ -1,198 +1,259 @@
-import { useRef, useState } from 'react';
-import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+// Native student login screen — no WebView.
+// Posts directly to the backend auth endpoint, stores the JWT, and navigates to
+// the native student panel on success.
+
+import { useState } from 'react';
+import {
+  ActivityIndicator,
+  ImageBackground,
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { WebView } from 'react-native-webview';
 import { useAuth } from '../../context/AuthContext';
+import { STUDENT } from '../../constants/theme';
 
-const LOGIN_URL = 'https://shreyartha.com/studentlogin';
-const DASHBOARD_PATH = '/student/platform/dashboard';
-const MOBILE_USER_AGENT = 'Mozilla/5.0 (Linux; Android 14; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36';
-
-const LOGIN_POLL_JS = `
-(function() {
-  // This helper is intentionally duplicated in READ_STORAGE_JS because each
-  // injected script must be self-contained inside the WebView runtime.
-  // Some websites persist invalid placeholders as the string literals
-  // "undefined"/"null"; filter them out so we only forward real tokens.
-  function firstStorageValue(storage, keys) {
-    for (var i = 0; i < keys.length; i += 1) {
-      var value = storage.getItem(keys[i]);
-      if (value && value !== 'undefined' && value !== 'null') return value;
-    }
-    return '';
-  }
-
-  function resolveToken() {
-    var tokenKeys = ['studentToken', 'userToken', 'accessToken', 'token', 'jwtToken', 'authToken'];
-    return firstStorageValue(localStorage, tokenKeys) || firstStorageValue(sessionStorage, tokenKeys);
-  }
-
-  function resolveRole() {
-    var roleKeys = ['studentRole', 'cachedStudentRole', 'role', 'userRole'];
-    return firstStorageValue(localStorage, roleKeys) || firstStorageValue(sessionStorage, roleKeys);
-  }
-
-  function sendPayload() {
-    var studentToken = resolveToken();
-    var userToken = studentToken;
-    var studentLoggedIn = localStorage.getItem('studentLoggedIn') || sessionStorage.getItem('studentLoggedIn');
-    var studentRole = resolveRole();
-    if ((studentToken || userToken) && studentLoggedIn === 'true') {
-      window.ReactNativeWebView.postMessage(JSON.stringify({
-        type: 'LOGIN_SUCCESS',
-        studentToken: studentToken,
-        userToken: userToken,
-        studentLoggedIn: studentLoggedIn,
-        studentRole: studentRole
-      }));
-      return true;
-    }
-    return false;
-  }
-
-  if (!sendPayload()) {
-    var interval = setInterval(function() {
-      if (sendPayload()) {
-        clearInterval(interval);
-      }
-    }, 500);
-    setTimeout(function() { clearInterval(interval); }, 20000);
-  }
-})();
-true;
-`;
-
-const READ_STORAGE_JS = `
-(function() {
-  // Duplicated intentionally: injected WebView scripts do not share scope.
-  // Keep the same guard as LOGIN_POLL_JS for websites that persist string placeholders.
-  function firstStorageValue(storage, keys) {
-    for (var i = 0; i < keys.length; i += 1) {
-      var value = storage.getItem(keys[i]);
-      if (value && value !== 'undefined' && value !== 'null') return value;
-    }
-    return '';
-  }
-
-  var tokenKeys = ['studentToken', 'userToken', 'accessToken', 'token', 'jwtToken', 'authToken'];
-  var roleKeys = ['studentRole', 'cachedStudentRole', 'role', 'userRole'];
-  var token = firstStorageValue(localStorage, tokenKeys) || firstStorageValue(sessionStorage, tokenKeys);
-  var role = firstStorageValue(localStorage, roleKeys) || firstStorageValue(sessionStorage, roleKeys);
-
-  window.ReactNativeWebView.postMessage(JSON.stringify({
-    type: 'LOGIN_SUCCESS',
-    studentToken: token,
-    userToken: token,
-    studentLoggedIn: localStorage.getItem('studentLoggedIn') || sessionStorage.getItem('studentLoggedIn'),
-    studentRole: role
-  }));
-})();
-true;
-`;
+const API_BASE_URL = 'https://shreyartha.com';
+const LOGIN_ENDPOINT = '/api/auth/login';
+const BG = require('../../assets/images/Background.png');
 
 export default function StudentLoginScreen() {
   const router = useRouter();
-  const { setUserType } = useAuth();
-  const webViewRef = useRef(null);
-  const handledLoginRef = useRef(false);
-  const [loading, setLoading] = useState(true);
+  const { setUserType, setUser } = useAuth();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
-  const onMessage = async (event) => {
+  const validate = () => {
+    if (!email.trim()) return 'Email is required.';
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) return 'Enter a valid email address.';
+    if (!password) return 'Password is required.';
+    if (password.length < 6) return 'Password must be at least 6 characters.';
+    return '';
+  };
+
+  const handleLogin = async () => {
+    const validationError = validate();
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
+    setError('');
+    setLoading(true);
     try {
-      const payload = JSON.parse(event.nativeEvent.data || '{}');
-      if (payload?.type !== 'LOGIN_SUCCESS' || handledLoginRef.current) return;
+      const response = await fetch(`${API_BASE_URL}${LOGIN_ENDPOINT}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: email.trim(), password }),
+      });
 
-      const token = payload.studentToken || payload.userToken || payload.accessToken || payload.token;
-      if (!token) return;
+      if (!response.ok) {
+        const contentType = response.headers.get('content-type') || '';
+        const msg = contentType.includes('application/json')
+          ? ((await response.json()).message || 'Invalid credentials. Please try again.')
+          : 'Invalid credentials. Please try again.';
+        setError(msg);
+        return;
+      }
 
-      handledLoginRef.current = true;
+      // Expected response: { token, accessToken, studentToken, or userToken } plus optional
+      // name/fullName/username/email fields. Accept any of the common Spring Boot JWT shapes.
+      const data = await response.json();
+      const token =
+        data.token || data.accessToken || data.studentToken || data.userToken || data.jwtToken;
+      if (!token) {
+        setError('Login failed: no token received. Please try again.');
+        return;
+      }
+
       await AsyncStorage.multiSet([
-        ['studentToken', payload.studentToken || token],
-        ['userToken', payload.userToken || token],
-        ['accessToken', payload.accessToken || token],
-        ['token', payload.token || token],
+        ['studentToken', token],
+        ['userToken', token],
+        ['accessToken', token],
+        ['token', token],
         ['studentLoggedIn', 'true'],
         ['userType', 'student'],
       ]);
 
-      if (payload.studentRole) {
-        await AsyncStorage.multiSet([
-          ['studentRole', payload.studentRole],
-          ['cachedStudentRole', payload.studentRole],
-        ]);
-      }
+      const name = data.name || data.fullName || data.username || data.email || '';
+      const userEmail = data.email || data.username || email.trim();
+      const userData = { name, email: userEmail };
+      await AsyncStorage.setItem('userData', JSON.stringify(userData));
+      setUser(userData);
 
       setUserType('student');
       router.replace('/student/');
     } catch {
-      // Ignore malformed payloads posted by website scripts.
-    }
-  };
-
-  const onNavigationStateChange = (navState) => {
-    if (navState?.url?.includes(DASHBOARD_PATH) && webViewRef.current && !handledLoginRef.current) {
-      webViewRef.current.injectJavaScript(READ_STORAGE_JS);
+      setError('Unable to connect. Please check your connection and try again.');
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.topBar}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <Text style={styles.backText}>← Back</Text>
-        </TouchableOpacity>
-      </View>
+    <ImageBackground source={BG} style={styles.bg} resizeMode="cover">
+      <View style={styles.overlay} />
+      <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right', 'bottom']}>
+        <KeyboardAvoidingView
+          style={styles.kav}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        >
+          <ScrollView
+            contentContainerStyle={styles.scroll}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+          >
+            <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
+              <Text style={styles.backText}>← Back</Text>
+            </TouchableOpacity>
 
-      <WebView
-        ref={webViewRef}
-        source={{ uri: LOGIN_URL }}
-        userAgent={MOBILE_USER_AGENT}
-        javaScriptEnabled
-        domStorageEnabled
-        mixedContentMode="always"
-        originWhitelist={['*']}
-        setSupportMultipleWindows={false}
-        injectedJavaScript={LOGIN_POLL_JS}
-        onMessage={onMessage}
-        onNavigationStateChange={onNavigationStateChange}
-        onLoadStart={() => setLoading(true)}
-        onLoadEnd={() => setLoading(false)}
-      />
+            <View style={styles.card}>
+              <Text style={styles.title}>Student Login</Text>
+              <Text style={styles.subtitle}>Sign in to your Shreyartha account</Text>
 
-      {loading ? (
-        <View style={styles.loaderOverlay}>
-          <ActivityIndicator size="large" color="#B0003A" />
-        </View>
-      ) : null}
-    </SafeAreaView>
+              {error ? (
+                <View style={styles.errorBox}>
+                  <Text style={styles.errorText}>{error}</Text>
+                </View>
+              ) : null}
+
+              <View style={styles.fieldWrap}>
+                <Text style={styles.label}>Email</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Enter your email"
+                  placeholderTextColor={STUDENT.textMuted}
+                  value={email}
+                  onChangeText={(t) => { setEmail(t); setError(''); }}
+                  autoCapitalize="none"
+                  keyboardType="email-address"
+                  autoCorrect={false}
+                  returnKeyType="next"
+                />
+              </View>
+
+              <View style={styles.fieldWrap}>
+                <Text style={styles.label}>Password</Text>
+                <View style={styles.passwordRow}>
+                  <TextInput
+                    style={[styles.input, styles.passwordInput]}
+                    placeholder="Enter your password"
+                    placeholderTextColor={STUDENT.textMuted}
+                    value={password}
+                    onChangeText={(t) => { setPassword(t); setError(''); }}
+                    secureTextEntry={!showPassword}
+                    returnKeyType="done"
+                    onSubmitEditing={handleLogin}
+                  />
+                  <TouchableOpacity
+                    style={styles.eyeBtn}
+                    onPress={() => setShowPassword((v) => !v)}
+                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                  >
+                    <Text style={styles.eyeText}>{showPassword ? '🙈' : '👁️'}</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+
+              <Pressable
+                style={({ pressed }) => [
+                  styles.loginBtn,
+                  pressed && styles.loginBtnPressed,
+                  loading && styles.loginBtnDisabled,
+                ]}
+                onPress={handleLogin}
+                disabled={loading}
+              >
+                {loading ? (
+                  <ActivityIndicator size="small" color="#fff" />
+                ) : (
+                  <Text style={styles.loginBtnText}>Sign In</Text>
+                )}
+              </Pressable>
+            </View>
+          </ScrollView>
+        </KeyboardAvoidingView>
+      </SafeAreaView>
+    </ImageBackground>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff' },
-  topBar: {
-    position: 'absolute',
-    top: 12,
-    left: 12,
-    zIndex: 10,
-  },
-  backButton: {
-    backgroundColor: 'rgba(0,0,0,0.55)',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 16,
-  },
-  backText: {
-    color: '#fff',
-    fontWeight: '700',
-    fontSize: 13,
-  },
-  loaderOverlay: {
+  bg: { flex: 1, backgroundColor: STUDENT.bg },
+  overlay: {
     ...StyleSheet.absoluteFillObject,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.5)',
+    backgroundColor: 'rgba(10, 15, 30, 0.55)',
   },
+  safeArea: { flex: 1 },
+  kav: { flex: 1 },
+  scroll: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    paddingHorizontal: 24,
+    paddingVertical: 32,
+  },
+  backBtn: {
+    alignSelf: 'flex-start',
+    marginBottom: 24,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    backgroundColor: 'rgba(79, 70, 229, 0.18)',
+  },
+  backText: { color: STUDENT.textSecondary, fontSize: 14, fontWeight: '600' },
+  card: {
+    backgroundColor: STUDENT.bgCard,
+    borderRadius: 20,
+    padding: 28,
+    borderWidth: 1,
+    borderColor: STUDENT.border,
+  },
+  title: { color: '#fff', fontSize: 26, fontWeight: '800', marginBottom: 6 },
+  subtitle: { color: STUDENT.textSecondary, fontSize: 14, marginBottom: 22 },
+  errorBox: {
+    backgroundColor: 'rgba(244, 63, 94, 0.15)',
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(244, 63, 94, 0.4)',
+  },
+  errorText: { color: '#f43f5e', fontSize: 13 },
+  fieldWrap: { marginBottom: 16 },
+  label: { color: STUDENT.textSecondary, fontSize: 13, fontWeight: '600', marginBottom: 6 },
+  input: {
+    backgroundColor: STUDENT.bgCardAlt,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: STUDENT.border,
+    color: '#fff',
+    fontSize: 15,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+  },
+  passwordRow: { flexDirection: 'row', alignItems: 'center' },
+  passwordInput: { flex: 1 },
+  eyeBtn: { position: 'absolute', right: 12 },
+  eyeText: { fontSize: 18 },
+  loginBtn: {
+    backgroundColor: STUDENT.accent,
+    borderRadius: 12,
+    paddingVertical: 14,
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  loginBtnPressed: { backgroundColor: '#3730a3' },
+  loginBtnDisabled: { opacity: 0.7 },
+  loginBtnText: { color: '#fff', fontSize: 16, fontWeight: '700' },
 });
