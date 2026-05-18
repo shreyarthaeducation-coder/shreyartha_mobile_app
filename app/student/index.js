@@ -55,7 +55,7 @@ const DASHBOARD_CARDS = [
   {
     label: 'Events & Info',
     icon: require('../../assets/images/events-info.png'),
-    route: '/student/resources',
+    route: '/student/events',
   },
 ];
 
