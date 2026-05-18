@@ -352,7 +352,7 @@ function MockTestRunner({ questions, mockTest, onSubmit, onBack }) {
                 style={[styles.optionCard, selected && styles.optionCardActive]}
               >
                 <Text style={[styles.mockOptionLabel, selected && styles.mockOptionLabelActive]}>{String.fromCharCode(65 + index)}</Text>
-                <Text style={[styles.optionText, { flex: 1 }]}>{option.text}</Text>
+                <Text style={styles.optionText}>{option.text}</Text>
               </Pressable>
             );
           })}
@@ -936,7 +936,7 @@ export default function AcademicIQLearningHub() {
               onPress={() => openExamPracticeSubject(subject)}
             />
           )) : (
-            <Text style={styles.placeholderText}>No subjects available for this exam&apos;s practice zone.</Text>
+            <Text style={styles.placeholderText}>No subjects available for this exam's practice zone.</Text>
           )}
         </ScrollView>
       )}
@@ -1054,7 +1054,7 @@ export default function AcademicIQLearningHub() {
       if (percentage >= 80) return '🎉 Excellent! Outstanding performance!';
       if (percentage >= 60) return '👍 Good work! Keep it up!';
       if (percentage >= 40) return '📚 Keep practicing to improve!';
-      return '💪 Don\'t give up! Practice makes perfect!';
+      return "💪 Don't give up! Practice makes perfect!";
     };
     return (
       <>
