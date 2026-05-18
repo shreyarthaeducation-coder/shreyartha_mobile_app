@@ -87,6 +87,21 @@ export const studentService = {
   getResourceCategories: () => api.get('/api/students/resources/categories'),
   createCounselorQuery: (data) => api.post('/api/student/counselor-queries', data),
 
+  // ── Events ─────────────────────────────────────────────────────────────────
+  getEvents: ({ filter, search, category, page } = {}) => {
+    const params = new URLSearchParams();
+    if (filter) params.append('filter', filter);
+    if (search) params.append('search', search);
+    if (category) params.append('category', category);
+    if (page && page > 1) params.append('page', String(page));
+    const qs = params.toString();
+    return api.get(`/api/events${qs ? `?${qs}` : ''}`);
+  },
+  getEventDetail: (eventId) => api.get(`/api/events/${encodeURIComponent(eventId)}`),
+  registerForEvent: (eventId) => api.post(`/api/events/${encodeURIComponent(eventId)}/register`, {}),
+  cancelEventRegistration: (eventId) => api.delete(`/api/events/${encodeURIComponent(eventId)}/register`),
+  getMyEvents: () => api.get('/api/students/my-events'),
+
   // ── Notifications ──────────────────────────────────────────────────────────
   getNotifications: () => api.get('/api/students/notifications'),
   markNotificationRead: (id) => api.put(`/api/students/notifications/${id}/read`),
