@@ -36,7 +36,7 @@ const topicFromChapter = (chapter) => arr(chapter?.topics || chapter?.children |
 
 const nodeLabel = (node, fallback = '') => String(node?.name || node?.title || node?.label || fallback || '').trim();
 
-const parseQuestionOptions = (question) => {
+const normalizeQuestionOptions = (question) => {
   const options = arr(question?.options || question?.choices || question?.answers || question?.answerOptions || question?.mcqOptions);
   if (options.length > 0) {
     return options.map((option, index) => {
@@ -50,15 +50,16 @@ const parseQuestionOptions = (question) => {
       };
     });
   }
-  const letters = ['A', 'B', 'C', 'D', 'E'];
-  return letters
-    .map((letter) => question?.[`option${letter}`])
-    .filter(Boolean)
-    .map((text, index) => ({ id: `${index}`, text: String(text), isCorrect: false }));
+  const optionKeys = Object.keys(question || {})
+    .filter((key) => /^option[A-Za-z]+$/.test(key))
+    .sort();
+  return optionKeys
+    .map((key, index) => ({ id: `${index}`, text: String(question[key]), isCorrect: false }))
+    .filter((option) => option.text && option.text !== 'undefined' && option.text !== 'null');
 };
 
 const isCorrectAnswer = (question, optionIndex) => {
-  const options = parseQuestionOptions(question);
+  const options = normalizeQuestionOptions(question);
   if (options.some((option) => option.isCorrect)) {
     return Boolean(options[optionIndex]?.isCorrect);
   }
@@ -70,13 +71,13 @@ const isCorrectAnswer = (question, optionIndex) => {
         : Number.isInteger(question?.correctAnswerIndex)
           ? question.correctAnswerIndex
           : null;
-  if (answerIndex != null) return answerIndex === optionIndex;
+  if (answerIndex !== null) return answerIndex === optionIndex;
   const answerText = normalizeText(question?.answer || question?.correctAnswer || question?.correctOption);
   if (!answerText) return false;
   return normalizeText(options[optionIndex]?.text) === answerText;
 };
 
-async function requestFirst(candidates) {
+async function requestWithFallbacks(candidates) {
   let lastError;
   for (const candidate of candidates) {
     try {
@@ -125,7 +126,7 @@ function NodeCard({ index, title, subtitle, onPress }) {
             <Text style={styles.nodeNumber}>{index + 1}</Text>
           </View>
         ) : null}
-        <View style={{ flex: 1 }}>
+        <View style={styles.nodeContentWrap}>
           <Text style={styles.nodeTitle}>{title}</Text>
           {subtitle ? <Text style={styles.nodeSubtitle}>{subtitle}</Text> : null}
         </View>
@@ -182,7 +183,7 @@ function PracticeViewer({ questions, quizState, onPickOption, onSubmitOption, on
   }
 
   const question = questions[quizState.currentIndex];
-  const options = parseQuestionOptions(question);
+  const options = normalizeQuestionOptions(question);
   return (
     <View style={styles.leafCard}>
       <Text style={styles.leafHeading}>{`Question ${quizState.currentIndex + 1} of ${questions.length}`}</Text>
@@ -206,7 +207,7 @@ function PracticeViewer({ questions, quizState, onPickOption, onSubmitOption, on
         })}
       </View>
       {!quizState.submitted ? (
-        <TouchableOpacity style={[styles.actionButton, quizState.selectedOption == null && styles.disabled]} disabled={quizState.selectedOption == null} onPress={onSubmitOption}>
+        <TouchableOpacity style={[styles.actionButton, quizState.selectedOption === null && styles.disabled]} disabled={quizState.selectedOption === null} onPress={onSubmitOption}>
           <Text style={styles.actionButtonText}>Submit Answer</Text>
         </TouchableOpacity>
       ) : (
@@ -343,7 +344,7 @@ export default function AcademicIQLearningHub() {
 
     try {
       if (activeCategory === 'practice') {
-        const questionData = await requestFirst([
+        const questionData = await requestWithFallbacks([
           () => studentService.getTopicQuestions(topicId, activeCategory),
           () => api.get(`/api/academiciq/topics/${encodeURIComponent(topicId)}/questions`),
           () => api.get(`/api/students/practice/topics/${encodeURIComponent(topicId)}/questions`),
@@ -352,7 +353,7 @@ export default function AcademicIQLearningHub() {
         const parsedQuestions = arr(unwrap(questionData).questions || unwrap(questionData).items || unwrap(questionData));
         setTopicQuestions(parsedQuestions);
       } else {
-        const contentData = await requestFirst([
+        const contentData = await requestWithFallbacks([
           () => studentService.getTopicContent(topicId, activeCategory),
           () => api.get(`/api/academiciq/topics/${encodeURIComponent(topicId)}/content`),
           () => api.get(`/api/academiciq/topic/${encodeURIComponent(topicId)}`),
@@ -388,9 +389,6 @@ export default function AcademicIQLearningHub() {
     if (!selectedExam) return [];
     const subjectsList = arr(selectedExam?.subjects || selectedExam?.subjectList || selectedExam?.papers || selectedExam?.children);
     if (subjectsList.length > 0) return subjectsList.map((item) => (typeof item === 'string' ? { name: item } : item));
-    const examName = normalizeText(nodeLabel(selectedExam));
-    if (examName.includes('jee') || examName.includes('engineering')) return [{ name: 'Physics' }, { name: 'Chemistry' }, { name: 'Mathematics' }];
-    if (examName.includes('neet') || examName.includes('medical')) return [{ name: 'Physics' }, { name: 'Chemistry' }, { name: 'Biology' }];
     return [];
   }, [selectedExam]);
 
@@ -532,7 +530,7 @@ export default function AcademicIQLearningHub() {
         <Pressable style={styles.sheetOverlay} onPress={() => setSheetVisible(false)}>
           <Pressable style={styles.sheetCard}>
             <Text style={styles.sheetTitle}>{nodeLabel(selectedExamCategory, 'Exams')}</Text>
-            <ScrollView style={{ maxHeight: 280 }}>
+            <ScrollView style={styles.sheetScrollView}>
               {activeExamItems.map((exam, index) => {
                 const locked = Boolean(exam?.locked || exam?.isLocked || hiddenExamIds.includes(exam?.id));
                 return (
@@ -590,7 +588,7 @@ export default function AcademicIQLearningHub() {
               try {
                 const examId = selectedExam?.id || selectedExam?.examId;
                 if (!examId) return;
-                await requestFirst([
+                await requestWithFallbacks([
                   () => api.get(`/api/competitiveexam/exams/${encodeURIComponent(examId)}/practice-zone`),
                   () => api.get(`/api/competitiveexam/exams/${encodeURIComponent(examId)}/practice`),
                   () => studentService.getExamDetail(examId),
@@ -613,7 +611,7 @@ export default function AcademicIQLearningHub() {
               try {
                 const examId = selectedExam?.id || selectedExam?.examId;
                 if (!examId) return;
-                await requestFirst([
+                await requestWithFallbacks([
                   () => studentService.getExamMockTests(examId),
                   () => api.get(`/api/competitiveexam/exams/${encodeURIComponent(examId)}/mock-tests`),
                   () => api.get(`/api/competitiveexam/exams/${encodeURIComponent(examId)}/mocktest`),
@@ -702,6 +700,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   nodeLeft: { flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 },
+  nodeContentWrap: { flex: 1 },
   nodeNumberWrap: { width: 32, height: 32, borderRadius: 10, backgroundColor: 'rgba(79,70,229,0.2)', alignItems: 'center', justifyContent: 'center' },
   nodeNumber: { color: STUDENT.textPrimary, fontWeight: '700' },
   nodeTitle: { color: STUDENT.textPrimary, fontSize: 14, fontWeight: '700' },
@@ -746,6 +745,7 @@ const styles = StyleSheet.create({
   sheetOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
   sheetCard: { backgroundColor: '#0b1222', borderTopLeftRadius: 18, borderTopRightRadius: 18, paddingHorizontal: 16, paddingTop: 14, paddingBottom: 24, borderTopWidth: 1, borderColor: STUDENT.border },
   sheetTitle: { color: STUDENT.textPrimary, fontSize: 16, fontWeight: '700', marginBottom: 10 },
+  sheetScrollView: { maxHeight: 280 },
   sheetItem: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderWidth: 1, borderColor: STUDENT.border, backgroundColor: STUDENT.bgCard, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 12, marginBottom: 8 },
   sheetItemLocked: { opacity: 0.5 },
   sheetItemText: { color: STUDENT.textPrimary, flex: 1, fontWeight: '600' },
