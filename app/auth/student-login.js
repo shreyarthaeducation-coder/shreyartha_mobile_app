@@ -19,7 +19,7 @@ import { useAuth } from '../../context/AuthContext';
 import { api } from '../../services/apiService';
 import { COLORS } from '../../constants/theme';
 
-const LOGO_URL = 'https://the3cedge.com/images/The3CEdge.png';
+const LOGO = require('../../assets/images/ShreyarthaLogo.png');
 const AUTH_STORAGE_KEYS = ['studentToken', 'userToken', 'token', 'adminToken', 'schoolUserToken'];
 const MODES = {
   LOGIN: 'login',
@@ -126,6 +126,7 @@ export default function StudentLoginScreen() {
       setSignupData((prev) => ({ ...prev, schoolName }));
       setSchoolLookup({ state: 'success', message: schoolName });
     } catch {
+      console.warn('School code lookup failed', { code });
       setSchoolLookup({ state: 'error', message: 'Invalid School Code' });
       setSignupData((prev) => ({ ...prev, schoolName: '' }));
     }
@@ -322,7 +323,7 @@ export default function StudentLoginScreen() {
             </TouchableOpacity>
 
             <View style={styles.card}>
-              <Image source={{ uri: LOGO_URL }} style={styles.logo} resizeMode="contain" />
+              <Image source={LOGO} style={styles.logo} resizeMode="contain" />
               <Text style={styles.title}>{titleMeta.title}</Text>
               <Text style={styles.subtitle}>{titleMeta.subtitle}</Text>
 
