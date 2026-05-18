@@ -328,11 +328,25 @@ export default function StudentProfileScreen() {
       studentService.getAdditionalProfile().catch(() => ({})),
     ]);
     const pD = unwrap(p); const aD = unwrap(a); const sD = unwrap(s); const uD = unwrap(u); const eD = unwrap(e); const adD = unwrap(ad);
+    const personalFavoriteSubjects = typeof (pD.favSubjects || pD.favoriteSubjects) === 'string'
+      ? (pD.favSubjects || pD.favoriteSubjects).split(',').map((item) => item.trim()).filter(Boolean)
+      : arr(pD.favSubjects || pD.favoriteSubjects);
     const academicPreparing = aD.preparingCompetitiveExam != null
       ? Boolean(aD.preparingCompetitiveExam)
       : Boolean(aD.competitiveExamId || aD.competitiveExamName || arr(aD.entranceExamIds).length);
     setCompleted({
-      personal: Boolean((pD.fullName || pD.name || pD.studentName) && (pD.mobile || pD.phone) && pD.email),
+      personal: Boolean(
+        (pD.fullName || pD.name || pD.studentName)
+        && pD.email
+        && (pD.mobile || pD.phone)
+        && pD.gender
+        && (pD.dob || pD.dateOfBirth)
+        && (pD.currentClass || pD.className || pD.class)
+        && pD.strengths
+        && pD.weakness
+        && pD.stream
+        && personalFavoriteSubjects.length > 0
+      ),
       academic: Boolean(
         (aD.curriculumId || aD.curriculum || aD.curriculumName)
         && (aD.classId || aD.className || aD.class)
@@ -356,7 +370,7 @@ export default function StudentProfileScreen() {
         && (uD.coursePreference1 || uD.intendedCourse)
         && countWords(uD.personalStatement || uD.statementOfPurpose || '') >= 250
         && countWords(uD.personalStatement || uD.statementOfPurpose || '') <= 500
-        && countWords(uD.careerReason || uD.courseCareerReason || uD.whyThisCourse || '') > 0
+        && countWords(uD.careerReason || uD.courseCareerReason || uD.whyThisCourse || '') >= 1
         && countWords(uD.careerReason || uD.courseCareerReason || uD.whyThisCourse || '') <= 200
       ),
       education: Boolean(eD.class10School && eD.class10Year && eD.class10Percentage && (eD.englishTestTaken !== 'Yes' || eD.ieltsScore || eD.toeflScore || eD.englishCertificateNumber)),
@@ -461,11 +475,14 @@ export default function StudentProfileScreen() {
         entranceExamIds: arr(a.entranceExamIds),
       });
 
+      const loadedSkillsTree = arr(sTree.skills || sTree.categories || sTree.nodes || sTree.children || sTree);
+      const availableSkillOptions = flattenSkillOptions(loadedSkillsTree);
+      const availableSkillIds = new Set((availableSkillOptions.length > 0 ? availableSkillOptions : SKILLS_EDGE_OPTIONS).map((option) => option.id));
       const selectedSkillIds = arr(s.selectedSkillIds || s.skillIds || s.selectedSkills).map((item) => {
         if (typeof item === 'string') return item;
         if (item && typeof item === 'object') return item.id || item.key || item.name || item.label;
         return item;
-      }).map(resolveSkillOptionId).filter(Boolean);
+      }).map(resolveSkillOptionId).filter((id) => availableSkillIds.has(id));
       const communicationRatings = {
         Listening: s.communicationRatings?.Listening || s.englishCommunicationRating?.Listening || s.listeningRating || '',
         Speaking: s.communicationRatings?.Speaking || s.englishCommunicationRating?.Speaking || s.speakingRating || '',
@@ -485,7 +502,7 @@ export default function StudentProfileScreen() {
           || s.isSelectionSaved
         ),
       });
-      setSkillsTree(arr(sTree.skills || sTree.categories || sTree.nodes || sTree.children || sTree));
+      setSkillsTree(loadedSkillsTree);
       setUniversity({
         id: u.id || null,
         country: u.country || arr(u.preferredCountries || u.countries)[0] || '',
@@ -601,7 +618,7 @@ export default function StudentProfileScreen() {
       if (!academic.curriculumId) return setError('Please select a curriculum.');
       if (!academic.classId && !academic.classLabel) return setError('Please select a class.');
       if (!academic.challengingSubjects.length && !academic.challengingSubjectIds.length) return setError('Please select at least one challenging subject.');
-      if ((academic.challengingSubjects.length || academic.challengingSubjectIds.length) > 2) return setError('You can select up to 2 challenging subjects.');
+      if ((academic.challengingSubjects.length + academic.challengingSubjectIds.length) > 2) return setError('You can select up to 2 challenging subjects.');
       if (academic.preparingCompetitiveExam == null) return setError('Please select whether you are preparing for a competitive examination.');
       if (academic.preparingCompetitiveExam && !academic.competitiveExamId && !academic.competitiveExamName) {
         return setError('Please choose a competitive examination category.');
@@ -621,7 +638,7 @@ export default function StudentProfileScreen() {
       if (university.country === 'India' && !university.state) return setError('Please select a state.');
       if (!university.universityPreference1.trim() || !university.coursePreference1.trim()) return setError('University Preference 1 and Course Preference 1 are required.');
       if (personalStatementWords < 250 || personalStatementWords > 500) return setError('Personal Statement must be between 250 and 500 words.');
-      if (!university.careerReason.trim()) return setError('Why do you want to pursue this course/career? is required.');
+      if (!university.careerReason.trim()) return setError('Please provide a reason for why you want to pursue this course/career.');
       if (careerReasonWords > 200) return setError('Why do you want to pursue this course/career? must be 200 words or less.');
     }
     if (active === 'education') {
@@ -742,11 +759,16 @@ export default function StudentProfileScreen() {
   const competitiveExamOptions = filteredExams.length > 0
     ? filteredExams.map((exam) => ({ id: exam?.id, label: exam?.name || exam?.title || String(exam?.id) }))
     : ACADEMIC_COMPETITIVE_EXAM_OPTIONS.map((label) => ({ id: examByName[normalizeText(label)]?.id, label }));
-  const resolvedSkillOptions = flattenSkillOptions(skillsTree);
   const skillsEdgeOptions = useMemo(() => {
+    const resolvedSkillOptions = flattenSkillOptions(skillsTree);
     const source = resolvedSkillOptions.length > 0 ? resolvedSkillOptions : SKILLS_EDGE_OPTIONS;
-    return source.filter((option, index) => source.findIndex((candidate) => candidate.id === option.id) === index);
-  }, [resolvedSkillOptions]);
+    const seen = new Set();
+    return source.filter((option) => {
+      if (seen.has(option.id)) return false;
+      seen.add(option.id);
+      return true;
+    });
+  }, [skillsTree]);
 
   return (
     <SafeAreaView style={styles.root} edges={['top', 'left', 'right']}>
@@ -1117,7 +1139,7 @@ export default function StudentProfileScreen() {
                                 ...a,
                                 entranceExamIds: checked
                                   ? a.entranceExamIds.filter((x) => x !== id)
-                                  : (a.entranceExamIds.length >= 2 ? a.entranceExamIds : [...a.entranceExamIds, id]),
+                                  : [...a.entranceExamIds, id],
                               }))}
                             />
                           );
