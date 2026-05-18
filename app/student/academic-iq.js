@@ -27,6 +27,7 @@ const LEARNING_CATEGORIES = [
   { key: 'competitive', title: 'Competitive Exam', subtitle: 'Exam-ready preparation tracks.', icon: '🏆' },
 ];
 const LEVELS = ['Basic', 'Intermediate', 'Advanced'];
+const REFLECTION_ACCENT = '#FBBF24';
 const REFLECTION_CHOICES = [
   { key: 'Beginner', color: '#DC2626', backgroundColor: 'rgba(220,38,38,0.16)' },
   { key: 'Developing', color: '#D97706', backgroundColor: 'rgba(217,119,6,0.18)' },
@@ -465,7 +466,7 @@ function MyReflectionPanel({ state, onStart, onAnswer, onChooseLevel, onSubmitLe
   if (state.loading) {
     return (
       <View style={styles.contentCardDark}>
-        <ActivityIndicator color="#F59E0B" />
+        <ActivityIndicator color={REFLECTION_ACCENT} />
         <Text style={styles.mutedText}>Loading adaptive reflection…</Text>
       </View>
     );
@@ -476,7 +477,7 @@ function MyReflectionPanel({ state, onStart, onAnswer, onChooseLevel, onSubmitLe
       <View style={styles.contentCardDark}>
         <Text style={styles.contentCardTitle}>My Reflection</Text>
         <Text style={styles.contentBody}>Take the adaptive reflection test to review your understanding and self-assess your confidence level.</Text>
-        <TouchableOpacity style={[styles.actionButton, { backgroundColor: '#F59E0B' }]} onPress={onStart}>
+        <TouchableOpacity style={[styles.actionButton, { backgroundColor: REFLECTION_ACCENT }]} onPress={onStart}>
           <Text style={styles.actionButtonText}>Start Reflection Test</Text>
         </TouchableOpacity>
       </View>
@@ -488,7 +489,7 @@ function MyReflectionPanel({ state, onStart, onAnswer, onChooseLevel, onSubmitLe
     return (
       <View style={styles.contentCardDark}>
         <Text style={styles.contentCardTitle}>My Reflection</Text>
-        <View style={styles.progressTrack}><View style={[styles.progressFill, { width: `${Math.min(((state.step || 1) / 12) * 100, 100)}%`, backgroundColor: '#F59E0B' }]} /></View>
+        <View style={styles.progressTrack}><View style={[styles.progressFill, { width: `${Math.min(((state.step || 1) / 12) * 100, 100)}%`, backgroundColor: REFLECTION_ACCENT }]} /></View>
         <Text style={styles.questionCountText}>{`Adaptive Question ${Math.min(state.step || 1, 12)} of 12`}</Text>
         <Text style={styles.questionText}>{stripHtml(state.question?.questionText || state.question?.question || state.question?.text || '')}</Text>
         <View style={styles.optionsWrap}>
@@ -496,8 +497,8 @@ function MyReflectionPanel({ state, onStart, onAnswer, onChooseLevel, onSubmitLe
             const value = optionValue(option);
             const selected = normalizeText(state.selection) === normalizeText(value);
             return (
-              <Pressable key={`${value}-${index}`} style={[styles.optionCard, selected && { borderColor: '#F59E0B', backgroundColor: 'rgba(245,158,11,0.15)' }]} onPress={() => onAnswer(option, index)}>
-                <Text style={[styles.mockOptionLabel, selected && { color: '#F59E0B', borderColor: '#F59E0B' }]}>{String.fromCharCode(65 + index)}</Text>
+              <Pressable key={`${value}-${index}`} style={[styles.optionCard, selected && { borderColor: REFLECTION_ACCENT, backgroundColor: 'rgba(251,191,36,0.15)' }]} onPress={() => onAnswer(option, index)}>
+                <Text style={[styles.mockOptionLabel, selected && { color: REFLECTION_ACCENT, borderColor: REFLECTION_ACCENT }]}>{String.fromCharCode(65 + index)}</Text>
                 <Text style={styles.optionText}>{value}</Text>
               </Pressable>
             );
@@ -524,7 +525,7 @@ function MyReflectionPanel({ state, onStart, onAnswer, onChooseLevel, onSubmitLe
             );
           })}
         </View>
-        <TouchableOpacity style={[styles.actionButton, { backgroundColor: '#F59E0B' }, !state.reflectionChoice && styles.disabled]} disabled={!state.reflectionChoice} onPress={onSubmitLevel}>
+        <TouchableOpacity style={[styles.actionButton, { backgroundColor: REFLECTION_ACCENT }, !state.reflectionChoice && styles.disabled]} disabled={!state.reflectionChoice} onPress={onSubmitLevel}>
           <Text style={styles.actionButtonText}>Submit Reflection</Text>
         </TouchableOpacity>
       </View>
@@ -562,17 +563,19 @@ function MockTestRunner({ questions, mockTest, onSubmit, onBack }) {
   const durationMins = mockTest?.duration ?? mockTest?.durationMinutes ?? 0;
   const [timeRemaining, setTimeRemaining] = useState(durationMins > 0 ? durationMins * 60 : null);
   const answersRef = useRef(answers);
+  const onSubmitRef = useRef(onSubmit);
 
   useEffect(() => { answersRef.current = answers; }, [answers]);
+  useEffect(() => { onSubmitRef.current = onSubmit; }, [onSubmit]);
   useEffect(() => {
     if (timeRemaining === null) return undefined;
     if (timeRemaining <= 0) {
-      onSubmit(answersRef.current);
+      onSubmitRef.current(answersRef.current);
       return undefined;
     }
     const id = setTimeout(() => setTimeRemaining((value) => Math.max(0, value - 1)), 1000);
     return () => clearTimeout(id);
-  }, [timeRemaining, onSubmit]);
+  }, [timeRemaining]);
 
   if (!questions.length) {
     return <View style={styles.centerWrap}><Text style={styles.placeholderText}>No questions available for this mock test.</Text><TouchableOpacity style={[styles.actionButton, { marginTop: 16 }]} onPress={onBack}><Text style={styles.actionButtonText}>Go Back</Text></TouchableOpacity></View>;
@@ -640,7 +643,7 @@ function MockTestRunner({ questions, mockTest, onSubmit, onBack }) {
   );
 }
 
-export default function AcademicIQLearningHub() {
+export default function AcademicIQScreen() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [screenError, setScreenError] = useState('');
@@ -1055,8 +1058,8 @@ export default function AcademicIQLearningHub() {
       const detail = await studentService.getExamDetail(exam?.id || exam?.examId);
       const payload = unwrap(detail);
       if (payload && Object.keys(payload).length > 0) setSelectedExam((prev) => ({ ...prev, ...payload }));
-    } catch {
-      // Preserve existing exam payload when detail fetch is unavailable.
+    } catch (error) {
+      console.warn('Competitive exam detail fetch failed', error?.message || 'Unknown error');
     }
   }, [resetExamTopicState]);
 
@@ -1281,13 +1284,99 @@ export default function AcademicIQLearningHub() {
       <Modal visible={sheetVisible} transparent animationType="slide" onRequestClose={() => setSheetVisible(false)}><Pressable style={styles.sheetOverlay} onPress={() => setSheetVisible(false)}><Pressable style={styles.sheetCard}><Text style={styles.sheetTitle}>{nodeLabel(selectedExamCategory, 'Exams')}</Text><ScrollView style={styles.sheetScrollView}>{activeExamItems.map((exam, index) => <TouchableOpacity key={String(exam?.id || `${nodeLabel(exam)}-${index}`)} style={styles.sheetItem} onPress={() => openExam(exam)}><Text style={styles.sheetItemText}>{nodeLabel(exam, `Exam ${index + 1}`)}</Text><Text style={styles.sheetItemIcon}>›</Text></TouchableOpacity>)}</ScrollView></Pressable></Pressable></Modal>
     </>
   );
-  const renderMockTestList = () => <><View style={styles.headerRow}><TouchableOpacity onPress={() => setView('competitive')}><Text style={styles.backText}>← Back</Text></TouchableOpacity><Text style={styles.headerTitle}>Mock Tests</Text><View style={{ width: 60 }} /></View><InlineNotice text={screenError} /><View style={styles.examBanner}><Text style={styles.examBannerTitle}>{nodeLabel(selectedExam, 'Exam')}</Text><Text style={styles.examBannerSub}>Select a mock test paper to begin</Text></View>{mockTestsLoading ? <View style={styles.centerWrap}><ActivityIndicator size="large" color={STUDENT.accent} /><Text style={styles.mutedText}>Loading mock tests...</Text></View> : <ScrollView style={styles.listScroll} contentContainerStyle={styles.listContent}>{mockTests.length > 0 ? mockTests.map((test, index) => <MockTestCard key={String(test?.id || `mock-${index}`)} test={test} onPress={() => openMockTest(test)} />) : <View style={styles.centerWrap}><Text style={{ fontSize: 32 }}>📋</Text><Text style={styles.placeholderText}>No mock tests are available for this exam yet.</Text></View>}</ScrollView>}</>;
-  const renderMockTestRunner = () => (mockTestLoading ? <View style={styles.centerWrap}><ActivityIndicator size="large" color={STUDENT.accent} /><Text style={styles.mutedText}>Loading test...</Text></View> : <MockTestRunner questions={mockTestQuestions} mockTest={selectedMockTest} onSubmit={handleSubmitMockTest} onBack={() => setView('mockTestList')} />);
+  const renderMockTestList = () => (
+    <>
+      <View style={styles.headerRow}>
+        <TouchableOpacity onPress={() => setView('competitive')}>
+          <Text style={styles.backText}>← Back</Text>
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Mock Tests</Text>
+        <View style={{ width: 60 }} />
+      </View>
+
+      <InlineNotice text={screenError} />
+
+      <View style={styles.examBanner}>
+        <Text style={styles.examBannerTitle}>{nodeLabel(selectedExam, 'Exam')}</Text>
+        <Text style={styles.examBannerSub}>Select a mock test paper to begin</Text>
+      </View>
+
+      {mockTestsLoading ? (
+        <View style={styles.centerWrap}>
+          <ActivityIndicator size="large" color={STUDENT.accent} />
+          <Text style={styles.mutedText}>Loading mock tests...</Text>
+        </View>
+      ) : (
+        <ScrollView style={styles.listScroll} contentContainerStyle={styles.listContent}>
+          {mockTests.length > 0 ? mockTests.map((test, index) => (
+            <MockTestCard key={String(test?.id || `mock-${index}`)} test={test} onPress={() => openMockTest(test)} />
+          )) : (
+            <View style={styles.centerWrap}>
+              <Text style={{ fontSize: 32 }}>📋</Text>
+              <Text style={styles.placeholderText}>No mock tests are available for this exam yet.</Text>
+            </View>
+          )}
+        </ScrollView>
+      )}
+    </>
+  );
+
+  const renderMockTestRunner = () => (
+    mockTestLoading ? (
+      <View style={styles.centerWrap}>
+        <ActivityIndicator size="large" color={STUDENT.accent} />
+        <Text style={styles.mutedText}>Loading test...</Text>
+      </View>
+    ) : (
+      <MockTestRunner
+        questions={mockTestQuestions}
+        mockTest={selectedMockTest}
+        onSubmit={handleSubmitMockTest}
+        onBack={() => setView('mockTestList')}
+      />
+    )
+  );
   const renderMockTestResults = () => {
     const score = mockTestResults?.score ?? mockTestResults?.correct ?? 0;
     const total = mockTestResults?.total ?? mockTestResults?.totalQuestions ?? mockTestQuestions.length;
     const percentage = mockTestResults?.percentage ?? (total > 0 ? Math.round((score / total) * 100) : 0);
-    return <><View style={styles.headerRow}><TouchableOpacity onPress={() => { setView('mockTestList'); setMockTestResults(null); setMockTestQuestions([]); setSelectedMockTest(null); }}><Text style={styles.backText}>← Back to Tests</Text></TouchableOpacity><Text style={styles.headerTitle}>Test Results</Text><View style={{ width: 60 }} /></View><ScrollView style={styles.listScroll} contentContainerStyle={styles.listContent}><View style={styles.resultsCard}><Text style={styles.resultsTestName}>{nodeLabel(selectedMockTest, 'Mock Test')}</Text><Text style={styles.resultsScore}>{`${score} / ${total}`}</Text><View style={styles.resultsPercentWrap}><Text style={styles.resultsPercent}>{`${percentage}%`}</Text></View><Text style={styles.resultsMessage}>{percentage >= 80 ? '🎉 Excellent! Outstanding performance!' : percentage >= 60 ? '👍 Good work! Keep it up!' : percentage >= 40 ? '📚 Keep practicing to improve!' : "💪 Don't give up! Practice makes perfect!"}</Text></View></ScrollView></>;
+    const resultMessage = percentage >= 80
+      ? '🎉 Excellent! Outstanding performance!'
+      : percentage >= 60
+        ? '👍 Good work! Keep it up!'
+        : percentage >= 40
+          ? '📚 Keep practicing to improve!'
+          : "💪 Don't give up! Practice makes perfect!";
+
+    return (
+      <>
+        <View style={styles.headerRow}>
+          <TouchableOpacity
+            onPress={() => {
+              setView('mockTestList');
+              setMockTestResults(null);
+              setMockTestQuestions([]);
+              setSelectedMockTest(null);
+            }}
+          >
+            <Text style={styles.backText}>← Back to Tests</Text>
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Test Results</Text>
+          <View style={{ width: 60 }} />
+        </View>
+
+        <ScrollView style={styles.listScroll} contentContainerStyle={styles.listContent}>
+          <View style={styles.resultsCard}>
+            <Text style={styles.resultsTestName}>{nodeLabel(selectedMockTest, 'Mock Test')}</Text>
+            <Text style={styles.resultsScore}>{`${score} / ${total}`}</Text>
+            <View style={styles.resultsPercentWrap}>
+              <Text style={styles.resultsPercent}>{`${percentage}%`}</Text>
+            </View>
+            <Text style={styles.resultsMessage}>{resultMessage}</Text>
+          </View>
+        </ScrollView>
+      </>
+    );
   };
 
   if (loading) return <SafeAreaView style={styles.root} edges={['top', 'left', 'right']}><View style={styles.centerWrap}><ActivityIndicator size="large" color={STUDENT.accent} /><Text style={styles.mutedText}>Loading Academic IQ...</Text></View></SafeAreaView>;

@@ -525,10 +525,10 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     borderRadius: 18,
     borderWidth: 1,
-    borderColor: 'rgba(59,130,246,0.45)',
-    backgroundColor: 'rgba(59,130,246,0.18)',
+    borderColor: STUDENT.borderBlue,
+    backgroundColor: STUDENT.accentBlueTint,
   },
-  tabPillActive: { backgroundColor: '#1D4ED8', borderColor: '#3B82F6' },
+  tabPillActive: { backgroundColor: STUDENT.accentBlueStrong, borderColor: STUDENT.accentBlue },
   tabPillText: { color: '#BFDBFE', fontSize: 12, fontWeight: '600' },
   tabPillTextActive: { color: '#fff' },
   contentCard: {
