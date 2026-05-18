@@ -1138,7 +1138,7 @@ export default function AcademicIQLearningHub() {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: STUDENT.bg },
+  root: { flex: 1, backgroundColor: 'transparent' },
   heroHeader: { marginBottom: 16 },
   heroTitle: { color: STUDENT.textPrimary, fontSize: 28, fontWeight: '800' },
   heroSub: { color: STUDENT.textSecondary, marginTop: 6, lineHeight: 20 },

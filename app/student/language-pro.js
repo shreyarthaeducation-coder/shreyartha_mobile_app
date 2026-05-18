@@ -299,7 +299,7 @@ export default function LanguageProScreen() {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: STUDENT.bg },
+  root: { flex: 1, backgroundColor: 'transparent' },
   scroll: { flex: 1 },
   scrollContent: { padding: 16, paddingBottom: 24 },
   centerWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 10 },

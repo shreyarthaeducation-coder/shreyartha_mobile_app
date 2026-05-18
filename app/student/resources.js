@@ -226,7 +226,7 @@ export default function ResourcesScreen() {
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: STUDENT.bg },
+  root: { flex: 1, backgroundColor: 'transparent' },
 
   screenHeader: {
     paddingHorizontal: 20,

@@ -1285,7 +1285,7 @@ export default function StudentProfileScreen() {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: STUDENT.bg },
+  root: { flex: 1, backgroundColor: 'transparent' },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 12, paddingBottom: 10 },
   headerBtn: { minWidth: 64, paddingVertical: 8, alignItems: 'center', borderRadius: 10, borderWidth: 1, borderColor: STUDENT.border, backgroundColor: STUDENT.bgCard },
   headerBtnText: { color: STUDENT.textPrimary, fontWeight: '700' },

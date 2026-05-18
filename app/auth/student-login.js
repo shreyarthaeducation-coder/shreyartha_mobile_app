@@ -12,11 +12,33 @@ const MOBILE_USER_AGENT = 'Mozilla/5.0 (Linux; Android 14; Mobile) AppleWebKit/5
 
 const LOGIN_POLL_JS = `
 (function() {
+  // This helper is intentionally duplicated in READ_STORAGE_JS because each
+  // injected script must be self-contained inside the WebView runtime.
+  // Some websites persist invalid placeholders as the string literals
+  // "undefined"/"null"; filter them out so we only forward real tokens.
+  function firstStorageValue(storage, keys) {
+    for (var i = 0; i < keys.length; i += 1) {
+      var value = storage.getItem(keys[i]);
+      if (value && value !== 'undefined' && value !== 'null') return value;
+    }
+    return '';
+  }
+
+  function resolveToken() {
+    var tokenKeys = ['studentToken', 'userToken', 'accessToken', 'token', 'jwtToken', 'authToken'];
+    return firstStorageValue(localStorage, tokenKeys) || firstStorageValue(sessionStorage, tokenKeys);
+  }
+
+  function resolveRole() {
+    var roleKeys = ['studentRole', 'cachedStudentRole', 'role', 'userRole'];
+    return firstStorageValue(localStorage, roleKeys) || firstStorageValue(sessionStorage, roleKeys);
+  }
+
   function sendPayload() {
-    var studentToken = localStorage.getItem('studentToken');
-    var userToken = localStorage.getItem('userToken');
-    var studentLoggedIn = localStorage.getItem('studentLoggedIn');
-    var studentRole = localStorage.getItem('studentRole') || localStorage.getItem('cachedStudentRole') || '';
+    var studentToken = resolveToken();
+    var userToken = studentToken;
+    var studentLoggedIn = localStorage.getItem('studentLoggedIn') || sessionStorage.getItem('studentLoggedIn');
+    var studentRole = resolveRole();
     if ((studentToken || userToken) && studentLoggedIn === 'true') {
       window.ReactNativeWebView.postMessage(JSON.stringify({
         type: 'LOGIN_SUCCESS',
@@ -44,12 +66,27 @@ true;
 
 const READ_STORAGE_JS = `
 (function() {
+  // Duplicated intentionally: injected WebView scripts do not share scope.
+  // Keep the same guard as LOGIN_POLL_JS for websites that persist string placeholders.
+  function firstStorageValue(storage, keys) {
+    for (var i = 0; i < keys.length; i += 1) {
+      var value = storage.getItem(keys[i]);
+      if (value && value !== 'undefined' && value !== 'null') return value;
+    }
+    return '';
+  }
+
+  var tokenKeys = ['studentToken', 'userToken', 'accessToken', 'token', 'jwtToken', 'authToken'];
+  var roleKeys = ['studentRole', 'cachedStudentRole', 'role', 'userRole'];
+  var token = firstStorageValue(localStorage, tokenKeys) || firstStorageValue(sessionStorage, tokenKeys);
+  var role = firstStorageValue(localStorage, roleKeys) || firstStorageValue(sessionStorage, roleKeys);
+
   window.ReactNativeWebView.postMessage(JSON.stringify({
     type: 'LOGIN_SUCCESS',
-    studentToken: localStorage.getItem('studentToken'),
-    userToken: localStorage.getItem('userToken'),
-    studentLoggedIn: localStorage.getItem('studentLoggedIn') || 'true',
-    studentRole: localStorage.getItem('studentRole') || localStorage.getItem('cachedStudentRole') || ''
+    studentToken: token,
+    userToken: token,
+    studentLoggedIn: localStorage.getItem('studentLoggedIn') || sessionStorage.getItem('studentLoggedIn'),
+    studentRole: role
   }));
 })();
 true;
@@ -67,13 +104,15 @@ export default function StudentLoginScreen() {
       const payload = JSON.parse(event.nativeEvent.data || '{}');
       if (payload?.type !== 'LOGIN_SUCCESS' || handledLoginRef.current) return;
 
-      const token = payload.studentToken || payload.userToken;
+      const token = payload.studentToken || payload.userToken || payload.accessToken || payload.token;
       if (!token) return;
 
       handledLoginRef.current = true;
       await AsyncStorage.multiSet([
         ['studentToken', payload.studentToken || token],
         ['userToken', payload.userToken || token],
+        ['accessToken', payload.accessToken || token],
+        ['token', payload.token || token],
         ['studentLoggedIn', 'true'],
         ['userType', 'student'],
       ]);

@@ -868,7 +868,7 @@ export default function EventsScreen() {
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: STUDENT.bg },
+  root: { flex: 1, backgroundColor: 'transparent' },
 
   bgGlowOne: {
     position: 'absolute',

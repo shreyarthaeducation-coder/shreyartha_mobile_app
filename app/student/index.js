@@ -156,7 +156,7 @@ export default function StudentDashboardScreen() {
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: '#040816',
+    backgroundColor: 'transparent',
   },
   bgGlowOne: {
     position: 'absolute',

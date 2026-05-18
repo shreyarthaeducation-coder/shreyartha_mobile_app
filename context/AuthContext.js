@@ -35,7 +35,7 @@ export function AuthProvider({ children }) {
   const logout = async () => {
     try {
       await AsyncStorage.multiRemove([
-        'studentToken', 'userToken', 'adminToken',
+        'studentToken', 'userToken', 'accessToken', 'token', 'adminToken',
         'schoolUserToken', 'parentUserToken',
         'studentLoggedIn', 'schoolLoggedIn', 'parentLoggedIn', 'adminLoggedIn',
         'userType', 'userData', 'schoolUserType',

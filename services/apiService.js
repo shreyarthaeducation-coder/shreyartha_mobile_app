@@ -3,6 +3,7 @@
 // Adapted for React Native (AsyncStorage instead of localStorage)
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { router } from 'expo-router';
 
 // IMPORTANT: Replace with your actual backend URL
 // In production, use your deployed backend URL (e.g., https://api.shreyartha.com)
@@ -10,6 +11,68 @@ const API_BASE_URL = 'https://shreyartha.com';
 
 const REQUEST_TIMEOUT_MS = 10000; // 10 seconds
 const MAX_RETRIES = 1;
+const REDIRECT_COOLDOWN_MS = 500;
+let redirectingAfterAuthError = false;
+let clearAuthRedirectPromise = null;
+
+const clearAuthAndRedirect = async () => {
+  if (clearAuthRedirectPromise) return clearAuthRedirectPromise;
+
+  clearAuthRedirectPromise = (async () => {
+    if (redirectingAfterAuthError) return;
+    redirectingAfterAuthError = true;
+
+    let userType = null;
+    try {
+      userType = await AsyncStorage.getItem('userType');
+    } catch {
+      userType = null;
+    }
+
+    try {
+      await AsyncStorage.multiRemove([
+        'studentToken',
+        'userToken',
+        'accessToken',
+        'token',
+        'adminToken',
+        'schoolUserToken',
+        'parentUserToken',
+        'studentLoggedIn',
+        'schoolLoggedIn',
+        'parentLoggedIn',
+        'adminLoggedIn',
+        'userType',
+        'userData',
+        'studentRole',
+        'cachedStudentRole',
+      ]);
+    } catch {
+      // Ignore storage clear failures; we still want to force a login redirect.
+    } finally {
+      const authRouteByUserType = {
+        admin: '/auth/admin-login',
+        school: '/auth/school-login',
+        parent: '/auth/parent-login',
+      };
+      const targetRoute = authRouteByUserType[userType] || '/auth/student-login';
+      try {
+        router.replace(targetRoute);
+      } catch {
+        // Ignore navigation errors if router is not ready yet.
+      }
+      setTimeout(() => {
+        redirectingAfterAuthError = false;
+      }, REDIRECT_COOLDOWN_MS);
+    }
+  })();
+
+  try {
+    await clearAuthRedirectPromise;
+  } finally {
+    clearAuthRedirectPromise = null;
+  }
+};
 
 /**
  * Get stored token — checks all possible token storage locations.
@@ -38,11 +101,15 @@ const getStoredToken = async (endpoint = '') => {
 
     if (endpoint.includes('/students/')) {
       return (await AsyncStorage.getItem('studentToken')) ||
-             (await AsyncStorage.getItem('userToken')) || null;
+             (await AsyncStorage.getItem('userToken')) ||
+             (await AsyncStorage.getItem('accessToken')) ||
+             (await AsyncStorage.getItem('token')) || null;
     }
 
     return (await AsyncStorage.getItem('studentToken')) ||
            (await AsyncStorage.getItem('userToken')) ||
+           (await AsyncStorage.getItem('accessToken')) ||
+           (await AsyncStorage.getItem('token')) ||
            (await AsyncStorage.getItem('adminToken')) ||
            (await AsyncStorage.getItem('schoolUserToken')) ||
            (await AsyncStorage.getItem('parentUserToken')) || null;
@@ -102,6 +169,9 @@ const apiFetch = async (endpoint, options = {}, attempt = 0) => {
     const errMsg = contentType.includes('application/json')
       ? (await response.json()).message || 'Unauthorized'
       : 'Unauthorized';
+    if (!isAuthEndpoint) {
+      await clearAuthAndRedirect();
+    }
     const err = new Error(errMsg);
     err.status = response.status;
     throw err;
