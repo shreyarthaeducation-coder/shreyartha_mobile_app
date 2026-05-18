@@ -38,14 +38,14 @@ const DASHBOARD_CARDS = [
     route: '/student/subject-career',
   },
   {
-    label: 'Skill Edge',
+    label: 'Skills Edge',
     icon: require('../../assets/images/skill-edge.png'),
-    route: '/student/resources',
+    route: '/student/skills-edge',
   },
   {
     label: 'Language Pro',
     icon: require('../../assets/images/language-pro.png'),
-    route: '/student/resources',
+    route: '/student/language-pro',
   },
   {
     label: 'Coding',

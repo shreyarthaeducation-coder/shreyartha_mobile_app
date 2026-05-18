@@ -39,9 +39,23 @@ export const studentService = {
   updateAcademicProfile: (data) => api.put('/api/academic/profile', data),
   getStudentHiddenNodes: (type) => api.get(`/api/students/hidden-nodes?type=${encodeURIComponent(type)}`),
   getSkillsEdgeTree: () => api.get('/api/skillsedge/tree'),
+  getSkillDetail: (skillId) => api.get(`/api/skillsedge/skills/${encodeURIComponent(skillId)}`),
+  getSkillChapterDetail: (chapterId) => api.get(`/api/skillsedge/chapters/${encodeURIComponent(chapterId)}`),
+  getSkillModuleDetail: (moduleId) => api.get(`/api/skillsedge/modules/${encodeURIComponent(moduleId)}`),
+  getSkillChapterAssessment: (chapterId) => api.get(`/api/skillsedge/chapters/${encodeURIComponent(chapterId)}/assessment`),
+  getSkillChapterProject: (chapterId) => api.get(`/api/skillsedge/chapters/${encodeURIComponent(chapterId)}/project`),
   getSkillsProfile: () => api.get('/api/skills/profile'),
   createSkillsProfile: (data) => api.post('/api/skills/profile', data),
   updateSkillsProfile: (data) => api.put('/api/skills/profile', data),
+  getLanguageProTree: () => api.get('/api/languagepro/tree'),
+  getLanguageProTopics: ({ resourceType, focusArea, level, mode }) =>
+    api.get(
+      `/api/languagepro/topics?resourceType=${encodeURIComponent(resourceType)}&focusArea=${encodeURIComponent(focusArea)}&level=${encodeURIComponent(level || '')}&mode=${encodeURIComponent(mode)}`,
+    ),
+  getLanguageProTopicContent: (topicId, { resourceType, focusArea, level, mode } = {}) =>
+    api.get(
+      `/api/languagepro/topics/${encodeURIComponent(topicId)}/content?resourceType=${encodeURIComponent(resourceType || '')}&focusArea=${encodeURIComponent(focusArea || '')}&level=${encodeURIComponent(level || '')}&mode=${encodeURIComponent(mode || '')}`,
+    ),
   getUniversityProfile: () => api.get('/api/university/profile'),
   createUniversityProfile: (data) => api.post('/api/university/profile', data),
   updateUniversityProfile: (data) => api.put('/api/university/profile', data),
