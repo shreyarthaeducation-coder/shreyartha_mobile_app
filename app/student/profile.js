@@ -55,6 +55,23 @@ const SKILLS_EDGE_OPTIONS = [
 ];
 const COMMUNICATION_ROWS = ['Listening', 'Speaking', 'Reading', 'Writing'];
 const COMMUNICATION_LEVELS = ['Beginner', 'Average', 'Proficient'];
+const ACADEMIC_CLASS_OPTIONS = ['9', '10', '11', '12', '4', '1', '2', '3', '5'];
+const ACADEMIC_CHALLENGING_SUBJECT_OPTIONS = [
+  'Science',
+  'Mathematics',
+  'Social Science',
+  'English Literature',
+  'English Writing Skills',
+];
+const ACADEMIC_COMPETITIVE_EXAM_OPTIONS = [
+  'Engineering & Technology',
+  'Medical & Healthcare',
+  'CUET UG',
+  'Commerce, Accounting & Finance',
+  'Defense & Paramilitary',
+  'Arts & Humanities',
+  'Govt Examination',
+];
 // Keeps card height aligned for one- and two-line skill labels in the grid.
 const SKILL_LABEL_MIN_HEIGHT = 34;
 const SKILL_ALIAS_MAP = SKILLS_EDGE_OPTIONS.reduce((acc, skill) => {
@@ -83,6 +100,11 @@ const PERSONAL_REQUIRED = ['fullName', 'email', 'gender', 'dob', 'mobile', 'curr
 const unwrap = (value) => (value?.data && typeof value.data === 'object' ? value.data : value || {});
 const arr = (value) => (Array.isArray(value) ? value : value ? [value] : []);
 const countWords = (text) => (text || '').trim().split(/\s+/).filter(Boolean).length;
+const normalizeText = (value) => String(value || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+const classToken = (value) => {
+  const match = String(value || '').match(/\d+/);
+  return match ? match[0] : String(value || '').trim();
+};
 const normalizeSkillId = (raw) => {
   if (raw == null) return '';
   const text = String(raw).trim().toLowerCase();
@@ -147,9 +169,17 @@ function ReadOnly({ label, value }) {
   );
 }
 
-function Tick({ checked, label, onPress }) {
+function Tick({ checked, label, onPress, disabled, accessibilityHint }) {
   return (
-    <Pressable style={[styles.tickRow, checked && styles.tickRowActive]} onPress={onPress}>
+    <Pressable
+      style={[styles.tickRow, checked && styles.tickRowActive, disabled && styles.disabled]}
+      onPress={onPress}
+      disabled={disabled}
+      accessibilityRole="checkbox"
+      accessibilityLabel={label}
+      accessibilityHint={accessibilityHint}
+      accessibilityState={{ checked, disabled: Boolean(disabled) }}
+    >
       <View style={[styles.tickBox, checked && styles.tickBoxActive]}>{checked ? <Text style={styles.tickText}>✓</Text> : null}</View>
       <Text style={styles.tickLabel}>{label}</Text>
     </Pressable>
@@ -220,11 +250,14 @@ export default function StudentProfileScreen() {
     id: null,
     curriculumId: null,
     classId: null,
+    classLabel: '',
     challengingSubjectIds: [],
+    challengingSubjects: [],
     chapters: {},
     topics: {},
     preparingCompetitiveExam: null,
     competitiveExamId: null,
+    competitiveExamName: '',
     entranceExamIds: [],
   });
   const [skills, setSkills] = useState({ id: null, selectedSkillIds: [], communicationRatings: { Listening: '', Speaking: '', Reading: '', Writing: '' }, locked: false });
@@ -274,7 +307,7 @@ export default function StudentProfileScreen() {
     const pD = unwrap(p); const aD = unwrap(a); const sD = unwrap(s); const uD = unwrap(u); const eD = unwrap(e); const adD = unwrap(ad);
     setCompleted({
       personal: Boolean((pD.fullName || pD.name || pD.studentName) && (pD.mobile || pD.phone) && pD.email),
-      academic: Boolean((aD.curriculumId || aD.curriculum || aD.curriculumName) && (aD.classId || aD.className || aD.class) && (arr(aD.challengingSubjectIds).length || arr(aD.selectedTopicIds || aD.topicIds).length)),
+      academic: Boolean((aD.curriculumId || aD.curriculum || aD.curriculumName) && (aD.classId || aD.className || aD.class) && (arr(aD.challengingSubjectIds).length || arr(aD.challengingSubjects || aD.subjectNames).length || arr(aD.selectedTopicIds || aD.topicIds).length)),
       skillsedge: Boolean(arr(sD.selectedSkillIds || sD.skillIds || sD.selectedSkills).length),
       university: Boolean(
         (uD.universityPreference1 || uD.preferredUniversity1)
@@ -366,15 +399,22 @@ export default function StudentProfileScreen() {
         Object.assign(topicMap, a.topics);
       }
       const competitiveExamId = a.competitiveExamId || arr(a.competitiveExamIds || a.examIds)[0] || null;
+      const challengingSubjectsRaw = a.challengingSubjects || a.subjectNames || a.challengingSubjectNames;
+      const challengingSubjects = typeof challengingSubjectsRaw === 'string'
+        ? challengingSubjectsRaw.split(',').map((item) => item.trim()).filter(Boolean)
+        : arr(challengingSubjectsRaw);
       setAcademic({
         id: a.id || null,
         curriculumId: a.curriculumId || null,
         classId: a.classId || null,
+        classLabel: a.className || a.class || '',
         challengingSubjectIds: arr(a.challengingSubjectIds || a.subjectIds),
+        challengingSubjects: challengingSubjects.length ? challengingSubjects : [],
         chapters: chapterMap,
         topics: topicMap,
         preparingCompetitiveExam: a.preparingCompetitiveExam != null ? Boolean(a.preparingCompetitiveExam) : (competitiveExamId ? true : null),
         competitiveExamId,
+        competitiveExamName: a.competitiveExamName || a.examName || '',
         entranceExamIds: arr(a.entranceExamIds),
       });
 
@@ -550,11 +590,16 @@ export default function StudentProfileScreen() {
         const payload = {
           curriculumId: academic.curriculumId,
           classId: academic.classId,
+          className: academic.classLabel,
+          class: academic.classLabel,
           challengingSubjectIds: academic.challengingSubjectIds,
+          challengingSubjects: academic.challengingSubjects,
+          subjectNames: academic.challengingSubjects,
           chapters: academic.chapters,
           topics: academic.topics,
           preparingCompetitiveExam: academic.preparingCompetitiveExam,
           competitiveExamId: academic.preparingCompetitiveExam ? academic.competitiveExamId : null,
+          competitiveExamName: academic.preparingCompetitiveExam ? academic.competitiveExamName : '',
           entranceExamIds: academic.preparingCompetitiveExam ? academic.entranceExamIds : [],
         };
         await (academic.id ? studentService.updateAcademicProfile(payload) : studentService.createAcademicProfile(payload));
@@ -606,10 +651,26 @@ export default function StudentProfileScreen() {
   const selectedCurriculumNode = tree.find((x) => x.id === academic.curriculumId);
   const filteredCurriculums = tree.filter((c) => !hiddenNodeIds.includes(c.id));
   const filteredClasses = arr(selectedCurriculumNode?.classes || selectedCurriculumNode?.children).filter((c) => !hiddenNodeIds.includes(c.id));
-  const selectedClassNode = filteredClasses.find((c) => c.id === academic.classId);
+  const orderedClassOptions = ACADEMIC_CLASS_OPTIONS.map((label) => {
+    const node = filteredClasses.find((c) => classToken(c.name || c.title) === label);
+    return { label, id: node?.id || null };
+  });
+  const selectedClassNode = filteredClasses.find((c) => c.id === academic.classId)
+    || filteredClasses.find((c) => classToken(c.name || c.title) === classToken(academic.classLabel));
   const classSubjects = arr(selectedClassNode?.subjects || selectedClassNode?.children).filter((s) => !hiddenNodeIds.includes(s.id));
+  const subjectByName = classSubjects.reduce((acc, subj) => {
+    const key = normalizeText(subj.name || subj.title);
+    if (key) acc[key] = subj;
+    return acc;
+  }, {});
   const filteredExams = arr(exams).filter((x) => !hiddenExamIds.includes(x.id));
-  const selectedExam = filteredExams.find((x) => x.id === academic.competitiveExamId);
+  const examByName = filteredExams.reduce((acc, exam) => {
+    const key = normalizeText(exam.name || exam.title);
+    if (key) acc[key] = exam;
+    return acc;
+  }, {});
+  const selectedExam = filteredExams.find((x) => x.id === academic.competitiveExamId)
+    || examByName[normalizeText(academic.competitiveExamName)];
   const entranceExamOptions = arr(selectedExam?.entranceExams || selectedExam?.exams || []);
 
   return (
@@ -813,184 +874,145 @@ export default function StudentProfileScreen() {
               <>
                 <Text style={styles.subHeader}>Curriculum</Text>
                 <View style={styles.chips}>
-                  {isSchoolStudent ? (
-                    <View style={[styles.chip, styles.chipOn]}>
-                      <Text style={[styles.chipTxt, styles.chipTxtOn]}>{personal.curriculum || 'School Curriculum'}</Text>
-                    </View>
-                  ) : (
-                    filteredCurriculums.map((node) => (
-                      <TouchableOpacity
-                        key={String(node.id)}
-                        style={[styles.chip, academic.curriculumId === node.id && styles.chipOn]}
-                        onPress={() => setAcademic((a) => ({
-                          ...a, curriculumId: node.id,
-                          classId: null, challengingSubjectIds: [], chapters: {}, topics: {},
-                        }))}
-                      >
-                        <Text style={[styles.chipTxt, academic.curriculumId === node.id && styles.chipTxtOn]}>
-                          {node.name || node.title}
-                        </Text>
-                      </TouchableOpacity>
-                    ))
-                  )}
+                  {filteredCurriculums.map((node) => (
+                    <TouchableOpacity
+                      key={String(node.id)}
+                      style={[styles.chip, academic.curriculumId === node.id && styles.chipOn]}
+                      onPress={() => setAcademic((a) => ({
+                        ...a,
+                        curriculumId: node.id,
+                        classId: null,
+                        classLabel: '',
+                        challengingSubjectIds: [],
+                        challengingSubjects: [],
+                        chapters: {},
+                        topics: {},
+                      }))}
+                    >
+                      <Text style={[styles.chipTxt, academic.curriculumId === node.id && styles.chipTxtOn]}>
+                        {node.name || node.title}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
                 </View>
 
                 <Text style={styles.subHeader}>Class</Text>
                 <View style={styles.chips}>
-                  {isSchoolStudent ? (
-                    <View style={[styles.chip, styles.chipOn]}>
-                      <Text style={[styles.chipTxt, styles.chipTxtOn]}>
-                        {personal.currentClass ? `Class ${personal.currentClass}` : 'My Class'}
-                      </Text>
-                    </View>
-                  ) : (
-                    filteredClasses.map((cls) => (
-                      <TouchableOpacity
-                        key={String(cls.id)}
-                        style={[styles.chip, academic.classId === cls.id && styles.chipOn]}
-                        onPress={() => setAcademic((a) => ({
-                          ...a, classId: cls.id,
-                          challengingSubjectIds: [], chapters: {}, topics: {},
-                        }))}
-                      >
-                        <Text style={[styles.chipTxt, academic.classId === cls.id && styles.chipTxtOn]}>
-                          {cls.name || cls.title}
-                        </Text>
-                      </TouchableOpacity>
-                    ))
-                  )}
-                </View>
-
-                {classSubjects.length > 0 ? (
-                  <>
-                    <Text style={styles.subHeader}>Challenging Subjects (max 2)</Text>
-                    {classSubjects.map((subj) => {
-                      const id = subj.id;
-                      const checked = academic.challengingSubjectIds.includes(id);
-                      return (
-                        <Tick
-                          key={String(id)}
-                          checked={checked}
-                          label={subj.name || subj.title || String(id)}
-                          onPress={() => {
-                            if (!checked && academic.challengingSubjectIds.length >= 2) {
-                              setError('You can select up to 2 subjects');
-                              return;
-                            }
-                            setError('');
-                            setAcademic((a) => {
-                              const next = checked
-                                ? a.challengingSubjectIds.filter((x) => x !== id)
-                                : [...a.challengingSubjectIds, id];
-                              const newChapters = { ...a.chapters };
-                              if (checked) delete newChapters[String(id)];
-                              return { ...a, challengingSubjectIds: next, chapters: newChapters };
-                            });
-                          }}
-                        />
-                      );
-                    })}
-                    {academic.challengingSubjectIds.map((subjectId) => {
-                      const subj = classSubjects.find((s) => s.id === subjectId);
-                      if (!subj) return null;
-                      const subjChapters = arr(subj.chapters || subj.children).filter((ch) => !hiddenNodeIds.includes(ch.id));
-                      if (!subjChapters.length) return null;
-                      return (
-                        <View key={String(subjectId)}>
-                          <Text style={styles.subHeaderSm}>{subj.name || subj.title} — Chapters</Text>
-                          {subjChapters.map((ch) => {
-                            const chId = ch.id;
-                            const subjKey = String(subjectId);
-                            const selectedChIds = arr(academic.chapters[subjKey]);
-                            const checked = selectedChIds.includes(chId);
-                            return (
-                              <Tick
-                                key={String(chId)}
-                                checked={checked}
-                                label={ch.name || ch.title || String(chId)}
-                                onPress={() => {
-                                  setAcademic((a) => {
-                                    const prev = arr(a.chapters[subjKey]);
-                                    const next = checked ? prev.filter((x) => x !== chId) : [...prev, chId];
-                                    const newChapters = { ...a.chapters, [subjKey]: next };
-                                    const newTopics = { ...a.topics };
-                                    if (checked) delete newTopics[String(chId)];
-                                    return { ...a, chapters: newChapters, topics: newTopics };
-                                  });
-                                }}
-                              />
-                            );
-                          })}
-                          {arr(academic.chapters[String(subjectId)]).map((chapterId) => {
-                            const ch = subjChapters.find((c) => c.id === chapterId);
-                            if (!ch) return null;
-                            const chTopics = arr(ch.topics || ch.children).filter((t) => !hiddenNodeIds.includes(t.id));
-                            if (!chTopics.length) return null;
-                            const chKey = String(chapterId);
-                            return (
-                              <View key={chKey}>
-                                <Text style={styles.subHeaderSm}>{ch.name || ch.title} — Topics</Text>
-                                {chTopics.map((topic) => {
-                                  const tId = topic.id;
-                                  const selTopics = arr(academic.topics[chKey]);
-                                  const tchecked = selTopics.includes(tId);
-                                  return (
-                                    <Tick
-                                      key={String(tId)}
-                                      checked={tchecked}
-                                      label={topic.name || topic.title || String(tId)}
-                                      onPress={() => {
-                                        setAcademic((a) => {
-                                          const prev = arr(a.topics[chKey]);
-                                          const next = tchecked ? prev.filter((x) => x !== tId) : [...prev, tId];
-                                          return { ...a, topics: { ...a.topics, [chKey]: next } };
-                                        });
-                                      }}
-                                    />
-                                  );
-                                })}
-                              </View>
-                            );
-                          })}
-                        </View>
-                      );
-                    })}
-                  </>
-                ) : null}
-
-                <Text style={styles.subHeader}>Are you preparing for a competitive exam?</Text>
-                <View style={styles.yesNoRow}>
-                  {['Yes', 'No'].map((opt) => {
-                    const isYes = opt === 'Yes';
-                    const isActive = academic.preparingCompetitiveExam === isYes;
+                  {orderedClassOptions.map((cls) => {
+                    const selected = academic.classId === cls.id || classToken(academic.classLabel) === cls.label;
                     return (
                       <TouchableOpacity
-                        key={opt}
-                        style={[styles.chip, isActive && styles.chipOn, { marginRight: 8 }]}
+                        key={cls.label}
+                        style={[styles.chip, selected && styles.chipOn]}
                         onPress={() => setAcademic((a) => ({
                           ...a,
-                          preparingCompetitiveExam: isYes,
-                          competitiveExamId: isYes ? a.competitiveExamId : null,
-                          entranceExamIds: isYes ? a.entranceExamIds : [],
+                          classId: cls.id,
+                          classLabel: cls.label,
+                          challengingSubjectIds: [],
+                          challengingSubjects: [],
+                          chapters: {},
+                          topics: {},
                         }))}
                       >
-                        <Text style={[styles.chipTxt, isActive && styles.chipTxtOn]}>{opt}</Text>
+                        <Text style={[styles.chipTxt, selected && styles.chipTxtOn]}>{cls.label}</Text>
                       </TouchableOpacity>
                     );
                   })}
                 </View>
 
+                <Text style={styles.subHeader}>Subjects you find challenging (Max 2)</Text>
+                {(() => {
+                  const selectedSubjectCount = ACADEMIC_CHALLENGING_SUBJECT_OPTIONS.filter((subjectName) => {
+                    const subjectNode = subjectByName[normalizeText(subjectName)];
+                    return academic.challengingSubjects.includes(subjectName)
+                      || (subjectNode?.id && academic.challengingSubjectIds.includes(subjectNode.id));
+                  }).length;
+                  return ACADEMIC_CHALLENGING_SUBJECT_OPTIONS.map((subjectName) => {
+                    const subjectNode = subjectByName[normalizeText(subjectName)];
+                    const subjectId = subjectNode?.id;
+                    const checked = academic.challengingSubjects.includes(subjectName)
+                      || (subjectId && academic.challengingSubjectIds.includes(subjectId));
+                    const disableNew = !checked && selectedSubjectCount >= 2;
+                    return (
+                      <Tick
+                        key={subjectName}
+                        checked={checked}
+                        label={subjectName}
+                        disabled={disableNew}
+                        accessibilityHint={disableNew ? 'Maximum 2 subjects can be selected' : undefined}
+                        onPress={() => {
+                          setError('');
+                          setAcademic((a) => {
+                            if (checked) {
+                              return {
+                                ...a,
+                                challengingSubjects: a.challengingSubjects.filter((x) => x !== subjectName),
+                                challengingSubjectIds: subjectId ? a.challengingSubjectIds.filter((x) => x !== subjectId) : a.challengingSubjectIds,
+                              };
+                            }
+                            if (selectedSubjectCount >= 2) {
+                              setError('You can select up to 2 subjects');
+                              return a;
+                            }
+                            return {
+                              ...a,
+                              challengingSubjects: [...a.challengingSubjects, subjectName],
+                              challengingSubjectIds: subjectId && !a.challengingSubjectIds.includes(subjectId)
+                                ? [...a.challengingSubjectIds, subjectId]
+                                : a.challengingSubjectIds,
+                            };
+                          });
+                        }}
+                      />
+                    );
+                  });
+                })()}
+
+                <Select
+                  label="Are you preparing for any competitive examination?"
+                  required
+                  value={academic.preparingCompetitiveExam == null ? '' : (academic.preparingCompetitiveExam ? 'Yes' : 'No')}
+                  setValue={(v) => {
+                    const isYes = v === 'Yes';
+                    setAcademic((a) => ({
+                      ...a,
+                      preparingCompetitiveExam: v ? isYes : null,
+                      competitiveExamId: isYes ? a.competitiveExamId : null,
+                      competitiveExamName: isYes ? a.competitiveExamName : '',
+                      entranceExamIds: isYes ? a.entranceExamIds : [],
+                    }));
+                  }}
+                  options={['Yes', 'No']}
+                />
+
                 {academic.preparingCompetitiveExam === true ? (
                   <>
-                    <Select
-                      label="Which competitive exam?"
-                      value={academic.competitiveExamId ? String(academic.competitiveExamId) : ''}
-                      setValue={(v) => setAcademic((a) => ({ ...a, competitiveExamId: v || null, entranceExamIds: [] }))}
-                      options={filteredExams.map((x) => ({ label: x.name || x.title || String(x.id), value: String(x.id) }))}
-                    />
+                    <Text style={styles.subHeader}>Which Competitive Examination are you preparing for? (Max 1)</Text>
+                    {ACADEMIC_COMPETITIVE_EXAM_OPTIONS.map((examName) => {
+                      const examNode = examByName[normalizeText(examName)];
+                      const selected = normalizeText(academic.competitiveExamName) === normalizeText(examName)
+                        || (examNode?.id && academic.competitiveExamId === examNode.id);
+                      return (
+                        <TouchableOpacity
+                          key={examName}
+                          style={[styles.ratingOption, selected && styles.ratingOptionOn]}
+                          onPress={() => setAcademic((a) => ({
+                            ...a,
+                            competitiveExamId: examNode?.id || null,
+                            competitiveExamName: examName,
+                            entranceExamIds: [],
+                          }))}
+                        >
+                          <View style={[styles.radioOuter, selected && styles.radioOuterOn]}>
+                            {selected ? <View style={styles.radioInner} /> : null}
+                          </View>
+                          <Text style={styles.ratingText}>{examName}</Text>
+                        </TouchableOpacity>
+                      );
+                    })}
                     {entranceExamOptions.length > 0 ? (
                       <>
-                        <Text style={styles.subHeader}>Which entrance exams?</Text>
+                        <Text style={styles.subHeader}>Entrance Exams under {academic.competitiveExamName || (selectedExam?.name || selectedExam?.title || 'selected category')}</Text>
                         {entranceExamOptions.map((ee) => {
                           const id = ee.id;
                           const checked = academic.entranceExamIds.includes(id);
