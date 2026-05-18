@@ -41,6 +41,9 @@ export default function StudentLayout() {
       <Tabs.Screen name="psychometric-assessment" options={{ href: null }} />
       <Tabs.Screen name="subject-career" options={{ href: null }} />
       <Tabs.Screen name="resources" options={{ href: null }} />
+      <Tabs.Screen name="coding-pro" options={{ href: null }} />
+      <Tabs.Screen name="coding-pro-stream" options={{ href: null }} />
+      <Tabs.Screen name="coding-pro-projects" options={{ href: null }} />
       <Tabs.Screen name="profile" options={{ href: null }} />
       <Tabs.Screen name="speak-to-counsellor" options={{ href: null }} />
     </Tabs>
