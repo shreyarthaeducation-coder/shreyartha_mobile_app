@@ -75,7 +75,7 @@ export default function CodingProProjectsScreen() {
           <Text style={styles.backText}>← Back</Text>
         </TouchableOpacity>
         <Text style={styles.title}>My Project</Text>
-        <View style={{ width: 40 }} />
+        <View style={styles.topBarSpacer} />
       </View>
 
       {loading ? (
@@ -121,6 +121,7 @@ const styles = StyleSheet.create({
   },
   backText: { color: '#fff', fontSize: 16, fontWeight: '700' },
   title: { color: '#fff', fontSize: 18, fontWeight: '800' },
+  topBarSpacer: { width: 40 },
   loaderWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 10 },
   loaderText: { color: '#c7d2fe' },
   scroll: { flex: 1 },

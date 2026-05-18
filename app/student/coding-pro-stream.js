@@ -114,7 +114,9 @@ export default function CodingProStreamScreen() {
 
   const openTopic = useCallback(async (topic) => {
     const topicLabel = text(topic.title);
-    if (topicLabel.includes('project')) {
+    const topicType = text(topic?.raw?.type || topic?.raw?.nodeType || topic?.raw?.category);
+    const isProjectTopic = Boolean(topic?.raw?.isProject || topic?.raw?.isProjects || topicType === 'project' || topicType === 'projects' || topicLabel.includes('project'));
+    if (isProjectTopic) {
       router.push({ pathname: '/student/coding-pro-projects', params: { stream: streamKey, classValue: studentClass } });
       return;
     }
@@ -151,11 +153,11 @@ export default function CodingProStreamScreen() {
           <Text style={styles.backText}>← Back</Text>
         </TouchableOpacity>
         <Text style={styles.topTitle}>Coding Pro</Text>
-        <View style={{ width: 46 }} />
+        <View style={styles.topBarSpacer} />
       </View>
 
       <View style={styles.banner}>
-        <View style={{ flex: 1 }}>
+        <View style={styles.bannerTextWrap}>
           <Text style={styles.bannerTitle}>{streamLabel}</Text>
           <Text style={styles.bannerSub}>Coding Pro Stream</Text>
         </View>
@@ -211,7 +213,7 @@ export default function CodingProStreamScreen() {
             )}
           </View>
 
-          <TouchableOpacity style={styles.backButton} onPress={() => router.replace('/student/coding-pro')}>
+          <TouchableOpacity style={styles.backButton} onPress={() => router.push('/student/coding-pro')}>
             <Text style={styles.backButtonText}>Back to Coding Pro</Text>
           </TouchableOpacity>
         </ScrollView>
@@ -232,6 +234,7 @@ const styles = StyleSheet.create({
   },
   backText: { color: '#fff', fontSize: 16, fontWeight: '700' },
   topTitle: { color: '#fff', fontSize: 18, fontWeight: '800' },
+  topBarSpacer: { width: 46 },
   banner: {
     backgroundColor: '#f7c948',
     borderRadius: 14,
@@ -241,6 +244,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 8,
   },
+  bannerTextWrap: { flex: 1 },
   bannerTitle: { fontSize: 15, fontWeight: '800', color: '#1f2937' },
   bannerSub: { fontSize: 12, color: '#374151', marginTop: 2 },
   classText: { fontSize: 13, fontWeight: '700', color: '#1f2937' },

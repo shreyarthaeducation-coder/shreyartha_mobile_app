@@ -60,14 +60,14 @@ export default function CodingProLandingScreen() {
           <TouchableOpacity style={[styles.mainCard, styles.streamCard]} activeOpacity={0.9} onPress={() => setSelectorVisible(true)}>
             <Text style={styles.streamTitle}>AI, Coding & Robotics</Text>
             {STREAMS.map((stream) => (
-              <TouchableOpacity
+              <View
                 key={stream.key}
                 style={styles.chip}
-                activeOpacity={0.8}
-                onPress={() => setSelectorVisible(true)}
+                accessibilityRole="button"
+                accessibilityLabel={`Open selector for ${stream.label}`}
               >
                 <Text style={styles.chipText}>{stream.icon} {stream.label} ▾</Text>
-              </TouchableOpacity>
+              </View>
             ))}
           </TouchableOpacity>
         </View>
@@ -75,7 +75,7 @@ export default function CodingProLandingScreen() {
 
       <Modal transparent animationType="fade" visible={selectorVisible} onRequestClose={() => setSelectorVisible(false)}>
         <Pressable style={styles.modalOverlay} onPress={() => setSelectorVisible(false)}>
-          <Pressable onPress={() => {}} style={styles.popupWrap}>
+          <Pressable onPress={(event) => event.stopPropagation()} style={styles.popupWrap}>
             <BlurView intensity={40} tint="dark" style={styles.popup}>
               <TouchableOpacity style={styles.closeBtn} onPress={() => setSelectorVisible(false)}>
                 <Text style={styles.closeText}>×</Text>
