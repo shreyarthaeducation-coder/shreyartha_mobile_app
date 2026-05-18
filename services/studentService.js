@@ -82,6 +82,28 @@ export const studentService = {
       `/api/subject-career/content?streamId=${encodeURIComponent(streamId)}&majorId=${encodeURIComponent(majorId)}&careerId=${encodeURIComponent(careerId)}&section=${encodeURIComponent(section)}`,
     ),
 
+  // ── Coding Pro ──────────────────────────────────────────────────────────────
+  getCodingProLanding: () => api.get('/api/codingpro/landing'),
+  getCodingProTree: () => api.get('/api/codingpro/tree'),
+  getCodingProStreamTopics: (stream, classValue) =>
+    api.get(
+      `/api/codingpro/streams/${encodeURIComponent(stream)}/topics${classValue ? `?class=${encodeURIComponent(classValue)}` : ''}`,
+    ),
+  getCodingProTopicContent: ({ topicId, stream, classValue }) =>
+    api.get(
+      `/api/codingpro/topics/${encodeURIComponent(topicId)}/content${stream || classValue ? `?${[
+        stream ? `stream=${encodeURIComponent(stream)}` : '',
+        classValue ? `class=${encodeURIComponent(classValue)}` : '',
+      ].filter(Boolean).join('&')}` : ''}`,
+    ),
+  getCodingProProjects: ({ stream, classValue }) =>
+    api.get(
+      `/api/codingpro/projects${stream || classValue ? `?${[
+        stream ? `stream=${encodeURIComponent(stream)}` : '',
+        classValue ? `class=${encodeURIComponent(classValue)}` : '',
+      ].filter(Boolean).join('&')}` : ''}`,
+    ),
+
   // ── Resources ──────────────────────────────────────────────────────────────
   getResources: () => api.get('/api/students/resources'),
   getResourceCategories: () => api.get('/api/students/resources/categories'),
