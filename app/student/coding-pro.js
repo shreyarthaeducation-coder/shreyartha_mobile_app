@@ -99,7 +99,7 @@ export default function CodingProLandingScreen() {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#030b1f' },
+  root: { flex: 1, backgroundColor: 'transparent' },
   bgGlowOne: {
     position: 'absolute',
     top: -60,

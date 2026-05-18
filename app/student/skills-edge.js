@@ -479,7 +479,7 @@ export default function SkillsEdgeScreen() {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: STUDENT.bg },
+  root: { flex: 1, backgroundColor: 'transparent' },
   centerWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 10 },
   mutedText: { color: STUDENT.textMuted, fontSize: 13 },
   headerRow: { paddingHorizontal: 16, paddingVertical: 14 },

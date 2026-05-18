@@ -3,6 +3,7 @@
 // Adapted for React Native (AsyncStorage instead of localStorage)
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { router } from 'expo-router';
 
 // IMPORTANT: Replace with your actual backend URL
 // In production, use your deployed backend URL (e.g., https://api.shreyartha.com)
@@ -10,6 +11,42 @@ const API_BASE_URL = 'https://shreyartha.com';
 
 const REQUEST_TIMEOUT_MS = 10000; // 10 seconds
 const MAX_RETRIES = 1;
+let redirectingAfterAuthError = false;
+
+const clearAuthAndRedirect = async () => {
+  if (redirectingAfterAuthError) return;
+  redirectingAfterAuthError = true;
+  try {
+    await AsyncStorage.multiRemove([
+      'studentToken',
+      'userToken',
+      'accessToken',
+      'token',
+      'adminToken',
+      'schoolUserToken',
+      'parentUserToken',
+      'studentLoggedIn',
+      'schoolLoggedIn',
+      'parentLoggedIn',
+      'adminLoggedIn',
+      'userType',
+      'userData',
+      'studentRole',
+      'cachedStudentRole',
+    ]);
+  } catch {
+    // no-op
+  } finally {
+    try {
+      router.replace('/auth/student-login');
+    } catch {
+      // Ignore navigation errors during startup.
+    }
+    setTimeout(() => {
+      redirectingAfterAuthError = false;
+    }, 500);
+  }
+};
 
 /**
  * Get stored token — checks all possible token storage locations.
@@ -38,11 +75,15 @@ const getStoredToken = async (endpoint = '') => {
 
     if (endpoint.includes('/students/')) {
       return (await AsyncStorage.getItem('studentToken')) ||
-             (await AsyncStorage.getItem('userToken')) || null;
+             (await AsyncStorage.getItem('userToken')) ||
+             (await AsyncStorage.getItem('accessToken')) ||
+             (await AsyncStorage.getItem('token')) || null;
     }
 
     return (await AsyncStorage.getItem('studentToken')) ||
            (await AsyncStorage.getItem('userToken')) ||
+           (await AsyncStorage.getItem('accessToken')) ||
+           (await AsyncStorage.getItem('token')) ||
            (await AsyncStorage.getItem('adminToken')) ||
            (await AsyncStorage.getItem('schoolUserToken')) ||
            (await AsyncStorage.getItem('parentUserToken')) || null;
@@ -102,6 +143,9 @@ const apiFetch = async (endpoint, options = {}, attempt = 0) => {
     const errMsg = contentType.includes('application/json')
       ? (await response.json()).message || 'Unauthorized'
       : 'Unauthorized';
+    if (!isAuthEndpoint) {
+      await clearAuthAndRedirect();
+    }
     const err = new Error(errMsg);
     err.status = response.status;
     throw err;

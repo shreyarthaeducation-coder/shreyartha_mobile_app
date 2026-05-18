@@ -486,7 +486,7 @@ export default function PsychometricAssessmentScreen() {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: STUDENT.bg },
+  root: { flex: 1, backgroundColor: 'transparent' },
   headerRow: {
     flexDirection: 'row',
     alignItems: 'center',

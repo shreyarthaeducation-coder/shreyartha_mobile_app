@@ -1,5 +1,5 @@
 import { Tabs } from 'expo-router';
-import { View, Text, StyleSheet } from 'react-native';
+import { ImageBackground, View, Text, StyleSheet } from 'react-native';
 import { STUDENT } from '../../constants/theme';
 
 function TabIcon({ emoji, focused }) {
@@ -12,50 +12,59 @@ function TabIcon({ emoji, focused }) {
 
 export default function StudentLayout() {
   return (
-    <Tabs
-      screenOptions={{
-        headerShown: false,
-        tabBarStyle: styles.tabBar,
-        tabBarActiveTintColor: STUDENT.accent,
-        tabBarInactiveTintColor: STUDENT.textMuted,
-        tabBarLabelStyle: styles.tabLabel,
-        tabBarShowLabel: true,
-      }}
-    >
-      <Tabs.Screen
-        name="index"
-        options={{
-          title: 'Home',
-          tabBarIcon: ({ focused }) => <TabIcon emoji="🏠" focused={focused} />,
+    <ImageBackground source={require('../../assets/images/Background.png')} style={styles.background} resizeMode="cover">
+      <Tabs
+        screenOptions={{
+          headerShown: false,
+          sceneStyle: styles.scene,
+          tabBarStyle: styles.tabBar,
+          tabBarActiveTintColor: STUDENT.accent,
+          tabBarInactiveTintColor: STUDENT.textMuted,
+          tabBarLabelStyle: styles.tabLabel,
+          tabBarShowLabel: true,
         }}
-      />
-      <Tabs.Screen
-        name="account"
-        options={{
-          title: 'Support',
-          tabBarIcon: ({ focused }) => <TabIcon emoji="🛟" focused={focused} />,
-        }}
-      />
-      <Tabs.Screen name="academic" options={{ href: null }} />
-      <Tabs.Screen name="academic-iq" options={{ href: null }} />
-      <Tabs.Screen name="psychometric-assessment" options={{ href: null }} />
-      <Tabs.Screen name="subject-career" options={{ href: null }} />
-      <Tabs.Screen name="skills-edge" options={{ href: null }} />
-      <Tabs.Screen name="language-pro" options={{ href: null }} />
-      <Tabs.Screen name="resources" options={{ href: null }} />
-      <Tabs.Screen name="coding-pro" options={{ href: null }} />
-      <Tabs.Screen name="coding-pro-stream" options={{ href: null }} />
-      <Tabs.Screen name="coding-pro-projects" options={{ href: null }} />
-      <Tabs.Screen name="events" options={{ href: null }} />
-      <Tabs.Screen name="profile" options={{ href: null }} />
-      <Tabs.Screen name="speak-to-counsellor" options={{ href: null }} />
-    </Tabs>
+      >
+        <Tabs.Screen
+          name="index"
+          options={{
+            title: 'Home',
+            tabBarIcon: ({ focused }) => <TabIcon emoji="🏠" focused={focused} />,
+          }}
+        />
+        <Tabs.Screen
+          name="account"
+          options={{
+            title: 'Support',
+            tabBarIcon: ({ focused }) => <TabIcon emoji="🛟" focused={focused} />,
+          }}
+        />
+        <Tabs.Screen name="academic" options={{ href: null }} />
+        <Tabs.Screen name="academic-iq" options={{ href: null }} />
+        <Tabs.Screen name="psychometric-assessment" options={{ href: null }} />
+        <Tabs.Screen name="subject-career" options={{ href: null }} />
+        <Tabs.Screen name="skills-edge" options={{ href: null }} />
+        <Tabs.Screen name="language-pro" options={{ href: null }} />
+        <Tabs.Screen name="resources" options={{ href: null }} />
+        <Tabs.Screen name="coding-pro" options={{ href: null }} />
+        <Tabs.Screen name="coding-pro-stream" options={{ href: null }} />
+        <Tabs.Screen name="coding-pro-projects" options={{ href: null }} />
+        <Tabs.Screen name="events" options={{ href: null }} />
+        <Tabs.Screen name="profile" options={{ href: null }} />
+        <Tabs.Screen name="speak-to-counsellor" options={{ href: null }} />
+      </Tabs>
+    </ImageBackground>
   );
 }
 
 const styles = StyleSheet.create({
+  background: {
+    flex: 1,
+  },
+  scene: {
+    backgroundColor: 'transparent',
+  },
   tabBar: {
-    backgroundColor: STUDENT.tabBar,
+    backgroundColor: 'rgba(15, 23, 41, 0.95)',
     borderTopWidth: 1,
     borderTopColor: STUDENT.tabBarBorder,
     height: 62,
