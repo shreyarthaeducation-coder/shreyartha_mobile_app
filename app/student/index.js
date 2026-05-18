@@ -25,7 +25,7 @@ const DASHBOARD_CARDS = [
   {
     label: 'Academic IQ',
     icon: require('../../assets/images/academiciq.png'),
-    route: '/student/academic',
+    route: '/student/academic-iq',
   },
   {
     label: 'Psychometric Assessment',
