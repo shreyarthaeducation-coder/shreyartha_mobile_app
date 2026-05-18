@@ -48,9 +48,9 @@ const DASHBOARD_CARDS = [
     route: '/student/language-pro',
   },
   {
-    label: 'Coding',
+    label: 'Coding Pro',
     icon: require('../../assets/images/coding.png'),
-    route: '/student/resources',
+    route: '/student/coding-pro',
   },
   {
     label: 'Events & Info',
