@@ -64,7 +64,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
   },
   tabBar: {
-    backgroundColor: 'rgba(15, 23, 41, 0.95)',
+    backgroundColor: STUDENT.tabBar,
     borderTopWidth: 1,
     borderTopColor: STUDENT.tabBarBorder,
     height: 62,

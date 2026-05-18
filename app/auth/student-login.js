@@ -12,6 +12,10 @@ const MOBILE_USER_AGENT = 'Mozilla/5.0 (Linux; Android 14; Mobile) AppleWebKit/5
 
 const LOGIN_POLL_JS = `
 (function() {
+  // This helper is intentionally duplicated in READ_STORAGE_JS because each
+  // injected script must be self-contained inside the WebView runtime.
+  // Some websites persist invalid placeholders as the string literals
+  // "undefined"/"null"; filter them out so we only forward real tokens.
   function firstStorageValue(storage, keys) {
     for (var i = 0; i < keys.length; i += 1) {
       var value = storage.getItem(keys[i]);
@@ -33,7 +37,7 @@ const LOGIN_POLL_JS = `
   function sendPayload() {
     var studentToken = resolveToken();
     var userToken = studentToken;
-    var studentLoggedIn = localStorage.getItem('studentLoggedIn') || sessionStorage.getItem('studentLoggedIn') || 'true';
+    var studentLoggedIn = localStorage.getItem('studentLoggedIn') || sessionStorage.getItem('studentLoggedIn');
     var studentRole = resolveRole();
     if ((studentToken || userToken) && studentLoggedIn === 'true') {
       window.ReactNativeWebView.postMessage(JSON.stringify({
@@ -62,6 +66,8 @@ true;
 
 const READ_STORAGE_JS = `
 (function() {
+  // Duplicated intentionally: injected WebView scripts do not share scope.
+  // Keep the same guard as LOGIN_POLL_JS for websites that persist string placeholders.
   function firstStorageValue(storage, keys) {
     for (var i = 0; i < keys.length; i += 1) {
       var value = storage.getItem(keys[i]);
@@ -79,7 +85,7 @@ const READ_STORAGE_JS = `
     type: 'LOGIN_SUCCESS',
     studentToken: token,
     userToken: token,
-    studentLoggedIn: localStorage.getItem('studentLoggedIn') || sessionStorage.getItem('studentLoggedIn') || 'true',
+    studentLoggedIn: localStorage.getItem('studentLoggedIn') || sessionStorage.getItem('studentLoggedIn'),
     studentRole: role
   }));
 })();

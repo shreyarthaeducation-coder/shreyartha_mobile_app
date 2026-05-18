@@ -11,40 +11,66 @@ const API_BASE_URL = 'https://shreyartha.com';
 
 const REQUEST_TIMEOUT_MS = 10000; // 10 seconds
 const MAX_RETRIES = 1;
+const REDIRECT_COOLDOWN_MS = 500;
 let redirectingAfterAuthError = false;
+let clearAuthRedirectPromise = null;
 
 const clearAuthAndRedirect = async () => {
-  if (redirectingAfterAuthError) return;
-  redirectingAfterAuthError = true;
-  try {
-    await AsyncStorage.multiRemove([
-      'studentToken',
-      'userToken',
-      'accessToken',
-      'token',
-      'adminToken',
-      'schoolUserToken',
-      'parentUserToken',
-      'studentLoggedIn',
-      'schoolLoggedIn',
-      'parentLoggedIn',
-      'adminLoggedIn',
-      'userType',
-      'userData',
-      'studentRole',
-      'cachedStudentRole',
-    ]);
-  } catch {
-    // no-op
-  } finally {
+  if (clearAuthRedirectPromise) return clearAuthRedirectPromise;
+
+  clearAuthRedirectPromise = (async () => {
+    if (redirectingAfterAuthError) return;
+    redirectingAfterAuthError = true;
+
+    let userType = null;
     try {
-      router.replace('/auth/student-login');
+      userType = await AsyncStorage.getItem('userType');
     } catch {
-      // Ignore navigation errors during startup.
+      userType = null;
     }
-    setTimeout(() => {
-      redirectingAfterAuthError = false;
-    }, 500);
+
+    try {
+      await AsyncStorage.multiRemove([
+        'studentToken',
+        'userToken',
+        'accessToken',
+        'token',
+        'adminToken',
+        'schoolUserToken',
+        'parentUserToken',
+        'studentLoggedIn',
+        'schoolLoggedIn',
+        'parentLoggedIn',
+        'adminLoggedIn',
+        'userType',
+        'userData',
+        'studentRole',
+        'cachedStudentRole',
+      ]);
+    } catch {
+      // Ignore storage clear failures; we still want to force a login redirect.
+    } finally {
+      const authRouteByUserType = {
+        admin: '/auth/admin-login',
+        school: '/auth/school-login',
+        parent: '/auth/parent-login',
+      };
+      const targetRoute = authRouteByUserType[userType] || '/auth/student-login';
+      try {
+        router.replace(targetRoute);
+      } catch {
+        // Ignore navigation errors if router is not ready yet.
+      }
+      setTimeout(() => {
+        redirectingAfterAuthError = false;
+      }, REDIRECT_COOLDOWN_MS);
+    }
+  })();
+
+  try {
+    await clearAuthRedirectPromise;
+  } finally {
+    clearAuthRedirectPromise = null;
   }
 };
 
