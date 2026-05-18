@@ -500,7 +500,7 @@ function EventDetailModal({ event, visible, onClose, onRegisterChange }) {
                   <TouchableOpacity
                     key={i}
                     style={styles.attachmentRow}
-                    onPress={() => url && Linking.openURL(url).catch(() => {})}
+                    onPress={() => url && Linking.openURL(url).catch(() => Alert.alert('Error', 'Could not open the attachment.'))}
                     activeOpacity={0.7}
                   >
                     <Text style={styles.attachmentIcon}>📎</Text>
@@ -620,15 +620,20 @@ export default function EventsScreen() {
   }, []);
 
   useEffect(() => {
-    fetchEvents({ filter: activeFilter !== 'my' ? activeFilter : undefined });
+    fetchEvents({ filter: activeFilter !== 'my' && activeFilter !== 'all' ? activeFilter : undefined });
     if (activeFilter === 'my') fetchMyEvents();
-  }, [fetchEvents, fetchMyEvents, activeFilter]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeFilter]);
+
+  // Clean up debounce timer on unmount
+  useEffect(() => () => {
+    if (searchTimeout.current) clearTimeout(searchTimeout.current);
+  }, []);
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
     if (activeFilter === 'my') {
-      fetchMyEvents();
-      setRefreshing(false);
+      fetchMyEvents().finally(() => setRefreshing(false));
     } else {
       fetchEvents({ silent: true, filter: activeFilter !== 'all' ? activeFilter : undefined, search: searchQuery, category: activeCategory !== 'All' ? activeCategory : undefined });
     }
@@ -684,34 +689,31 @@ export default function EventsScreen() {
 
   // Apply client-side filtering for upcoming/past (in case server doesn't filter)
   const displayedEvents = useMemo(() => {
-    let list = activeFilter === 'my' ? myEvents : events;
+    const source = activeFilter === 'my' ? myEvents : events;
+    const q = searchQuery.trim().toLowerCase();
+    const catFilter = activeCategory !== 'All' ? activeCategory.toLowerCase() : null;
 
-    if (activeFilter === 'upcoming') {
-      list = list.filter(isUpcoming);
-    } else if (activeFilter === 'past') {
-      list = list.filter((e) => !isUpcoming(e));
-    }
+    return source.filter((e) => {
+      // Upcoming / past filter
+      if (activeFilter === 'upcoming' && !isUpcoming(e)) return false;
+      if (activeFilter === 'past' && isUpcoming(e)) return false;
 
-    // Client-side category filter (belt-and-suspenders)
-    if (activeCategory !== 'All') {
-      list = list.filter((e) => {
+      // Category filter
+      if (catFilter) {
         const cat = str(e?.category || e?.eventType).toLowerCase();
-        return cat === activeCategory.toLowerCase();
-      });
-    }
+        if (cat !== catFilter) return false;
+      }
 
-    // Client-side search
-    if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase();
-      list = list.filter((e) => {
+      // Search filter
+      if (q) {
         const title = str(e?.title || e?.name || e?.eventName).toLowerCase();
         const desc = str(e?.description || e?.shortDescription).toLowerCase();
         const loc = str(e?.location || e?.venue).toLowerCase();
-        return title.includes(q) || desc.includes(q) || loc.includes(q);
-      });
-    }
+        if (!title.includes(q) && !desc.includes(q) && !loc.includes(q)) return false;
+      }
 
-    return list;
+      return true;
+    });
   }, [events, myEvents, activeFilter, activeCategory, searchQuery]);
 
   const isLoadingNow = loading || (activeFilter === 'my' && myEventsLoading);
