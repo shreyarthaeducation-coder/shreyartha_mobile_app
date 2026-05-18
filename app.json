@@ -31,6 +31,7 @@
     "plugins": ["expo-router", "@react-native-community/datetimepicker"],
     "extra": {
       "router": {},
+      "apiBaseUrl": "https://shreyartha.com",
       "eas": {
         "projectId": "3895f096-be3e-4a55-b755-ebc8c28181a2"
       }

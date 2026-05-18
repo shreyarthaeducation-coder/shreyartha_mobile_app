@@ -3,11 +3,20 @@
 // Adapted for React Native (AsyncStorage instead of localStorage)
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import Constants from 'expo-constants';
 import { router } from 'expo-router';
 
-// IMPORTANT: Replace with your actual backend URL
-// In production, use your deployed backend URL (e.g., https://api.shreyartha.com)
-const API_BASE_URL = 'https://shreyartha.com';
+const resolveApiBaseUrl = () => {
+  const fromExpoConfig =
+    Constants?.expoConfig?.extra?.apiBaseUrl ||
+    Constants?.manifest2?.extra?.expoClient?.extra?.apiBaseUrl ||
+    Constants?.manifest?.extra?.apiBaseUrl;
+  const fromEnv = process?.env?.EXPO_PUBLIC_API_BASE_URL;
+  const rawBaseUrl = String(fromEnv || fromExpoConfig || 'https://shreyartha.com').trim();
+  return rawBaseUrl.replace(/\/+$/, '');
+};
+
+const API_BASE_URL = resolveApiBaseUrl();
 
 const REQUEST_TIMEOUT_MS = 10000; // 10 seconds
 const MAX_RETRIES = 1;
@@ -220,3 +229,4 @@ export const api = {
 };
 
 export default api;
+export { API_BASE_URL };
