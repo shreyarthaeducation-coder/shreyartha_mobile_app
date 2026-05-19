@@ -33,7 +33,7 @@ function normalizeTopicList(payload) {
   const direct = arr(data.topics || data.items || data.nodes || data.children || data.lessons || data);
   return direct
     .map((item, index) => ({
-      id: item?.id || item?.topicId || item?._id || `${index}`,
+      id: item?.topicId || item?.id || item?._id || `${index}`,
       title: item?.title || item?.name || item?.label || `Topic ${index + 1}`,
       raw: item,
     }))

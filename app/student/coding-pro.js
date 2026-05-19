@@ -53,7 +53,7 @@ export default function CodingProLandingScreen() {
   const streamOptions = useMemo(() => {
     const fromApi = Array.isArray(landingData?.streams)
       ? landingData.streams.map((item, index) => ({
-          key: String(item?.key || item?.id || item?.slug || item?.name || STREAMS[index]?.key || `stream-${index}`),
+          key: String(item?.key || item?.streamKey || item?.stream || item?.slug || item?.id || item?.name || STREAMS[index]?.key || `stream-${index}`),
           label: String(item?.label || item?.name || item?.title || STREAMS[index]?.label || `Stream ${index + 1}`),
           icon: String(item?.icon || STREAMS[index]?.icon || '💡'),
         }))

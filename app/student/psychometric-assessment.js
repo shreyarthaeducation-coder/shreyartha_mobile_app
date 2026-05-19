@@ -43,7 +43,7 @@ const normalizeCategories = (payload) => {
   const list = arr(data?.categories || data?.assessments || data?.items || data?.tabs || payload);
   return list
     .map((item, index) => ({
-      id: item?.id || item?.categoryId || item?.slug || item?.code || `${index}`,
+      id: item?.categoryId || item?.assessmentId || item?.id || item?.slug || item?.code || `${index}`,
       name: labelOf(item, `Assessment ${index + 1}`),
       raw: item,
     }))
@@ -82,7 +82,7 @@ const normalizeQuestions = (payload) => {
   const data = unwrap(payload);
   return arr(data?.questions || data?.items || data?.assessmentQuestions || payload).map((question, index) => ({
     ...question,
-    __id: String(question?.id || question?.questionId || question?.qid || index),
+    __id: String(question?.questionId || question?.qid || question?.id || index),
   }));
 };
 
@@ -256,7 +256,7 @@ export default function PsychometricAssessmentScreen() {
           const selected = answersMap[key];
           if (!selected) return null;
           return {
-            questionId: question?.id || question?.questionId || key,
+            questionId: question?.questionId || question?.id || key,
             optionId: selected.optionId,
             selectedOptionId: selected.optionId,
             selectedOptionIndex: selected.index,
