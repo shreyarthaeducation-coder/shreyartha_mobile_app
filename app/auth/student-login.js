@@ -33,6 +33,8 @@ const extractResponseData = (response) =>
 const extractErrorMessage = (err) =>
   err?.response?.data?.message || err?.message || 'Server error. Please try again.';
 
+const normalizeToken = (value) => String(value || '').trim().replace(/^Bearer\s+/i, '');
+
 const extractRoleFromResponse = (response) => {
   const data = extractResponseData(response);
   return (
@@ -160,18 +162,25 @@ export default function StudentLoginScreen() {
         response?.data?.token ??
         response?.token ??
         data?.token ??
+        data?.data?.token ??
         data?.accessToken ??
+        data?.data?.accessToken ??
         data?.studentToken ??
         data?.userToken ??
+        data?.user?.token ??
+        data?.student?.token ??
         data?.jwtToken;
 
-      if (!token) {
+      const authToken = normalizeToken(token);
+      if (!authToken) {
         throw new Error('Server error. Please try again.');
       }
 
       await AsyncStorage.multiSet([
-        ['studentToken', token],
-        ['userToken', token],
+        ['studentToken', authToken],
+        ['userToken', authToken],
+        ['accessToken', authToken],
+        ['token', authToken],
         ['studentLoggedIn', 'true'],
         ['userType', 'student'],
       ]);

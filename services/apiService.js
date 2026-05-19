@@ -24,6 +24,13 @@ const REDIRECT_COOLDOWN_MS = 500;
 let redirectingAfterAuthError = false;
 let clearAuthRedirectPromise = null;
 
+const normalizeStoredToken = (rawToken) => {
+  if (!rawToken) return null;
+  const token = String(rawToken).trim().replace(/^["']|["']$/g, '');
+  if (!token) return null;
+  return token.replace(/^Bearer\s+/i, '').trim();
+};
+
 const clearAuthAndRedirect = async () => {
   if (clearAuthRedirectPromise) return clearAuthRedirectPromise;
 
@@ -90,7 +97,7 @@ const clearAuthAndRedirect = async () => {
 const getStoredToken = async (endpoint = '') => {
   try {
     if (endpoint.includes('/admin/')) {
-      return (await AsyncStorage.getItem('adminToken')) ||
+      return normalizeStoredToken((await AsyncStorage.getItem('adminToken')) ||
              (await AsyncStorage.getItem('userToken')) || null;
     }
 
@@ -101,27 +108,27 @@ const getStoredToken = async (endpoint = '') => {
       endpoint.includes('/principal/') ||
       endpoint.includes('/vice-principal/')
     ) {
-      return (await AsyncStorage.getItem('schoolUserToken')) || null;
+      return normalizeStoredToken((await AsyncStorage.getItem('schoolUserToken')) || null);
     }
 
     if (endpoint.includes('/parent/')) {
-      return (await AsyncStorage.getItem('parentUserToken')) || null;
+      return normalizeStoredToken((await AsyncStorage.getItem('parentUserToken')) || null);
     }
 
     if (endpoint.includes('/students/')) {
-      return (await AsyncStorage.getItem('studentToken')) ||
+      return normalizeStoredToken((await AsyncStorage.getItem('studentToken')) ||
              (await AsyncStorage.getItem('userToken')) ||
              (await AsyncStorage.getItem('accessToken')) ||
-             (await AsyncStorage.getItem('token')) || null;
+             (await AsyncStorage.getItem('token')) || null);
     }
 
-    return (await AsyncStorage.getItem('studentToken')) ||
-           (await AsyncStorage.getItem('userToken')) ||
-           (await AsyncStorage.getItem('accessToken')) ||
-           (await AsyncStorage.getItem('token')) ||
-           (await AsyncStorage.getItem('adminToken')) ||
-           (await AsyncStorage.getItem('schoolUserToken')) ||
-           (await AsyncStorage.getItem('parentUserToken')) || null;
+    return normalizeStoredToken((await AsyncStorage.getItem('studentToken')) ||
+            (await AsyncStorage.getItem('userToken')) ||
+            (await AsyncStorage.getItem('accessToken')) ||
+            (await AsyncStorage.getItem('token')) ||
+            (await AsyncStorage.getItem('adminToken')) ||
+            (await AsyncStorage.getItem('schoolUserToken')) ||
+            (await AsyncStorage.getItem('parentUserToken')) || null);
   } catch {
     return null;
   }

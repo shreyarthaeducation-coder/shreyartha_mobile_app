@@ -12,11 +12,11 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { STUDENT } from '../../constants/theme';
 import { studentService } from '../../services/studentService';
-import { api } from '../../services/apiService';
 
 const arr = (value) => (Array.isArray(value) ? value : value ? [value] : []);
 const unwrap = (value) => (value?.data && typeof value.data === 'object' ? value.data : value || {});
 const labelOf = (node, fallback = '') => String(node?.title || node?.name || node?.label || fallback || '').trim();
+const toMessage = (err) => err?.response?.data?.message || err?.message || 'Server error. Please try again.';
 
 const normalizeQuestionOptions = (question) => {
   const options = arr(question?.options || question?.choices || question?.answers || question?.answerOptions || question?.mcqOptions);
@@ -86,20 +86,6 @@ const normalizeQuestions = (payload) => {
   }));
 };
 
-async function requestWithFallbacks(candidates) {
-  let lastError;
-  for (const candidate of candidates) {
-    try {
-      // eslint-disable-next-line no-await-in-loop
-      return await candidate();
-    } catch (error) {
-      lastError = error;
-    }
-  }
-  if (lastError) throw lastError;
-  return null;
-}
-
 function ResultCard({ result, onBack }) {
   const score = result?.score ?? result?.correct ?? result?.totalScore ?? result?.obtainedMarks;
   const total = result?.total ?? result?.totalQuestions ?? result?.maxScore;
@@ -159,19 +145,14 @@ export default function PsychometricAssessmentScreen() {
     setLoading(true);
     setError('');
     try {
-      const data = await requestWithFallbacks([
-        () => studentService.getPsychometricCategories(),
-        () => api.get('/api/students/psychometric/categories'),
-        () => api.get('/api/psychometric/assessments'),
-        () => api.get('/api/students/assessments/psychometric'),
-      ]);
+      const data = await studentService.getPsychometricCategories();
       const parsed = normalizeCategories(data);
       setCategories(parsed);
       if (parsed.length > 0) {
         setActiveCategoryId(parsed[0].id);
       }
     } catch (loadError) {
-      setError(loadError?.message || 'Unable to load psychometric assessments.');
+      setError(toMessage(loadError));
     } finally {
       setLoading(false);
     }
@@ -187,16 +168,11 @@ export default function PsychometricAssessmentScreen() {
     setError('');
     try {
       const categoryId = category.id;
-      const data = await requestWithFallbacks([
-        () => studentService.getPsychometricIntro(categoryId),
-        () => api.get(`/api/students/psychometric/categories/${encodeURIComponent(categoryId)}`),
-        () => api.get(`/api/psychometric/assessments/${encodeURIComponent(categoryId)}`),
-        () => api.get(`/api/students/assessments/psychometric/${encodeURIComponent(categoryId)}`),
-      ]);
+      const data = await studentService.getPsychometricIntro(categoryId);
       setInstruction(normalizeInstructions(data, category.name));
     } catch (detailError) {
       setInstruction({ title: category.name, bullets: [], status: '', answers: null, result: null });
-      setError(detailError?.message || 'Unable to load assessment details.');
+      setError(toMessage(detailError));
     }
   }, []);
 
@@ -206,12 +182,7 @@ export default function PsychometricAssessmentScreen() {
   }, [activeCategory, loadCategoryDetails]);
 
   const loadQuestions = useCallback(async (categoryId) => {
-    const data = await requestWithFallbacks([
-      () => studentService.getPsychometricQuestions(categoryId),
-      () => api.get(`/api/students/psychometric/categories/${encodeURIComponent(categoryId)}/questions`),
-      () => api.get(`/api/psychometric/assessments/${encodeURIComponent(categoryId)}/questions`),
-      () => api.get(`/api/students/assessments/psychometric/${encodeURIComponent(categoryId)}/questions`),
-    ]);
+    const data = await studentService.getPsychometricQuestions(categoryId);
     return normalizeQuestions(data);
   }, []);
 
@@ -267,7 +238,7 @@ export default function PsychometricAssessmentScreen() {
       setAnswersMap(buildInitialAnswers(questionList, instruction.answers || {}));
       setView('runner');
     } catch (startError) {
-      setError(startError?.message || 'Unable to start the assessment.');
+      setError(toMessage(startError));
     } finally {
       setLoading(false);
     }
@@ -300,12 +271,7 @@ export default function PsychometricAssessmentScreen() {
         answers,
       };
 
-      const submitResponse = await requestWithFallbacks([
-        () => studentService.submitPsychometricAssessment(activeCategory.id, payload),
-        () => api.post(`/api/students/psychometric/categories/${encodeURIComponent(activeCategory.id)}/submit`, payload),
-        () => api.post(`/api/psychometric/assessments/${encodeURIComponent(activeCategory.id)}/submit`, payload),
-        () => api.post('/api/students/assessments/psychometric/submit', payload),
-      ]);
+      const submitResponse = await studentService.submitPsychometricAssessment(activeCategory.id, payload);
 
       const submitData = unwrap(submitResponse);
       const resultPayload = submitData?.result || submitData?.report || submitData;
@@ -314,16 +280,12 @@ export default function PsychometricAssessmentScreen() {
         setInstruction((prev) => ({ ...prev, status: 'completed', result: resultPayload }));
         setView('result');
       } else {
-        const resultResponse = await requestWithFallbacks([
-          () => studentService.getPsychometricResult(activeCategory.id),
-          () => api.get(`/api/students/psychometric/categories/${encodeURIComponent(activeCategory.id)}/result`),
-          () => api.get(`/api/psychometric/assessments/${encodeURIComponent(activeCategory.id)}/result`),
-        ]);
+        const resultResponse = await studentService.getPsychometricResult(activeCategory.id);
         setInstruction((prev) => ({ ...prev, status: 'completed', result: unwrap(resultResponse) }));
         setView('result');
       }
     } catch (submitError) {
-      setError(submitError?.message || 'Unable to submit your assessment.');
+      setError(toMessage(submitError));
     } finally {
       setSubmitting(false);
     }

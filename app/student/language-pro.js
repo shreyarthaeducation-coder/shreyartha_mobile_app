@@ -11,7 +11,6 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { STUDENT } from '../../constants/theme';
 import { studentService } from '../../services/studentService';
-import { api } from '../../services/apiService';
 
 const MODE_TABS = [
   { key: 'listen', label: '🎧 Listen' },
@@ -31,6 +30,7 @@ const unwrap = (value) => (value?.data && typeof value.data === 'object' ? value
 const nodeLabel = (node, fallback = '') => String(node?.name || node?.title || node?.label || fallback || '').trim();
 const normalize = (value) => String(value || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
 const asText = (value) => String(value ?? '').trim();
+const toMessage = (err) => err?.response?.data?.message || err?.message || 'Server error. Please try again.';
 
 function levelBadge(levelRaw) {
   const level = String(levelRaw || 'Beginner');
@@ -38,20 +38,6 @@ function levelBadge(levelRaw) {
   if (token.includes('proficient')) return { label: 'PROFICIENT', color: '#16A34A', background: '#DCFCE7' };
   if (token.includes('average') || token.includes('intermediate')) return { label: 'AVERAGE', color: '#D97706', background: '#FEF3C7' };
   return { label: 'BEGINNER', color: '#DC2626', background: '#FEE2E2' };
-}
-
-async function requestWithFallbacks(candidates) {
-  let lastError;
-  for (const candidate of candidates) {
-    try {
-      // eslint-disable-next-line no-await-in-loop
-      return await candidate();
-    } catch (error) {
-      lastError = error;
-    }
-  }
-  if (lastError) throw lastError;
-  return null;
 }
 
 function mapTopics(data) {
@@ -96,7 +82,7 @@ export default function LanguageProScreen() {
       ]);
       setSkillsProfile(unwrap(profileRes));
     } catch (loadError) {
-      setError(loadError?.message || 'Unable to load Language Pro.');
+      setError(toMessage(loadError));
       setSkillsProfile({});
     } finally {
       setLoading(false);
@@ -113,19 +99,15 @@ export default function LanguageProScreen() {
     setSelectedTopic(null);
     setTopicContent(null);
     try {
-      const data = await requestWithFallbacks([
-        () => studentService.getLanguageProTopics({
-          resourceType,
-          focusArea: activeFocusArea,
-          level: resourceType === 'personalized' ? activeLevel : '',
-          mode: activeMode,
-        }),
-        () => api.get(`/api/language-pro/topics?resourceType=${encodeURIComponent(resourceType)}&focusArea=${encodeURIComponent(activeFocusArea)}&level=${encodeURIComponent(resourceType === 'personalized' ? activeLevel : '')}&mode=${encodeURIComponent(activeMode)}`),
-        () => api.get(`/api/students/languagepro/topics?resourceType=${encodeURIComponent(resourceType)}&focusArea=${encodeURIComponent(activeFocusArea)}&level=${encodeURIComponent(resourceType === 'personalized' ? activeLevel : '')}&mode=${encodeURIComponent(activeMode)}`),
-      ]);
+      const data = await studentService.getLanguageProTopics({
+        resourceType,
+        focusArea: activeFocusArea,
+        level: resourceType === 'personalized' ? activeLevel : '',
+        mode: activeMode,
+      });
       setTopics(mapTopics(unwrap(data)));
     } catch (topicsError) {
-      setError(topicsError?.message || 'Unable to load Language Pro topics.');
+      setError(toMessage(topicsError));
       setTopics([]);
     } finally {
       setTopicsLoading(false);
@@ -144,19 +126,15 @@ export default function LanguageProScreen() {
     setTopicContentLoading(true);
     setTopicContent(null);
     try {
-      const data = await requestWithFallbacks([
-        () => studentService.getLanguageProTopicContent(topicId, {
-          resourceType,
-          focusArea: activeFocusArea,
-          level: resourceType === 'personalized' ? activeLevel : '',
-          mode: activeMode,
-        }),
-        () => api.get(`/api/languagepro/topics/${encodeURIComponent(topicId)}/content?resourceType=${encodeURIComponent(resourceType)}&focusArea=${encodeURIComponent(activeFocusArea)}&level=${encodeURIComponent(resourceType === 'personalized' ? activeLevel : '')}&mode=${encodeURIComponent(activeMode)}`),
-        () => api.get(`/api/language-pro/topics/${encodeURIComponent(topicId)}/content?resourceType=${encodeURIComponent(resourceType)}&focusArea=${encodeURIComponent(activeFocusArea)}&level=${encodeURIComponent(resourceType === 'personalized' ? activeLevel : '')}&mode=${encodeURIComponent(activeMode)}`),
-      ]);
+      const data = await studentService.getLanguageProTopicContent(topicId, {
+        resourceType,
+        focusArea: activeFocusArea,
+        level: resourceType === 'personalized' ? activeLevel : '',
+        mode: activeMode,
+      });
       setTopicContent(unwrap(data));
     } catch (contentError) {
-      setError(contentError?.message || 'Unable to load topic content.');
+      setError(toMessage(contentError));
       setTopicContent(null);
     } finally {
       setTopicContentLoading(false);

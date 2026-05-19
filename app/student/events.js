@@ -54,6 +54,7 @@ function categoryColor(cat) {
 
 const arr = (v) => (Array.isArray(v) ? v : v ? [v] : []);
 const str = (v, fallback = '') => String(v ?? fallback).trim();
+const toMessage = (err) => err?.response?.data?.message || err?.message || 'Server error. Please try again.';
 
 function formatDate(dateStr) {
   if (!dateStr) return '';
@@ -289,7 +290,7 @@ function EventDetailModal({ event, visible, onClose, onRegisterChange }) {
       onRegisterChange?.();
       Alert.alert('Registered!', 'You have successfully registered for this event.');
     } catch (err) {
-      Alert.alert('Registration Failed', err?.message || 'Could not register. Please try again.');
+      Alert.alert('Registration Failed', toMessage(err));
     } finally {
       setLoading(false);
     }
@@ -314,7 +315,7 @@ function EventDetailModal({ event, visible, onClose, onRegisterChange }) {
               onRegisterChange?.();
               Alert.alert('Cancelled', 'Your registration has been cancelled.');
             } catch (err) {
-              Alert.alert('Error', err?.message || 'Could not cancel registration. Please try again.');
+              Alert.alert('Error', toMessage(err));
             } finally {
               setLoading(false);
             }
@@ -600,7 +601,7 @@ export default function EventsScreen() {
       });
       setCategories(['All', ...Array.from(cats)]);
     } catch (err) {
-      setError(err?.message || 'Could not load events.');
+      setError(toMessage(err));
     } finally {
       setLoading(false);
       setRefreshing(false);
