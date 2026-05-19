@@ -6,6 +6,7 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { COLORS, SPACING } from '../../constants/theme';
+import { api } from '../../services/apiService';
 
 // Mirrors src/components/Chatbot/chatbotData.js from frontendmain
 const CHATBOT_DATA = [
@@ -158,8 +159,6 @@ const STEP = {
   DONE: 'done',
 };
 
-const API_URL = 'https://shreyartha.com/api/chatbot/inquiry';
-
 export default function ChatbotWidget() {
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
@@ -288,20 +287,15 @@ export default function ChatbotWidget() {
     setIsSubmitting(true);
     addMessage('bot', '⏳ Submitting your inquiry...');
     try {
-      const res = await fetch(API_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: data.name,
-          email: data.email,
-          phone: data.phone,
-          classAndStream: data.classAndStream,
-          category: selectedCategory?.label || '',
-          subCategory: selectedSubOption?.title || '',
-          concern: data.concern,
-        }),
+      await api.post('/api/chatbot/inquiry', {
+        name: data.name,
+        email: data.email,
+        phone: data.phone,
+        classAndStream: data.classAndStream,
+        category: selectedCategory?.label || '',
+        subCategory: selectedSubOption?.title || '',
+        concern: data.concern,
       });
-      if (!res.ok) throw new Error(`Server error: ${res.status}`);
       setMessages(prev => prev.filter(m => m.text !== '⏳ Submitting your inquiry...'));
       addMessage('bot', `✅ Thank you, ${data.name}! Your inquiry has been submitted.\n\nOur team will reach out to you at **${data.email}** within 24–48 hours.`, { type: 'done' });
       setStep(STEP.DONE);
