@@ -97,8 +97,11 @@ const clearAuthAndRedirect = async () => {
 const getStoredToken = async (endpoint = '') => {
   try {
     if (endpoint.includes('/admin/')) {
-      return normalizeStoredToken((await AsyncStorage.getItem('adminToken')) ||
-             (await AsyncStorage.getItem('userToken')) || null;
+      return normalizeStoredToken(
+        (await AsyncStorage.getItem('adminToken')) ||
+        (await AsyncStorage.getItem('userToken')) ||
+        null
+      );
     }
 
     if (
@@ -116,19 +119,25 @@ const getStoredToken = async (endpoint = '') => {
     }
 
     if (endpoint.includes('/students/')) {
-      return normalizeStoredToken((await AsyncStorage.getItem('studentToken')) ||
-             (await AsyncStorage.getItem('userToken')) ||
-             (await AsyncStorage.getItem('accessToken')) ||
-             (await AsyncStorage.getItem('token')) || null);
+      return normalizeStoredToken(
+        (await AsyncStorage.getItem('studentToken')) ||
+        (await AsyncStorage.getItem('userToken')) ||
+        (await AsyncStorage.getItem('accessToken')) ||
+        (await AsyncStorage.getItem('token')) ||
+        null
+      );
     }
 
-    return normalizeStoredToken((await AsyncStorage.getItem('studentToken')) ||
-            (await AsyncStorage.getItem('userToken')) ||
-            (await AsyncStorage.getItem('accessToken')) ||
-            (await AsyncStorage.getItem('token')) ||
-            (await AsyncStorage.getItem('adminToken')) ||
-            (await AsyncStorage.getItem('schoolUserToken')) ||
-            (await AsyncStorage.getItem('parentUserToken')) || null);
+    return normalizeStoredToken(
+      (await AsyncStorage.getItem('studentToken')) ||
+      (await AsyncStorage.getItem('userToken')) ||
+      (await AsyncStorage.getItem('accessToken')) ||
+      (await AsyncStorage.getItem('token')) ||
+      (await AsyncStorage.getItem('adminToken')) ||
+      (await AsyncStorage.getItem('schoolUserToken')) ||
+      (await AsyncStorage.getItem('parentUserToken')) ||
+      null
+    );
   } catch {
     return null;
   }
