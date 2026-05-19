@@ -44,6 +44,22 @@ const buildQuery = (params = {}) => {
   return serialized ? `?${serialized}` : '';
 };
 
+const buildLanguageProQueries = ({
+  resourceType,
+  focusArea,
+  level,
+  mode,
+  classValue,
+  activity,
+} = {}) => {
+  const variants = [
+    { resourceType, focusArea, level, mode, class: classValue, activity },
+    { type: resourceType, focus: focusArea, level, mode, class: classValue, activity },
+    { resource: resourceType, focusArea, proficiency: level, mode, className: classValue, activityType: activity },
+  ];
+  return [...new Set(variants.map((variant) => buildQuery(variant)))];
+};
+
 const getFirst = (endpoints) => withFallback(endpoints.map((endpoint) => () => api.get(endpoint)));
 const deleteFirst = (endpoints) => withFallback(endpoints.map((endpoint) => () => api.delete(endpoint)));
 const postFirst = (candidates, retryStatuses = WRITE_FALLBACK_RETRY_STATUSES) =>
@@ -206,15 +222,84 @@ export const studentService = {
   updateSkillsProfile: (data) => api.put('/api/skills/profile', data),
   getLanguageProTree: () => getFirst(languageProBasePaths.map((basePath) => `${basePath}/tree`)),
   getLanguageProTopics: ({ resourceType, focusArea, level, mode }) =>
-    getFirst(languageProBasePaths.flatMap((basePath) => [
-      `${basePath}/topics${buildQuery({ resourceType, focusArea, level, mode })}`,
-      `${basePath}/resources${buildQuery({ resourceType, focusArea, level, mode })}`,
-    ])),
-  getLanguageProTopicContent: (topicId, { resourceType, focusArea, level, mode } = {}) =>
-    getFirst(languageProBasePaths.flatMap((basePath) => [
-      `${basePath}/topics/${encodeURIComponent(topicId)}/content${buildQuery({ resourceType, focusArea, level, mode })}`,
-      `${basePath}/content/${encodeURIComponent(topicId)}${buildQuery({ resourceType, focusArea, level, mode })}`,
-    ])),
+    getFirst(languageProBasePaths.flatMap((basePath) => buildLanguageProQueries({
+      resourceType,
+      focusArea,
+      level,
+      mode,
+    }).flatMap((query) => [
+      `${basePath}/topics${query}`,
+      `${basePath}/resources${query}`,
+      `${basePath}/chapters${query}`,
+      `${basePath}/modules${query}`,
+    ]))),
+  getLanguageProTopicContent: (topicId, { resourceType, focusArea, level, mode, classValue, activity } = {}) =>
+    getFirst(languageProBasePaths.flatMap((basePath) => buildLanguageProQueries({
+      resourceType,
+      focusArea,
+      level,
+      mode,
+      classValue,
+      activity,
+    }).flatMap((query) => [
+      `${basePath}/topics/${encodeURIComponent(topicId)}/content${query}`,
+      `${basePath}/topic/${encodeURIComponent(topicId)}/content${query}`,
+      `${basePath}/chapters/${encodeURIComponent(topicId)}/content${query}`,
+      `${basePath}/chapter/${encodeURIComponent(topicId)}/content${query}`,
+      `${basePath}/activities/${encodeURIComponent(topicId)}${query}`,
+      `${basePath}/activity/${encodeURIComponent(topicId)}${query}`,
+      `${basePath}/content/${encodeURIComponent(topicId)}${query}`,
+    ]))),
+  getLanguageProQuestions: (topicId, { resourceType, focusArea, level, mode, classValue, activity } = {}) =>
+    getFirst(languageProBasePaths.flatMap((basePath) => buildLanguageProQueries({
+      resourceType,
+      focusArea,
+      level,
+      mode,
+      classValue,
+      activity,
+    }).flatMap((query) => [
+      `${basePath}/topics/${encodeURIComponent(topicId)}/questions${query}`,
+      `${basePath}/topic/${encodeURIComponent(topicId)}/questions${query}`,
+      `${basePath}/chapters/${encodeURIComponent(topicId)}/questions${query}`,
+      `${basePath}/chapter/${encodeURIComponent(topicId)}/questions${query}`,
+      `${basePath}/quizzes/${encodeURIComponent(topicId)}${query}`,
+      `${basePath}/quiz/${encodeURIComponent(topicId)}${query}`,
+      `${basePath}/understanding/${encodeURIComponent(topicId)}/questions${query}`,
+    ]))),
+  submitLanguageProQuiz: (topicId, data, { resourceType, focusArea, level, mode, classValue, activity } = {}) =>
+    postFirst(languageProBasePaths.flatMap((basePath) => buildLanguageProQueries({
+      resourceType,
+      focusArea,
+      level,
+      mode,
+      classValue,
+      activity,
+    }).flatMap((query) => [
+      { endpoint: `${basePath}/topics/${encodeURIComponent(topicId)}/submit${query}`, body: data },
+      { endpoint: `${basePath}/topic/${encodeURIComponent(topicId)}/submit${query}`, body: data },
+      { endpoint: `${basePath}/chapters/${encodeURIComponent(topicId)}/submit${query}`, body: data },
+      { endpoint: `${basePath}/quiz/${encodeURIComponent(topicId)}/submit${query}`, body: data },
+      { endpoint: `${basePath}/quizzes/${encodeURIComponent(topicId)}/submit${query}`, body: data },
+      { endpoint: `${basePath}/understanding/${encodeURIComponent(topicId)}/submit${query}`, body: data },
+      { endpoint: `${basePath}/topics/${encodeURIComponent(topicId)}/answers${query}`, body: data },
+    ]))),
+  uploadLanguageProRecording: (topicId, formData, { resourceType, focusArea, level, mode, classValue, activity } = {}) =>
+    postFirst(languageProBasePaths.flatMap((basePath) => buildLanguageProQueries({
+      resourceType,
+      focusArea,
+      level,
+      mode,
+      classValue,
+      activity,
+    }).flatMap((query) => [
+      { endpoint: `${basePath}/topics/${encodeURIComponent(topicId)}/recordings${query}`, body: formData },
+      { endpoint: `${basePath}/topic/${encodeURIComponent(topicId)}/recordings${query}`, body: formData },
+      { endpoint: `${basePath}/topics/${encodeURIComponent(topicId)}/recording${query}`, body: formData },
+      { endpoint: `${basePath}/topic/${encodeURIComponent(topicId)}/recording${query}`, body: formData },
+      { endpoint: `${basePath}/voice-recordings${buildQuery({ topicId, resourceType, focusArea, level, mode, class: classValue, className: classValue, activity })}`, body: formData },
+      { endpoint: `${basePath}/speaking/${encodeURIComponent(topicId)}/submit${query}`, body: formData },
+    ]))),
   getUniversityProfile: () => api.get('/api/university/profile'),
   createUniversityProfile: (data) => api.post('/api/university/profile', data),
   updateUniversityProfile: (data) => api.put('/api/university/profile', data),
