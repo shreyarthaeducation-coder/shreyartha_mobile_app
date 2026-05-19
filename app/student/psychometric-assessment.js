@@ -22,16 +22,20 @@ const labelOf = (node, fallback = '') => String(node?.title || node?.name || nod
 const toMessage = (err) => err?.response?.data?.message || err?.message || 'Server error. Please try again.';
 const isPremiumAccessError = (err) => [402, 403].includes(err?.response?.status || err?.status)
   || /premium|subscription|upgrade|paid/i.test(toMessage(err));
+const TAB_SCROLL_MAX_HEIGHT = 58;
+
+// Kept separate to maintain one consistent parser for all backend option payload variants.
+const normalizeOption = (option, index) => (typeof option === 'string'
+  ? { id: `${index}`, text: option }
+  : {
+    id: String(option.id || option.optionId || option.key || index),
+    text: option.text || option.label || option.option || option.value || `Option ${index + 1}`,
+  });
 
 const normalizeQuestionOptions = (question) => {
   const options = arr(question?.options || question?.choices || question?.answers || question?.answerOptions || question?.mcqOptions);
   if (options.length > 0) {
-    return options.map((option, index) => (typeof option === 'string'
-      ? { id: `${index}`, text: option }
-      : {
-        id: String(option.id || option.optionId || option.key || index),
-        text: option.text || option.label || option.option || option.value || `Option ${index + 1}`,
-      }));
+    return options.map(normalizeOption);
   }
   const optionKeys = Object.keys(question || {}).filter((key) => /^option[A-Za-z0-9]*$/.test(key)).sort();
   return optionKeys.map((key, index) => ({ id: `${index}`, text: String(question[key]) })).filter((option) => option.text && option.text !== 'undefined' && option.text !== 'null');
@@ -52,9 +56,8 @@ const normalizeHistory = (historyPayload) => arr(historyPayload)
 
 const isCategoryPremium = (item = {}) => {
   const explicitFlags = [item?.isPremium, item?.premium, item?.premiumOnly, item?.isLocked];
-  for (let i = 0; i < explicitFlags.length; i += 1) {
-    if (typeof explicitFlags[i] === 'boolean') return explicitFlags[i];
-  }
+  const explicitFlag = explicitFlags.find((flag) => typeof flag === 'boolean');
+  if (typeof explicitFlag === 'boolean') return explicitFlag;
   const text = String(item?.accessLevel || item?.tier || item?.plan || item?.type || item?.visibility || '').toLowerCase();
   return ['premium', 'pro', 'paid', 'locked'].some((key) => text.includes(key));
 };
@@ -365,7 +368,10 @@ export default function PsychometricAssessmentScreen() {
     return 'Start Assessment';
   }, [instruction.status, instruction.result]);
 
-  const historyList = instruction.history?.length ? instruction.history : activeCategory?.history || [];
+  const historyList = useMemo(
+    () => (instruction.history?.length ? instruction.history : activeCategory?.history || []),
+    [instruction.history, activeCategory?.history],
+  );
   const showPremiumResultBlur = !isPremium && Boolean(activeCategory?.isPremium);
 
   return (
@@ -379,7 +385,7 @@ export default function PsychometricAssessmentScreen() {
       </View>
 
       <View style={styles.planChipWrap}>
-        <Text style={styles.planChipText}>{subscriptionLoading ? 'Plan: Checking...' : `Plan: ${isPremium ? 'Premium' : plan || 'Free'}`}</Text>
+        <Text style={styles.planChipText}>{subscriptionLoading ? 'Plan: Checking...' : `Plan: ${plan || 'Free'}`}</Text>
       </View>
 
       {error ? <View style={styles.errorBanner}><Text style={styles.errorText}>⚠️ {error}</Text></View> : null}
@@ -401,7 +407,7 @@ export default function PsychometricAssessmentScreen() {
                 <TouchableOpacity key={String(category.id)} style={[styles.tabPill, active && styles.tabPillActive]} onPress={() => setActiveCategoryId(category.id)}>
                   <Text style={[styles.tabText, active && styles.tabTextActive]}>{locked ? '🔒 ' : ''}{category.name}</Text>
                   <View style={[styles.accessBadge, locked ? styles.badgePremium : styles.badgeFree]}>
-                    <Text style={styles.accessBadgeText}>{locked ? 'Premium' : (category.isPremium ? 'Premium' : 'Free')}</Text>
+                    <Text style={styles.accessBadgeText}>{locked || category.isPremium ? 'Premium' : 'Free'}</Text>
                   </View>
                 </TouchableOpacity>
               );
@@ -448,7 +454,7 @@ export default function PsychometricAssessmentScreen() {
           </View>
           <View style={styles.questionHeader}>
             <Text style={styles.questionCounter}>{`Question ${currentIndex + 1} of ${questions.length}`}</Text>
-            {questionIsMulti ? <Text style={styles.multiText}>Select {maxSelections > 0 ? `up to ${maxSelections}` : 'one or more'} options</Text> : null}
+            {questionIsMulti ? <Text style={styles.multiText}>Select {maxSelections > 0 ? `up to ${maxSelections}` : 'multiple'} options</Text> : null}
           </View>
 
           <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent}>
@@ -463,6 +469,11 @@ export default function PsychometricAssessmentScreen() {
                         key={option.id}
                         style={[styles.optionRow, selected && styles.optionRowSelected]}
                         onPress={() => {
+                          if (questionIsMulti && maxSelections > 0 && !selected && selectedArray.length >= maxSelections) {
+                            setError(`You can select up to ${maxSelections} options for this question.`);
+                            return;
+                          }
+                          setError('');
                           setAnswersMap((prev) => {
                             const current = prev[question.__id];
                             const list = Array.isArray(current) ? current : (current ? [current] : []);
@@ -470,7 +481,6 @@ export default function PsychometricAssessmentScreen() {
                             const value = { index, optionId: option.id, text: option.text };
                             if (questionIsMulti) {
                               if (exists >= 0) return { ...prev, [question.__id]: list.filter((item) => item.index !== index) };
-                              if (maxSelections > 0 && list.length >= maxSelections) return { ...prev, [question.__id]: [...list.slice(1), value] };
                               return { ...prev, [question.__id]: [...list, value] };
                             }
                             return { ...prev, [question.__id]: value };
@@ -542,7 +552,7 @@ const styles = StyleSheet.create({
   headerTitle: { color: STUDENT.textPrimary, fontSize: 16, fontWeight: '800' },
   planChipWrap: { paddingHorizontal: 16, paddingTop: 10 },
   planChipText: { alignSelf: 'flex-start', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 999, backgroundColor: STUDENT.bgCardAlt, borderWidth: 1, borderColor: STUDENT.border, color: STUDENT.textSecondary, fontSize: 11, fontWeight: '700' },
-  tabScroll: { maxHeight: 68, borderBottomWidth: 1, borderBottomColor: STUDENT.border, marginTop: 10 },
+  tabScroll: { maxHeight: TAB_SCROLL_MAX_HEIGHT, borderBottomWidth: 1, borderBottomColor: STUDENT.border, marginTop: 10 },
   tabContent: { paddingHorizontal: 12, paddingVertical: 10, gap: 8 },
   tabPill: { backgroundColor: STUDENT.bgCard, borderColor: STUDENT.border, borderWidth: 1, borderRadius: 999, paddingVertical: 8, paddingHorizontal: 14, flexDirection: 'row', alignItems: 'center', gap: 8 },
   tabPillActive: { backgroundColor: STUDENT.accent, borderColor: STUDENT.accent },

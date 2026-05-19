@@ -84,6 +84,11 @@ const getMockTestPaperQuestions = (paperId) => getFirst([
 export const studentService = {
   // ── Dashboard ──────────────────────────────────────────────────────────────
   getDashboard: () => api.get('/api/students/dashboard'),
+  /**
+   * Resolves student subscription/plan entitlements using backend fallbacks.
+   * Different deployments expose this data under different endpoints, so this
+   * helper retries the common variants and returns the first successful payload.
+   */
   getStudentSubscription: () => getFirst([
     '/api/students/subscription',
     '/api/student/subscription',

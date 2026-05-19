@@ -9,6 +9,7 @@ const SubscriptionContext = createContext({
   refresh: async () => {},
 });
 
+/** Normalizes optional values into lowercase text for plan/status matching. */
 const normalizeText = (value) => String(value ?? '').trim().toLowerCase();
 
 const boolFromValue = (value) => {
@@ -68,14 +69,9 @@ const extractSubscription = (payload) => {
     student?.subscriptionActive,
   ];
 
-  let isPremium = null;
-  for (let index = 0; index < boolCandidates.length; index += 1) {
-    const resolved = boolFromValue(boolCandidates[index]);
-    if (resolved !== null) {
-      isPremium = resolved;
-      break;
-    }
-  }
+  const firstResolvedCandidate = boolCandidates.find((value) => boolFromValue(value) !== null);
+  const resolvedPremiumValue = firstResolvedCandidate === undefined ? null : boolFromValue(firstResolvedCandidate);
+  let isPremium = resolvedPremiumValue;
 
   const planText = normalizeText(planRaw || candidate?.status || data?.status);
   if (isPremium === null) {
@@ -103,7 +99,8 @@ export function SubscriptionProvider({ children }) {
       setIsPremium(parsed.isPremium);
       setPlan(parsed.plan);
       setRaw(parsed.raw);
-    } catch {
+    } catch (error) {
+      console.warn('[Subscription] Failed to resolve subscription state', error);
       setIsPremium(false);
       setPlan('Free');
       setRaw(null);
@@ -114,7 +111,7 @@ export function SubscriptionProvider({ children }) {
 
   useEffect(() => {
     refresh();
-  }, [refresh]);
+  }, []);
 
   const value = useMemo(
     () => ({ loading, isPremium, plan, raw, refresh }),
