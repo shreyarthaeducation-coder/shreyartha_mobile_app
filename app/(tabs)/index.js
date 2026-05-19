@@ -103,7 +103,7 @@ export default function LandingScreen() {
         {/* ── HEADER ── */}
         <View style={styles.header}>
           <View style={styles.logoContainer}>
-            <Image source={APP_LOGO} style={styles.logoImage} resizeMode="contain" />
+            <Image source={APP_LOGO} style={styles.logoImage} resizeMode="contain" accessible accessibilityLabel="The 3C Edge Logo" />
           </View>
           <TouchableOpacity style={styles.loginBtn} onPress={() => setLoginDropdownVisible(true)}>
             <Text style={styles.loginBtnText}>🔒 Login ▼</Text>
