@@ -459,8 +459,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: SPACING.lg, paddingTop: 50, paddingBottom: SPACING.md,
     backgroundColor: COLORS.white, borderBottomWidth: 1, borderBottomColor: COLORS.border,
   },
-  logoContainer: { flexDirection: 'row', alignItems: 'center' },
-  logoImage: { width: 120, height: 40 },
+  logoContainer: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginRight: SPACING.md,
+  },
+  logoImage: { width: 132, height: 92 },
   loginBtn: {
     backgroundColor: COLORS.primary, paddingVertical: 10, paddingHorizontal: 18,
     borderRadius: 32,
