@@ -27,6 +27,8 @@ export const studentService = {
   getAcademicIQTree: () => api.get('/api/academiciq/tree'),
   getCompetitiveExams: () => api.get('/api/competitiveexam/exams'),
   getAcademicIQTopicContent: (topicId) => api.get(`/api/academiciq/topic/${encodeURIComponent(topicId)}/content`),
+  getPracticeZoneQuestions: (topicId, level) =>
+    api.get(`/api/academiciq/topic/${encodeURIComponent(topicId)}/practice-zone?level=${encodeURIComponent(level)}`),
   getUnderstandingQuestions: (topicId) => api.get(`/api/student/understanding/${encodeURIComponent(topicId)}/questions`),
   getUnderstandingInfo: (topicId) => api.get(`/api/student/understanding/${encodeURIComponent(topicId)}/info`),
   startTopicReflection: (topicId, body = {}) => api.post(`/api/adaptive/topic/${encodeURIComponent(topicId)}/start`, body),
@@ -38,9 +40,13 @@ export const studentService = {
   getExamDetail: (examId) => api.get(`/api/competitiveexam/exams/${encodeURIComponent(examId)}`),
   getExamPracticeSubjects: (examId) => api.get(`/api/competitiveexam/exams/${encodeURIComponent(examId)}/practice-zone`),
   getExamSubjectQuestions: (examId, subjectId) => api.get(`/api/competitiveexam/exams/${encodeURIComponent(examId)}/subjects/${encodeURIComponent(subjectId)}/questions`),
-  getExamMockTests: (examId, { page, size } = {}) => {
+  getExamTopicPracticeQuestions: (topicId, level) =>
+    api.get(`/api/competitiveexam/topic/${encodeURIComponent(topicId)}/practice-zone?level=${encodeURIComponent(level)}`),
+  getExamMockTests: (examId, { page = 1, size } = {}) => {
     const params = new URLSearchParams();
-    if (Number.isFinite(page) && page > 0) params.append('page', String(page));
+    // Spring Boot uses 0-indexed pages; UI passes 1-indexed pages, so convert
+    const apiPage = Number.isFinite(page) ? Math.max(0, page - 1) : 0;
+    params.append('page', String(apiPage));
     if (Number.isFinite(size) && size > 0) params.append('size', String(size));
     const qs = params.toString();
     return api.get(`/api/competitiveexam/exams/${encodeURIComponent(examId)}/mock-tests${qs ? `?${qs}` : ''}`);
