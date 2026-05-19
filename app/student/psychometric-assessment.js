@@ -373,11 +373,22 @@ export default function PsychometricAssessmentScreen() {
     [instruction.history, activeCategory?.history],
   );
   const showPremiumResultBlur = !isPremium && Boolean(activeCategory?.isPremium);
+  const handleHeaderBack = useCallback(() => {
+    if (view === 'landing') {
+      if (router.canGoBack()) {
+        router.back();
+      } else {
+        router.replace('/');
+      }
+      return;
+    }
+    setView('landing');
+  }, [router, view]);
 
   return (
     <SafeAreaView style={styles.root} edges={['top', 'left', 'right']}>
       <View style={styles.headerRow}>
-        <TouchableOpacity onPress={() => (view === 'landing' ? (router.canGoBack() ? router.back() : router.replace('/')) : setView('landing'))}>
+        <TouchableOpacity onPress={handleHeaderBack}>
           <Text style={styles.backText}>{view === 'landing' ? '← Back' : '← Assessments'}</Text>
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Psychometric Assessment</Text>
