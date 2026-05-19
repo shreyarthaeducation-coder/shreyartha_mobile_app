@@ -1489,9 +1489,9 @@ export default function AcademicIQScreen() {
           ) : examSection === 'practice' && practiceZoneSubjectsError && !examSubjects.length ? (
             <View style={styles.errorRetryWrap}>
               <InlineNotice text={practiceZoneSubjectsError} />
-                <TouchableOpacity style={styles.retryButton} onPress={() => { setPracticeZoneSubjectsError(''); loadPracticeZoneSubjects(getApiId(selectedExam, ['id', 'examId', 'entranceExamId', 'competitiveExamId', 'exam_id']) || getNodeId(selectedExam)); }}>
-                  <Text style={styles.retryButtonText}>↺ Retry</Text>
-                </TouchableOpacity>
+              <TouchableOpacity style={styles.retryButton} onPress={() => { setPracticeZoneSubjectsError(''); loadPracticeZoneSubjects(getApiId(selectedExam, ['id', 'examId', 'entranceExamId', 'competitiveExamId', 'exam_id']) || getNodeId(selectedExam)); }}>
+                <Text style={styles.retryButtonText}>↺ Retry</Text>
+              </TouchableOpacity>
             </View>
           ) : (
             <SubjectTabs items={examSubjects} activeId={selectedExamSubjectId} onSelect={(subject) => { setSelectedExamSubjectId(getNodeId(subject)); resetExamTopicState(); }} />
