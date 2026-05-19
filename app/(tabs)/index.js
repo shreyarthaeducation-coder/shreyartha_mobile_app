@@ -460,9 +460,9 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.white, borderBottomWidth: 1, borderBottomColor: COLORS.border,
   },
   logoContainer: {
-    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
+    flexShrink: 1,
     marginRight: SPACING.md,
   },
   logoImage: { width: 132, height: 92 },
