@@ -1007,10 +1007,10 @@ export default function StudentProfileScreen() {
             </View>
             <View style={styles.heroActionRow}>
               <TouchableOpacity style={styles.heroActionBtn} onPress={() => pickMedia('image')}>
-                <Text style={styles.heroActionText}>📷 Change Photo</Text>
+                <Text style={styles.heroActionText}>Change Photo</Text>
               </TouchableOpacity>
               <TouchableOpacity style={styles.heroActionBtn} onPress={() => pickMedia('video')}>
-                <Text style={styles.heroActionText}>⬆ Upload Video</Text>
+                <Text style={styles.heroActionText}>Upload Video</Text>
               </TouchableOpacity>
             </View>
           </View>

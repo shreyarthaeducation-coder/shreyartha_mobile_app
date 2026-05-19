@@ -235,7 +235,7 @@ export default function StudentDashboardScreen() {
               onPress={() => router.push('/student/my-analytics')}
             >
               <Text style={styles.analyticsText} numberOfLines={1} adjustsFontSizeToFit>
-                📊 My Analytics
+                My Analytics
               </Text>
             </TouchableOpacity>
           </View>
@@ -246,7 +246,6 @@ export default function StudentDashboardScreen() {
               activeOpacity={0.84}
               onPress={() => setLanguageModalVisible(true)}
             >
-              <Text style={styles.languageIcon}>🌐</Text>
               <Text style={styles.languageText}>{activeLanguage.code}</Text>
             </TouchableOpacity>
           </View>
@@ -388,9 +387,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-  },
-  languageIcon: {
-    fontSize: 13,
   },
   languageText: {
     color: '#fff',
