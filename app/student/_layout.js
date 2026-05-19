@@ -40,6 +40,7 @@ export default function StudentLayout() {
         />
         <Tabs.Screen name="academic" options={{ href: null }} />
         <Tabs.Screen name="academic-iq" options={{ href: null }} />
+        <Tabs.Screen name="my-analytics" options={{ href: null, title: 'My Analytics' }} />
         <Tabs.Screen name="psychometric-assessment" options={{ href: null }} />
         <Tabs.Screen name="subject-career" options={{ href: null }} />
         <Tabs.Screen name="skills-edge" options={{ href: null }} />

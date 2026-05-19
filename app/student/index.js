@@ -211,39 +211,44 @@ export default function StudentDashboardScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.headerRow}>
-          <View style={styles.brandWrap}>
-            <View style={styles.logoCard}>
-              <Image
-                source={require('../../assets/images/AppLogo.png')}
-                style={styles.logo}
-                resizeMode="contain"
-              />
+          <View style={styles.headerLeft}>
+            <View style={styles.brandWrap}>
+              <View style={styles.logoCard}>
+                <Image
+                  source={require('../../assets/images/AppLogo.png')}
+                  style={styles.logo}
+                  resizeMode="contain"
+                />
+              </View>
+              {avatarUri ? (
+                <Image source={{ uri: avatarUri }} style={styles.avatar} />
+              ) : (
+                <DefaultAvatar />
+              )}
             </View>
-            {avatarUri ? (
-              <Image source={{ uri: avatarUri }} style={styles.avatar} />
-            ) : (
-              <DefaultAvatar />
-            )}
           </View>
 
-          <TouchableOpacity
-            style={styles.languageButton}
-            activeOpacity={0.84}
-            onPress={() => setLanguageModalVisible(true)}
-          >
-            <Text style={styles.languageIcon}>🌐</Text>
-            <Text style={styles.languageText}>{activeLanguage.code}</Text>
-          </TouchableOpacity>
-        </View>
+          <View style={styles.headerCenter}>
+            <TouchableOpacity
+              style={styles.analyticsBtn}
+              activeOpacity={0.88}
+              onPress={() => router.push('/student/my-analytics')}
+            >
+              <Text style={styles.analyticsText} numberOfLines={1} adjustsFontSizeToFit>
+                My Analytics
+              </Text>
+            </TouchableOpacity>
+          </View>
 
-        <View style={styles.analyticsWrap}>
-          <TouchableOpacity
-            style={styles.analyticsBtn}
-            activeOpacity={0.88}
-            onPress={() => router.push('/student/academic')}
-          >
-            <Text style={styles.analyticsText}>My Analytics</Text>
-          </TouchableOpacity>
+          <View style={styles.headerRight}>
+            <TouchableOpacity
+              style={styles.languageButton}
+              activeOpacity={0.84}
+              onPress={() => setLanguageModalVisible(true)}
+            >
+              <Text style={styles.languageText}>{activeLanguage.code}</Text>
+            </TouchableOpacity>
+          </View>
         </View>
 
         <View style={styles.welcomeRow}>
@@ -312,14 +317,26 @@ const styles = StyleSheet.create({
   },
   headerRow: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
-    justifyContent: 'space-between',
+    alignItems: 'center',
     gap: 12,
+  },
+  headerLeft: {
+    justifyContent: 'flex-start',
   },
   brandWrap: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
+  },
+  headerCenter: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 6,
+  },
+  headerRight: {
+    justifyContent: 'flex-end',
+    alignItems: 'flex-end',
   },
   logoCard: {
     width: 68,
@@ -371,32 +388,24 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 6,
   },
-  languageIcon: {
-    fontSize: 13,
-  },
   languageText: {
     color: '#fff',
     fontSize: 12,
     fontWeight: '800',
     letterSpacing: 0.4,
   },
-  analyticsWrap: {
-    alignItems: 'center',
-    marginTop: 18,
-    marginBottom: 18,
-  },
   analyticsBtn: {
-    minWidth: 160,
+    maxWidth: '100%',
     minHeight: 40,
-    borderRadius: 999,
-    paddingHorizontal: 22,
+    borderRadius: 22,
+    paddingHorizontal: 18,
     paddingVertical: 10,
-    backgroundColor: '#8b5cf6',
+    backgroundColor: '#16a34a',
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOpacity: 0.16,
-    shadowOffset: { width: 0, height: 7 },
+    shadowColor: '#15803d',
+    shadowOpacity: 0.28,
+    shadowOffset: { width: 0, height: 8 },
     shadowRadius: 16,
     elevation: 8,
   },
@@ -404,6 +413,7 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 13,
     fontWeight: '800',
+    letterSpacing: 0.2,
   },
   welcomeRow: {
     flexDirection: 'row',
