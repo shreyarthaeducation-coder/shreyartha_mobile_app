@@ -18,7 +18,6 @@ import { useRouter } from 'expo-router';
 import { WebView } from 'react-native-webview';
 import { STUDENT } from '../../constants/theme';
 import { studentService } from '../../services/studentService';
-import { api } from '../../services/apiService';
 
 const LEARNING_CATEGORIES = [
   { key: 'personalized', title: 'Personalized Resources', subtitle: 'Resources curated for your profile.', icon: '🧠' },
@@ -54,7 +53,6 @@ const classToken = (value) => {
   return match ? match[0] : String(value || '').trim();
 };
 const nodeLabel = (node, fallback = '') => String(node?.name || node?.title || node?.label || fallback || '').trim();
-const encode = (value) => encodeURIComponent(String(value ?? ''));
 const isProbablyUrl = (value) => /^https?:\/\//i.test(String(value || '').trim());
 const chapterFromSubject = (subject) => arr(subject?.chapters || subject?.children || subject?.items || subject?.units);
 const topicFromChapter = (chapter) => arr(chapter?.topics || chapter?.children || chapter?.items || chapter?.lessons);
@@ -176,24 +174,9 @@ function getAnswerStats(questions, answers, { marksMode = false } = {}) {
   return { correct, wrong, unanswered, score: Math.max(0, score), totalPossible };
 }
 
-async function requestWithFallbacks(candidates) {
-  let lastError;
-  for (let index = 0; index < candidates.length; index += 1) {
-    const candidate = candidates[index];
-    try {
-      // eslint-disable-next-line no-await-in-loop
-      return await candidate();
-    } catch (error) {
-      lastError = error;
-      logApiError(`request fallback ${index + 1} failed`, error);
-    }
-  }
-  if (lastError) throw lastError;
-  return null;
-}
 
 function normalizeDifficultyLevel(level) {
-  return String(level || '').trim().toLowerCase();
+  return String(level || '').trim().toUpperCase();
 }
 
 function normalizeAssetItem(item, defaultType = 'link', fallbackLabel = 'Attachment') {
@@ -754,6 +737,21 @@ export default function AcademicIQScreen() {
   const isLimitedStudent = useMemo(() => /limited/i.test(String(studentRole || studentProfile?.role || academicProfile?.role || '')), [studentRole, studentProfile?.role, academicProfile?.role]);
   const showLimitedAccess = isSchoolStudent || isLimitedStudent;
   const hasAcademicCurriculumClassSelection = useMemo(() => Boolean(academicProfile?.curriculumId && (academicProfile?.classId || academicProfile?.className || academicProfile?.class)), [academicProfile?.curriculumId, academicProfile?.classId, academicProfile?.className, academicProfile?.class]);
+
+  // Determine the student's enrolled/selected competitive exam (best-effort from profile).
+  // Falls back to null (no filter applied) if not found in the profile response.
+  const enrolledCompetitiveExamId = useMemo(() => {
+    const id = String(
+      studentProfile?.competitiveExamId ||
+      studentProfile?.selectedExamId ||
+      studentProfile?.enrolledExamId ||
+      studentProfile?.selectedCompetitiveExamId ||
+      academicProfile?.competitiveExamId ||
+      academicProfile?.selectedExamId ||
+      ''
+    ).trim();
+    return id || null;
+  }, [studentProfile, academicProfile]);
   const selectedCurriculumNode = useMemo(() => {
     if (!tree.length) return null;
     return tree.find((node) => String(node?.id) === String(academicProfile?.curriculumId)) || tree[0];
@@ -831,9 +829,24 @@ export default function AcademicIQScreen() {
     return filtered;
   }, [selectedChapter, hiddenAcademicNodeIds, activeCategory, academicProfile?.topics, showLimitedAccess, limitedAcademicTopicId]);
 
-  const filteredExamCategories = useMemo(() => examCategories.filter((category) => !hiddenExamIds.includes(String(category?.id))), [examCategories, hiddenExamIds]);
+  const filteredExamCategories = useMemo(() => {
+    const base = examCategories.filter((category) => !hiddenExamIds.includes(String(category?.id)));
+    if (!enrolledCompetitiveExamId) return base;
+    // Only show categories that contain the student's enrolled exam
+    const withEnrolled = base.filter((category) =>
+      arr(category?.entranceExams || category?.exams || category?.children)
+        .some((exam) => String(exam?.id || exam?.examId || '') === enrolledCompetitiveExamId),
+    );
+    return withEnrolled.length ? withEnrolled : base;
+  }, [examCategories, hiddenExamIds, enrolledCompetitiveExamId]);
   const examCategoryCards = useMemo(() => filteredExamCategories.map((category) => ({ ...category, count: arr(category?.entranceExams || category?.exams || category?.children).length, title: nodeLabel(category, 'Exam Category') })), [filteredExamCategories]);
-  const activeExamItems = useMemo(() => arr(selectedExamCategory?.entranceExams || selectedExamCategory?.exams || selectedExamCategory?.children).filter((item) => !hiddenExamIds.includes(String(item?.id))), [selectedExamCategory, hiddenExamIds]);
+  const activeExamItems = useMemo(() => {
+    const all = arr(selectedExamCategory?.entranceExams || selectedExamCategory?.exams || selectedExamCategory?.children)
+      .filter((item) => !hiddenExamIds.includes(String(item?.id)));
+    if (!enrolledCompetitiveExamId) return all;
+    const enrolled = all.filter((item) => String(item?.id || item?.examId || '') === enrolledCompetitiveExamId);
+    return enrolled.length ? enrolled : all;
+  }, [selectedExamCategory, hiddenExamIds, enrolledCompetitiveExamId]);
 
   // When in practice section, prefer practice-zone subjects (loaded separately); fall back to exam detail subjects
   const examSubjects = useMemo(() => {
@@ -849,9 +862,9 @@ export default function AcademicIQScreen() {
   useEffect(() => {
     if (examSection !== 'practice') return;
     const examId = selectedExam?.id || selectedExam?.examId;
-    // Load if not yet loaded and not currently loading (allow retry after error by checking practiceZoneSubjectsError)
+    // Only load if we haven't loaded yet and have no error; errors require a manual Retry
     if (!examId || practiceZoneSubjectsLoading) return;
-    if (practiceZoneSubjects.length > 0 && !practiceZoneSubjectsError) return;
+    if (practiceZoneSubjects.length > 0 || practiceZoneSubjectsError) return;
     loadPracticeZoneSubjects(examId);
   }, [examSection, selectedExam, practiceZoneSubjects.length, practiceZoneSubjectsLoading, practiceZoneSubjectsError, loadPracticeZoneSubjects]);
 
@@ -950,15 +963,16 @@ export default function AcademicIQScreen() {
 
   const extractPracticeQuestions = useCallback((response, level) => {
     const payload = unwrap(response);
-    // level is now lowercase (e.g. 'basic'); also try title-case and uppercase variants
-    const titleLevel = level ? level.charAt(0).toUpperCase() + level.slice(1) : level;
-    const upperLevel = level ? level.toUpperCase() : level;
-    const keys = [level, titleLevel, upperLevel, `${level}Questions`, `${titleLevel}Questions`, `${upperLevel}Questions`, 'questions', 'items', 'content'];
+    // level may be uppercase (e.g. 'BASIC'); also try title-case and lowercase variants
+    const upperLevel = level ? String(level).toUpperCase() : '';
+    const lowerLevel = level ? String(level).toLowerCase() : '';
+    const titleLevel = lowerLevel ? lowerLevel.charAt(0).toUpperCase() + lowerLevel.slice(1) : '';
+    const keys = [upperLevel, lowerLevel, titleLevel, `${upperLevel}Questions`, `${lowerLevel}Questions`, `${titleLevel}Questions`, 'questions', 'items', 'content'].filter(Boolean);
     for (const key of keys) {
       if (Array.isArray(payload?.[key])) return payload[key];
     }
     if (payload?.levels && typeof payload.levels === 'object') {
-      return arr(payload.levels[level] || payload.levels[titleLevel] || payload.levels[upperLevel]);
+      return arr(payload.levels[upperLevel] || payload.levels[lowerLevel] || payload.levels[titleLevel]);
     }
     return arr(payload);
   }, []);
@@ -967,12 +981,7 @@ export default function AcademicIQScreen() {
     setTopicLoading(true);
     setTopicError('');
     try {
-      const response = await requestWithFallbacks([
-        () => studentService.getAcademicIQTopicContent(topicId),
-        () => api.get(`/api/academiciq/topic/${encode(topicId)}/content`),
-        () => api.get(`/api/academiciq/topics/${encode(topicId)}/content`),
-        () => studentService.getTopicContent(topicId, activeCategory),
-      ]);
+      const response = await studentService.getAcademicIQTopicContent(topicId);
       const payload = unwrap(response);
       setTopicContent(payload?.content && typeof payload.content === 'object' ? { ...payload.content, ...payload } : payload);
     } catch (error) {
@@ -981,18 +990,14 @@ export default function AcademicIQScreen() {
     } finally {
       setTopicLoading(false);
     }
-  }, [activeCategory]);
+  }, []);
 
   const loadPracticeQuestions = useCallback(async (topicId, level) => {
     setPracticeLoading(true);
     setPracticeError('');
     try {
       const normalizedLevel = normalizeDifficultyLevel(level);
-      const response = await requestWithFallbacks([
-        () => studentService.getPracticeZoneQuestions(topicId, normalizedLevel),
-        () => api.get(`/api/academiciq/topic/${encode(topicId)}/questions?level=${encode(normalizedLevel)}`),
-        () => api.get(`/api/student/practicezone/${encode(topicId)}/questions?level=${encode(normalizedLevel)}`),
-      ]);
+      const response = await studentService.getPracticeZoneQuestions(topicId, normalizedLevel);
       setPracticeQuestions(extractPracticeQuestions(response, normalizedLevel));
     } catch (error) {
       logApiError('Practice Zone questions failed', error);
@@ -1023,8 +1028,8 @@ export default function AcademicIQScreen() {
     setUnderstandingError('');
     try {
       const [infoResponse, questionsResponse] = await Promise.all([
-        requestWithFallbacks([() => studentService.getUnderstandingInfo(topicId), () => api.get(`/api/student/understanding/${encode(topicId)}/info`)]).catch(() => null),
-        requestWithFallbacks([() => studentService.getUnderstandingQuestions(topicId), () => api.get(`/api/student/understanding/${encode(topicId)}/questions`)]),
+        studentService.getUnderstandingInfo(topicId).catch(() => null),
+        studentService.getUnderstandingQuestions(topicId),
       ]);
       setUnderstandingInfo(unwrap(infoResponse));
       setUnderstandingQuestions(shuffleArray(arr(unwrap(questionsResponse)?.questions || unwrap(questionsResponse)?.items || unwrap(questionsResponse))).slice(0, 15));
@@ -1072,11 +1077,7 @@ export default function AcademicIQScreen() {
 
   const finalizeReflectionSummary = useCallback(async (topicId, sessionState, history) => {
     try {
-      const response = await requestWithFallbacks([
-        () => studentService.submitTopicReflectionTest(topicId, { sessionState }),
-        () => studentService.submitTopicReflectionTest(topicId, { state: sessionState }),
-        () => studentService.submitTopicReflectionTest(topicId, { session: sessionState }),
-      ]);
+      const response = await studentService.submitTopicReflectionTest(topicId, { sessionState });
       setReflectionState((prev) => ({ ...prev, phase: 'summary', loading: false, summary: unwrap(response), history }));
     } catch {
       setReflectionState((prev) => ({ ...prev, phase: 'summary', loading: false, summary: { score: history.length, summary: 'Adaptive test complete. Choose the reflection level that best matches your confidence.' }, history }));
@@ -1091,11 +1092,7 @@ export default function AcademicIQScreen() {
     const history = [...reflectionState.history, { questionId, answer }];
     setReflectionState((prev) => ({ ...prev, loading: true, selection: answer }));
     try {
-      const response = await requestWithFallbacks([
-        () => studentService.answerTopicReflection(topicId, { sessionState: reflectionState.sessionState, answer, questionId, optionIndex: index }),
-        () => studentService.answerTopicReflection(topicId, { state: reflectionState.sessionState, selectedAnswer: answer, questionId, selectedOption: index }),
-        () => studentService.answerTopicReflection(topicId, { session: reflectionState.sessionState, response: answer, questionId, answerIndex: index }),
-      ]);
+      const response = await studentService.answerTopicReflection(topicId, { sessionState: reflectionState.sessionState, answer, questionId, optionIndex: index });
       const payload = unwrap(response);
       const nextQuestion = payload?.question || payload?.nextQuestion || null;
       const nextSessionState = payload?.sessionState || payload?.state || payload?.session || reflectionState.sessionState;
@@ -1115,11 +1112,7 @@ export default function AcademicIQScreen() {
     const topicId = getNodeId(selectedTopic);
     setReflectionState((prev) => ({ ...prev, loading: true, error: '' }));
     try {
-      const response = await requestWithFallbacks([
-        () => studentService.submitTopicReflectionLevel(topicId, { sessionState: reflectionState.sessionState, reflectionLevel: reflectionState.reflectionChoice }),
-        () => studentService.submitTopicReflectionLevel(topicId, { state: reflectionState.sessionState, reflection: reflectionState.reflectionChoice }),
-        () => studentService.submitTopicReflectionLevel(topicId, { session: reflectionState.sessionState, level: reflectionState.reflectionChoice }),
-      ]);
+      const response = await studentService.submitTopicReflectionLevel(topicId, { sessionState: reflectionState.sessionState, reflectionLevel: reflectionState.reflectionChoice });
       const payload = unwrap(response);
       setReflectionState((prev) => ({ ...prev, phase: 'submitted', loading: false, submittedMessage: payload?.message || payload?.summary || 'Your reflection level has been submitted.' }));
     } catch (error) {
@@ -1128,6 +1121,11 @@ export default function AcademicIQScreen() {
   }, [selectedTopic, reflectionState.reflectionChoice, reflectionState.sessionState]);
 
   const openExam = useCallback(async (exam) => {
+    // Access control: block if this exam is not the student's enrolled one
+    if (enrolledCompetitiveExamId && String(exam?.id || exam?.examId || '') !== enrolledCompetitiveExamId) {
+      Alert.alert('Access Denied', 'This exam is not part of your enrollment. Please contact your administrator to change your exam enrollment.');
+      return;
+    }
     setSelectedExam(exam);
     setExamSection('resources');
     resetExamTopicState();
@@ -1139,9 +1137,9 @@ export default function AcademicIQScreen() {
       const payload = unwrap(detail);
       if (payload && Object.keys(payload).length > 0) setSelectedExam((prev) => ({ ...prev, ...payload }));
     } catch (error) {
-      console.warn('Competitive exam detail fetch failed', error?.message || 'Unknown error');
+      logApiError('Competitive exam detail fetch failed', error);
     }
-  }, [resetExamTopicState]);
+  }, [resetExamTopicState, enrolledCompetitiveExamId]);
 
   const openExamTopic = useCallback((topic) => {
     setSelectedExamTopic(topic);
@@ -1156,37 +1154,31 @@ export default function AcademicIQScreen() {
     setExamTopicLoading(true);
     setExamTopicError('');
     try {
-      const examId = selectedExam?.id || selectedExam?.examId;
-      const subjectId = getNodeId(activeExamSubject);
-      const response = await requestWithFallbacks([
-        () => api.get(`/api/competitiveexam/topic/${encode(topicId)}/content`),
-        () => api.get(`/api/competitiveexam/topics/${encode(topicId)}/content`),
-        () => api.get(`/api/competitiveexam/exams/${encode(examId)}/subjects/${encode(subjectId)}/topics/${encode(topicId)}/content`),
-        () => studentService.getAcademicIQTopicContent(topicId),
-      ]);
+      const response = await studentService.getExamTopicContent(topicId);
       const payload = unwrap(response);
       setExamTopicContent(payload?.content && typeof payload.content === 'object' ? { ...payload.content, ...payload } : payload);
     } catch (error) {
       logApiError('Competitive Exam topic content failed', error);
       setExamTopicContent(null);
-      setExamTopicError(toMessage(error, 'Server error. Please try again.'));
+      const status = error?.response?.status || error?.status;
+      if (status === 401 || status === 403) {
+        setExamTopicError('Session expired. Please log in again.');
+      } else if (status === 404) {
+        setExamTopicError('Content not found for this topic.');
+      } else {
+        setExamTopicError(toMessage(error, 'Server error. Please try again.'));
+      }
     } finally {
       setExamTopicLoading(false);
     }
-  }, [selectedExam, activeExamSubject]);
+  }, []);
 
   const loadExamPracticeQuestions = useCallback(async (topicId, level) => {
     setExamPracticeLoading(true);
     setExamPracticeError('');
     try {
-      const examId = selectedExam?.id || selectedExam?.examId;
-      const subjectId = getNodeId(activeExamSubject);
       const normalizedLevel = normalizeDifficultyLevel(level);
-      const response = await requestWithFallbacks([
-        () => studentService.getExamTopicPracticeQuestions(topicId, normalizedLevel),
-        () => api.get(`/api/competitiveexam/exams/${encode(examId)}/subjects/${encode(subjectId)}/topics/${encode(topicId)}/questions?level=${encode(normalizedLevel)}`),
-        () => api.get(`/api/competitiveexam/topic/${encode(topicId)}/questions?level=${encode(normalizedLevel)}`),
-      ]);
+      const response = await studentService.getExamTopicPracticeQuestions(topicId, normalizedLevel);
       setExamPracticeQuestions(extractPracticeQuestions(response, normalizedLevel));
     } catch (error) {
       logApiError('Competitive Exam practice questions failed', error);
@@ -1202,7 +1194,7 @@ export default function AcademicIQScreen() {
     } finally {
       setExamPracticeLoading(false);
     }
-  }, [selectedExam, activeExamSubject, extractPracticeQuestions]);
+  }, [extractPracticeQuestions]);
 
   useEffect(() => {
     if (!selectedExamTopic) return;
@@ -1284,10 +1276,7 @@ export default function AcademicIQScreen() {
     setMockTestResults(null);
     setScreenError('');
     try {
-      const data = await requestWithFallbacks([
-        () => studentService.getMockTestQuestions(mockTestId),
-        () => api.get(`/api/competitiveexam/mock-tests/${encode(mockTestId)}/questions`),
-      ]);
+      const data = await studentService.getMockTestQuestions(mockTestId);
       setMockTestQuestions(arr(unwrap(data)?.questions || unwrap(data)?.items || unwrap(data)));
     } catch (error) {
       logApiError('Mock Test questions failed', error);
@@ -1300,7 +1289,7 @@ export default function AcademicIQScreen() {
     } finally {
       setMockTestLoading(false);
     }
-  }, [selectedExam]);
+  }, []);
 
   const handleSubmitMockTest = useCallback(async (answersMap) => {
     const mockTestId = selectedMockTest?.id || selectedMockTest?.testId;
@@ -1308,10 +1297,7 @@ export default function AcademicIQScreen() {
     setMockTestLoading(true);
     try {
       const payload = { answers: Object.entries(answersMap).map(([questionId, optionIndex]) => ({ questionId, selectedOption: optionIndex })) };
-      const data = await requestWithFallbacks([
-        () => studentService.submitMockTest(mockTestId, payload),
-        () => api.post(`/api/competitiveexam/mocktest/${encode(mockTestId)}/submit`, payload),
-      ]);
+      const data = await studentService.submitMockTest(mockTestId, payload);
       const parsed = unwrap(data);
       const scoreValue = parsed?.score ?? parsed?.correct;
       const totalValue = parsed?.total ?? parsed?.totalQuestions;
@@ -1320,14 +1306,13 @@ export default function AcademicIQScreen() {
       if (hasScore && hasTotal) {
         setMockTestResults(parsed);
       } else {
-        const resultData = await requestWithFallbacks([
-          () => api.get(`/api/competitiveexam/mock-tests/${encode(mockTestId)}/result`),
-          () => api.get(`/api/competitiveexam/mocktest/${encode(mockTestId)}/result`),
-        ]).catch((error) => {
-          logApiError('Mock Test result fetch failed', error);
-          return null;
-        });
-        setMockTestResults(resultData ? unwrap(resultData) : parsed);
+        try {
+          const resultData = await studentService.getMockTestResult(mockTestId);
+          setMockTestResults(resultData ? unwrap(resultData) : parsed);
+        } catch (resultError) {
+          logApiError('Mock Test result fetch failed', resultError);
+          setMockTestResults(parsed);
+        }
       }
     } catch (error) {
       logApiError('Mock Test submit failed', error);
