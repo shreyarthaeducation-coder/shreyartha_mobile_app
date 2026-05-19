@@ -66,6 +66,10 @@ function formatTime(milliseconds) {
   return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
 }
 
+function buildRecordingFileName() {
+  return `language-pro-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.m4a`;
+}
+
 function levelBadge(levelRaw) {
   const token = normalizeText(levelRaw || 'Beginner');
   if (token.includes('advanced') || token.includes('proficient')) {
@@ -934,7 +938,7 @@ export default function LanguageProScreen() {
       const form = new FormData();
       form.append('file', {
         uri: recordedUri,
-        name: `language-pro-${Date.now()}.m4a`,
+        name: buildRecordingFileName(),
         type: 'audio/m4a',
       });
       form.append('topicId', String(selectedChapter.id));

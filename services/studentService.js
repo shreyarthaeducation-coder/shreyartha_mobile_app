@@ -297,7 +297,7 @@ export const studentService = {
       { endpoint: `${basePath}/topic/${encodeURIComponent(topicId)}/recordings${query}`, body: formData },
       { endpoint: `${basePath}/topics/${encodeURIComponent(topicId)}/recording${query}`, body: formData },
       { endpoint: `${basePath}/topic/${encodeURIComponent(topicId)}/recording${query}`, body: formData },
-      { endpoint: `${basePath}/voice-recordings${buildQuery({ topicId, resourceType, focusArea, level, mode, class: classValue, activity })}`, body: formData },
+      { endpoint: `${basePath}/voice-recordings${buildQuery({ topicId, resourceType, focusArea, level, mode, class: classValue, classValue, activity })}`, body: formData },
       { endpoint: `${basePath}/speaking/${encodeURIComponent(topicId)}/submit${query}`, body: formData },
     ]))),
   getUniversityProfile: () => api.get('/api/university/profile'),
