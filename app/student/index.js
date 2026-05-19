@@ -99,13 +99,16 @@ export default function StudentDashboardScreen() {
         profileResult.status === 'fulfilled' ? getNestedProfile(profileResult.value) : null;
       const resolvedDashboard =
         dashboardResult.status === 'fulfilled' ? getNestedProfile(dashboardResult.value) : null;
-      const mergedProfile = { ...(resolvedDashboard || {}), ...(resolvedProfile || {}) };
+      const hasResolvedProfile = Boolean(resolvedProfile && Object.keys(resolvedProfile).length);
+      const hasResolvedDashboard = Boolean(resolvedDashboard && Object.keys(resolvedDashboard).length);
 
-      if (!Object.keys(mergedProfile).length) {
+      if (!hasResolvedProfile && !hasResolvedDashboard) {
         const profileError = profileResult.status === 'rejected' ? profileResult.reason : null;
         const dashboardErrorResult = dashboardResult.status === 'rejected' ? dashboardResult.reason : null;
         throw profileError || dashboardErrorResult || new Error('Unable to load student dashboard.');
       }
+
+      const mergedProfile = { ...(resolvedDashboard || {}), ...(resolvedProfile || {}) };
 
       setProfileData(mergedProfile);
 
