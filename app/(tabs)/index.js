@@ -456,11 +456,11 @@ const styles = StyleSheet.create({
   // ── Header ──
   header: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-    paddingHorizontal: SPACING.lg, paddingTop: 50, paddingBottom: SPACING.md,
+    paddingLeft: 10, paddingRight: SPACING.lg, paddingTop: 50, paddingBottom: 0,
     backgroundColor: COLORS.white, borderBottomWidth: 1, borderBottomColor: COLORS.border,
   },
-  logoContainer: { flexDirection: 'row', alignItems: 'center' },
-  logoImage: { width: 200, height: 64 },
+  logoContainer: { flexDirection: 'row', alignItems: 'center', height: 80 },
+  logoImage: { width: 230, height: '100%' },
   loginBtn: {
     backgroundColor: COLORS.primary, paddingVertical: 10, paddingHorizontal: 18,
     borderRadius: 32,
