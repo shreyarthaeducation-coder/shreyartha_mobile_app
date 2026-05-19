@@ -14,20 +14,7 @@ import { studentService } from '../../services/studentService';
 
 const arr = (value) => (Array.isArray(value) ? value : value ? [value] : []);
 const unwrap = (value) => (value?.data && typeof value.data === 'object' ? value.data : value || {});
-
-async function requestWithFallbacks(candidates) {
-  let lastError;
-  for (const candidate of candidates) {
-    try {
-      // eslint-disable-next-line no-await-in-loop
-      return await candidate();
-    } catch (error) {
-      lastError = error;
-    }
-  }
-  if (lastError) throw lastError;
-  return null;
-}
+const toMessage = (err) => err?.response?.data?.message || err?.message || 'Server error. Please try again.';
 
 export default function CodingProProjectsScreen() {
   const { stream = '', classValue = '' } = useLocalSearchParams();
@@ -43,11 +30,7 @@ export default function CodingProProjectsScreen() {
     setLoading(true);
     setError('');
     try {
-      const data = await requestWithFallbacks([
-        () => studentService.getCodingProProjects({ stream: streamValue, classValue: classParam }),
-        () => studentService.getCodingProLanding(),
-        () => studentService.getResources(),
-      ]);
+      const data = await studentService.getCodingProProjects({ stream: streamValue, classValue: classParam });
       const payload = unwrap(data);
       const projectItems = arr(payload.projects || payload.items || payload.tools || payload.resources || payload).map((item, index) => ({
         id: item?.id || item?._id || item?.toolId || `${index}`,
@@ -57,7 +40,7 @@ export default function CodingProProjectsScreen() {
       }));
       setItems(projectItems);
     } catch (loadErr) {
-      setError(loadErr?.message || 'Unable to load project tools.');
+      setError(toMessage(loadErr));
       setItems([]);
     } finally {
       setLoading(false);

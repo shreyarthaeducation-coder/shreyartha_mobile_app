@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
+  ActivityIndicator,
   Image,
   Modal,
   Pressable,
@@ -12,16 +13,53 @@ import {
 } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { useRouter } from 'expo-router';
+import { studentService } from '../../services/studentService';
 
 const STREAMS = [
   { key: 'ai', label: 'Artificial Intelligence (AI)', icon: '🧠' },
   { key: 'coding', label: 'Coding', icon: '</>' },
   { key: 'robotics', label: 'Robotics', icon: '🦾' },
 ];
+const toMessage = (err) => err?.response?.data?.message || err?.message || 'Server error. Please try again.';
 
 export default function CodingProLandingScreen() {
   const router = useRouter();
   const [selectorVisible, setSelectorVisible] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [landingData, setLandingData] = useState(null);
+
+  useEffect(() => {
+    let mounted = true;
+    const loadLanding = async () => {
+      setLoading(true);
+      setError('');
+      try {
+        const response = await studentService.getCodingProLanding();
+        if (!mounted) return;
+        setLandingData(response?.data ?? response ?? null);
+      } catch (err) {
+        if (!mounted) return;
+        setError(toMessage(err));
+        setLandingData(null);
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    };
+    loadLanding();
+    return () => { mounted = false; };
+  }, []);
+
+  const streamOptions = useMemo(() => {
+    const fromApi = Array.isArray(landingData?.streams)
+      ? landingData.streams.map((item, index) => ({
+          key: String(item?.key || item?.id || item?.slug || item?.name || STREAMS[index]?.key || `stream-${index}`),
+          label: String(item?.label || item?.name || item?.title || STREAMS[index]?.label || `Stream ${index + 1}`),
+          icon: String(item?.icon || STREAMS[index]?.icon || '💡'),
+        }))
+      : [];
+    return fromApi.length ? fromApi : STREAMS;
+  }, [landingData]);
 
   const openStream = (stream) => {
     setSelectorVisible(false);
@@ -44,6 +82,8 @@ export default function CodingProLandingScreen() {
         <View style={styles.headerCard}>
           <Text style={styles.headerTitle}>Coding Pro</Text>
           <Text style={styles.headerSub}>(Create, innovate, and code your future)</Text>
+          {loading ? <ActivityIndicator color="#dbeafe" style={{ marginTop: 8 }} /> : null}
+          {!loading && error ? <Text style={styles.errorText}>{error}</Text> : null}
         </View>
 
         <View style={styles.row}>
@@ -59,7 +99,7 @@ export default function CodingProLandingScreen() {
 
           <TouchableOpacity style={[styles.mainCard, styles.streamCard]} activeOpacity={0.9} onPress={() => setSelectorVisible(true)}>
             <Text style={styles.streamTitle}>AI, Coding & Robotics</Text>
-            {STREAMS.map((stream) => (
+            {streamOptions.map((stream) => (
               <View
                 key={stream.key}
                 style={styles.chip}
@@ -80,7 +120,7 @@ export default function CodingProLandingScreen() {
               <TouchableOpacity style={styles.closeBtn} onPress={() => setSelectorVisible(false)}>
                 <Text style={styles.closeText}>×</Text>
               </TouchableOpacity>
-              {STREAMS.map((stream) => (
+              {streamOptions.map((stream) => (
                 <TouchableOpacity
                   key={stream.key}
                   style={styles.popupButton}
@@ -153,6 +193,7 @@ const styles = StyleSheet.create({
   cardTitle: { color: '#fff', fontSize: 20, fontWeight: '800' },
   cardSub: { color: '#d6defd', marginTop: 8, fontSize: 12, lineHeight: 18 },
   streamTitle: { color: '#fff', fontSize: 16, fontWeight: '700', marginBottom: 12 },
+  errorText: { color: '#fecaca', marginTop: 8, fontSize: 12 },
   chip: {
     backgroundColor: '#fff',
     borderRadius: 10,

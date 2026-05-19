@@ -13,11 +13,11 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { STUDENT } from '../../constants/theme';
 import { studentService } from '../../services/studentService';
-import { api } from '../../services/apiService';
 
 const arr = (value) => (Array.isArray(value) ? value : value ? [value] : []);
 const unwrap = (value) => (value?.data && typeof value.data === 'object' ? value.data : value || {});
 const labelOf = (node, fallback = '') => String(node?.title || node?.name || node?.label || fallback || '').trim();
+const toMessage = (err) => err?.response?.data?.message || err?.message || 'Server error. Please try again.';
 
 const SECTION_TABS = [
   { key: 'about-courses', label: 'About Courses' },
@@ -26,20 +26,6 @@ const SECTION_TABS = [
   { key: 'colleges-abroad', label: 'Colleges Abroad' },
   { key: 'scholarship-details', label: 'Scholarship Details' },
 ];
-
-async function requestWithFallbacks(candidates) {
-  let lastError;
-  for (const candidate of candidates) {
-    try {
-      // eslint-disable-next-line no-await-in-loop
-      return await candidate();
-    } catch (error) {
-      lastError = error;
-    }
-  }
-  if (lastError) throw lastError;
-  return null;
-}
 
 const normalizeOptions = (payload, fallbackLabel) => {
   const data = unwrap(payload);
@@ -153,11 +139,7 @@ export default function SubjectCareerScreen() {
     setError('');
 
     try {
-      const data = await requestWithFallbacks([
-        () => studentService.getSubjectCareerStreams(),
-        () => api.get('/api/students/subject-career/streams'),
-        () => api.get('/api/subjectcareer/streams'),
-      ]);
+      const data = await studentService.getSubjectCareerStreams();
 
       const parsed = normalizeOptions(data, 'Stream');
       setStreams(parsed);
@@ -165,7 +147,7 @@ export default function SubjectCareerScreen() {
         setStreamId(String(parsed[0].id));
       }
     } catch (loadError) {
-      setError(loadError?.message || 'Unable to load streams.');
+      setError(toMessage(loadError));
       setStreams([]);
     } finally {
       setLoading(false);
@@ -191,11 +173,7 @@ export default function SubjectCareerScreen() {
     const loadMajors = async () => {
       setError('');
       try {
-        const data = await requestWithFallbacks([
-          () => studentService.getSubjectCareerMajors(streamId),
-          () => api.get(`/api/students/subject-career/streams/${encodeURIComponent(streamId)}/majors`),
-          () => api.get(`/api/subjectcareer/streams/${encodeURIComponent(streamId)}/majors`),
-        ]);
+        const data = await studentService.getSubjectCareerMajors(streamId);
 
         if (!mounted) return;
         const parsed = normalizeOptions(data, 'Major');
@@ -205,7 +183,7 @@ export default function SubjectCareerScreen() {
         setCareerId('');
       } catch (loadError) {
         if (!mounted) return;
-        setError(loadError?.message || 'Unable to load major options.');
+        setError(toMessage(loadError));
         setMajors([]);
         setMajorId('');
       }
@@ -229,11 +207,7 @@ export default function SubjectCareerScreen() {
     const loadCareers = async () => {
       setError('');
       try {
-        const data = await requestWithFallbacks([
-          () => studentService.getSubjectCareerOptics(streamId, majorId),
-          () => api.get(`/api/students/subject-career/streams/${encodeURIComponent(streamId)}/majors/${encodeURIComponent(majorId)}/careers`),
-          () => api.get(`/api/subjectcareer/majors/${encodeURIComponent(majorId)}/careers`),
-        ]);
+        const data = await studentService.getSubjectCareerOptics(streamId, majorId);
 
         if (!mounted) return;
         const parsed = normalizeOptions(data, 'Career');
@@ -241,7 +215,7 @@ export default function SubjectCareerScreen() {
         setCareerId(parsed.length > 0 ? String(parsed[0].id) : '');
       } catch (loadError) {
         if (!mounted) return;
-        setError(loadError?.message || 'Unable to load career options.');
+        setError(toMessage(loadError));
         setCareers([]);
         setCareerId('');
       }
@@ -263,18 +237,12 @@ export default function SubjectCareerScreen() {
     setContentError('');
 
     try {
-      const query = `streamId=${encodeURIComponent(streamId)}&majorId=${encodeURIComponent(majorId)}&careerId=${encodeURIComponent(careerId)}&section=${encodeURIComponent(activeTab)}`;
-      const data = await requestWithFallbacks([
-        () => studentService.getSubjectCareerContent({ streamId, majorId, careerId, section: activeTab }),
-        () => api.get(`/api/students/subject-career/content?${query}`),
-        () => api.get(`/api/subjectcareer/content?${query}`),
-        () => api.get(`/api/subject-career/careers/${encodeURIComponent(careerId)}/${encodeURIComponent(activeTab)}`),
-      ]);
+      const data = await studentService.getSubjectCareerContent({ streamId, majorId, careerId, section: activeTab });
 
       setContentPayload(getTabPayload(data, activeTab));
     } catch (loadError) {
       setContentPayload(null);
-      setContentError(loadError?.message || 'Unable to load section content.');
+      setContentError(toMessage(loadError));
     } finally {
       setContentLoading(false);
     }

@@ -12,7 +12,6 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { STUDENT } from '../../constants/theme';
 import { studentService } from '../../services/studentService';
-import { api } from '../../services/apiService';
 
 const HERO_TITLE = 'Skills Edge';
 const HERO_TAGLINE = 'Build your future, one skill at a time';
@@ -25,20 +24,7 @@ const unwrap = (value) => (value?.data && typeof value.data === 'object' ? value
 const nodeLabel = (node, fallback = '') => String(node?.name || node?.title || node?.label || fallback || '').trim();
 const normalize = (value) => String(value || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
 const asText = (value) => String(value ?? '').trim();
-
-async function requestWithFallbacks(candidates) {
-  let lastError;
-  for (const candidate of candidates) {
-    try {
-      // eslint-disable-next-line no-await-in-loop
-      return await candidate();
-    } catch (error) {
-      lastError = error;
-    }
-  }
-  if (lastError) throw lastError;
-  return null;
-}
+const toMessage = (err) => err?.response?.data?.message || err?.message || 'Server error. Please try again.';
 
 function extractSkills(tree) {
   const root = arr(tree?.skills || tree?.nodes || tree?.children || tree);
@@ -138,7 +124,7 @@ export default function SkillsEdgeScreen() {
       const parsed = extractSkills(unwrap(data));
       setSkills(parsed);
     } catch (loadError) {
-      setError(loadError?.message || 'Unable to load Skills Edge catalog.');
+      setError(toMessage(loadError));
       setSkills([]);
     } finally {
       setLoading(false);
@@ -165,11 +151,7 @@ export default function SkillsEdgeScreen() {
     setAssessmentQuestions([]);
     setProjectData(null);
     try {
-      const chapterData = await requestWithFallbacks([
-        () => studentService.getSkillChapterDetail(chapterId),
-        () => api.get(`/api/skillsedge/chapter/${encodeURIComponent(chapterId)}`),
-        () => api.get(`/api/students/skillsedge/chapters/${encodeURIComponent(chapterId)}`),
-      ]);
+      const chapterData = await studentService.getSkillChapterDetail(chapterId);
       const parsed = extractChapterPayload(chapterData, chapterNode);
       setObjectives(parsed.objectives);
       setModules(parsed.modules);
@@ -201,11 +183,7 @@ export default function SkillsEdgeScreen() {
         setModuleModal(module);
         return;
       }
-      const data = await requestWithFallbacks([
-        () => studentService.getSkillModuleDetail(moduleId),
-        () => api.get(`/api/skillsedge/module/${encodeURIComponent(moduleId)}`),
-        () => api.get(`/api/students/skillsedge/modules/${encodeURIComponent(moduleId)}`),
-      ]);
+      const data = await studentService.getSkillModuleDetail(moduleId);
       const raw = { ...module.raw, ...unwrap(data) };
       setModuleModal({
         ...module,
@@ -224,14 +202,10 @@ export default function SkillsEdgeScreen() {
     setDetailView('assessment');
     setAssessmentState({ index: 0, answers: {}, submitted: false });
     try {
-      const data = await requestWithFallbacks([
-        () => studentService.getSkillChapterAssessment(chapterId),
-        () => api.get(`/api/skillsedge/assessment/${encodeURIComponent(chapterId)}`),
-        () => api.get(`/api/students/skillsedge/chapters/${encodeURIComponent(chapterId)}/assessment`),
-      ]);
+      const data = await studentService.getSkillChapterAssessment(chapterId);
       setAssessmentQuestions(arr(unwrap(data)?.questions || unwrap(data)?.items || unwrap(data)));
     } catch (assessmentError) {
-      setError(assessmentError?.message || 'Unable to load assessment.');
+      setError(toMessage(assessmentError));
       setAssessmentQuestions([]);
     } finally {
       setAssessmentLoading(false);
@@ -244,14 +218,10 @@ export default function SkillsEdgeScreen() {
     setProjectLoading(true);
     setDetailView('project');
     try {
-      const data = await requestWithFallbacks([
-        () => studentService.getSkillChapterProject(chapterId),
-        () => api.get(`/api/skillsedge/project/${encodeURIComponent(chapterId)}`),
-        () => api.get(`/api/students/skillsedge/chapters/${encodeURIComponent(chapterId)}/project`),
-      ]);
+      const data = await studentService.getSkillChapterProject(chapterId);
       setProjectData(unwrap(data));
     } catch (projectError) {
-      setError(projectError?.message || 'Unable to load project details.');
+      setError(toMessage(projectError));
       setProjectData(null);
     } finally {
       setProjectLoading(false);

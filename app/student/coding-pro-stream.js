@@ -21,25 +21,12 @@ const STREAM_LABELS = {
 const arr = (value) => (Array.isArray(value) ? value : value ? [value] : []);
 const unwrap = (value) => (value?.data && typeof value.data === 'object' ? value.data : value || {});
 const text = (value) => String(value || '').toLowerCase().trim();
+const toMessage = (err) => err?.response?.data?.message || err?.message || 'Server error. Please try again.';
 
 const classToken = (value) => {
   const match = String(value || '').match(/\d+/);
   return match ? match[0] : String(value || '').trim();
 };
-
-async function requestWithFallbacks(candidates) {
-  let lastError;
-  for (const candidate of candidates) {
-    try {
-      // eslint-disable-next-line no-await-in-loop
-      return await candidate();
-    } catch (error) {
-      lastError = error;
-    }
-  }
-  if (lastError) throw lastError;
-  return null;
-}
 
 function normalizeTopicList(payload) {
   const data = unwrap(payload);
@@ -92,16 +79,12 @@ export default function CodingProStreamScreen() {
       const classValue = classToken(profileData?.currentClass || profileData?.className || profileData?.class || '');
       setStudentClass(classValue || '—');
 
-      const data = await requestWithFallbacks([
-        () => studentService.getCodingProStreamTopics(streamKey, classValue),
-        () => studentService.getCodingProStreamTopics(streamLabel, classValue),
-        () => studentService.getCodingProTree(),
-      ]);
+      const data = await studentService.getCodingProStreamTopics(streamKey, classValue);
 
       const normalized = normalizeTopicList(data);
       setTopics(normalized);
     } catch (loadErr) {
-      setError(loadErr?.message || 'Unable to load Coding Pro topics.');
+      setError(toMessage(loadErr));
       setTopics([]);
     } finally {
       setLoading(false);
@@ -125,14 +108,10 @@ export default function CodingProStreamScreen() {
     setTopicLoading(true);
     setTopicError('');
     try {
-      const data = await requestWithFallbacks([
-        () => studentService.getCodingProTopicContent({ topicId: topic.id, stream: streamKey, classValue: studentClass }),
-        () => studentService.getTopicContent(topic.id, 'coding_pro'),
-        () => studentService.getTopicContent(topic.id, streamKey),
-      ]);
+      const data = await studentService.getCodingProTopicContent({ topicId: topic.id, stream: streamKey, classValue: studentClass });
       setTopicContent(unwrap(data));
     } catch (contentErr) {
-      setTopicError(contentErr?.message || 'Unable to load topic content.');
+      setTopicError(toMessage(contentErr));
       setTopicContent(null);
     } finally {
       setTopicLoading(false);
