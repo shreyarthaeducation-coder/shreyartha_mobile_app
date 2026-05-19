@@ -54,7 +54,7 @@ export default function CodingProProjectsScreen() {
   return (
     <SafeAreaView style={styles.root}>
       <View style={styles.topBar}>
-        <TouchableOpacity onPress={() => router.back()}>
+        <TouchableOpacity onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))}>
           <Text style={styles.backText}>← Back</Text>
         </TouchableOpacity>
         <Text style={styles.title}>My Project</Text>
