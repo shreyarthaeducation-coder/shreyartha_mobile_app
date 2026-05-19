@@ -465,7 +465,7 @@ const styles = StyleSheet.create({
     flexShrink: 1,
     marginRight: SPACING.md,
   },
-  logoImage: { width: 132, height: 92 },
+  logoImage: { width: 120, height: 96 },
   loginBtn: {
     backgroundColor: COLORS.primary, paddingVertical: 10, paddingHorizontal: 18,
     borderRadius: 32,
