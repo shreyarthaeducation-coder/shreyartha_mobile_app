@@ -10,15 +10,14 @@ import {
   StyleSheet,
   Text,
   TouchableOpacity,
-  useWindowDimensions,
   View,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { WebView } from 'react-native-webview';
-import RenderHTML from 'react-native-render-html';
 import { STUDENT } from '../../constants/theme';
+import RichText from '../../components/RichText';
 import { studentService } from '../../services/studentService';
 
 const LEARNING_CATEGORIES = [
@@ -45,8 +44,7 @@ const TOPIC_BASE_TABS = [
   { key: 'understanding', label: 'Test Your Understanding', accent: '#FACC15' },
   { key: 'reflection', label: 'My Reflection', accent: '#F59E0B' },
 ];
-const HTML_CONTENT_HORIZONTAL_MARGIN = 72;
-
+const EXAM_ID_FIELDS = ['subExamId', 'id', 'examId', 'entranceExamId', 'entranceExamSubjectId', 'competitiveExamSubjectId', 'competitiveExamId', 'exam_id'];
 const arr = (value) => (Array.isArray(value) ? value : value ? [value] : []);
 const unwrap = (value) => (value?.data && typeof value.data === 'object' ? value.data : value || {});
 const normalizeText = (value) => String(value || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
@@ -57,16 +55,23 @@ const classToken = (value) => {
 };
 const nodeLabel = (node, fallback = '') => String(node?.name || node?.title || node?.label || fallback || '').trim();
 const isProbablyUrl = (value) => /^https?:\/\//i.test(String(value || '').trim());
-const chapterFromSubject = (subject) => arr(subject?.chapters || subject?.children || subject?.items || subject?.units);
+const chapterFromSubject = (subject) => arr(subject?.chapters || subject?.chapterList || subject?.children || subject?.items || subject?.units);
 const topicFromChapter = (chapter) => arr(chapter?.topics || chapter?.children || chapter?.items || chapter?.lessons);
-const topicFromExamSubject = (subject) => arr(subject?.topics || subject?.children || subject?.items || subject?.lessons);
+const topicFromExamSubject = (subject) => {
+  const directTopics = arr(subject?.topics || subject?.children || subject?.items || subject?.lessons);
+  if (directTopics.length) return directTopics;
+  return chapterFromSubject(subject).flatMap((chapter) => topicFromChapter(chapter));
+};
 const getNodeId = (node, fallback = '') => String(
   node?.id
   || node?.topicId
   || node?.chapterId
   || node?.subjectId
+  || node?.subExamId
   || node?.examId
   || node?.entranceExamId
+  || node?.entranceExamSubjectId
+  || node?.competitiveExamSubjectId
   || node?.competitiveExamId
   || node?.mockTestId
   || node?.nodeId
@@ -116,45 +121,6 @@ function logApiError(context, error) {
     message: payload?.message || payload?.error || payload?.details || payload?.detail || error?.message || 'Unknown error',
     payload,
   });
-}
-
-/**
- * Renders plain text or rich HTML content inside Academic IQ cards/questions.
- * @param {{html: string, textStyle: object, numberOfLines?: number}} props
- */
-function HtmlContent({ html, textStyle, numberOfLines }) {
-  const { width } = useWindowDimensions();
-  const rawHtml = String(html || '').trim();
-  if (!rawHtml) return null;
-  if (!/[<>&]/.test(rawHtml)) {
-    return <Text numberOfLines={numberOfLines} style={textStyle}>{rawHtml}</Text>;
-  }
-  return (
-    <RenderHTML
-      contentWidth={Math.max(0, width - HTML_CONTENT_HORIZONTAL_MARGIN)}
-      source={{ html: rawHtml }}
-      baseStyle={textStyle}
-      defaultTextProps={numberOfLines ? { numberOfLines } : undefined}
-      tagsStyles={{
-        p: { marginTop: 0, marginBottom: 8 },
-        ul: { marginTop: 0, marginBottom: 8, paddingLeft: 18 },
-        ol: { marginTop: 0, marginBottom: 8, paddingLeft: 18 },
-        li: { marginBottom: 4 },
-        strong: { fontWeight: '700' },
-        em: { fontStyle: 'italic' },
-        code: {
-          backgroundColor: 'rgba(148,163,184,0.2)',
-          color: '#E2E8F0',
-          fontFamily: 'monospace',
-          paddingHorizontal: 4,
-          borderRadius: 4,
-        },
-        h1: { fontSize: 20, lineHeight: 28, marginTop: 4, marginBottom: 8, fontWeight: '800' },
-        h2: { fontSize: 18, lineHeight: 26, marginTop: 4, marginBottom: 8, fontWeight: '800' },
-        h3: { fontSize: 16, lineHeight: 24, marginTop: 4, marginBottom: 8, fontWeight: '700' },
-      }}
-    />
-  );
 }
 
 function shuffleArray(items) {
@@ -421,7 +387,7 @@ function ContentCard({ title, body, attachments, onPreview }) {
   return (
     <View style={styles.contentCardDark}>
       <Text style={styles.contentCardTitle}>{title}</Text>
-      {body ? <HtmlContent html={body} textStyle={styles.contentBody} /> : <Text style={styles.placeholderText}>No content is available for this section yet.</Text>}
+      {body ? <RichText html={body} textStyle={styles.contentBody} /> : <Text style={styles.placeholderText}>No content is available for this section yet.</Text>}
       {attachments?.length ? <AttachmentGrid items={attachments} onPreview={onPreview} /> : null}
     </View>
   );
@@ -478,12 +444,12 @@ function QuestionRunner({
         <Text style={styles.questionCountText}>{`Question ${state.index + 1} of ${questions.length}`}</Text>
         {question?.bloomsLevel ? <Text style={styles.metaPill}>{question.bloomsLevel}</Text> : null}
       </View>
-      <HtmlContent html={question?.questionText || question?.question || question?.text || ''} textStyle={styles.questionText} />
+      <RichText html={question?.questionText || question?.question || question?.text || ''} textStyle={styles.questionText} />
       <View style={styles.metaInfoWrap}>
         {question?.marks != null ? <Text style={styles.metaInfo}>{`Marks: ${question.marks}`}</Text> : null}
         {question?.negativeMarks != null ? <Text style={styles.metaInfo}>{`Negative: ${question.negativeMarks}`}</Text> : null}
       </View>
-      {question?.hint ? <View style={styles.hintWrap}><Text style={styles.hintPrefix}>Hint:</Text><HtmlContent html={question.hint} textStyle={styles.hintText} /></View> : null}
+      {question?.hint ? <View style={styles.hintWrap}><Text style={styles.hintPrefix}>Hint:</Text><RichText html={question.hint} textStyle={styles.hintText} /></View> : null}
       <View style={styles.optionsWrap}>
         {options.map((option, index) => {
           const active = selectedIndex === index;
@@ -494,7 +460,7 @@ function QuestionRunner({
               onPress={() => setState((prev) => ({ ...prev, answers: { ...prev.answers, [questionId]: index } }))}
             >
               <Text style={[styles.mockOptionLabel, active && { color: accentColor || STUDENT.accent, borderColor: accentColor || STUDENT.accent }]}>{String.fromCharCode(65 + index)}</Text>
-              <View style={styles.optionTextWrap}>{/* Required so RenderHTML can shrink within row alongside option label */}<HtmlContent html={option.text} textStyle={styles.optionText} /></View>
+              <View style={styles.optionTextWrap}>{/* Required so RenderHTML can shrink within row alongside option label */}<RichText html={option.text} textStyle={styles.optionText} /></View>
             </Pressable>
           );
         })}
@@ -550,7 +516,7 @@ function MyReflectionPanel({ state, onStart, onAnswer, onChooseLevel, onSubmitLe
         <Text style={styles.contentCardTitle}>My Reflection</Text>
         <View style={styles.progressTrack}><View style={[styles.progressFill, { width: `${Math.min(((state.step || 1) / 12) * 100, 100)}%`, backgroundColor: REFLECTION_ACCENT }]} /></View>
         <Text style={styles.questionCountText}>{`Adaptive Question ${Math.min(state.step || 1, 12)} of 12`}</Text>
-        <HtmlContent html={state.question?.questionText || state.question?.question || state.question?.text || ''} textStyle={styles.questionText} />
+        <RichText html={state.question?.questionText || state.question?.question || state.question?.text || ''} textStyle={styles.questionText} />
         <View style={styles.optionsWrap}>
           {options.map((option, index) => {
             const value = optionValue(option);
@@ -558,7 +524,7 @@ function MyReflectionPanel({ state, onStart, onAnswer, onChooseLevel, onSubmitLe
             return (
               <Pressable key={`${value}-${index}`} style={[styles.optionCard, selected && { borderColor: REFLECTION_ACCENT, backgroundColor: 'rgba(251,191,36,0.15)' }]} onPress={() => onAnswer(option, index)}>
                 <Text style={[styles.mockOptionLabel, selected && { color: REFLECTION_ACCENT, borderColor: REFLECTION_ACCENT }]}>{String.fromCharCode(65 + index)}</Text>
-                <View style={styles.optionTextWrap}><HtmlContent html={value} textStyle={styles.optionText} /></View>
+                <View style={styles.optionTextWrap}><RichText html={value} textStyle={styles.optionText} /></View>
               </Pressable>
             );
           })}
@@ -608,7 +574,7 @@ function MockTestCard({ test, onPress }) {
         {duration > 0 ? <View style={styles.mockTestMetaPill}><Text style={styles.mockTestMetaText}>⏱ {duration} min</Text></View> : null}
         {questionCount > 0 ? <View style={styles.mockTestMetaPill}><Text style={styles.mockTestMetaText}>📝 {questionCount} Qs</Text></View> : null}
       </View>
-      {test?.description ? <HtmlContent html={test.description} textStyle={styles.mockTestCardSub} numberOfLines={2} /> : null}
+      {test?.description ? <RichText html={test.description} textStyle={styles.mockTestCardSub} numberOfLines={2} /> : null}
       <Text style={styles.mockTestStartText}>Start Test →</Text>
     </TouchableOpacity>
   );
@@ -681,14 +647,14 @@ function MockTestRunner({ questions, mockTest, onSubmit, onBack }) {
           <Text style={styles.mockQLabel}>{`Question ${currentIndex + 1}`}</Text>
           <TouchableOpacity onPress={() => setFlagged((prev) => ({ ...prev, [qId]: !prev[qId] }))} style={[styles.flagButton, isFlagged && styles.flagButtonActive]}><Text style={styles.flagButtonText}>{isFlagged ? '🚩 Flagged' : '🏳️ Flag'}</Text></TouchableOpacity>
         </View>
-        <HtmlContent html={question?.questionText || question?.question || question?.text || ''} textStyle={styles.questionText} />
+        <RichText html={question?.questionText || question?.question || question?.text || ''} textStyle={styles.questionText} />
         <View style={styles.optionsWrap}>
           {options.map((option, index) => {
             const selected = selectedOption === index;
             return (
               <Pressable key={option.id} onPress={() => setAnswers((prev) => ({ ...prev, [qId]: index }))} style={[styles.optionCard, selected && styles.optionCardActive]}>
                 <Text style={[styles.mockOptionLabel, selected && styles.mockOptionLabelActive]}>{String.fromCharCode(65 + index)}</Text>
-                <View style={styles.optionTextWrap}><HtmlContent html={option.text} textStyle={styles.optionText} /></View>
+                <View style={styles.optionTextWrap}><RichText html={option.text} textStyle={styles.optionText} /></View>
               </Pressable>
             );
           })}
@@ -896,7 +862,7 @@ export default function AcademicIQScreen() {
     // Only show categories that contain the student's enrolled exam
     const withEnrolled = base.filter((category) =>
       arr(category?.entranceExams || category?.exams || category?.children)
-        .some((exam) => String(getApiId(exam, ['id', 'examId', 'entranceExamId', 'competitiveExamId', 'exam_id']) || '') === enrolledCompetitiveExamId),
+        .some((exam) => String(getApiId(exam, EXAM_ID_FIELDS) || '') === enrolledCompetitiveExamId),
     );
     return withEnrolled.length ? withEnrolled : base;
   }, [examCategories, hiddenExamIds, enrolledCompetitiveExamId]);
@@ -905,7 +871,7 @@ export default function AcademicIQScreen() {
     const all = arr(selectedExamCategory?.entranceExams || selectedExamCategory?.exams || selectedExamCategory?.children)
       .filter((item) => !hiddenExamIds.includes(String(item?.id)));
     if (!enrolledCompetitiveExamId) return all;
-    const enrolled = all.filter((item) => String(getApiId(item, ['id', 'examId', 'entranceExamId', 'competitiveExamId', 'exam_id']) || '') === enrolledCompetitiveExamId);
+    const enrolled = all.filter((item) => String(getApiId(item, EXAM_ID_FIELDS) || '') === enrolledCompetitiveExamId);
     return enrolled.length ? enrolled : all;
   }, [selectedExamCategory, hiddenExamIds, enrolledCompetitiveExamId]);
 
@@ -922,7 +888,7 @@ export default function AcademicIQScreen() {
   // Load practice zone subjects when user enters the practice section
   useEffect(() => {
     if (examSection !== 'practice') return;
-    const examId = getApiId(selectedExam, ['id', 'examId', 'entranceExamId', 'competitiveExamId', 'exam_id']) || getNodeId(selectedExam);
+    const examId = getApiId(selectedExam, EXAM_ID_FIELDS) || getNodeId(selectedExam);
     // Only load if we haven't loaded yet and have no error; errors require a manual Retry
     if (!examId || practiceZoneSubjectsLoading) return;
     if (practiceZoneSubjects.length > 0 || practiceZoneSubjectsError) return;
@@ -978,9 +944,9 @@ export default function AcademicIQScreen() {
     setPracticeZoneSubjectsLoading(true);
     setPracticeZoneSubjectsError('');
     try {
-      const response = await studentService.getExamPracticeSubjects(examId);
+      const response = await studentService.getExamSubjectTree(examId);
       const payload = unwrap(response);
-      const subjects = arr(payload?.subjects || payload?.subjectList || payload?.papers || payload?.children || payload);
+      const subjects = arr(payload?.subjects || payload?.subjectList || payload?.papers || payload?.children || payload?.content || payload);
       setPracticeZoneSubjects(subjects);
     } catch (error) {
       logApiError('Competitive Exam practice subjects failed', error);
@@ -1030,12 +996,24 @@ export default function AcademicIQScreen() {
     const titleLevel = lowerLevel ? lowerLevel.charAt(0).toUpperCase() + lowerLevel.slice(1) : '';
     const keys = [upperLevel, lowerLevel, titleLevel, `${upperLevel}Questions`, `${lowerLevel}Questions`, `${titleLevel}Questions`, 'questions', 'items', 'content'].filter(Boolean);
     for (const key of keys) {
-      if (Array.isArray(payload?.[key])) return payload[key];
+      if (Array.isArray(payload?.[key])) {
+        const keyedItems = payload[key];
+        if (!upperLevel) return keyedItems;
+        const filteredByKey = keyedItems.filter(
+          (item) => normalizeDifficultyLevel(item?.bloomsLevel || item?.testLevel || item?.difficulty || item?.level) === upperLevel,
+        );
+        return filteredByKey.length ? filteredByKey : keyedItems;
+      }
     }
     if (payload?.levels && typeof payload.levels === 'object') {
       return arr(payload.levels[upperLevel] || payload.levels[lowerLevel] || payload.levels[titleLevel]);
     }
-    return arr(payload);
+    const list = arr(payload);
+    if (!upperLevel) return list;
+    const filtered = list.filter(
+      (item) => normalizeDifficultyLevel(item?.bloomsLevel || item?.testLevel || item?.difficulty || item?.level) === upperLevel,
+    );
+    return filtered.length ? filtered : list;
   }, []);
 
   const loadTopicContent = useCallback(async (topicId) => {
@@ -1063,7 +1041,7 @@ export default function AcademicIQScreen() {
     setPracticeError('');
     try {
       const normalizedLevel = normalizeDifficultyLevel(level);
-      const response = await studentService.getPracticeZoneQuestions(topicId, normalizedLevel);
+      const response = await studentService.getPracticeZoneQuestions(topicId);
       setPracticeQuestions(extractPracticeQuestions(response, normalizedLevel));
     } catch (error) {
       logApiError('Practice Zone questions failed', error);
@@ -1187,7 +1165,7 @@ export default function AcademicIQScreen() {
   }, [selectedTopic, reflectionState.reflectionChoice, reflectionState.sessionState]);
 
   const openExam = useCallback(async (exam) => {
-    const selectedExamId = getApiId(exam, ['id', 'examId', 'entranceExamId', 'competitiveExamId', 'exam_id']) || getNodeId(exam);
+    const selectedExamId = getApiId(exam, EXAM_ID_FIELDS) || getNodeId(exam);
     // Access control: block if this exam is not the student's enrolled one
     if (enrolledCompetitiveExamId && String(selectedExamId || '') !== enrolledCompetitiveExamId) {
       Alert.alert('Access Denied', 'This exam is not part of your enrollment. Please contact your administrator to change your exam enrollment.');
@@ -1205,7 +1183,7 @@ export default function AcademicIQScreen() {
         setExamDetailError('Unable to open this exam right now.');
         return;
       }
-      const detail = await studentService.getExamDetail(selectedExamId);
+      const detail = await studentService.getExamSubjectTree(selectedExamId);
       const payload = unwrap(detail);
       if (payload && Object.keys(payload).length > 0) setSelectedExam((prev) => ({ ...prev, ...payload, id: prev?.id || prev?.examId || selectedExamId }));
     } catch (error) {
@@ -1256,7 +1234,7 @@ export default function AcademicIQScreen() {
     setExamPracticeError('');
     try {
       const normalizedLevel = normalizeDifficultyLevel(level);
-      const response = await studentService.getExamTopicPracticeQuestions(topicId, normalizedLevel);
+      const response = await studentService.getExamTopicPracticeQuestions(topicId);
       setExamPracticeQuestions(extractPracticeQuestions(response, normalizedLevel));
     } catch (error) {
       logApiError('Competitive Exam practice questions failed', error);
@@ -1305,13 +1283,17 @@ export default function AcademicIQScreen() {
   }, []);
 
   const loadMockTestsPage = useCallback(async (page, append = false) => {
-    const examId = getApiId(selectedExam, ['id', 'examId', 'entranceExamId', 'competitiveExamId', 'exam_id']) || getNodeId(selectedExam);
+    const examId = getApiId(selectedExam, EXAM_ID_FIELDS) || getNodeId(selectedExam);
     if (!examId) return;
     if (append) setMockTestsLoadingMore(true);
     else setMockTestsLoading(true);
     try {
-      // studentService.getExamMockTests converts 1-indexed UI page to 0-indexed Spring Boot page
-      const data = await studentService.getExamMockTests(examId, { page, size: 10 });
+      const data = await studentService.getMockTestPapersForSubject(examId).catch((error) => {
+        const status = error?.response?.status || error?.status;
+        if (![404, 405].includes(status)) throw error;
+        logApiError('Mock Test paper list request failed (not supported), falling back to entrance-exam endpoint', error);
+        return studentService.getExamMockTests(examId, page > 1 ? { page } : undefined);
+      });
       const { list, hasMore } = parseMockTestsPage(data);
       setMockTests((prev) => (append ? [...prev, ...list] : list));
       setMockTestsPage(page);
@@ -1354,7 +1336,7 @@ export default function AcademicIQScreen() {
     setMockTestResults(null);
     setScreenError('');
     try {
-      const data = await studentService.getMockTestQuestions(mockTestId);
+      const data = await studentService.getMockTestPaperQuestions(mockTestId);
       setMockTestQuestions(arr(unwrap(data)?.questions || unwrap(data)?.items || unwrap(data)));
     } catch (error) {
       logApiError('Mock Test questions failed', error);
@@ -1489,7 +1471,7 @@ export default function AcademicIQScreen() {
           ) : examSection === 'practice' && practiceZoneSubjectsError && !examSubjects.length ? (
             <View style={styles.errorRetryWrap}>
               <InlineNotice text={practiceZoneSubjectsError} />
-              <TouchableOpacity style={styles.retryButton} onPress={() => { setPracticeZoneSubjectsError(''); loadPracticeZoneSubjects(getApiId(selectedExam, ['id', 'examId', 'entranceExamId', 'competitiveExamId', 'exam_id']) || getNodeId(selectedExam)); }}>
+              <TouchableOpacity style={styles.retryButton} onPress={() => { setPracticeZoneSubjectsError(''); loadPracticeZoneSubjects(getApiId(selectedExam, EXAM_ID_FIELDS) || getNodeId(selectedExam)); }}>
                 <Text style={styles.retryButtonText}>↺ Retry</Text>
               </TouchableOpacity>
             </View>

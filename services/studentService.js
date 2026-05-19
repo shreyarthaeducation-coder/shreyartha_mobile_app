@@ -5,6 +5,9 @@
 
 import { api } from './apiService';
 
+const getExamSubjectTree = (subExamId) => api.get(`/api/competitiveexam/subject/${encodeURIComponent(subExamId)}/tree`);
+const getMockTestPaperQuestions = (paperId) => api.get(`/api/admin/competitiveexam/mocktest-papers/student/${encodeURIComponent(paperId)}/questions`);
+
 export const studentService = {
   // ── Dashboard ──────────────────────────────────────────────────────────────
   getDashboard: () => api.get('/api/students/dashboard'),
@@ -27,8 +30,9 @@ export const studentService = {
   getAcademicIQTree: () => api.get('/api/academiciq/tree'),
   getCompetitiveExams: () => api.get('/api/competitiveexam/exams'),
   getAcademicIQTopicContent: (topicId) => api.get(`/api/academiciq/topic/${encodeURIComponent(topicId)}/content`),
-  getPracticeZoneQuestions: (topicId, level) =>
-    api.get(`/api/academiciq/topic/${encodeURIComponent(topicId)}/questions?level=${encodeURIComponent(level)}`),
+  getPracticeZoneQuestions: (topicId) => api.get(`/api/practice/topic/${encodeURIComponent(topicId)}/questions`),
+  getPracticeZoneQuestionsByDifficulty: (topicId, level) =>
+    api.get(`/api/practice/topic/${encodeURIComponent(topicId)}/questions/filter?difficulty=${encodeURIComponent(level)}`),
   getUnderstandingQuestions: (topicId) => api.get(`/api/student/understanding/${encodeURIComponent(topicId)}/questions`),
   getUnderstandingInfo: (topicId) => api.get(`/api/student/understanding/${encodeURIComponent(topicId)}/info`),
   startTopicReflection: (topicId, body = {}) => api.post(`/api/adaptive/topic/${encodeURIComponent(topicId)}/start`, body),
@@ -37,24 +41,23 @@ export const studentService = {
   submitTopicReflectionLevel: (topicId, body) => api.post(`/api/adaptive/topic/${encodeURIComponent(topicId)}/reflection`, body),
   getTopicContent: (topicId, category) => api.get(`/api/students/study/topics/${encodeURIComponent(topicId)}/content${category ? `?category=${encodeURIComponent(category)}` : ''}`),
   getTopicQuestions: (topicId, category) => api.get(`/api/students/study/topics/${encodeURIComponent(topicId)}/questions${category ? `?category=${encodeURIComponent(category)}` : ''}`),
-  getExamDetail: (examId) => api.get(`/api/competitiveexam/exams/${encodeURIComponent(examId)}`),
-  getExamPracticeSubjects: (examId) => api.get(`/api/competitiveexam/exams/${encodeURIComponent(examId)}/practice-zone`),
-  getExamSubjectQuestions: (examId, subjectId) => api.get(`/api/competitiveexam/exams/${encodeURIComponent(examId)}/subjects/${encodeURIComponent(subjectId)}/questions`),
+  getExamSubjectTree,
+  getExamDetail: getExamSubjectTree,
+  getExamPracticeSubjects: getExamSubjectTree,
+  getExamSubjectQuestions: (topicId) => api.get(`/api/student/competitiveexam/practice/${encodeURIComponent(topicId)}/questions`),
   getExamTopicContent: (topicId) => api.get(`/api/competitiveexam/topic/${encodeURIComponent(topicId)}/content`),
-  getExamTopicPracticeQuestions: (topicId, level) =>
-    api.get(`/api/competitiveexam/topic/${encodeURIComponent(topicId)}/questions?level=${encodeURIComponent(level)}`),
-  getExamMockTests: (examId, { page = 1, size } = {}) => {
+  getExamTopicPracticeQuestions: (topicId) => api.get(`/api/student/competitiveexam/practice/${encodeURIComponent(topicId)}/questions`),
+  getExamMockTests: (entranceExamId, { page } = {}) => {
     const params = new URLSearchParams();
-    // Spring Boot uses 0-indexed pages; UI passes 1-indexed pages, so convert
-    const apiPage = Number.isFinite(page) ? Math.max(0, page - 1) : 0;
-    params.append('page', String(apiPage));
-    if (Number.isFinite(size) && size > 0) params.append('size', String(size));
+    if (Number.isFinite(page) && page > 0) params.append('page', String(page));
     const qs = params.toString();
-    return api.get(`/api/competitiveexam/exams/${encodeURIComponent(examId)}/mock-tests${qs ? `?${qs}` : ''}`);
+    return api.get(`/api/student/competitiveexam/mocktest/entrance-exam/${encodeURIComponent(entranceExamId)}${qs ? `?${qs}` : ''}`);
   },
+  getMockTestPapersForSubject: (subExamId) => api.get(`/api/admin/competitiveexam/mocktest-papers/student/subject/${encodeURIComponent(subExamId)}`),
+  getMockTestPaperQuestions,
   getMockTestResult: (mockTestId) => api.get(`/api/competitiveexam/mock-tests/${encodeURIComponent(mockTestId)}/result`),
-  getMockTestQuestions: (mockTestId) => api.get(`/api/competitiveexam/mock-tests/${encodeURIComponent(mockTestId)}/questions`),
-  submitMockTest: (mockTestId, data) => api.post(`/api/competitiveexam/mock-tests/${encodeURIComponent(mockTestId)}/submit`, data),
+  getMockTestQuestions: getMockTestPaperQuestions,
+  submitMockTest: (mockTestId, data) => api.post(`/api/student/competitiveexam/mocktest/${encodeURIComponent(mockTestId)}/submit`, data),
   getAcademicProfile: () => api.get('/api/academic/profile'),
   createAcademicProfile: (data) => api.post('/api/academic/profile', data),
   updateAcademicProfile: (data) => api.put('/api/academic/profile', data),
