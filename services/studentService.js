@@ -28,7 +28,7 @@ export const studentService = {
   getCompetitiveExams: () => api.get('/api/competitiveexam/exams'),
   getAcademicIQTopicContent: (topicId) => api.get(`/api/academiciq/topic/${encodeURIComponent(topicId)}/content`),
   getPracticeZoneQuestions: (topicId, level) =>
-    api.get(`/api/academiciq/topic/${encodeURIComponent(topicId)}/practice-zone?level=${encodeURIComponent(level)}`),
+    api.get(`/api/academiciq/topic/${encodeURIComponent(topicId)}/questions?level=${encodeURIComponent(level)}`),
   getUnderstandingQuestions: (topicId) => api.get(`/api/student/understanding/${encodeURIComponent(topicId)}/questions`),
   getUnderstandingInfo: (topicId) => api.get(`/api/student/understanding/${encodeURIComponent(topicId)}/info`),
   startTopicReflection: (topicId, body = {}) => api.post(`/api/adaptive/topic/${encodeURIComponent(topicId)}/start`, body),
@@ -42,7 +42,7 @@ export const studentService = {
   getExamSubjectQuestions: (examId, subjectId) => api.get(`/api/competitiveexam/exams/${encodeURIComponent(examId)}/subjects/${encodeURIComponent(subjectId)}/questions`),
   getExamTopicContent: (topicId) => api.get(`/api/competitiveexam/topic/${encodeURIComponent(topicId)}/content`),
   getExamTopicPracticeQuestions: (topicId, level) =>
-    api.get(`/api/competitiveexam/topic/${encodeURIComponent(topicId)}/practice-zone?level=${encodeURIComponent(level)}`),
+    api.get(`/api/competitiveexam/topic/${encodeURIComponent(topicId)}/questions?level=${encodeURIComponent(level)}`),
   getExamMockTests: (examId, { page = 1, size } = {}) => {
     const params = new URLSearchParams();
     // Spring Boot uses 0-indexed pages; UI passes 1-indexed pages, so convert
