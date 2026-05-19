@@ -28,7 +28,7 @@ const FOCUS_AREAS = [
   { key: 'Listening', emoji: '🎧' },
   { key: 'Speaking', emoji: '🗣️' },
   { key: 'Reading', emoji: '📖' },
-  { key: 'Writing', emoji: '✍️' },
+  { key: 'Writing', emoji: '✍' },
 ];
 
 const ACTIVITY_CATALOG = [
@@ -36,7 +36,7 @@ const ACTIVITY_CATALOG = [
   { key: 'read_speak', label: '📖 Read & Speak', tokens: ['read', 'speak', 'reading', 'read speak'], defaultVisible: true },
   { key: 'record_voice', label: '🎙️ Record Your Voice', tokens: ['record', 'voice', 'speaking'], defaultVisible: true },
   { key: 'understanding', label: '📝 Test Your Understanding', tokens: ['understanding', 'quiz', 'test', 'question'], defaultVisible: true },
-  { key: 'write', label: '✍️ Writing', tokens: ['write', 'writing', 'prompt'], defaultVisible: false },
+  { key: 'write', label: '✍ Writing', tokens: ['write', 'writing', 'prompt'], defaultVisible: false },
 ];
 
 const emptyRunnerState = { index: 0, answers: {}, submitted: false, result: null };
@@ -146,7 +146,7 @@ function extractActivityEntries(node = {}) {
 
   const rawNode = node?.raw || node;
   if (rawNode?.writing || rawNode?.write || rawNode?.writingPrompt || rawNode?.prompt) {
-    map.set('write', { key: 'write', label: '✍️ Writing', isPremium: false });
+    map.set('write', { key: 'write', label: '✍ Writing', isPremium: false });
   }
 
   return [...map.values()];
@@ -947,7 +947,7 @@ export default function LanguageProScreen() {
       form.append('focusArea', activeFocusArea);
       form.append('level', activeLevel);
       if (studentClass) form.append('class', studentClass);
-      // Keep recording upload metadata with the file so the backend fallbacks can grade/store the same blob across deployments.
+      // Keep recording upload metadata with the file so the backend can process the same recording across fallback deployment endpoints.
       const response = await studentService.uploadLanguageProRecording(selectedChapter.id, form, {
         resourceType,
         focusArea: activeFocusArea,
