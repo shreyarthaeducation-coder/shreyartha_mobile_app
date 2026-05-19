@@ -86,7 +86,8 @@ const emptyReflectionState = {
 };
 
 function toMessage(error, fallback) {
-  return error?.response?.data?.message || error?.message || fallback || 'Server error. Please try again.';
+  const fallbackMessage = fallback ?? 'Server error. Please try again.';
+  return error?.response?.data?.message || error?.message || fallbackMessage;
 }
 
 function logApiError(context, error) {
@@ -1163,7 +1164,7 @@ export default function AcademicIQScreen() {
     const list = arr(payload?.mockTests || payload?.tests || payload?.papers || payload?.items || pagedContent || payload);
     const explicitHasMore = payload?.hasNext ?? payload?.hasNextPage ?? payload?.pagination?.hasNext ?? payload?.meta?.hasNext;
     const rawPage = Number(payload?.page ?? payload?.currentPage ?? payload?.number ?? payload?.pagination?.page ?? payload?.meta?.page ?? 1);
-    const currentPage = rawPage >= 1 ? rawPage : rawPage + 1;
+    const currentPage = Math.max(1, rawPage);
     const totalPages = Number(payload?.totalPages ?? payload?.pages ?? payload?.pagination?.totalPages ?? payload?.meta?.totalPages ?? 0);
     const hasMore = typeof explicitHasMore === 'boolean' ? explicitHasMore : totalPages > 0 && currentPage < totalPages;
     return { list, hasMore };
@@ -1244,13 +1245,20 @@ export default function AcademicIQScreen() {
         () => api.post(`/api/competitiveexam/mocktest/${encode(mockTestId)}/submit`, payload),
       ]);
       const parsed = unwrap(data);
-      if (parsed?.score !== undefined || parsed?.percentage !== undefined || parsed?.total !== undefined || parsed?.totalQuestions !== undefined) {
+      const scoreValue = parsed?.score ?? parsed?.correct;
+      const totalValue = parsed?.total ?? parsed?.totalQuestions;
+      const hasScore = scoreValue !== null && scoreValue !== undefined && Number.isFinite(Number(scoreValue));
+      const hasTotal = totalValue !== null && totalValue !== undefined && Number.isFinite(Number(totalValue));
+      if (hasScore && hasTotal) {
         setMockTestResults(parsed);
       } else {
         const resultData = await requestWithFallbacks([
           () => api.get(`/api/competitiveexam/mock-tests/${encode(mockTestId)}/result`),
           () => api.get(`/api/competitiveexam/mocktest/${encode(mockTestId)}/result`),
-        ]).catch(() => null);
+        ]).catch((error) => {
+          logApiError('Mock Test result fetch failed', error);
+          return null;
+        });
         setMockTestResults(resultData ? unwrap(resultData) : parsed);
       }
     } catch (error) {
