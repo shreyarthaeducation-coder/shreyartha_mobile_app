@@ -50,18 +50,13 @@ const postFirst = (candidates, retryStatuses = WRITE_FALLBACK_RETRY_STATUSES) =>
   withFallback(candidates.map(({ endpoint, body }) => () => api.post(endpoint, body)), retryStatuses);
 const buildBasePaths = (prefixes, baseNames) => prefixes.flatMap((prefix) => baseNames.map((baseName) => `/api${prefix}/${baseName}`));
 const buildPsychometricSubmitCandidates = (basePath, categoryId, data) => {
-  const encodedCategoryId = encodeURIComponent(categoryId);
-  const candidates = [
-    { endpoint: `${basePath}/categories/${encodedCategoryId}/submit`, body: data },
-    { endpoint: `${basePath}/categories/${encodedCategoryId}/answers`, body: data },
+  const responsePayload = Array.isArray(data?.answers) && !Array.isArray(data?.responses)
+    ? { ...data, responses: data.answers }
+    : data;
+  return [
+    { endpoint: `${basePath}/categories/${encodeURIComponent(categoryId)}/submit`, body: data },
+    { endpoint: `${basePath}/categories/${encodeURIComponent(categoryId)}/answers`, body: responsePayload },
   ];
-  if (Array.isArray(data?.answers) && !Array.isArray(data?.responses)) {
-    candidates.push({
-      endpoint: `${basePath}/categories/${encodedCategoryId}/submit`,
-      body: { ...data, responses: data.answers },
-    });
-  }
-  return candidates;
 };
 
 const psychometricBasePaths = buildBasePaths(['', '/student', '/students'], ['psychometric', 'psychometric-assessment']);

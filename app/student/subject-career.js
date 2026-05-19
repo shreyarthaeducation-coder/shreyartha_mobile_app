@@ -19,7 +19,7 @@ const unwrap = (value) => (value?.data && typeof value.data === 'object' ? value
 const labelOf = (node, fallback = '') => String(node?.title || node?.name || node?.label || fallback || '').trim();
 const toMessage = (err) => err?.response?.data?.message || err?.message || 'Server error. Please try again.';
 const findFirstValidId = (item, keys = []) =>
-  keys.map((key) => item?.[key]).find((value) => value !== undefined && value !== null && String(value).trim());
+  keys.map((key) => item?.[key]).find((value) => value !== undefined && value !== null && String(value).trim() !== '');
 
 const SECTION_TABS = [
   { key: 'about-courses', label: 'About Courses' },
