@@ -19,7 +19,7 @@
     },
     "android": {
       "package": "com.the3cedgeai.app",
-      "versionCode": 5,
+      "versionCode": 6,
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
@@ -35,6 +35,7 @@
       "eas": {
         "projectId": "3895f096-be3e-4a55-b755-ebc8c28181a2"
       }
-    }
+    },
+    "owner": "yatharthaghosh"
   }
 }
