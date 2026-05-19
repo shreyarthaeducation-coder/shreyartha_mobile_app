@@ -128,7 +128,7 @@ export default function CodingProStreamScreen() {
   return (
     <SafeAreaView style={styles.root}>
       <View style={styles.topBar}>
-        <TouchableOpacity onPress={() => router.back()}>
+        <TouchableOpacity onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))}>
           <Text style={styles.backText}>← Back</Text>
         </TouchableOpacity>
         <Text style={styles.topTitle}>Coding Pro</Text>

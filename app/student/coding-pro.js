@@ -72,7 +72,7 @@ export default function CodingProLandingScreen() {
       <View style={styles.bgGlowTwo} />
 
       <View style={styles.topBar}>
-        <TouchableOpacity onPress={() => router.back()}>
+        <TouchableOpacity onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))}>
           <Text style={styles.backText}>← Back</Text>
         </TouchableOpacity>
         <Image source={require('../../assets/images/ShreyarthaLogo.png')} style={styles.logo} resizeMode="contain" />

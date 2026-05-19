@@ -19,7 +19,7 @@
     },
     "android": {
       "package": "com.the3cedgeai.app",
-      "versionCode": 5,
+      "versionCode": 7,
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"

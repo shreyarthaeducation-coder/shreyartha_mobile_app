@@ -377,7 +377,7 @@ export default function PsychometricAssessmentScreen() {
   return (
     <SafeAreaView style={styles.root} edges={['top', 'left', 'right']}>
       <View style={styles.headerRow}>
-        <TouchableOpacity onPress={() => (view === 'landing' ? router.back() : setView('landing'))}>
+        <TouchableOpacity onPress={() => (view === 'landing' ? (router.canGoBack() ? router.back() : router.replace('/')) : setView('landing'))}>
           <Text style={styles.backText}>{view === 'landing' ? '← Back' : '← Assessments'}</Text>
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Psychometric Assessment</Text>
