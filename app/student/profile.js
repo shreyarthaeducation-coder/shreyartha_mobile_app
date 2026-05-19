@@ -989,7 +989,7 @@ export default function StudentProfileScreen() {
   return (
     <SafeAreaView style={styles.root} edges={['top', 'left', 'right']}>
       <View style={styles.header}>
-        <TouchableOpacity style={styles.headerIconBtn} onPress={() => router.back()}><Text style={styles.headerIconText}>{'<'}</Text></TouchableOpacity>
+        <TouchableOpacity style={styles.headerIconBtn} onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))}><Text style={styles.headerIconText}>{'<'}</Text></TouchableOpacity>
         <Text style={styles.title}>Students Profile</Text>
         <View style={styles.headerSpacer} />
       </View>

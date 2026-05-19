@@ -278,7 +278,7 @@ export default function SpeakToCounsellorScreen() {
     <SafeAreaView style={styles.root} edges={['top', 'left', 'right']}>
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <View style={styles.topRow}>
-          <TouchableOpacity style={styles.backButton} activeOpacity={0.8} onPress={() => router.back()}>
+          <TouchableOpacity style={styles.backButton} activeOpacity={0.8} onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))}>
             <Text style={styles.backButtonText}>← Back</Text>
           </TouchableOpacity>
         </View>

@@ -21,7 +21,7 @@ export default function LoginSelectScreen() {
       <View style={styles.headerBand}>
         <View style={styles.headerCircle1} />
         <View style={styles.headerCircle2} />
-        <TouchableOpacity style={styles.backBtnHeader} onPress={() => router.back()}>
+        <TouchableOpacity style={styles.backBtnHeader} onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))}>
           <Text style={styles.backBtnHeaderText}>← Back</Text>
         </TouchableOpacity>
         <Image source={{ uri: LOGO_URL }} style={styles.headerLogo} resizeMode="contain" />
