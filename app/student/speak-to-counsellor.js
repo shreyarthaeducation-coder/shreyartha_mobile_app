@@ -81,6 +81,17 @@ const formatApiDateTime = (dateValue, timeValue) => {
   return `${combined.getFullYear()}-${pad(combined.getMonth() + 1)}-${pad(combined.getDate())}T${pad(combined.getHours())}:${pad(combined.getMinutes())}:00`;
 };
 
+const unwrap = (value) => (value?.data && typeof value.data === 'object' ? value.data : value || {});
+const getProfilePayload = (value) => {
+  const data = unwrap(value);
+  return {
+    ...unwrap(data?.profile),
+    ...unwrap(data?.student),
+    ...unwrap(data?.user),
+    ...data,
+  };
+};
+
 function OptionCard({
   title,
   description,
@@ -140,8 +151,8 @@ export default function SpeakToCounsellorScreen() {
 
     const loadProfile = async () => {
       try {
-        const data = await studentService.getProfile();
-        const fullName = data?.name || data?.studentName || data?.fullName || user?.name || '';
+        const data = getProfilePayload(await studentService.getProfile());
+        const fullName = data?.fullName || data?.name || data?.studentName || user?.name || '';
 
         if (active) {
           setProfileName(fullName);

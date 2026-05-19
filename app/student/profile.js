@@ -19,6 +19,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { STUDENT } from '../../constants/theme';
+import { API_BASE_URL } from '../../services/apiService';
 import { studentService } from '../../services/studentService';
 
 const TABS = [
@@ -217,6 +218,46 @@ const findAnswerForQuestion = (rawAnswers, question) => (
   ?? question.raw?.answer
   ?? ''
 );
+const resolveMediaUrl = (value) => {
+  const raw = String(value || '').trim();
+  if (!raw) return '';
+  if (/^[a-z][a-z0-9+.-]*:/i.test(raw)) return raw;
+  if (raw.startsWith('//')) return `https:${raw}`;
+  if (raw.startsWith('/')) return `${API_BASE_URL}${raw}`;
+  return `${API_BASE_URL}/${raw.replace(/^\/+/, '')}`;
+};
+const getReflectionPayload = (response) => {
+  const data = unwrap(response);
+  const reflection = unwrap(
+    data?.survey
+    || data?.reflection
+    || data?.studentReflection
+    || data?.questionnaire
+    || data?.form
+    || data?.studentSurvey
+  );
+  return { ...data, ...reflection };
+};
+const getReflectionQuestions = (payload) => (
+  payload.questions
+  || payload.surveyQuestions
+  || payload.reflectionQuestions
+  || payload.questionList
+  || payload.questionnaire
+  || (Array.isArray(payload) ? payload : [])
+);
+const getReflectionAnswers = (payload) => {
+  if (payload.answers && typeof payload.answers === 'object') return payload.answers;
+  if (payload.responses && typeof payload.responses === 'object' && !Array.isArray(payload.responses)) return payload.responses;
+  if (Array.isArray(payload.responses)) {
+    return payload.responses.reduce((acc, answer) => {
+      const key = String(answer?.questionId || answer?.id || answer?.key || '').trim();
+      if (key) acc[key] = answer?.answer ?? answer?.value ?? answer?.response ?? '';
+      return acc;
+    }, {});
+  }
+  return {};
+};
 
 function SectionHeader({ title, dark }) {
   return <Text style={dark ? styles.sectionHeaderDark : styles.sectionHeader}>{title}</Text>;
@@ -520,7 +561,10 @@ export default function StudentProfileScreen() {
         studentType: profile.studentType || '',
       });
       setPersonalLocked(Boolean(profile.personalLocked || profile.personalDetailsSaved || profile.isProfileSubmitted));
-      setMedia({ pictureUrl: profile.profilePictureUrl || profile.pictureUrl || profile.avatar || '', videoUrl: profile.profileVideoUrl || profile.videoUrl || '' });
+      setMedia({
+        pictureUrl: resolveMediaUrl(profile.profilePictureUrl || profile.pictureUrl || profile.avatar || ''),
+        videoUrl: resolveMediaUrl(profile.profileVideoUrl || profile.videoUrl || ''),
+      });
 
       const curriculumNodes = arr(academicTree.curriculums || academicTree.nodes || academicTree.children || academicTree).filter(Boolean);
       setTree(curriculumNodes);
@@ -632,12 +676,12 @@ export default function StudentProfileScreen() {
     setReflectionError('');
     try {
       const response = await studentService.getStudentSurvey();
-      const payload = unwrap(response);
-      const dynamicQuestions = normalizeSurveyQuestions(payload.questions || payload.surveyQuestions || (Array.isArray(payload) ? payload : []));
+      const payload = getReflectionPayload(response);
+      const dynamicQuestions = normalizeSurveyQuestions(getReflectionQuestions(payload));
       const reflectionQuestions = dynamicQuestions.filter((question) => !isReflectionProfileQuestion(question.questionText));
       const questionsToUse = reflectionQuestions.length > 0 ? reflectionQuestions : REFLECTION_DEFAULT_QUESTIONS;
       const answerMap = {};
-      const rawAnswers = payload.answers || {};
+      const rawAnswers = getReflectionAnswers(payload);
       questionsToUse.forEach((question) => {
         const qid = question.id;
         const seededAnswer = findAnswerForQuestion(rawAnswers, question);
