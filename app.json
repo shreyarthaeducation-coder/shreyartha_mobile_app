@@ -5,11 +5,11 @@
     "version": "1.2.0",
     "scheme": "shreyartha",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/images/AppLogo.png",
     "userInterfaceStyle": "light",
     "platforms": ["ios", "android"],
     "splash": {
-      "image": "./assets/splash-icon.png",
+      "image": "./assets/images/AppLogo.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },

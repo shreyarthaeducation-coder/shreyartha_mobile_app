@@ -24,7 +24,7 @@ export default function TabsLayout() {
         options={{
           title: 'Home',
           tabBarIcon: ({ focused }) => (
-            <TabIcon emoji={focused ? '🏠' : '🏡'} />
+            <TabIcon emoji={focused ? '🏠' : '🏡'} label="Home tab" />
           ),
         }}
       />
@@ -33,7 +33,7 @@ export default function TabsLayout() {
         options={{
           title: 'Explore',
           tabBarIcon: (_) => (
-            <TabIcon emoji="🔍" />
+            <TabIcon emoji="🔍" label="Explore tab" />
           ),
         }}
       />
@@ -42,7 +42,16 @@ export default function TabsLayout() {
         options={{
           title: 'About Us',
           tabBarIcon: (_) => (
-            <TabIcon emoji="⚙️" />
+            <TabIcon emoji="⚙️" label="About Us tab" />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="support"
+        options={{
+          title: 'Support',
+          tabBarIcon: ({ focused }) => (
+            <TabIcon emoji={focused ? '🎧' : '💬'} label="Support tab" />
           ),
         }}
       />
@@ -50,7 +59,7 @@ export default function TabsLayout() {
   );
 }
 
-function TabIcon({ emoji }) {
+function TabIcon({ emoji, label }) {
   const { Text } = require('react-native');
-  return <Text style={{ fontSize: 20 }}>{emoji}</Text>;
+  return <Text style={{ fontSize: 20 }} accessibilityLabel={label}>{emoji}</Text>;
 }
