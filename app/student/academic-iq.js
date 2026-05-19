@@ -193,7 +193,7 @@ async function requestWithFallbacks(candidates) {
 }
 
 function normalizeDifficultyLevel(level) {
-  return String(level || '').trim().toUpperCase();
+  return String(level || '').trim().toLowerCase();
 }
 
 function normalizeAssetItem(item, defaultType = 'link', fallbackLabel = 'Attachment') {
@@ -697,6 +697,9 @@ export default function AcademicIQScreen() {
   const [selectedExam, setSelectedExam] = useState(null);
   const [examSection, setExamSection] = useState('resources');
   const [selectedExamSubjectId, setSelectedExamSubjectId] = useState(null);
+  const [practiceZoneSubjects, setPracticeZoneSubjects] = useState([]);
+  const [practiceZoneSubjectsLoading, setPracticeZoneSubjectsLoading] = useState(false);
+  const [practiceZoneSubjectsError, setPracticeZoneSubjectsError] = useState('');
   const [selectedExamTopic, setSelectedExamTopic] = useState(null);
   const [examActiveTab, setExamActiveTab] = useState('lessonPlan');
   const [examTopicLoading, setExamTopicLoading] = useState(false);
@@ -831,7 +834,26 @@ export default function AcademicIQScreen() {
   const filteredExamCategories = useMemo(() => examCategories.filter((category) => !hiddenExamIds.includes(String(category?.id))), [examCategories, hiddenExamIds]);
   const examCategoryCards = useMemo(() => filteredExamCategories.map((category) => ({ ...category, count: arr(category?.entranceExams || category?.exams || category?.children).length, title: nodeLabel(category, 'Exam Category') })), [filteredExamCategories]);
   const activeExamItems = useMemo(() => arr(selectedExamCategory?.entranceExams || selectedExamCategory?.exams || selectedExamCategory?.children).filter((item) => !hiddenExamIds.includes(String(item?.id))), [selectedExamCategory, hiddenExamIds]);
-  const examSubjects = useMemo(() => arr(selectedExam?.subjects || selectedExam?.subjectList || selectedExam?.papers || selectedExam?.children).map((item) => (typeof item === 'string' ? { name: item } : item)).filter((subject) => !hiddenExamIds.includes(String(subject?.id))), [selectedExam, hiddenExamIds]);
+
+  // When in practice section, prefer practice-zone subjects (loaded separately); fall back to exam detail subjects
+  const examSubjects = useMemo(() => {
+    const baseSubjects = examSection === 'practice' && practiceZoneSubjects.length
+      ? practiceZoneSubjects
+      : arr(selectedExam?.subjects || selectedExam?.subjectList || selectedExam?.papers || selectedExam?.children);
+    return baseSubjects
+      .map((item) => (typeof item === 'string' ? { name: item } : item))
+      .filter((subject) => !hiddenExamIds.includes(String(subject?.id)));
+  }, [selectedExam, hiddenExamIds, examSection, practiceZoneSubjects]);
+
+  // Load practice zone subjects when user enters the practice section
+  useEffect(() => {
+    if (examSection !== 'practice') return;
+    const examId = selectedExam?.id || selectedExam?.examId;
+    // Load if not yet loaded and not currently loading (allow retry after error by checking practiceZoneSubjectsError)
+    if (!examId || practiceZoneSubjectsLoading) return;
+    if (practiceZoneSubjects.length > 0 && !practiceZoneSubjectsError) return;
+    loadPracticeZoneSubjects(examId);
+  }, [examSection, selectedExam, practiceZoneSubjects.length, practiceZoneSubjectsLoading, practiceZoneSubjectsError, loadPracticeZoneSubjects]);
 
   useEffect(() => {
     if (!examSubjects.length) {
@@ -877,6 +899,31 @@ export default function AcademicIQScreen() {
     setExamPracticeState(emptyRunnerState);
   }, []);
 
+  const loadPracticeZoneSubjects = useCallback(async (examId) => {
+    if (!examId) return;
+    setPracticeZoneSubjectsLoading(true);
+    setPracticeZoneSubjectsError('');
+    try {
+      const response = await studentService.getExamPracticeSubjects(examId);
+      const payload = unwrap(response);
+      const subjects = arr(payload?.subjects || payload?.subjectList || payload?.papers || payload?.children || payload);
+      setPracticeZoneSubjects(subjects);
+    } catch (error) {
+      logApiError('Competitive Exam practice subjects failed', error);
+      setPracticeZoneSubjects([]);
+      const status = error?.response?.status || error?.status;
+      if (status === 401 || status === 403) {
+        setPracticeZoneSubjectsError('Session expired. Please log in again.');
+      } else if (status === 404) {
+        setPracticeZoneSubjectsError('No practice zone subjects found for this exam.');
+      } else {
+        setPracticeZoneSubjectsError(toMessage(error, 'Unable to load subjects. Please try again.'));
+      }
+    } finally {
+      setPracticeZoneSubjectsLoading(false);
+    }
+  }, []);
+
   const openCategory = useCallback((key) => {
     if (key === 'competitive') {
       setView('competitive');
@@ -903,12 +950,16 @@ export default function AcademicIQScreen() {
 
   const extractPracticeQuestions = useCallback((response, level) => {
     const payload = unwrap(response);
-    const upperLevel = normalizeDifficultyLevel(level);
-    const keys = [level, level?.toLowerCase(), upperLevel, `${level}Questions`, `${level?.toLowerCase()}Questions`, `${upperLevel}Questions`, 'questions', 'items', 'content'];
+    // level is now lowercase (e.g. 'basic'); also try title-case and uppercase variants
+    const titleLevel = level ? level.charAt(0).toUpperCase() + level.slice(1) : level;
+    const upperLevel = level ? level.toUpperCase() : level;
+    const keys = [level, titleLevel, upperLevel, `${level}Questions`, `${titleLevel}Questions`, `${upperLevel}Questions`, 'questions', 'items', 'content'];
     for (const key of keys) {
       if (Array.isArray(payload?.[key])) return payload[key];
     }
-    if (payload?.levels && typeof payload.levels === 'object') return arr(payload.levels[level] || payload.levels[level?.toLowerCase()]);
+    if (payload?.levels && typeof payload.levels === 'object') {
+      return arr(payload.levels[level] || payload.levels[titleLevel] || payload.levels[upperLevel]);
+    }
     return arr(payload);
   }, []);
 
@@ -938,19 +989,22 @@ export default function AcademicIQScreen() {
     try {
       const normalizedLevel = normalizeDifficultyLevel(level);
       const response = await requestWithFallbacks([
-        () => api.get(`/api/student/practice/topic/${encode(topicId)}?level=${encode(normalizedLevel)}`),
-        () => api.get(`/api/student/practice/topic/${encode(topicId)}/questions?level=${encode(normalizedLevel)}`),
-        () => api.get(`/api/practicezone/topic/${encode(topicId)}/questions?level=${encode(normalizedLevel)}`),
-        () => api.get(`/api/academiciq/topic/${encode(topicId)}/practice?level=${encode(normalizedLevel)}`),
+        () => studentService.getPracticeZoneQuestions(topicId, normalizedLevel),
         () => api.get(`/api/academiciq/topic/${encode(topicId)}/questions?level=${encode(normalizedLevel)}`),
-        () => studentService.getTopicQuestions(topicId, normalizedLevel),
-        () => api.get(`/api/practice/topics/${encode(topicId)}/questions?level=${encode(normalizedLevel)}`),
+        () => api.get(`/api/student/practicezone/${encode(topicId)}/questions?level=${encode(normalizedLevel)}`),
       ]);
       setPracticeQuestions(extractPracticeQuestions(response, normalizedLevel));
     } catch (error) {
       logApiError('Practice Zone questions failed', error);
       setPracticeQuestions([]);
-      setPracticeError(toMessage(error, 'Server error. Please try again.'));
+      const status = error?.response?.status || error?.status;
+      if (status === 401 || status === 403) {
+        setPracticeError('Session expired. Please log in again.');
+      } else if (status === 404) {
+        setPracticeError('No practice questions found for this topic.');
+      } else {
+        setPracticeError(toMessage(error, 'Unable to load practice questions. Please try again.'));
+      }
     } finally {
       setPracticeLoading(false);
     }
@@ -1077,6 +1131,8 @@ export default function AcademicIQScreen() {
     setSelectedExam(exam);
     setExamSection('resources');
     resetExamTopicState();
+    setPracticeZoneSubjects([]);
+    setPracticeZoneSubjectsError('');
     setSheetVisible(false);
     try {
       const detail = await studentService.getExamDetail(exam?.id || exam?.examId);
@@ -1127,18 +1183,22 @@ export default function AcademicIQScreen() {
       const subjectId = getNodeId(activeExamSubject);
       const normalizedLevel = normalizeDifficultyLevel(level);
       const response = await requestWithFallbacks([
-        () => api.get(`/api/competitiveexam/topic/${encode(topicId)}/questions?level=${encode(normalizedLevel)}`),
-        () => api.get(`/api/competitiveexam/topics/${encode(topicId)}/questions?level=${encode(normalizedLevel)}`),
+        () => studentService.getExamTopicPracticeQuestions(topicId, normalizedLevel),
         () => api.get(`/api/competitiveexam/exams/${encode(examId)}/subjects/${encode(subjectId)}/topics/${encode(topicId)}/questions?level=${encode(normalizedLevel)}`),
-        () => api.get(`/api/competitiveexam/practice/${encode(examId)}/${encode(subjectId)}/questions?topicId=${encode(topicId)}&level=${encode(normalizedLevel)}`),
-        () => api.get(`/api/student/practice/topic/${encode(topicId)}?level=${encode(normalizedLevel)}`),
-        () => api.get(`/api/practicezone/topic/${encode(topicId)}/questions?level=${encode(normalizedLevel)}`),
+        () => api.get(`/api/competitiveexam/topic/${encode(topicId)}/questions?level=${encode(normalizedLevel)}`),
       ]);
       setExamPracticeQuestions(extractPracticeQuestions(response, normalizedLevel));
     } catch (error) {
       logApiError('Competitive Exam practice questions failed', error);
       setExamPracticeQuestions([]);
-      setExamPracticeError(toMessage(error, 'Server error. Please try again.'));
+      const status = error?.response?.status || error?.status;
+      if (status === 401 || status === 403) {
+        setExamPracticeError('Session expired. Please log in again.');
+      } else if (status === 404) {
+        setExamPracticeError('No practice questions found for this topic.');
+      } else {
+        setExamPracticeError(toMessage(error, 'Unable to load practice questions. Please try again.'));
+      }
     } finally {
       setExamPracticeLoading(false);
     }
@@ -1162,9 +1222,13 @@ export default function AcademicIQScreen() {
     const payload = unwrap(response);
     const pagedContent = Array.isArray(payload?.content) ? payload.content : null;
     const list = arr(payload?.mockTests || payload?.tests || payload?.papers || payload?.items || pagedContent || payload);
-    const explicitHasMore = payload?.hasNext ?? payload?.hasNextPage ?? payload?.pagination?.hasNext ?? payload?.meta?.hasNext;
-    const rawPage = Number(payload?.page ?? payload?.currentPage ?? payload?.number ?? payload?.pagination?.page ?? payload?.meta?.page ?? 1);
-    const currentPage = Math.max(1, rawPage);
+    // Spring Boot returns `last: true` when on the last page; also support explicit hasNext/hasNextPage
+    const explicitHasMore =
+      payload?.hasNext ?? payload?.hasNextPage ?? payload?.pagination?.hasNext ?? payload?.meta?.hasNext ??
+      (payload?.last !== undefined ? !payload.last : undefined);
+    // Spring Boot returns `number` as 0-indexed page; convert to 1-indexed for UI tracking
+    const rawPage = Number(payload?.page ?? payload?.currentPage ?? payload?.number ?? payload?.pagination?.page ?? payload?.meta?.page ?? 0);
+    const currentPage = rawPage + 1; // Convert to 1-indexed UI page
     const totalPages = Number(payload?.totalPages ?? payload?.pages ?? payload?.pagination?.totalPages ?? payload?.meta?.totalPages ?? 0);
     const hasMore = typeof explicitHasMore === 'boolean' ? explicitHasMore : totalPages > 0 && currentPage < totalPages;
     return { list, hasMore };
@@ -1176,13 +1240,8 @@ export default function AcademicIQScreen() {
     if (append) setMockTestsLoadingMore(true);
     else setMockTestsLoading(true);
     try {
-      const data = await requestWithFallbacks([
-        () => studentService.getExamMockTests(examId, { page, size: 10 }),
-        () => api.get(`/api/competitiveexam/exams/${encode(examId)}/mock-tests?page=${encode(page)}&size=10`),
-        () => api.get(`/api/competitiveexam/exams/${encode(examId)}/mock-tests?page=${encode(page)}&limit=10`),
-        () => api.get(`/api/competitiveexam/exams/${encode(examId)}/mocktest?page=${encode(page)}&size=10`),
-        () => api.get(`/api/competitiveexam/mock-tests?examId=${encode(examId)}&page=${encode(page)}&size=10`),
-      ]);
+      // studentService.getExamMockTests converts 1-indexed UI page to 0-indexed Spring Boot page
+      const data = await studentService.getExamMockTests(examId, { page, size: 10 });
       const { list, hasMore } = parseMockTestsPage(data);
       setMockTests((prev) => (append ? [...prev, ...list] : list));
       setMockTestsPage(page);
@@ -1190,7 +1249,14 @@ export default function AcademicIQScreen() {
     } catch (error) {
       logApiError('Mock Test list failed', error);
       if (!append) setMockTests([]);
-      setScreenError(toMessage(error, 'Server error. Please try again.'));
+      const status = error?.response?.status || error?.status;
+      if (status === 401 || status === 403) {
+        setScreenError('Session expired. Please log in again.');
+      } else if (status === 404) {
+        setScreenError('No mock tests found for this exam.');
+      } else {
+        setScreenError(toMessage(error, 'Unable to load mock tests. Please try again.'));
+      }
     } finally {
       if (append) setMockTestsLoadingMore(false);
       else setMockTestsLoading(false);
@@ -1220,15 +1286,17 @@ export default function AcademicIQScreen() {
     try {
       const data = await requestWithFallbacks([
         () => studentService.getMockTestQuestions(mockTestId),
-        () => api.get(`/api/competitiveexam/mock-tests/${encode(mockTestId)}`),
-        () => api.get(`/api/competitiveexam/mocktest/${encode(mockTestId)}/questions`),
-        () => api.get(`/api/competitiveexam/exams/${encode(selectedExam?.id || '')}/mock-tests/${encode(mockTestId)}/questions`),
-        () => api.get(`/api/competitiveexam/mock-tests/${encode(mockTestId)}/paper`),
+        () => api.get(`/api/competitiveexam/mock-tests/${encode(mockTestId)}/questions`),
       ]);
       setMockTestQuestions(arr(unwrap(data)?.questions || unwrap(data)?.items || unwrap(data)));
     } catch (error) {
       logApiError('Mock Test questions failed', error);
-      setScreenError(toMessage(error, 'Server error. Please try again.'));
+      const status = error?.response?.status || error?.status;
+      if (status === 401 || status === 403) {
+        setScreenError('Session expired. Please log in again.');
+      } else {
+        setScreenError(toMessage(error, 'Unable to load test questions. Please try again.'));
+      }
     } finally {
       setMockTestLoading(false);
     }
@@ -1303,7 +1371,14 @@ export default function AcademicIQScreen() {
         })}
       </ScrollView>
       {currentPracticeProgress?.completed ? <InlineNotice tone="warning" text={`Completed ${practiceDifficulty}: ${currentPracticeProgress.score}/${currentPracticeProgress.total}`} /> : null}
-      <InlineNotice text={practiceError} />
+      {practiceError ? (
+        <View style={styles.errorRetryWrap}>
+          <InlineNotice text={practiceError} />
+          <TouchableOpacity style={styles.retryButton} onPress={() => { setPracticeError(''); loadPracticeQuestions(getNodeId(selectedTopic), practiceDifficulty); }}>
+            <Text style={styles.retryButtonText}>↺ Retry</Text>
+          </TouchableOpacity>
+        </View>
+      ) : null}
       {practiceLoading ? <View style={styles.centerWrap}><ActivityIndicator color={STUDENT.accentCyan} /><Text style={styles.mutedText}>Loading practice questions…</Text></View> : <QuestionRunner title="Practice Zone" questions={practiceQuestions} state={practiceState} setState={setPracticeState} onSubmit={submitPractice} emptyMessage="No practice questions are currently available for this topic." accentColor={STUDENT.accentCyan} scoreSuffix={`/ ${practiceQuestions.length}`} />}
     </>
   );
@@ -1345,7 +1420,18 @@ export default function AcademicIQScreen() {
           <View style={styles.examBanner}><Text style={styles.examBannerTitle}>{nodeLabel(selectedExam, 'Exam')}</Text><Text style={styles.examBannerSub}>{`Part of ${nodeLabel(selectedExamCategory, 'Category')}`}</Text></View>
           {showLimitedAccess ? <LimitedAccessBanner /> : null}
           <ScrollView horizontal style={styles.subjectTabsScroll} contentContainerStyle={styles.subjectTabsContent} showsHorizontalScrollIndicator={false}>{[{ key: 'resources', label: 'Resources' }, { key: 'practice', label: 'Practice Zone' }, { key: 'mock', label: 'Mock Test' }].map((section) => <TouchableOpacity key={section.key} style={[styles.subjectPill, examSection === section.key && styles.subjectPillActive]} onPress={() => { if (section.key === 'mock') { openMockTestList(); return; } setExamSection(section.key); resetExamTopicState(); }}><Text style={[styles.subjectPillText, examSection === section.key && styles.subjectPillTextActive]}>{section.label}</Text></TouchableOpacity>)}</ScrollView>
-          <SubjectTabs items={examSubjects} activeId={selectedExamSubjectId} onSelect={(subject) => { setSelectedExamSubjectId(getNodeId(subject)); resetExamTopicState(); }} />
+          {examSection === 'practice' && practiceZoneSubjectsLoading ? (
+            <View style={styles.centerWrap}><ActivityIndicator color={STUDENT.accentCyan} /><Text style={styles.mutedText}>Loading practice subjects…</Text></View>
+          ) : examSection === 'practice' && practiceZoneSubjectsError && !examSubjects.length ? (
+            <View style={styles.errorRetryWrap}>
+              <InlineNotice text={practiceZoneSubjectsError} />
+              <TouchableOpacity style={styles.retryButton} onPress={() => { setPracticeZoneSubjectsError(''); loadPracticeZoneSubjects(selectedExam?.id || selectedExam?.examId); }}>
+                <Text style={styles.retryButtonText}>↺ Retry</Text>
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <SubjectTabs items={examSubjects} activeId={selectedExamSubjectId} onSelect={(subject) => { setSelectedExamSubjectId(getNodeId(subject)); resetExamTopicState(); }} />
+          )}
           <ScrollView style={styles.listScroll} contentContainerStyle={styles.listContent}>
             {selectedExamTopic ? (
               <>
@@ -1354,7 +1440,14 @@ export default function AcademicIQScreen() {
                   <>
                     <ScrollView horizontal style={styles.subjectTabsScroll} contentContainerStyle={styles.subjectTabsContent} showsHorizontalScrollIndicator={false}>{LEVELS.map((level) => { const active = level === examPracticeDifficulty; const progress = examPracticeProgress[`${getNodeId(selectedExamTopic)}:${level}`]; return <TouchableOpacity key={level} style={[styles.subjectPill, active && styles.subjectPillActive]} onPress={() => { setExamPracticeDifficulty(level); setExamPracticeState(emptyRunnerState); }}><Text style={[styles.subjectPillText, active && styles.subjectPillTextActive]}>{level}</Text>{progress?.completed ? <Text style={styles.levelDoneText}> ✓</Text> : null}</TouchableOpacity>; })}</ScrollView>
                     {currentExamPracticeProgress?.completed ? <InlineNotice tone="warning" text={`Completed ${examPracticeDifficulty}: ${currentExamPracticeProgress.score}/${currentExamPracticeProgress.total}`} /> : null}
-                    <InlineNotice text={examPracticeError} />
+                    {examPracticeError ? (
+                      <View style={styles.errorRetryWrap}>
+                        <InlineNotice text={examPracticeError} />
+                        <TouchableOpacity style={styles.retryButton} onPress={() => { setExamPracticeError(''); loadExamPracticeQuestions(getNodeId(selectedExamTopic), examPracticeDifficulty); }}>
+                          <Text style={styles.retryButtonText}>↺ Retry</Text>
+                        </TouchableOpacity>
+                      </View>
+                    ) : null}
                     {examPracticeLoading ? <View style={styles.centerWrap}><ActivityIndicator color={STUDENT.accentCyan} /><Text style={styles.mutedText}>Loading questions…</Text></View> : <QuestionRunner title="Competitive Practice Zone" questions={examPracticeQuestions} state={examPracticeState} setState={setExamPracticeState} onSubmit={submitExamPractice} emptyMessage="No practice questions are currently available for this topic." accentColor={STUDENT.accentCyan} scoreSuffix={`/ ${examPracticeQuestions.length}`} />}
                   </>
                 ) : (
@@ -1378,8 +1471,6 @@ export default function AcademicIQScreen() {
         <View style={{ width: 60 }} />
       </View>
 
-      <InlineNotice text={screenError} />
-
       <View style={styles.examBanner}>
         <Text style={styles.examBannerTitle}>{nodeLabel(selectedExam, 'Exam')}</Text>
         <Text style={styles.examBannerSub}>Select a mock test paper to begin</Text>
@@ -1392,14 +1483,23 @@ export default function AcademicIQScreen() {
         </View>
       ) : (
         <ScrollView style={styles.listScroll} contentContainerStyle={styles.listContent}>
+          {screenError ? (
+            <View style={styles.errorRetryWrap}>
+              <InlineNotice text={screenError} />
+              <TouchableOpacity style={styles.retryButton} onPress={() => { setScreenError(''); loadMockTestsPage(1, false); }}>
+                <Text style={styles.retryButtonText}>↺ Retry</Text>
+              </TouchableOpacity>
+            </View>
+          ) : null}
           {mockTests.length > 0 ? mockTests.map((test, index) => (
             <MockTestCard key={String(test?.id || `mock-${index}`)} test={test} onPress={() => openMockTest(test)} />
-          )) : (
+          )) : !screenError ? (
             <View style={styles.centerWrap}>
               <Text style={{ fontSize: 32 }}>📋</Text>
+              {/* Show empty state only when there is no error (error is shown above with retry button) */}
               <Text style={styles.placeholderText}>No mock tests are available for this exam yet.</Text>
             </View>
-          )}
+          ) : null}
           {mockTestsHasMore ? (
             <TouchableOpacity
               style={[styles.actionButton, mockTestsLoadingMore && styles.disabled]}
@@ -1572,6 +1672,9 @@ const styles = StyleSheet.create({
   resultSubtext: { color: STUDENT.textSecondary, fontSize: 13, lineHeight: 20 },
   noticeCard: { marginHorizontal: 16, marginBottom: 10, borderWidth: 1, borderRadius: 12, padding: 12 },
   noticeText: { fontSize: 12, lineHeight: 18, fontWeight: '600' },
+  errorRetryWrap: { marginHorizontal: 16, marginVertical: 6 },
+  retryButton: { marginTop: 8, alignSelf: 'flex-start', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 8, backgroundColor: STUDENT.accent },
+  retryButtonText: { color: '#fff', fontWeight: '700', fontSize: 13 },
   emptyCard: { margin: 16, borderRadius: 16, borderWidth: 1, borderColor: STUDENT.border, backgroundColor: 'rgba(17,24,39,0.95)', padding: 16, gap: 10 },
   emptyCardTitle: { color: '#fff', fontSize: 17, fontWeight: '800' },
   emptyCardText: { color: STUDENT.textSecondary, fontSize: 13, lineHeight: 20 },
