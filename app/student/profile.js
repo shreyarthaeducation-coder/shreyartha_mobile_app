@@ -101,7 +101,6 @@ const PERSONAL_SUB_TABS = [
 ];
 const PERSONAL_INFO_REQUIRED = ['fullName', 'email', 'gender', 'dob', 'mobile', 'currentClass'];
 const REFLECTION_PROFILE_REQUIRED = ['strengths', 'weakness', 'stream'];
-const REFLECTION_SUBJECT_OPTIONS = ['Mathematics', 'Physics', 'Chemistry', 'Biology', 'Computer Science', 'English'];
 const REFLECTION_DEFAULT_QUESTIONS = [
   { id: 'q6', questionText: 'How satisfied are you with your current academic performance?', required: true, type: 'single', options: ['Very satisfied', 'Satisfied', 'Needs improvement', 'Strongly dissatisfied'] },
   { id: 'q7', questionText: 'How organized are your study habits and daily routine?', required: true, type: 'single', options: ['Very organized', 'Mostly organized', 'Sometimes irregular', 'Disorganized'] },
@@ -211,6 +210,13 @@ const formatSurveyAnswersForSubmit = (answers, questions) => questions.reduce((a
   if (typeof value === 'string' && value.trim()) acc[question.id] = value.trim();
   return acc;
 }, {});
+const findAnswerForQuestion = (rawAnswers, question) => (
+  rawAnswers?.[question.id]
+  ?? rawAnswers?.[String(question.raw?.id || '')]
+  ?? rawAnswers?.[String(question.raw?.questionId || '')]
+  ?? question.raw?.answer
+  ?? ''
+);
 
 function SectionHeader({ title, dark }) {
   return <Text style={dark ? styles.sectionHeaderDark : styles.sectionHeader}>{title}</Text>;
@@ -468,7 +474,7 @@ export default function StudentProfileScreen() {
     setPersonalInfoLoading(true);
     setPersonalInfoError('');
     try {
-      const [pRes, aTreeRes, examRes, aRes, sTreeRes, sRes, uRes, eRes, adRes, hNodeRes, hExamRes] = await Promise.all([
+      const [profileRes, academicTreeRes, examsRes, academicProfileRes, skillsTreeRes, skillsProfileRes, universityProfileRes, educationProfileRes, additionalProfileRes, hiddenAcademicNodesRes, hiddenExamNodesRes] = await Promise.all([
         studentService.getProfile(),
         studentService.getAcademicIQTree().catch(() => ({})),
         studentService.getCompetitiveExams().catch(() => ([])),
@@ -482,119 +488,133 @@ export default function StudentProfileScreen() {
         studentService.getStudentHiddenNodes('COMPETITIVE_EXAM').catch(() => ([])),
       ]);
 
-      const p = unwrap(pRes); const aTree = unwrap(aTreeRes); const a = unwrap(aRes); const sTree = unwrap(sTreeRes);
-      const s = unwrap(sRes); const u = unwrap(uRes); const e = unwrap(eRes); const ad = unwrap(adRes);
+      const profile = unwrap(profileRes);
+      const academicTree = unwrap(academicTreeRes);
+      const academicProfile = unwrap(academicProfileRes);
+      const skillsTreeData = unwrap(skillsTreeRes);
+      const skillsProfile = unwrap(skillsProfileRes);
+      const universityProfile = unwrap(universityProfileRes);
+      const educationProfile = unwrap(educationProfileRes);
+      const additionalProfile = unwrap(additionalProfileRes);
 
-      const favSubjectsRaw = p.favSubjects || p.favoriteSubjects || '';
+      const favSubjectsRaw = profile.favSubjects || profile.favoriteSubjects || '';
       const favSubjectsArr = typeof favSubjectsRaw === 'string'
         ? favSubjectsRaw.split(',').map((x) => x.trim()).filter(Boolean)
         : arr(favSubjectsRaw);
 
       setPersonal({
-        fullName: p.fullName || p.name || p.studentName || '',
-        email: p.email || '',
-        mobile: p.mobile || p.phone || '',
-        dob: p.dob || p.dateOfBirth || '',
-        gender: p.gender || '',
-        schoolName: p.schoolName || (p.school && typeof p.school === 'object' ? p.school.name : p.school) || '',
-        curriculum: p.schoolBoard || p.board || (p.school && typeof p.school === 'object' ? p.school.board : '') || '',
-        currentClass: p.currentClass ? String(p.currentClass) : (p.className || p.class || ''),
-        section: p.section || '',
-        strengths: p.strengths || '',
-        weakness: p.weakness || '',
-        stream: p.stream || '',
+        fullName: profile.fullName || profile.name || profile.studentName || '',
+        email: profile.email || '',
+        mobile: profile.mobile || profile.phone || '',
+        dob: profile.dob || profile.dateOfBirth || '',
+        gender: profile.gender || '',
+        schoolName: profile.schoolName || (profile.school && typeof profile.school === 'object' ? profile.school.name : profile.school) || '',
+        curriculum: profile.schoolBoard || profile.board || (profile.school && typeof profile.school === 'object' ? profile.school.board : '') || '',
+        currentClass: profile.currentClass ? String(profile.currentClass) : (profile.className || profile.class || ''),
+        section: profile.section || '',
+        strengths: profile.strengths || '',
+        weakness: profile.weakness || '',
+        stream: profile.stream || '',
         favSubjects: favSubjectsArr,
-        hobbies: p.hobbies || '',
-        studentType: p.studentType || '',
+        hobbies: profile.hobbies || '',
+        studentType: profile.studentType || '',
       });
-      setPersonalLocked(Boolean(p.personalLocked || p.personalDetailsSaved || p.isProfileSubmitted));
-      setMedia({ pictureUrl: p.profilePictureUrl || p.pictureUrl || p.avatar || '', videoUrl: p.profileVideoUrl || p.videoUrl || '' });
+      setPersonalLocked(Boolean(profile.personalLocked || profile.personalDetailsSaved || profile.isProfileSubmitted));
+      setMedia({ pictureUrl: profile.profilePictureUrl || profile.pictureUrl || profile.avatar || '', videoUrl: profile.profileVideoUrl || profile.videoUrl || '' });
 
-      const curriculumNodes = arr(aTree.curriculums || aTree.nodes || aTree.children || aTree).filter(Boolean);
+      const curriculumNodes = arr(academicTree.curriculums || academicTree.nodes || academicTree.children || academicTree).filter(Boolean);
       setTree(curriculumNodes);
-      setExams(arr(unwrap(examRes).exams || unwrap(examRes)));
-      setHiddenNodeIds(arr(unwrap(hNodeRes).hiddenNodeIds || unwrap(hNodeRes)));
-      setHiddenExamIds(arr(unwrap(hExamRes).hiddenNodeIds || unwrap(hExamRes)));
+      setExams(arr(unwrap(examsRes).exams || unwrap(examsRes)));
+      setHiddenNodeIds(arr(unwrap(hiddenAcademicNodesRes).hiddenNodeIds || unwrap(hiddenAcademicNodesRes)));
+      setHiddenExamIds(arr(unwrap(hiddenExamNodesRes).hiddenNodeIds || unwrap(hiddenExamNodesRes)));
 
       // Map academic profile — support both new ID-based and legacy name-based shapes
       const chapterMap = {};
-      if (a.chapters && typeof a.chapters === 'object' && !Array.isArray(a.chapters)) {
-        Object.assign(chapterMap, a.chapters);
+      if (academicProfile.chapters && typeof academicProfile.chapters === 'object' && !Array.isArray(academicProfile.chapters)) {
+        Object.assign(chapterMap, academicProfile.chapters);
       }
       const topicMap = {};
-      if (a.topics && typeof a.topics === 'object' && !Array.isArray(a.topics)) {
-        Object.assign(topicMap, a.topics);
+      if (academicProfile.topics && typeof academicProfile.topics === 'object' && !Array.isArray(academicProfile.topics)) {
+        Object.assign(topicMap, academicProfile.topics);
       }
-      const competitiveExamId = a.competitiveExamId || arr(a.competitiveExamIds || a.examIds)[0] || null;
-      const challengingSubjectsRaw = a.challengingSubjects || a.subjectNames || a.challengingSubjectNames;
+      const competitiveExamId = academicProfile.competitiveExamId || arr(academicProfile.competitiveExamIds || academicProfile.examIds)[0] || null;
+      const challengingSubjectsRaw = academicProfile.challengingSubjects || academicProfile.subjectNames || academicProfile.challengingSubjectNames;
       const challengingSubjects = typeof challengingSubjectsRaw === 'string'
         ? challengingSubjectsRaw.split(',').map((item) => item.trim()).filter(Boolean)
         : arr(challengingSubjectsRaw);
       setAcademic({
-        id: a.id || null,
-        curriculumId: a.curriculumId || null,
-        classId: a.classId || null,
-        classLabel: a.className || a.class || '',
-        challengingSubjectIds: arr(a.challengingSubjectIds || a.subjectIds),
+        id: academicProfile.id || null,
+        curriculumId: academicProfile.curriculumId || null,
+        classId: academicProfile.classId || null,
+        classLabel: academicProfile.className || academicProfile.class || '',
+        challengingSubjectIds: arr(academicProfile.challengingSubjectIds || academicProfile.subjectIds),
         challengingSubjects: challengingSubjects.length ? challengingSubjects : [],
         chapters: chapterMap,
         topics: topicMap,
-        preparingCompetitiveExam: a.preparingCompetitiveExam != null ? Boolean(a.preparingCompetitiveExam) : (competitiveExamId ? true : null),
+        preparingCompetitiveExam: academicProfile.preparingCompetitiveExam != null ? Boolean(academicProfile.preparingCompetitiveExam) : (competitiveExamId ? true : null),
         competitiveExamId,
-        competitiveExamName: a.competitiveExamName || a.examName || '',
-        entranceExamIds: arr(a.entranceExamIds),
+        competitiveExamName: academicProfile.competitiveExamName || academicProfile.examName || '',
+        entranceExamIds: arr(academicProfile.entranceExamIds),
       });
 
-      const loadedSkillsTree = arr(sTree.skills || sTree.categories || sTree.nodes || sTree.children || sTree);
+      const loadedSkillsTree = arr(skillsTreeData.skills || skillsTreeData.categories || skillsTreeData.nodes || skillsTreeData.children || skillsTreeData);
       const availableSkillOptions = flattenSkillOptions(loadedSkillsTree);
       const availableSkillIds = new Set((availableSkillOptions.length > 0 ? availableSkillOptions : SKILLS_EDGE_OPTIONS).map((option) => option.id));
-      const selectedSkillIds = arr(s.selectedSkillIds || s.skillIds || s.selectedSkills).map((item) => {
+      const selectedSkillIds = arr(skillsProfile.selectedSkillIds || skillsProfile.skillIds || skillsProfile.selectedSkills).map((item) => {
         if (typeof item === 'string') return item;
         if (item && typeof item === 'object') return item.id || item.key || item.name || item.label;
         return item;
       }).map(resolveSkillOptionId).filter((id) => availableSkillIds.has(id));
       const communicationRatings = {
-        Listening: s.communicationRatings?.Listening || s.englishCommunicationRating?.Listening || s.listeningRating || '',
-        Speaking: s.communicationRatings?.Speaking || s.englishCommunicationRating?.Speaking || s.speakingRating || '',
-        Reading: s.communicationRatings?.Reading || s.englishCommunicationRating?.Reading || s.readingRating || '',
-        Writing: s.communicationRatings?.Writing || s.englishCommunicationRating?.Writing || s.writingRating || '',
+        Listening: skillsProfile.communicationRatings?.Listening || skillsProfile.englishCommunicationRating?.Listening || skillsProfile.listeningRating || '',
+        Speaking: skillsProfile.communicationRatings?.Speaking || skillsProfile.englishCommunicationRating?.Speaking || skillsProfile.speakingRating || '',
+        Reading: skillsProfile.communicationRatings?.Reading || skillsProfile.englishCommunicationRating?.Reading || skillsProfile.readingRating || '',
+        Writing: skillsProfile.communicationRatings?.Writing || skillsProfile.englishCommunicationRating?.Writing || skillsProfile.writingRating || '',
       };
       setSkills({
-        id: s.id || null,
+        id: skillsProfile.id || null,
         selectedSkillIds,
         communicationRatings,
         locked: Boolean(
-          s.locked
-          || s.isLocked
-          || s.selectionsLocked
-          || s.selectionLocked
-          || s.selectionsSaved
-          || s.isSelectionSaved
+          skillsProfile.locked
+          || skillsProfile.isLocked
+          || skillsProfile.selectionsLocked
+          || skillsProfile.selectionLocked
+          || skillsProfile.selectionsSaved
+          || skillsProfile.isSelectionSaved
         ),
       });
       setSkillsTree(loadedSkillsTree);
       setUniversity({
-        id: u.id || null,
-        country: u.country || arr(u.preferredCountries || u.countries)[0] || '',
-        state: u.state || u.indiaState || '',
-        universityPreference1: u.universityPreference1 || u.preferredUniversity1 || '',
-        coursePreference1: u.coursePreference1 || u.intendedCourse || '',
-        universityPreference2: u.universityPreference2 || u.preferredUniversity2 || '',
-        coursePreference2: u.coursePreference2 || '',
-        personalStatement: u.personalStatement || u.statementOfPurpose || '',
-        careerReason: u.careerReason || u.courseCareerReason || u.whyThisCourse || '',
+        id: universityProfile.id || null,
+        country: universityProfile.country || arr(universityProfile.preferredCountries || universityProfile.countries)[0] || '',
+        state: universityProfile.state || universityProfile.indiaState || '',
+        universityPreference1: universityProfile.universityPreference1 || universityProfile.preferredUniversity1 || '',
+        coursePreference1: universityProfile.coursePreference1 || universityProfile.intendedCourse || '',
+        universityPreference2: universityProfile.universityPreference2 || universityProfile.preferredUniversity2 || '',
+        coursePreference2: universityProfile.coursePreference2 || '',
+        personalStatement: universityProfile.personalStatement || universityProfile.statementOfPurpose || '',
+        careerReason: universityProfile.careerReason || universityProfile.courseCareerReason || universityProfile.whyThisCourse || '',
       });
       setEducation({
-        id: e.id || null,
-        class10School: e.class10School || '',
-        class10Year: e.class10Year ? String(e.class10Year) : '',
-        class10Percentage: e.class10Percentage ? String(e.class10Percentage) : '',
-        englishTestTaken: e.englishTestTaken || '',
-        ieltsScore: e.ieltsScore ? String(e.ieltsScore) : '',
-        toeflScore: e.toeflScore ? String(e.toeflScore) : '',
-        englishCertificateNumber: e.englishCertificateNumber || '',
+        id: educationProfile.id || null,
+        class10School: educationProfile.class10School || '',
+        class10Year: educationProfile.class10Year ? String(educationProfile.class10Year) : '',
+        class10Percentage: educationProfile.class10Percentage ? String(educationProfile.class10Percentage) : '',
+        englishTestTaken: educationProfile.englishTestTaken || '',
+        ieltsScore: educationProfile.ieltsScore ? String(educationProfile.ieltsScore) : '',
+        toeflScore: educationProfile.toeflScore ? String(educationProfile.toeflScore) : '',
+        englishCertificateNumber: educationProfile.englishCertificateNumber || '',
       });
-      setAdditional({ id: ad.id || null, hobbies: ad.hobbies || '', achievements: ad.achievements || '', volunteerWork: ad.volunteerWork || '', linkedinUrl: ad.linkedinUrl || '', portfolioUrl: ad.portfolioUrl || '', aboutMe: ad.aboutMe || '' });
+      setAdditional({
+        id: additionalProfile.id || null,
+        hobbies: additionalProfile.hobbies || '',
+        achievements: additionalProfile.achievements || '',
+        volunteerWork: additionalProfile.volunteerWork || '',
+        linkedinUrl: additionalProfile.linkedinUrl || '',
+        portfolioUrl: additionalProfile.portfolioUrl || '',
+        aboutMe: additionalProfile.aboutMe || '',
+      });
       await fetchCompletion();
     } catch (err) {
       setPersonalInfoError(err?.message || 'Unable to load personal information.');
@@ -620,20 +640,14 @@ export default function StudentProfileScreen() {
       const rawAnswers = payload.answers || {};
       questionsToUse.forEach((question) => {
         const qid = question.id;
-        const seededAnswer = rawAnswers[qid]
-          ?? rawAnswers[String(question.raw?.id || '')]
-          ?? rawAnswers[String(question.raw?.questionId || '')]
-          ?? question.raw?.answer
-          ?? '';
+        const seededAnswer = findAnswerForQuestion(rawAnswers, question);
         answerMap[qid] = normalizeAnswerValue(seededAnswer, question.type);
       });
       setSurveyQuestions(questionsToUse);
       setSurveyAnswers(answerMap);
-      setReflectionLoaded(true);
     } catch (err) {
       setReflectionError(err?.message || 'Unable to load student reflection.');
       setSurveyQuestions(REFLECTION_DEFAULT_QUESTIONS);
-      setSurveyAnswers((prev) => ({ ...prev }));
     } finally {
       setReflectionLoaded(true);
       setReflectionLoading(false);
@@ -1159,25 +1173,7 @@ export default function StudentProfileScreen() {
                               );
                             })
                           ) : (
-                            REFLECTION_SUBJECT_OPTIONS.map((subj) => {
-                              const checked = personal.favSubjects.includes(subj);
-                              return (
-                                <Tick
-                                  key={subj}
-                                  checked={checked}
-                                  label={subj}
-                                  onPress={() => {
-                                    if (personalLocked) return;
-                                    setPersonal((p) => ({
-                                      ...p,
-                                      favSubjects: checked
-                                        ? p.favSubjects.filter((x) => x !== subj)
-                                        : [...p.favSubjects, subj],
-                                    }));
-                                  }}
-                                />
-                              );
-                            })
+                            <Text style={styles.mutedHint}>Select a stream to choose subjects</Text>
                           )}
                         </View>
                         <Field

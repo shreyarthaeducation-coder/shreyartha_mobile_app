@@ -12,6 +12,8 @@ const { width } = Dimensions.get('window');
 const CARD_WIDTH = (width - SPACING.lg * 2 - SPACING.sm) / 2;
 const HEADER_LOGO_HEIGHT = 80;
 const HEADER_LOGO_WIDTH = 205;
+// Slight negative offset trims transparent left whitespace in the source logo asset.
+const LOGO_ALIGNMENT_OFFSET = -14;
 
 const APP_LOGO = require('../../assets/images/AppLogo.png');
 
@@ -473,7 +475,7 @@ const styles = StyleSheet.create({
   logoImage: {
     width: HEADER_LOGO_WIDTH,
     height: HEADER_LOGO_HEIGHT,
-    marginLeft: -14,
+    marginLeft: LOGO_ALIGNMENT_OFFSET,
   },
   loginBtn: {
     backgroundColor: COLORS.primary, paddingVertical: 10, paddingHorizontal: 18,

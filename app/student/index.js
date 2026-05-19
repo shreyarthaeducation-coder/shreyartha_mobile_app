@@ -15,6 +15,8 @@ import { studentService } from '../../services/studentService';
 import { STUDENT } from '../../constants/theme';
 
 const DEFAULT_STUDENT_NAME = 'Demo Student';
+const FULLY_UPGRADED_PLAN_TOKENS = ['premium', 'fully upgraded', 'fully-upgraded', 'platinum', 'gold'];
+const PAID_PLAN_TOKENS = ['paid', 'pro', 'subscribed', 'active'];
 
 const DASHBOARD_CARDS = [
   {
@@ -119,13 +121,18 @@ export default function StudentDashboardScreen() {
 
   const planText = String(plan || '').trim();
   const normalizedPlan = planText.toLowerCase();
-  const isFullyUpgraded = ['premium', 'fully upgraded', 'fully-upgraded', 'platinum', 'gold'].some((token) => normalizedPlan.includes(token));
-  const isPaidPlan = isFullyUpgraded || isPremium || ['paid', 'pro', 'subscribed', 'active'].some((token) => normalizedPlan.includes(token));
-  const planPill = subscriptionLoading
-    ? { label: 'Checking…', style: styles.planPillPending, text: styles.planPillTextPending }
-    : (!isPaidPlan
-      ? { label: 'Upgrade', style: styles.planPillUpgrade, text: styles.planPillTextUpgrade }
-      : { label: planText || (isFullyUpgraded ? 'Premium' : 'Paid'), style: isFullyUpgraded ? styles.planPillPremium : styles.planPillPaid, text: styles.planPillText });
+  const isFullyUpgraded = FULLY_UPGRADED_PLAN_TOKENS.some((token) => normalizedPlan.includes(token));
+  const isPaidPlan = isFullyUpgraded || isPremium || PAID_PLAN_TOKENS.some((token) => normalizedPlan.includes(token));
+  let planPill = { label: 'Upgrade', style: styles.planPillUpgrade, text: styles.planPillTextUpgrade };
+  if (subscriptionLoading) {
+    planPill = { label: 'Checking…', style: styles.planPillPending, text: styles.planPillTextPending };
+  } else if (isPaidPlan) {
+    planPill = {
+      label: planText || (isFullyUpgraded ? 'Premium' : 'Paid'),
+      style: isFullyUpgraded ? styles.planPillPremium : styles.planPillPaid,
+      text: styles.planPillText,
+    };
+  }
 
   return (
     <SafeAreaView style={styles.root} edges={['top', 'left', 'right']}>
