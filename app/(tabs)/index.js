@@ -459,9 +459,7 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
     paddingLeft: 0, paddingRight: SPACING.lg, paddingTop: 50, paddingBottom: 0,
-    paddingStart: 0,
     marginLeft: 0,
-    marginStart: 0,
     backgroundColor: COLORS.white, borderBottomWidth: 1, borderBottomColor: COLORS.border,
   },
   logoContainer: {
@@ -469,17 +467,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     height: HEADER_LOGO_HEIGHT,
     paddingLeft: 0,
-    paddingStart: 0,
     marginLeft: 0,
-    marginStart: 0,
   },
   logoImage: {
     width: HEADER_LOGO_WIDTH,
     height: HEADER_LOGO_HEIGHT,
-    paddingLeft: 0,
-    paddingStart: 0,
-    marginLeft: 0,
-    marginStart: 0,
   },
   loginBtn: {
     backgroundColor: COLORS.primary, paddingVertical: 10, paddingHorizontal: 18,
