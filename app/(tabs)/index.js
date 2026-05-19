@@ -10,6 +10,8 @@ import { api } from '../../services/apiService';
 
 const { width } = Dimensions.get('window');
 const CARD_WIDTH = (width - SPACING.lg * 2 - SPACING.sm) / 2;
+const HEADER_LOGO_HEIGHT = 80;
+const HEADER_LOGO_WIDTH = 230;
 
 const APP_LOGO = require('../../assets/images/AppLogo.png');
 
@@ -456,11 +458,11 @@ const styles = StyleSheet.create({
   // ── Header ──
   header: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-    paddingLeft: 10, paddingRight: SPACING.lg, paddingTop: 50, paddingBottom: 0,
+    paddingLeft: SPACING.sm, paddingRight: SPACING.lg, paddingTop: 50, paddingBottom: 0,
     backgroundColor: COLORS.white, borderBottomWidth: 1, borderBottomColor: COLORS.border,
   },
-  logoContainer: { flexDirection: 'row', alignItems: 'center', height: 80 },
-  logoImage: { width: 230, height: '100%' },
+  logoContainer: { flexDirection: 'row', alignItems: 'center', height: HEADER_LOGO_HEIGHT },
+  logoImage: { width: HEADER_LOGO_WIDTH, height: HEADER_LOGO_HEIGHT },
   loginBtn: {
     backgroundColor: COLORS.primary, paddingVertical: 10, paddingHorizontal: 18,
     borderRadius: 32,
