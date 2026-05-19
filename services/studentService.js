@@ -44,45 +44,27 @@ const getFirst = (endpoints) => withFallback(endpoints.map((endpoint) => () => a
 const deleteFirst = (endpoints) => withFallback(endpoints.map((endpoint) => () => api.delete(endpoint)));
 const postFirst = (candidates, retryStatuses = WRITE_FALLBACK_RETRY_STATUSES) =>
   withFallback(candidates.map(({ endpoint, body }) => () => api.post(endpoint, body)), retryStatuses);
+const buildBasePaths = (prefixes, baseNames) => prefixes.flatMap((prefix) => baseNames.map((baseName) => `/api${prefix}/${baseName}`));
 const buildPsychometricSubmitCandidates = (basePath, categoryId, data) => {
   const encodedCategoryId = encodeURIComponent(categoryId);
-  const responsePayload = Array.isArray(data?.answers) ? { ...data, responses: data.answers } : data;
-  return [
+  const candidates = [
     { endpoint: `${basePath}/categories/${encodedCategoryId}/submit`, body: data },
-    { endpoint: `${basePath}/categories/${encodedCategoryId}/submit`, body: responsePayload },
     { endpoint: `${basePath}/categories/${encodedCategoryId}/answers`, body: data },
   ];
+  if (Array.isArray(data?.answers) && !Array.isArray(data?.responses)) {
+    candidates.splice(1, 0, {
+      endpoint: `${basePath}/categories/${encodedCategoryId}/submit`,
+      body: { ...data, responses: data.answers },
+    });
+  }
+  return candidates;
 };
 
-const competitiveExamBasePaths = ['', '/student'].flatMap((prefix) => [
-  `/api${prefix}/competitiveexam`,
-  `/api${prefix}/competitive-exam`,
-]);
-
-const psychometricBasePaths = ['', '/student', '/students'].flatMap((prefix) => [
-  `/api${prefix}/psychometric`,
-  `/api${prefix}/psychometric-assessment`,
-]);
-
-const subjectCareerBasePaths = ['', '/student', '/students'].flatMap((prefix) => [
-  `/api${prefix}/subject-career`,
-  `/api${prefix}/subjectcareer`,
-]);
-
-const skillsEdgeBasePaths = ['', '/student', '/students'].flatMap((prefix) => [
-  `/api${prefix}/skillsedge`,
-  `/api${prefix}/skills-edge`,
-]);
-
-const languageProBasePaths = ['', '/student', '/students'].flatMap((prefix) => [
-  `/api${prefix}/languagepro`,
-  `/api${prefix}/language-pro`,
-]);
-
-const codingProBasePaths = ['', '/student', '/students'].flatMap((prefix) => [
-  `/api${prefix}/codingpro`,
-  `/api${prefix}/coding-pro`,
-]);
+const psychometricBasePaths = buildBasePaths(['', '/student', '/students'], ['psychometric', 'psychometric-assessment']);
+const subjectCareerBasePaths = buildBasePaths(['', '/student', '/students'], ['subject-career', 'subjectcareer']);
+const skillsEdgeBasePaths = buildBasePaths(['', '/student', '/students'], ['skillsedge', 'skills-edge']);
+const languageProBasePaths = buildBasePaths(['', '/student', '/students'], ['languagepro', 'language-pro']);
+const codingProBasePaths = buildBasePaths(['', '/student', '/students'], ['codingpro', 'coding-pro']);
 
 const eventsBasePaths = ['/api/events', '/api/student/events', '/api/students/events'];
 
@@ -293,7 +275,8 @@ export const studentService = {
 
   // ── Events ─────────────────────────────────────────────────────────────────
   getEvents: ({ filter, search, category, page } = {}) => {
-    const qs = buildQuery({ filter, search, category, page: page && page > 1 ? page : '' });
+    const pageParam = Number.isFinite(page) && page > 1 ? page : undefined;
+    const qs = buildQuery({ filter, search, category, page: pageParam });
     return getFirst(eventsBasePaths.map((basePath) => `${basePath}${qs}`));
   },
   getEventDetail: (eventId) => getFirst(eventsBasePaths.flatMap((basePath) => [

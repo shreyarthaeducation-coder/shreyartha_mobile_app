@@ -32,10 +32,6 @@ const normalizeOptions = (payload, fallbackLabel, idKeys = []) => {
   return arr(data?.streams || data?.majors || data?.careers || data?.items || data)
     .map((item, index) => ({
       id: idKeys.map((key) => item?.[key]).find((value) => value !== undefined && value !== null && String(value).trim())
-        || item?.id
-        || item?.streamId
-        || item?.majorId
-        || item?.careerId
         || item?.slug
         || `${index}`,
       name: labelOf(item, `${fallbackLabel} ${index + 1}`),
