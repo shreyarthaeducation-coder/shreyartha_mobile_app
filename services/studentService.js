@@ -44,6 +44,15 @@ const getFirst = (endpoints) => withFallback(endpoints.map((endpoint) => () => a
 const deleteFirst = (endpoints) => withFallback(endpoints.map((endpoint) => () => api.delete(endpoint)));
 const postFirst = (candidates, retryStatuses = WRITE_FALLBACK_RETRY_STATUSES) =>
   withFallback(candidates.map(({ endpoint, body }) => () => api.post(endpoint, body)), retryStatuses);
+const buildPsychometricSubmitCandidates = (basePath, categoryId, data) => {
+  const encodedCategoryId = encodeURIComponent(categoryId);
+  const responsePayload = Array.isArray(data?.answers) ? { ...data, responses: data.answers } : data;
+  return [
+    { endpoint: `${basePath}/categories/${encodedCategoryId}/submit`, body: data },
+    { endpoint: `${basePath}/categories/${encodedCategoryId}/submit`, body: responsePayload },
+    { endpoint: `${basePath}/categories/${encodedCategoryId}/answers`, body: data },
+  ];
+};
 
 const competitiveExamBasePaths = ['', '/student'].flatMap((prefix) => [
   `/api${prefix}/competitiveexam`,
@@ -231,11 +240,7 @@ export const studentService = {
       `${basePath}/categories/${encodeURIComponent(categoryId)}/assessment`,
     ])),
   submitPsychometricAssessment: (categoryId, data) => postFirst(
-    psychometricBasePaths.flatMap((basePath) => ([
-      { endpoint: `${basePath}/categories/${encodeURIComponent(categoryId)}/submit`, body: data },
-      { endpoint: `${basePath}/categories/${encodeURIComponent(categoryId)}/submit`, body: { ...data, responses: data?.answers || [] } },
-      { endpoint: `${basePath}/categories/${encodeURIComponent(categoryId)}/answers`, body: data },
-    ])),
+    psychometricBasePaths.flatMap((basePath) => buildPsychometricSubmitCandidates(basePath, categoryId, data)),
   ),
   getPsychometricResult: (categoryId) =>
     getFirst(psychometricBasePaths.flatMap((basePath) => [

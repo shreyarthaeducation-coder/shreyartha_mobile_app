@@ -147,7 +147,7 @@ export default function SubjectCareerScreen() {
     try {
       const data = await studentService.getSubjectCareerStreams();
 
-        const parsed = normalizeOptions(data, 'Stream', ['streamId', 'id', 'slug']);
+      const parsed = normalizeOptions(data, 'Stream', ['streamId', 'id', 'slug']);
       setStreams(parsed);
       if (!streamId && parsed.length > 0) {
         setStreamId(String(parsed[0].id));
