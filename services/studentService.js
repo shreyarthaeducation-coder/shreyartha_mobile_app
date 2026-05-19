@@ -5,6 +5,9 @@
 
 import { api } from './apiService';
 
+const getExamSubjectTree = (subExamId) => api.get(`/api/competitiveexam/subject/${encodeURIComponent(subExamId)}/tree`);
+const getMockTestPaperQuestions = (paperId) => api.get(`/api/admin/competitiveexam/mocktest-papers/student/${encodeURIComponent(paperId)}/questions`);
+
 export const studentService = {
   // ── Dashboard ──────────────────────────────────────────────────────────────
   getDashboard: () => api.get('/api/students/dashboard'),
@@ -38,9 +41,9 @@ export const studentService = {
   submitTopicReflectionLevel: (topicId, body) => api.post(`/api/adaptive/topic/${encodeURIComponent(topicId)}/reflection`, body),
   getTopicContent: (topicId, category) => api.get(`/api/students/study/topics/${encodeURIComponent(topicId)}/content${category ? `?category=${encodeURIComponent(category)}` : ''}`),
   getTopicQuestions: (topicId, category) => api.get(`/api/students/study/topics/${encodeURIComponent(topicId)}/questions${category ? `?category=${encodeURIComponent(category)}` : ''}`),
-  getExamSubjectTree: (subExamId) => api.get(`/api/competitiveexam/subject/${encodeURIComponent(subExamId)}/tree`),
-  getExamDetail: (subExamId) => api.get(`/api/competitiveexam/subject/${encodeURIComponent(subExamId)}/tree`),
-  getExamPracticeSubjects: (subExamId) => api.get(`/api/competitiveexam/subject/${encodeURIComponent(subExamId)}/tree`),
+  getExamSubjectTree,
+  getExamDetail: getExamSubjectTree,
+  getExamPracticeSubjects: getExamSubjectTree,
   getExamSubjectQuestions: (topicId) => api.get(`/api/student/competitiveexam/practice/${encodeURIComponent(topicId)}/questions`),
   getExamTopicContent: (topicId) => api.get(`/api/competitiveexam/topic/${encodeURIComponent(topicId)}/content`),
   getExamTopicPracticeQuestions: (topicId) => api.get(`/api/student/competitiveexam/practice/${encodeURIComponent(topicId)}/questions`),
@@ -51,9 +54,9 @@ export const studentService = {
     return api.get(`/api/student/competitiveexam/mocktest/entrance-exam/${encodeURIComponent(entranceExamId)}${qs ? `?${qs}` : ''}`);
   },
   getMockTestPapersForSubject: (subExamId) => api.get(`/api/admin/competitiveexam/mocktest-papers/student/subject/${encodeURIComponent(subExamId)}`),
-  getMockTestPaperQuestions: (paperId) => api.get(`/api/admin/competitiveexam/mocktest-papers/student/${encodeURIComponent(paperId)}/questions`),
+  getMockTestPaperQuestions,
   getMockTestResult: (mockTestId) => api.get(`/api/competitiveexam/mock-tests/${encodeURIComponent(mockTestId)}/result`),
-  getMockTestQuestions: (mockTestId) => api.get(`/api/admin/competitiveexam/mocktest-papers/student/${encodeURIComponent(mockTestId)}/questions`),
+  getMockTestQuestions: getMockTestPaperQuestions,
   submitMockTest: (mockTestId, data) => api.post(`/api/student/competitiveexam/mocktest/${encodeURIComponent(mockTestId)}/submit`, data),
   getAcademicProfile: () => api.get('/api/academic/profile'),
   createAcademicProfile: (data) => api.post('/api/academic/profile', data),

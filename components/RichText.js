@@ -3,15 +3,12 @@ import { Text, useWindowDimensions } from 'react-native';
 import RenderHTML from 'react-native-render-html';
 import { API_BASE_URL } from '../services/apiService';
 
-const ABSOLUTE_URL_REGEX = /^(?:[a-z][a-z0-9+.-]*:|\/\/|data:|blob:)/i;
+const SAFE_API_BASE_URL = String(API_BASE_URL || '').trim().replace(/[<>"'\s]/g, '').replace(/\/+$/, '');
 
 const normalizeHtml = (html) => {
   const rawHtml = String(html || '').trim();
   if (!rawHtml) return '';
-  return rawHtml.replace(/\b(src|href)\s*=\s*(['"])(\/[^'"]*)\2/gi, (_, attr, quote, path) => {
-    if (ABSOLUTE_URL_REGEX.test(path)) return `${attr}=${quote}${path}${quote}`;
-    return `${attr}=${quote}${API_BASE_URL}${path}${quote}`;
-  });
+  return rawHtml.replace(/\b(src|href)\s*=\s*(['"])(\/[^'"]*)\2/gi, (_, attr, quote, path) => `${attr}=${quote}${SAFE_API_BASE_URL}${path}${quote}`);
 };
 
 export default function RichText({ html, textStyle, numberOfLines }) {

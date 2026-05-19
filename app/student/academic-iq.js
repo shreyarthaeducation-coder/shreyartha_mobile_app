@@ -44,6 +44,7 @@ const TOPIC_BASE_TABS = [
   { key: 'understanding', label: 'Test Your Understanding', accent: '#FACC15' },
   { key: 'reflection', label: 'My Reflection', accent: '#F59E0B' },
 ];
+const EXAM_ID_FIELDS = ['subExamId', 'id', 'examId', 'entranceExamId', 'entranceExamSubjectId', 'competitiveExamSubjectId', 'competitiveExamId', 'exam_id'];
 const arr = (value) => (Array.isArray(value) ? value : value ? [value] : []);
 const unwrap = (value) => (value?.data && typeof value.data === 'object' ? value.data : value || {});
 const normalizeText = (value) => String(value || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
@@ -861,7 +862,7 @@ export default function AcademicIQScreen() {
     // Only show categories that contain the student's enrolled exam
     const withEnrolled = base.filter((category) =>
       arr(category?.entranceExams || category?.exams || category?.children)
-        .some((exam) => String(getApiId(exam, ['subExamId', 'id', 'examId', 'entranceExamId', 'entranceExamSubjectId', 'competitiveExamSubjectId', 'competitiveExamId', 'exam_id']) || '') === enrolledCompetitiveExamId),
+        .some((exam) => String(getApiId(exam, EXAM_ID_FIELDS) || '') === enrolledCompetitiveExamId),
     );
     return withEnrolled.length ? withEnrolled : base;
   }, [examCategories, hiddenExamIds, enrolledCompetitiveExamId]);
@@ -870,7 +871,7 @@ export default function AcademicIQScreen() {
     const all = arr(selectedExamCategory?.entranceExams || selectedExamCategory?.exams || selectedExamCategory?.children)
       .filter((item) => !hiddenExamIds.includes(String(item?.id)));
     if (!enrolledCompetitiveExamId) return all;
-    const enrolled = all.filter((item) => String(getApiId(item, ['subExamId', 'id', 'examId', 'entranceExamId', 'entranceExamSubjectId', 'competitiveExamSubjectId', 'competitiveExamId', 'exam_id']) || '') === enrolledCompetitiveExamId);
+    const enrolled = all.filter((item) => String(getApiId(item, EXAM_ID_FIELDS) || '') === enrolledCompetitiveExamId);
     return enrolled.length ? enrolled : all;
   }, [selectedExamCategory, hiddenExamIds, enrolledCompetitiveExamId]);
 
@@ -887,7 +888,7 @@ export default function AcademicIQScreen() {
   // Load practice zone subjects when user enters the practice section
   useEffect(() => {
     if (examSection !== 'practice') return;
-    const examId = getApiId(selectedExam, ['subExamId', 'id', 'examId', 'entranceExamId', 'entranceExamSubjectId', 'competitiveExamSubjectId', 'competitiveExamId', 'exam_id']) || getNodeId(selectedExam);
+    const examId = getApiId(selectedExam, EXAM_ID_FIELDS) || getNodeId(selectedExam);
     // Only load if we haven't loaded yet and have no error; errors require a manual Retry
     if (!examId || practiceZoneSubjectsLoading) return;
     if (practiceZoneSubjects.length > 0 || practiceZoneSubjectsError) return;
@@ -1164,7 +1165,7 @@ export default function AcademicIQScreen() {
   }, [selectedTopic, reflectionState.reflectionChoice, reflectionState.sessionState]);
 
   const openExam = useCallback(async (exam) => {
-    const selectedExamId = getApiId(exam, ['subExamId', 'id', 'examId', 'entranceExamId', 'entranceExamSubjectId', 'competitiveExamSubjectId', 'competitiveExamId', 'exam_id']) || getNodeId(exam);
+    const selectedExamId = getApiId(exam, EXAM_ID_FIELDS) || getNodeId(exam);
     // Access control: block if this exam is not the student's enrolled one
     if (enrolledCompetitiveExamId && String(selectedExamId || '') !== enrolledCompetitiveExamId) {
       Alert.alert('Access Denied', 'This exam is not part of your enrollment. Please contact your administrator to change your exam enrollment.');
@@ -1282,14 +1283,17 @@ export default function AcademicIQScreen() {
   }, []);
 
   const loadMockTestsPage = useCallback(async (page, append = false) => {
-    const examId = getApiId(selectedExam, ['subExamId', 'id', 'examId', 'entranceExamId', 'entranceExamSubjectId', 'competitiveExamSubjectId', 'competitiveExamId', 'exam_id']) || getNodeId(selectedExam);
+    const examId = getApiId(selectedExam, EXAM_ID_FIELDS) || getNodeId(selectedExam);
     if (!examId) return;
     if (append) setMockTestsLoadingMore(true);
     else setMockTestsLoading(true);
     try {
-      const data = await studentService.getMockTestPapersForSubject(examId).catch(() => (
-        studentService.getExamMockTests(examId, page > 1 ? { page } : undefined)
-      ));
+      const data = await studentService.getMockTestPapersForSubject(examId).catch((error) => {
+        const status = error?.response?.status || error?.status;
+        if (![404, 405].includes(status)) throw error;
+        logApiError('Mock Test paper list request failed (not supported), falling back to entrance-exam endpoint', error);
+        return studentService.getExamMockTests(examId, page > 1 ? { page } : undefined);
+      });
       const { list, hasMore } = parseMockTestsPage(data);
       setMockTests((prev) => (append ? [...prev, ...list] : list));
       setMockTestsPage(page);
@@ -1467,7 +1471,7 @@ export default function AcademicIQScreen() {
           ) : examSection === 'practice' && practiceZoneSubjectsError && !examSubjects.length ? (
             <View style={styles.errorRetryWrap}>
               <InlineNotice text={practiceZoneSubjectsError} />
-              <TouchableOpacity style={styles.retryButton} onPress={() => { setPracticeZoneSubjectsError(''); loadPracticeZoneSubjects(getApiId(selectedExam, ['subExamId', 'id', 'examId', 'entranceExamId', 'entranceExamSubjectId', 'competitiveExamSubjectId', 'competitiveExamId', 'exam_id']) || getNodeId(selectedExam)); }}>
+              <TouchableOpacity style={styles.retryButton} onPress={() => { setPracticeZoneSubjectsError(''); loadPracticeZoneSubjects(getApiId(selectedExam, EXAM_ID_FIELDS) || getNodeId(selectedExam)); }}>
                 <Text style={styles.retryButtonText}>↺ Retry</Text>
               </TouchableOpacity>
             </View>
