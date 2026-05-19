@@ -62,8 +62,12 @@ const buildLanguageProQueries = ({
 
 const getFirst = (endpoints) => withFallback(endpoints.map((endpoint) => () => api.get(endpoint)));
 const deleteFirst = (endpoints) => withFallback(endpoints.map((endpoint) => () => api.delete(endpoint)));
+const writeFirst = (candidates, retryStatuses = WRITE_FALLBACK_RETRY_STATUSES) =>
+  withFallback(candidates.map(({ endpoint, body, method = 'POST' }) => () => (
+    method === 'PUT' ? api.put(endpoint, body) : api.post(endpoint, body)
+  )), retryStatuses);
 const postFirst = (candidates, retryStatuses = WRITE_FALLBACK_RETRY_STATUSES) =>
-  withFallback(candidates.map(({ endpoint, body }) => () => api.post(endpoint, body)), retryStatuses);
+  writeFirst(candidates, retryStatuses);
 const buildBasePaths = (prefixes, baseNames) => prefixes.flatMap((prefix) => baseNames.map((baseName) => `/api${prefix}/${baseName}`));
 const buildPsychometricSubmitCandidates = (basePath, categoryId, data) => {
   const responsePayload = Array.isArray(data?.answers) && !Array.isArray(data?.responses)
@@ -99,7 +103,12 @@ const getMockTestPaperQuestions = (paperId) => getFirst([
 
 export const studentService = {
   // ── Dashboard ──────────────────────────────────────────────────────────────
-  getDashboard: () => api.get('/api/students/dashboard'),
+  getDashboard: () => getFirst([
+    '/api/students/dashboard',
+    '/api/student/dashboard',
+    '/api/students/profile',
+    '/api/student/profile',
+  ]),
   /**
    * Resolves student subscription/plan entitlements using backend fallbacks.
    * Different deployments expose this data under different endpoints, so this
@@ -115,11 +124,35 @@ export const studentService = {
   ]),
 
   // ── Profile ────────────────────────────────────────────────────────────────
-  getProfile: () => api.get('/api/students/profile'),
-  updateProfile: (data) => api.put('/api/students/profile', data),
+  getProfile: () => getFirst([
+    '/api/students/profile',
+    '/api/student/profile',
+  ]),
+  updateProfile: (data) => writeFirst([
+    { endpoint: '/api/students/profile', body: data, method: 'PUT' },
+    { endpoint: '/api/student/profile', body: data, method: 'PUT' },
+  ]),
   uploadAvatar: (formData) => api.put('/api/students/profile/avatar', formData),
-  getStudentSurvey: () => api.get('/api/students/survey'),
-  saveStudentSurvey: (data) => api.post('/api/students/survey', data),
+  getStudentSurvey: () => getFirst([
+    '/api/students/survey',
+    '/api/student/survey',
+    '/api/students/profile/survey',
+    '/api/student/profile/survey',
+    '/api/students/reflection',
+    '/api/student/reflection',
+    '/api/students/profile',
+    '/api/student/profile',
+  ]),
+  saveStudentSurvey: (data) => writeFirst([
+    { endpoint: '/api/students/survey', body: data, method: 'POST' },
+    { endpoint: '/api/student/survey', body: data, method: 'POST' },
+    { endpoint: '/api/students/survey', body: { answers: data }, method: 'POST' },
+    { endpoint: '/api/student/survey', body: { answers: data }, method: 'POST' },
+    { endpoint: '/api/students/reflection', body: data, method: 'PUT' },
+    { endpoint: '/api/student/reflection', body: data, method: 'PUT' },
+    { endpoint: '/api/students/reflection', body: { answers: data }, method: 'PUT' },
+    { endpoint: '/api/student/reflection', body: { answers: data }, method: 'PUT' },
+  ]),
   uploadProfilePicture: (formData) => api.post('/api/students/profile/picture', formData),
   deleteProfilePicture: () => api.delete('/api/students/profile/picture'),
   uploadProfileVideo: (formData) => api.post('/api/students/profile/video', formData),

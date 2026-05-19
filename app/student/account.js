@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -13,15 +13,12 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuth } from '../../context/AuthContext';
+import { useLanguage } from '../../context/LanguageContext';
 import { studentService } from '../../services/studentService';
 import { cacheService } from '../../services/cacheService';
 import { STUDENT } from '../../constants/theme';
 
-const STUDENT_LANGUAGE_PREFERENCE_KEY = 'studentPreferredLanguage';
-const DEFAULT_LANGUAGE = 'English';
-const SUPPORTED_LANGUAGES = [DEFAULT_LANGUAGE, 'Hindi'];
 const SUPPORT_TAB_TITLE = 'Support';
 
 function SectionCard({ title, children }) {
@@ -72,7 +69,12 @@ function PasswordField({ label, value, onChange, show, onToggle }) {
 
 export default function AccountScreen() {
   const router = useRouter();
-  const { logout, user } = useAuth();
+  const { logout } = useAuth();
+  const {
+    language,
+    supportedLanguages,
+    setLanguage,
+  } = useLanguage();
 
   const [pwdForm, setPwdForm] = useState({
     currentPassword: '',
@@ -82,33 +84,6 @@ export default function AccountScreen() {
   const [showPwd, setShowPwd] = useState({ current: false, newPwd: false, confirm: false });
   const [pwdLoading, setPwdLoading] = useState(false);
   const [expanded, setExpanded] = useState(null);
-  const [language, setLanguage] = useState(DEFAULT_LANGUAGE);
-
-  useEffect(() => {
-    let mounted = true;
-
-    const resolveLanguage = async () => {
-      try {
-        const savedLanguage = await AsyncStorage.getItem(STUDENT_LANGUAGE_PREFERENCE_KEY);
-        if (!mounted) return;
-
-        if (savedLanguage) {
-          setLanguage(savedLanguage);
-          return;
-        }
-
-        setLanguage(user?.language || DEFAULT_LANGUAGE);
-      } catch {
-        if (mounted) setLanguage(user?.language || DEFAULT_LANGUAGE);
-      }
-    };
-
-    resolveLanguage();
-
-    return () => {
-      mounted = false;
-    };
-  }, [user?.language]);
 
   const handlePasswordChange = async () => {
     if (!pwdForm.currentPassword || !pwdForm.newPassword || !pwdForm.confirmPassword) {
@@ -141,15 +116,18 @@ export default function AccountScreen() {
   };
 
   const handleLanguageChange = async () => {
-    const currentIndex = SUPPORTED_LANGUAGES.indexOf(language);
-    const next = SUPPORTED_LANGUAGES[(currentIndex + 1) % SUPPORTED_LANGUAGES.length];
-    setLanguage(next);
+    const currentIndex = supportedLanguages.findIndex((item) => item.code === language.code);
+    const next = supportedLanguages[(currentIndex + 1) % supportedLanguages.length];
     try {
-      await AsyncStorage.setItem(STUDENT_LANGUAGE_PREFERENCE_KEY, next);
-      Alert.alert('Language Updated', `Selected language: ${next}`);
+      await setLanguage(next);
+      Alert.alert('Language Updated', `Selected language: ${next.label}`);
     } catch {
       Alert.alert('Update Failed', 'Could not save language preference right now.');
     }
+  };
+
+  const handleSpeakToCounsellor = () => {
+    router.push('/student/speak-to-counsellor');
   };
 
   const handleLogout = () => {
@@ -183,6 +161,23 @@ export default function AccountScreen() {
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
+          <SectionCard title="Need Help Fast?">
+            <TouchableOpacity
+              style={styles.supportHeroButton}
+              onPress={handleSpeakToCounsellor}
+              activeOpacity={0.82}
+            >
+              <Text style={styles.supportHeroIcon}>🎓</Text>
+              <View style={styles.supportHeroTextWrap}>
+                <Text style={styles.supportHeroTitle}>Speak to Counsellor</Text>
+                <Text style={styles.supportHeroSubtitle}>
+                  Book the same counselling support flow from the dashboard here.
+                </Text>
+              </View>
+              <Text style={styles.supportHeroChevron}>›</Text>
+            </TouchableOpacity>
+          </SectionCard>
+
           <SectionCard title="Support Options">
             <SettingRow
               icon="🔑"
@@ -232,7 +227,7 @@ export default function AccountScreen() {
             <SettingRow
               icon="🌐"
               label="Change Language"
-              sublabel={`Current: ${language}`}
+              sublabel={`Current: ${language.label}`}
               onPress={handleLanguageChange}
             />
 
@@ -345,4 +340,21 @@ const styles = StyleSheet.create({
   },
   actionBtnDisabled: { opacity: 0.6 },
   actionBtnText: { color: '#fff', fontSize: 14, fontWeight: '700' },
+  supportHeroButton: {
+    margin: 12,
+    borderRadius: 14,
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    backgroundColor: 'rgba(79, 70, 229, 0.14)',
+    borderWidth: 1,
+    borderColor: 'rgba(99, 102, 241, 0.42)',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  supportHeroIcon: { fontSize: 24 },
+  supportHeroTextWrap: { flex: 1, gap: 3 },
+  supportHeroTitle: { fontSize: 15, fontWeight: '800', color: STUDENT.textPrimary },
+  supportHeroSubtitle: { fontSize: 12, lineHeight: 17, color: STUDENT.textSecondary },
+  supportHeroChevron: { fontSize: 22, color: STUDENT.textPrimary },
 });
