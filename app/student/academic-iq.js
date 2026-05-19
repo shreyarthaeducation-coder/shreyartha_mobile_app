@@ -45,6 +45,7 @@ const TOPIC_BASE_TABS = [
   { key: 'understanding', label: 'Test Your Understanding', accent: '#FACC15' },
   { key: 'reflection', label: 'My Reflection', accent: '#F59E0B' },
 ];
+const HTML_CONTENT_HORIZONTAL_MARGIN = 72;
 
 const arr = (value) => (Array.isArray(value) ? value : value ? [value] : []);
 const unwrap = (value) => (value?.data && typeof value.data === 'object' ? value.data : value || {});
@@ -78,6 +79,7 @@ const getNodeId = (node, fallback = '') => String(
   || fallback
   || nodeLabel(node)
 ).trim();
+// Extracts a backend-safe identifier by checking known ID fields in priority order.
 const getApiId = (node, keys = []) => {
   for (const key of keys) {
     const value = node?.[key];
@@ -116,6 +118,10 @@ function logApiError(context, error) {
   });
 }
 
+/**
+ * Renders plain text or rich HTML content inside Academic IQ cards/questions.
+ * @param {{html: string, textStyle: object, numberOfLines?: number}} props
+ */
 function HtmlContent({ html, textStyle, numberOfLines }) {
   const { width } = useWindowDimensions();
   const rawHtml = String(html || '').trim();
@@ -125,7 +131,7 @@ function HtmlContent({ html, textStyle, numberOfLines }) {
   }
   return (
     <RenderHTML
-      contentWidth={Math.max(0, width - 72)}
+      contentWidth={Math.max(0, width - HTML_CONTENT_HORIZONTAL_MARGIN)}
       source={{ html: rawHtml }}
       baseStyle={textStyle}
       defaultTextProps={numberOfLines ? { numberOfLines } : undefined}
@@ -477,7 +483,7 @@ function QuestionRunner({
         {question?.marks != null ? <Text style={styles.metaInfo}>{`Marks: ${question.marks}`}</Text> : null}
         {question?.negativeMarks != null ? <Text style={styles.metaInfo}>{`Negative: ${question.negativeMarks}`}</Text> : null}
       </View>
-      {question?.hint ? <View><Text style={styles.hintPrefix}>Hint:</Text><HtmlContent html={question.hint} textStyle={styles.hintText} /></View> : null}
+      {question?.hint ? <View style={styles.hintWrap}><Text style={styles.hintPrefix}>Hint:</Text><HtmlContent html={question.hint} textStyle={styles.hintText} /></View> : null}
       <View style={styles.optionsWrap}>
         {options.map((option, index) => {
           const active = selectedIndex === index;
@@ -488,7 +494,7 @@ function QuestionRunner({
               onPress={() => setState((prev) => ({ ...prev, answers: { ...prev.answers, [questionId]: index } }))}
             >
               <Text style={[styles.mockOptionLabel, active && { color: accentColor || STUDENT.accent, borderColor: accentColor || STUDENT.accent }]}>{String.fromCharCode(65 + index)}</Text>
-              <View style={styles.optionTextWrap}><HtmlContent html={option.text} textStyle={styles.optionText} /></View>
+              <View style={styles.optionTextWrap}>{/* Required so RenderHTML can shrink within row alongside option label */}<HtmlContent html={option.text} textStyle={styles.optionText} /></View>
             </Pressable>
           );
         })}
@@ -1713,13 +1719,14 @@ const styles = StyleSheet.create({
   metaInfoWrap: { flexDirection: 'row', gap: 12, flexWrap: 'wrap' },
   metaInfo: { color: STUDENT.textSecondary, fontSize: 12 },
   questionText: { color: '#fff', fontSize: 15, lineHeight: 22 },
+  hintWrap: { gap: 2 },
   hintPrefix: { color: '#FDE68A', fontSize: 12, fontWeight: '700', marginBottom: 2 },
   hintText: { color: '#FDE68A', fontSize: 12, lineHeight: 18 },
   optionsWrap: { gap: 10 },
   optionCard: { borderWidth: 1, borderColor: STUDENT.border, borderRadius: 12, padding: 12, backgroundColor: 'rgba(10,15,30,0.85)', flexDirection: 'row', alignItems: 'center', gap: 10 },
   optionCardActive: { borderColor: STUDENT.accent, backgroundColor: 'rgba(79,70,229,0.16)' },
   optionTextWrap: { flex: 1 },
-  optionText: { color: '#fff', fontSize: 13, flex: 1, lineHeight: 19 },
+  optionText: { color: '#fff', fontSize: 13, lineHeight: 19 },
   mockOptionLabel: { width: 24, height: 24, borderRadius: 12, borderWidth: 1, borderColor: STUDENT.border, color: STUDENT.textSecondary, textAlign: 'center', lineHeight: 22, fontWeight: '700' },
   mockOptionLabelActive: { color: '#fff', borderColor: '#fff' },
   mockNavRow: { flexDirection: 'row', gap: 10, marginTop: 6 },
