@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
+  Alert,
   Image,
   Modal,
   Pressable,
@@ -195,6 +196,7 @@ export default function StudentDashboardScreen() {
       setLanguageModalVisible(false);
     } catch {
       setLanguageModalVisible(false);
+      Alert.alert('Update Failed', 'Could not save language preference right now.');
     }
   };
 
