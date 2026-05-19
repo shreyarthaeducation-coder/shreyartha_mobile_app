@@ -15,22 +15,22 @@ import { studentService } from '../../services/studentService';
 import { STUDENT } from '../../constants/theme';
 
 const GREEN_ACCENT = '#16a34a';
+
 const arr = (value) => (Array.isArray(value) ? value : value ? [value] : []);
 const unwrap = (value) => (value?.data && typeof value.data === 'object' ? value.data : value || {});
+const compactText = (value, fallback = '—') => {
+  const text = String(value ?? '').trim();
+  return text || fallback;
+};
 const toNumber = (value) => {
-  const numeric = Number(value);
-  return Number.isFinite(numeric) ? numeric : null;
+  const number = Number(value);
+  return Number.isFinite(number) ? number : null;
 };
 const toPercent = (value) => {
-  const numeric = toNumber(value);
-  if (numeric == null) return null;
-  if (numeric <= 1 && numeric >= 0) return Math.round(numeric * 100);
-  return Math.max(0, Math.min(100, Math.round(numeric)));
-};
-const toTitle = (value, fallback) => String(value || '').trim() || fallback;
-const compactText = (value, fallback = '—') => {
-  const text = String(value || '').trim();
-  return text || fallback;
+  const number = toNumber(value);
+  if (number == null) return null;
+  if (number >= 0 && number <= 1) return Math.round(number * 100);
+  return Math.max(0, Math.min(100, Math.round(number)));
 };
 const resolveMediaUrl = (value) => {
   const raw = String(value || '').trim();
@@ -41,332 +41,231 @@ const resolveMediaUrl = (value) => {
   return `${API_BASE_URL}/${raw.replace(/^\/+/, '')}`;
 };
 
-function ProgressBar({ value, color = GREEN_ACCENT, height = 8, trackStyle }) {
+function ProgressBar({ value }) {
   const pct = toPercent(value) ?? 0;
   return (
-    <View style={[styles.progressTrack, { height, borderRadius: height / 2 }, trackStyle]}>
-      <View style={[styles.progressFill, { width: `${pct}%`, backgroundColor: color, borderRadius: height / 2 }]} />
+    <View style={styles.progressTrack}>
+      <View style={[styles.progressFill, { width: `${pct}%` }]} />
     </View>
   );
 }
 
-function SectionCard({ title, children, right, accent = GREEN_ACCENT }) {
+function SectionCard({ title, children }) {
   return (
     <View style={styles.card}>
       <View style={styles.cardHeader}>
-        <View style={styles.cardHeaderTitleWrap}>
-          <View style={[styles.cardAccent, { backgroundColor: accent }]} />
-          <Text style={styles.cardTitle}>{title}</Text>
-        </View>
-        {right}
+        <View style={styles.cardAccent} />
+        <Text style={styles.cardTitle}>{title}</Text>
       </View>
       {children}
     </View>
   );
 }
 
-function CollapsibleCard({ title, open, onToggle, children, summary, accent }) {
-  return (
-    <SectionCard
-      title={title}
-      accent={accent}
-      right={
-        <TouchableOpacity style={styles.collapseBtn} onPress={onToggle}>
-          <Text style={styles.collapseBtnText}>{open ? 'Hide' : 'Show'}</Text>
-        </TouchableOpacity>
-      }
-    >
-      {summary ? <Text style={styles.sectionSummary}>{summary}</Text> : null}
-      {open ? children : null}
-    </SectionCard>
-  );
-}
-
-function MetricChip({ label, value }) {
-  return (
-    <View style={styles.metricChip}>
-      <Text style={styles.metricValue}>{value}</Text>
-      <Text style={styles.metricLabel}>{label}</Text>
-    </View>
-  );
-}
-
-function EmptyState({ text = 'No data available yet' }) {
-  return <Text style={styles.emptyText}>{text}</Text>;
-}
-
-function normalizeStudentProfile(profile, analytics) {
-  const source = { ...unwrap(profile), ...unwrap(analytics) };
-  return {
-    name: source.fullName || source.name || source.studentName,
-    currentClass: source.currentClass || source.className || source.class,
-    schoolName: source.schoolName || source.school?.name || source.school,
-    stream: source.stream,
-    avatar: resolveMediaUrl(source.profilePictureUrl || source.pictureUrl || source.avatar),
-  };
-}
-
-function normalizeSyllabus(data) {
-  const source = unwrap(data);
-  const rawSubjects = arr(
-    source.subjects
-    || source.subjectWiseCompletion
-    || source.subjectWise
-    || source.subjectCompletion
-    || source.breakdown
-  );
-  const subjects = rawSubjects.map((subject, index) => {
-    const item = unwrap(subject);
-    const percent = toPercent(
-      item.percentage
-      ?? item.completionPercentage
-      ?? item.completedPercentage
-      ?? item.progress
-      ?? item.completion
+function SectionState({ loading, error, empty, emptyText = 'No data available yet', children }) {
+  if (loading) {
+    return (
+      <View style={styles.sectionStateWrap}>
+        <ActivityIndicator size="small" color={GREEN_ACCENT} />
+      </View>
     );
-    const totalTopics = toNumber(item.totalTopics ?? item.total ?? item.topicCount ?? item.totalCount);
-    const completedTopics = toNumber(item.completedTopics ?? item.completed ?? item.completedCount);
-    const pendingTopics = toNumber(
-      item.pendingTopics
-      ?? item.notCompletedTopics
-      ?? item.remainingTopics
-      ?? (totalTopics != null && completedTopics != null ? totalTopics - completedTopics : null)
-    );
-    return {
-      id: String(item.id ?? item.subjectId ?? index),
-      name: toTitle(item.subjectName || item.name || item.subject || item.title, `Subject ${index + 1}`),
-      percent: percent ?? 0,
-      totalTopics,
-      completedTopics,
-      pendingTopics,
-    };
-  });
-
-  const overall = toPercent(
-    source.overallCompletion
-    ?? source.overallCompletionPercentage
-    ?? source.overallPercentage
-    ?? source.completionPercentage
-    ?? source.percentage
-    ?? source.progress
-  ) ?? (subjects.length ? Math.round(subjects.reduce((sum, subject) => sum + subject.percent, 0) / subjects.length) : 0);
-
-  const totalTopics = toNumber(source.totalTopics ?? source.totalTopicCount) ?? subjects.reduce((sum, subject) => sum + (subject.totalTopics || 0), 0);
-  const completedTopics = toNumber(source.completedTopics ?? source.completedTopicCount) ?? subjects.reduce((sum, subject) => sum + (subject.completedTopics || 0), 0);
-  const pendingTopics = toNumber(source.notCompletedTopics ?? source.pendingTopics ?? source.remainingTopics)
-    ?? (totalTopics != null && completedTopics != null ? Math.max(totalTopics - completedTopics, 0) : null);
-
-  return { overall, totalTopics, completedTopics, pendingTopics, subjects };
-}
-
-function normalizeProgress(data) {
-  const source = unwrap(data);
-  const items = arr(source.modules || source.progress || source.items || source.sections || source.subjects || source.data || source)
-    .map((entry, index) => {
-      const item = unwrap(entry);
-      return {
-        id: String(item.id ?? item.moduleId ?? item.subjectId ?? index),
-        title: toTitle(item.moduleName || item.title || item.name || item.subjectName, `Module ${index + 1}`),
-        subtitle: compactText(item.description || item.status || item.stage || item.level, ''),
-        percent: toPercent(item.percentage ?? item.progress ?? item.completedPercentage ?? item.completion) ?? 0,
-        completed: toNumber(item.completed ?? item.completedCount ?? item.completedTopics),
-        total: toNumber(item.total ?? item.totalCount ?? item.totalTopics),
-      };
-    })
-    .filter((item) => item.title);
-  return items;
-}
-
-function normalizeCompetitiveAnalytics(data) {
-  const source = unwrap(data);
-  const exams = arr(source.exams || source.examAnalytics || source.analytics || source.data || source.results)
-    .map((entry, index) => {
-      const item = unwrap(entry);
-      return {
-        id: String(item.id ?? item.examId ?? index),
-        name: toTitle(item.examName || item.name || item.title, `Exam ${index + 1}`),
-        score: item.score ?? item.marks ?? item.correctAnswers ?? item.rank ?? '—',
-        accuracy: toPercent(item.accuracy ?? item.percentage ?? item.progress),
-        attempts: toNumber(item.attempts ?? item.testsAttempted ?? item.mockTestsAttempted),
-      };
-    })
-    .filter((exam) => exam.name);
-  const hasExam = source.hasExam ?? source.isExamStudent ?? (exams.length > 0);
-  return { hasExam, exams };
-}
-
-function normalizeAreaAnalytics(title, payload, fallback = {}) {
-  const source = unwrap(payload);
-  const titleValue = title;
-  const percent = toPercent(
-    source.percentage
-    ?? source.progress
-    ?? source.completionPercentage
-    ?? source.completedPercentage
-    ?? source.average
-    ?? fallback.percentage
-  );
-  const primaryValue = percent != null
-    ? `${percent}%`
-    : compactText(source.score ?? source.completed ?? source.count ?? source.totalCompleted ?? fallback.primaryValue, '—');
-  const secondary = compactText(
-    source.description
-    || source.summary
-    || source.status
-    || source.message
-    || fallback.secondary,
-    'No data available yet'
-  );
-  return {
-    title: titleValue,
-    primaryValue,
-    secondary,
-    percent,
-  };
-}
-
-async function fetchPsychometricFallback() {
-  const categoriesResponse = await studentService.getPsychometricCategories();
-  const categories = arr(unwrap(categoriesResponse).categories || unwrap(categoriesResponse));
-  if (!categories.length) return {};
-
-  const results = await Promise.allSettled(
-    categories.map((category) => studentService.getPsychometricResult(category.id || category.categoryId || category.key))
-  );
-  const resolved = results
-    .filter((result) => result.status === 'fulfilled')
-    .map((result) => unwrap(result.value));
-  const percentages = resolved
-    .map((item) => toPercent(item.percentage ?? item.score ?? item.progress))
-    .filter((value) => value != null);
-  return {
-    totalCompleted: resolved.length,
-    count: categories.length,
-    percentage: percentages.length ? Math.round(percentages.reduce((sum, value) => sum + value, 0) / percentages.length) : null,
-    summary: resolved.length ? `${resolved.length} assessments completed` : 'No completed assessments yet',
-  };
-}
-
-async function fetchSkillsEdgeFallback() {
-  const [profileResponse, treeResponse] = await Promise.all([
-    studentService.getSkillsProfile().catch(() => ({})),
-    studentService.getSkillsEdgeTree().catch(() => ([])),
-  ]);
-  const profile = unwrap(profileResponse);
-  const tree = arr(unwrap(treeResponse).skills || unwrap(treeResponse).categories || unwrap(treeResponse).nodes || unwrap(treeResponse));
-  const selected = arr(profile.selectedSkillIds || profile.skillIds || profile.selectedSkills);
-  return {
-    completed: selected.length,
-    count: tree.length || selected.length,
-    summary: selected.length ? `${selected.length} skill areas selected` : 'No skill selections saved yet',
-    percentage: tree.length ? Math.round((selected.length / tree.length) * 100) : null,
-  };
-}
-
-async function fetchCodingProFallback(profile) {
-  const classValue = profile?.currentClass ? String(profile.currentClass) : undefined;
-  const [treeResponse, projectsResponse] = await Promise.all([
-    studentService.getCodingProTree().catch(() => ([])),
-    studentService.getCodingProProjects({ classValue }).catch(() => ([])),
-  ]);
-  const tracks = arr(unwrap(treeResponse).streams || unwrap(treeResponse).topics || unwrap(treeResponse));
-  const projects = arr(unwrap(projectsResponse).projects || unwrap(projectsResponse));
-  return {
-    count: tracks.length || null,
-    completed: projects.length || null,
-    summary: projects.length ? `${projects.length} project resources available` : 'No coding projects available yet',
-    percentage: tracks.length && projects.length ? Math.round((projects.length / tracks.length) * 100) : null,
-  };
+  }
+  if (error) {
+    return <Text style={styles.sectionErrorText}>{error}</Text>;
+  }
+  if (empty) {
+    return <Text style={styles.emptyText}>{emptyText}</Text>;
+  }
+  return children;
 }
 
 export default function MyAnalyticsScreen() {
   const router = useRouter();
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [expanded, setExpanded] = useState({ subjects: false, progress: true, exams: true });
-  const [analytics, setAnalytics] = useState({
-    profile: {},
-    syllabus: { overall: 0, subjects: [] },
-    myProgress: [],
-    competitive: { hasExam: false, exams: [] },
-    areas: [],
-  });
 
-  const loadAnalytics = useCallback(async () => {
-    setLoading(true);
-    setError('');
+  const [profileSection, setProfileSection] = useState({ loading: true, error: '', data: null });
+  const [syllabusSection, setSyllabusSection] = useState({ loading: true, error: '', data: null });
+  const [myProgressSection, setMyProgressSection] = useState({ loading: true, error: '', data: null });
+  const [competitiveSection, setCompetitiveSection] = useState({ loading: true, error: '', data: null });
+  const [psychometricSection, setPsychometricSection] = useState({ loading: true, error: '', data: null });
+  const [learningGapsSection, setLearningGapsSection] = useState({ loading: true, error: '', data: null });
+  const [codingProSection, setCodingProSection] = useState({ loading: true, error: '', data: null });
+  const [skillsEdgeSection, setSkillsEdgeSection] = useState({ loading: true, error: '', data: null });
 
+  const [expandedProgress, setExpandedProgress] = useState({});
+  const [expandedSkills, setExpandedSkills] = useState({});
+  const [selectedExamTab, setSelectedExamTab] = useState('');
+
+  const fetchSection = useCallback(async (name, setter, fetcher) => {
+    setter((prev) => ({ ...prev, loading: true, error: '' }));
     try {
-      const [
-        profileResult,
-        studentAnalyticsResult,
-        syllabusResult,
-        myProgressResult,
-        competitiveResult,
-        psychometricResult,
-        learningGapsResult,
-        codingResult,
-        skillsResult,
-      ] = await Promise.allSettled([
-        studentService.getProfile(),
-        studentService.getStudentAnalytics(),
-        studentService.getSyllabusCompletion(),
-        studentService.getMyProgressAnalytics(),
-        studentService.getCompetitiveExamAnalytics(),
-        studentService.getPsychometricAnalytics(),
-        studentService.getLearningGapsAnalytics(),
-        studentService.getCodingProAnalytics(),
-        studentService.getSkillsEdgeAnalytics(),
-      ]);
-
-      const profile = normalizeStudentProfile(
-        profileResult.status === 'fulfilled' ? profileResult.value : {},
-        studentAnalyticsResult.status === 'fulfilled' ? studentAnalyticsResult.value : {},
-      );
-
-      const psychometricPayload = psychometricResult.status === 'fulfilled'
-        ? psychometricResult.value
-        : await fetchPsychometricFallback().catch(() => ({}));
-      const skillsPayload = skillsResult.status === 'fulfilled'
-        ? skillsResult.value
-        : await fetchSkillsEdgeFallback().catch(() => ({}));
-      const codingPayload = codingResult.status === 'fulfilled'
-        ? codingResult.value
-        : await fetchCodingProFallback(profile).catch(() => ({}));
-
-      const nextState = {
-        profile,
-        syllabus: normalizeSyllabus(syllabusResult.status === 'fulfilled' ? syllabusResult.value : {}),
-        myProgress: normalizeProgress(myProgressResult.status === 'fulfilled' ? myProgressResult.value : {}),
-        competitive: normalizeCompetitiveAnalytics(competitiveResult.status === 'fulfilled' ? competitiveResult.value : {}),
-        areas: [
-          normalizeAreaAnalytics('Psychometric', psychometricPayload),
-          normalizeAreaAnalytics('Learning Gaps', learningGapsResult.status === 'fulfilled' ? learningGapsResult.value : {}),
-          normalizeAreaAnalytics('Coding Pro', codingPayload),
-          normalizeAreaAnalytics('Skills Edge', skillsPayload),
-        ],
-      };
-
-      setAnalytics(nextState);
+      const response = await fetcher();
+      setter({ loading: false, error: '', data: unwrap(response) });
     } catch (err) {
-      setError(err?.message || 'Unable to load analytics right now.');
-    } finally {
-      setLoading(false);
+      const message = err?.message || 'Unable to load this section right now.';
+      console.error(`My Analytics ${name} fetch failed:`, err);
+      setter({ loading: false, error: message, data: null });
     }
   }, []);
 
+  const loadAllSections = useCallback(async () => {
+    await Promise.all([
+      fetchSection('profile', setProfileSection, studentService.getMyAnalyticsStudentAnalytics),
+      fetchSection('syllabus', setSyllabusSection, studentService.getMyAnalyticsSyllabusCompletion),
+      fetchSection('my-progress', setMyProgressSection, studentService.getMyAnalyticsProgress),
+      fetchSection('competitive-exam', setCompetitiveSection, studentService.getMyAnalyticsCompetitiveExam),
+      fetchSection('psychometric', setPsychometricSection, studentService.getMyAnalyticsPsychometric),
+      fetchSection('learning-gaps', setLearningGapsSection, studentService.getMyAnalyticsLearningGaps),
+      fetchSection('coding-pro', setCodingProSection, studentService.getMyAnalyticsCodingPro),
+      fetchSection('skills-edge', setSkillsEdgeSection, studentService.getMyAnalyticsSkillsEdge),
+    ]);
+  }, [fetchSection]);
+
   useEffect(() => {
-    loadAnalytics();
-  }, [loadAnalytics]);
+    loadAllSections();
+  }, [loadAllSections]);
 
-  const syllabusSummary = analytics.syllabus;
-  const studentProfile = analytics.profile;
-  const examAnalytics = analytics.competitive;
+  const profileData = useMemo(() => {
+    const data = unwrap(profileSection.data);
+    return {
+      fullName: data.fullName || data.name || data.studentName || 'Student',
+      currentClass: data.currentClass || data.className || data.class || '',
+      schoolName: data.schoolName || data.school?.name || data.school || '',
+      stream: data.stream || '',
+      profilePictureUrl: resolveMediaUrl(
+        data.profilePictureUrl || data.pictureUrl || data.avatarUri || data.avatar,
+      ),
+    };
+  }, [profileSection.data]);
 
-  const initials = useMemo(() => {
-    const pieces = compactText(studentProfile.name, '').split(/\s+/).filter(Boolean);
-    return pieces.slice(0, 2).map((item) => item.charAt(0).toUpperCase()).join('') || 'ST';
-  }, [studentProfile.name]);
+  const profileInitials = useMemo(() => {
+    const parts = compactText(profileData.fullName, '').split(/\s+/).filter(Boolean);
+    return parts.slice(0, 2).map((part) => part[0]?.toUpperCase()).join('') || 'ST';
+  }, [profileData.fullName]);
+
+  const syllabusData = useMemo(() => {
+    const data = unwrap(syllabusSection.data);
+    const subjects = arr(data.subjects || data.subjectWiseCompletion || data.subjectWise || data.breakdown).map((item, index) => {
+      const row = unwrap(item);
+      return {
+        id: String(row.subjectId || row.id || row.subjectName || index),
+        subjectName: row.subjectName || row.name || row.subject || `Subject ${index + 1}`,
+        completionPercent: toPercent(row.completionPercent ?? row.percentage ?? row.progress) ?? 0,
+      };
+    });
+
+    return {
+      overallCompletionPercent: toPercent(
+        data.overallCompletionPercent
+        ?? data.overallCompletionPercentage
+        ?? data.overallCompletion
+        ?? data.percentage,
+      ) ?? 0,
+      totalTopics: toNumber(data.totalTopics),
+      completedTopics: toNumber(data.completedTopics),
+      notCompletedTopics: toNumber(data.notCompletedTopics ?? data.pendingTopics),
+      totalSubjects: toNumber(data.totalSubjects) ?? subjects.length,
+      totalChapters: toNumber(data.totalChapters),
+      subjects,
+    };
+  }, [syllabusSection.data]);
+
+  const myProgressModules = useMemo(() => {
+    const data = unwrap(myProgressSection.data);
+    return arr(data.modules || data.myProgress || data.progress || data.items).map((item, index) => {
+      const row = unwrap(item);
+      return {
+        id: String(row.moduleId || row.id || row.moduleName || row.title || index),
+        moduleName: row.moduleName || row.title || row.name || `Module ${index + 1}`,
+        progressPercent: toPercent(row.progressPercent ?? row.percentage ?? row.progress ?? row.completionPercent) ?? 0,
+        completedCount: toNumber(row.completedCount ?? row.completedTopics ?? row.completed),
+        totalCount: toNumber(row.totalCount ?? row.totalTopics ?? row.total),
+        description: row.description || row.status || '',
+      };
+    });
+  }, [myProgressSection.data]);
+
+  const competitiveData = useMemo(() => {
+    const data = unwrap(competitiveSection.data);
+    const exams = arr(data.exams || data.examAnalytics || data.analytics || data.tabs).map((item, index) => {
+      const row = unwrap(item);
+      return {
+        id: String(row.examId || row.id || row.examName || row.name || index),
+        examName: row.examName || row.name || row.title || `Exam ${index + 1}`,
+        score: row.score ?? row.marks ?? row.totalScore ?? '—',
+        accuracyPercent: toPercent(row.accuracyPercent ?? row.accuracy ?? row.percentage),
+        recentAttempts: arr(row.recentAttempts || row.attempts || row.recent || row.latestAttempts),
+      };
+    });
+    return {
+      hasExam: data.hasExam,
+      exams,
+    };
+  }, [competitiveSection.data]);
+
+  useEffect(() => {
+    if (!selectedExamTab && competitiveData.exams.length > 0) {
+      setSelectedExamTab(competitiveData.exams[0].id);
+    }
+  }, [competitiveData.exams, selectedExamTab]);
+
+  const selectedExam = competitiveData.exams.find((exam) => exam.id === selectedExamTab) || competitiveData.exams[0];
+
+  const psychometricDimensions = useMemo(() => {
+    const data = unwrap(psychometricSection.data);
+    return arr(data.dimensions || data.scores || data.summary || data.results).map((item, index) => {
+      const row = unwrap(item);
+      return {
+        id: String(row.id || row.dimension || row.name || index),
+        label: row.dimension || row.label || row.name || `Dimension ${index + 1}`,
+        score: toPercent(row.score ?? row.percentage ?? row.value ?? row.progress),
+      };
+    }).filter((item) => item.label);
+  }, [psychometricSection.data]);
+
+  const learningGaps = useMemo(() => {
+    const data = unwrap(learningGapsSection.data);
+    return arr(data.learningGaps || data.gaps || data.items || data).map((item, index) => {
+      const row = unwrap(item);
+      return {
+        id: String(row.id || row.topicId || row.subject || index),
+        title: row.topicName || row.gap || row.title || row.subject || `Gap ${index + 1}`,
+        detail: row.suggestion || row.description || row.reason || '',
+      };
+    });
+  }, [learningGapsSection.data]);
+
+  const codingProProgress = useMemo(() => {
+    const data = unwrap(codingProSection.data);
+    return arr(data.modules || data.topics || data.progress || data.items || data.streams).map((item, index) => {
+      const row = unwrap(item);
+      return {
+        id: String(row.id || row.moduleId || row.topicId || row.name || index),
+        name: row.moduleName || row.topicName || row.name || row.title || `Track ${index + 1}`,
+        progressPercent: toPercent(row.progressPercent ?? row.percentage ?? row.progress ?? row.completionPercent),
+      };
+    });
+  }, [codingProSection.data]);
+
+  const skillsEdge = useMemo(() => {
+    const data = unwrap(skillsEdgeSection.data);
+    return arr(data.selectedSkills || data.skills || data.skillProgress || data.items).map((item, index) => {
+      const row = unwrap(item);
+      const modules = arr(row.modules || row.moduleProgress || row.chapters || row.items).map((module, moduleIndex) => {
+        const moduleRow = unwrap(module);
+        return {
+          id: String(moduleRow.id || moduleRow.moduleId || moduleRow.name || moduleIndex),
+          moduleName: moduleRow.moduleName || moduleRow.name || moduleRow.title || `Module ${moduleIndex + 1}`,
+          progressPercent: toPercent(moduleRow.progressPercent ?? moduleRow.percentage ?? moduleRow.progress),
+        };
+      });
+      return {
+        id: String(row.skillId || row.id || row.skillName || row.name || index),
+        skillName: row.skillName || row.name || row.title || `Skill ${index + 1}`,
+        progressPercent: toPercent(row.progressPercent ?? row.percentage ?? row.progress),
+        modules,
+      };
+    });
+  }, [skillsEdgeSection.data]);
 
   return (
     <SafeAreaView style={styles.root} edges={['top', 'left', 'right']}>
@@ -378,120 +277,242 @@ export default function MyAnalyticsScreen() {
         <View style={styles.headerSpacer} />
       </View>
 
-      {loading ? (
-        <View style={styles.loaderWrap}>
-          <ActivityIndicator size="large" color={GREEN_ACCENT} />
-          <Text style={styles.loaderText}>Loading analytics…</Text>
-        </View>
-      ) : (
-        <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-          {error ? <Text style={styles.errorText}>{error}</Text> : null}
-
-          <SectionCard title="Student Profile">
-            <View style={styles.profileCardBody}>
+      <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        <SectionCard title="Student Profile">
+          <SectionState loading={profileSection.loading} error={profileSection.error} empty={!profileSection.data} emptyText="Student profile not available yet.">
+            <View style={styles.profileRow}>
               <View style={styles.profileAvatarWrap}>
-                {studentProfile.avatar ? (
-                  <Image source={{ uri: studentProfile.avatar }} style={styles.profileAvatar} />
+                {profileData.profilePictureUrl ? (
+                  <Image source={{ uri: profileData.profilePictureUrl }} style={styles.profileAvatar} />
                 ) : (
-                  <View style={styles.profileAvatarFallback}><Text style={styles.profileAvatarFallbackText}>{initials}</Text></View>
+                  <View style={styles.profileAvatarFallback}>
+                    <Text style={styles.profileAvatarFallbackText}>{profileInitials}</Text>
+                  </View>
                 )}
               </View>
-              <View style={styles.profileInfo}>
-                <Text style={styles.profileName}>{compactText(studentProfile.name, 'Student')}</Text>
-                <Text style={styles.profileMeta}>{`Class: ${compactText(studentProfile.currentClass)}`}</Text>
-                <Text style={styles.profileMeta}>{`School: ${compactText(studentProfile.schoolName)}`}</Text>
-                <Text style={styles.profileMeta}>{`Stream: ${compactText(studentProfile.stream)}`}</Text>
+              <View style={styles.profileMetaWrap}>
+                <Text style={styles.profileName}>{compactText(profileData.fullName, 'Student')}</Text>
+                <Text style={styles.profileMeta}>Class: {compactText(profileData.currentClass)}</Text>
+                <Text style={styles.profileMeta}>School: {compactText(profileData.schoolName)}</Text>
+                <Text style={styles.profileMeta}>Stream: {compactText(profileData.stream)}</Text>
               </View>
             </View>
-          </SectionCard>
+          </SectionState>
+        </SectionCard>
 
-          <SectionCard title="Overall Syllabus Completion" right={<Text style={styles.highlightValue}>{`${syllabusSummary.overall || 0}%`}</Text>}>
-            <ProgressBar value={syllabusSummary.overall} height={12} />
-            <View style={styles.metricRow}>
-              <MetricChip label="Total Topics" value={compactText(syllabusSummary.totalTopics, '0')} />
-              <MetricChip label="Completed" value={compactText(syllabusSummary.completedTopics, '0')} />
-              <MetricChip label="Not Completed" value={compactText(syllabusSummary.pendingTopics, '0')} />
+        <SectionCard title="Overall Syllabus Completion">
+          <SectionState loading={syllabusSection.loading} error={syllabusSection.error} empty={!syllabusSection.data} emptyText="Syllabus completion data not available yet.">
+            <Text style={styles.primaryPercent}>{`${syllabusData.overallCompletionPercent}%`}</Text>
+            <ProgressBar value={syllabusData.overallCompletionPercent} />
+            <View style={styles.metricGrid}>
+              <View style={styles.metricChip}><Text style={styles.metricValue}>{compactText(syllabusData.totalTopics, '0')}</Text><Text style={styles.metricLabel}>Total Topics</Text></View>
+              <View style={styles.metricChip}><Text style={styles.metricValue}>{compactText(syllabusData.completedTopics, '0')}</Text><Text style={styles.metricLabel}>Completed</Text></View>
+              <View style={styles.metricChip}><Text style={styles.metricValue}>{compactText(syllabusData.notCompletedTopics, '0')}</Text><Text style={styles.metricLabel}>Not Completed</Text></View>
+              <View style={styles.metricChip}><Text style={styles.metricValue}>{compactText(syllabusData.totalSubjects, '0')}</Text><Text style={styles.metricLabel}>Total Subjects</Text></View>
+              <View style={styles.metricChip}><Text style={styles.metricValue}>{compactText(syllabusData.totalChapters, '0')}</Text><Text style={styles.metricLabel}>Total Chapters</Text></View>
             </View>
-          </SectionCard>
+          </SectionState>
+        </SectionCard>
 
-          <CollapsibleCard
-            title="Subject-wise Breakdown"
-            accent={GREEN_ACCENT}
-            open={expanded.subjects}
-            onToggle={() => setExpanded((prev) => ({ ...prev, subjects: !prev.subjects }))}
-            summary={`${analytics.syllabus.subjects.length} subjects`}
+        <SectionCard title="Per-subject Syllabus Breakdown">
+          <SectionState
+            loading={syllabusSection.loading}
+            error={syllabusSection.error}
+            empty={!syllabusData.subjects.length}
+            emptyText="No subject-wise syllabus progress available yet."
           >
-            {analytics.syllabus.subjects.length ? analytics.syllabus.subjects.map((subject) => (
-              <View key={subject.id} style={styles.listItem}>
-                <View style={styles.listItemHeader}>
-                  <Text style={styles.listItemTitle}>{subject.name}</Text>
-                  <Text style={styles.listItemValue}>{`${subject.percent}%`}</Text>
+            {syllabusData.subjects.map((subject) => (
+              <View key={subject.id} style={styles.rowCard}>
+                <View style={styles.rowHeader}>
+                  <Text style={styles.rowTitle}>{subject.subjectName}</Text>
+                  <Text style={styles.rowValue}>{`${subject.completionPercent}%`}</Text>
                 </View>
-                <ProgressBar value={subject.percent} />
-                <Text style={styles.listItemMeta}>
-                  {`${compactText(subject.completedTopics, '0')} completed • ${compactText(subject.pendingTopics, '0')} pending`}
-                </Text>
+                <ProgressBar value={subject.completionPercent} />
               </View>
-            )) : <EmptyState />}
-          </CollapsibleCard>
+            ))}
+          </SectionState>
+        </SectionCard>
 
-          <CollapsibleCard
-            title="My Progress"
-            accent={GREEN_ACCENT}
-            open={expanded.progress}
-            onToggle={() => setExpanded((prev) => ({ ...prev, progress: !prev.progress }))}
-            summary={analytics.myProgress.length ? `${analytics.myProgress.length} modules tracked` : undefined}
+        <SectionCard title="My Progress">
+          <SectionState
+            loading={myProgressSection.loading}
+            error={myProgressSection.error}
+            empty={!myProgressModules.length}
+            emptyText="No module progress available yet."
           >
-            {analytics.myProgress.length ? analytics.myProgress.map((item) => (
-              <View key={item.id} style={styles.listItem}>
-                <View style={styles.listItemHeader}>
-                  <Text style={styles.listItemTitle}>{item.title}</Text>
-                  <Text style={styles.listItemValue}>{`${item.percent}%`}</Text>
+            {myProgressModules.map((module) => {
+              const isOpen = Boolean(expandedProgress[module.id]);
+              return (
+                <View key={module.id} style={styles.rowCard}>
+                  <TouchableOpacity
+                    style={styles.rowHeader}
+                    onPress={() => setExpandedProgress((prev) => ({ ...prev, [module.id]: !prev[module.id] }))}
+                  >
+                    <Text style={styles.rowTitle}>{module.moduleName}</Text>
+                    <Text style={styles.rowValue}>{`${module.progressPercent}%`}</Text>
+                  </TouchableOpacity>
+                  <ProgressBar value={module.progressPercent} />
+                  {isOpen ? (
+                    <View style={styles.rowDetails}>
+                      {module.description ? <Text style={styles.rowMeta}>{module.description}</Text> : null}
+                      {(module.completedCount != null || module.totalCount != null) ? (
+                        <Text style={styles.rowMeta}>
+                          {compactText(module.completedCount, '0')} / {compactText(module.totalCount, '0')} completed
+                        </Text>
+                      ) : null}
+                    </View>
+                  ) : null}
                 </View>
-                <Text style={styles.listItemMeta}>{item.subtitle || 'Progress updated from your learning activity'}</Text>
-                <ProgressBar value={item.percent} />
-                {(item.completed != null || item.total != null) ? (
-                  <Text style={styles.listItemMeta}>{`${compactText(item.completed, '0')} / ${compactText(item.total, '0')} completed`}</Text>
-                ) : null}
-              </View>
-            )) : <EmptyState />}
-          </CollapsibleCard>
+              );
+            })}
+          </SectionState>
+        </SectionCard>
 
-          {examAnalytics.hasExam !== false ? (
-            <CollapsibleCard
-              title="Competitive Exam Analytics"
-              accent={GREEN_ACCENT}
-              open={expanded.exams}
-              onToggle={() => setExpanded((prev) => ({ ...prev, exams: !prev.exams }))}
-              summary={examAnalytics.exams.length ? `${examAnalytics.exams.length} exam insights` : undefined}
-            >
-              {examAnalytics.exams.length ? examAnalytics.exams.map((exam) => (
-                <View key={exam.id} style={styles.examCard}>
-                  <Text style={styles.examName}>{exam.name}</Text>
-                  <View style={styles.examStatsRow}>
-                    <MetricChip label="Score / Rank" value={compactText(exam.score)} />
-                    <MetricChip label="Accuracy" value={exam.accuracy != null ? `${exam.accuracy}%` : '—'} />
-                    <MetricChip label="Attempts" value={compactText(exam.attempts, '0')} />
+        <SectionCard title="Competitive Exam Analytics">
+          <SectionState loading={competitiveSection.loading} error={competitiveSection.error} empty={!competitiveSection.data} emptyText="Competitive exam analytics not available yet.">
+            {competitiveData.hasExam === false ? (
+              <Text style={styles.emptyText}>No competitive exam data found for your profile.</Text>
+            ) : competitiveData.exams.length ? (
+              <>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.examTabsRow}>
+                  {competitiveData.exams.map((exam) => {
+                    const isActive = selectedExam?.id === exam.id;
+                    return (
+                      <TouchableOpacity
+                        key={exam.id}
+                        style={[styles.examTab, isActive && styles.examTabActive]}
+                        onPress={() => setSelectedExamTab(exam.id)}
+                      >
+                        <Text style={[styles.examTabText, isActive && styles.examTabTextActive]}>{exam.examName}</Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </ScrollView>
+
+                {selectedExam ? (
+                  <View style={styles.rowCard}>
+                    <View style={styles.rowHeader}>
+                      <Text style={styles.rowTitle}>{selectedExam.examName}</Text>
+                      <Text style={styles.rowValue}>{compactText(selectedExam.score)}</Text>
+                    </View>
+                    {selectedExam.accuracyPercent != null ? (
+                      <>
+                        <Text style={styles.rowMeta}>{`Accuracy: ${selectedExam.accuracyPercent}%`}</Text>
+                        <ProgressBar value={selectedExam.accuracyPercent} />
+                      </>
+                    ) : null}
+
+                    <Text style={styles.sectionSubTitle}>Recent Attempts</Text>
+                    {selectedExam.recentAttempts.length ? selectedExam.recentAttempts.map((attempt, index) => {
+                      const row = unwrap(attempt);
+                      const label = row.testName || row.name || row.date || `Attempt ${index + 1}`;
+                      const value = row.score ?? row.marks ?? row.rank ?? row.result;
+                      return (
+                        <View key={`${selectedExam.id}-${index}`} style={styles.attemptRow}>
+                          <Text style={styles.attemptLabel}>{label}</Text>
+                          <Text style={styles.attemptValue}>{compactText(value)}</Text>
+                        </View>
+                      );
+                    }) : <Text style={styles.emptyText}>No recent attempts available.</Text>}
                   </View>
-                </View>
-              )) : <EmptyState />}
-            </CollapsibleCard>
-          ) : null}
+                ) : null}
+              </>
+            ) : (
+              <Text style={styles.emptyText}>No competitive exam data available yet.</Text>
+            )}
+          </SectionState>
+        </SectionCard>
 
-          <SectionCard title="More Analytics">
-            <View style={styles.areaGrid}>
-              {analytics.areas.map((area) => (
-                <View key={area.title} style={styles.areaCard}>
-                  <Text style={styles.areaTitle}>{area.title}</Text>
-                  <Text style={styles.areaPrimary}>{area.primaryValue}</Text>
-                  <Text style={styles.areaSecondary}>{area.secondary}</Text>
-                  {area.percent != null ? <ProgressBar value={area.percent} trackStyle={styles.areaProgressTrack} /> : null}
+        <SectionCard title="Psychometric Summary">
+          <SectionState
+            loading={psychometricSection.loading}
+            error={psychometricSection.error}
+            empty={!psychometricDimensions.length}
+            emptyText="Psychometric scores are not available yet."
+          >
+            {psychometricDimensions.map((dimension) => (
+              <View key={dimension.id} style={styles.rowCard}>
+                <View style={styles.rowHeader}>
+                  <Text style={styles.rowTitle}>{dimension.label}</Text>
+                  <Text style={styles.rowValue}>{dimension.score != null ? `${dimension.score}%` : '—'}</Text>
                 </View>
-              ))}
-            </View>
-          </SectionCard>
-        </ScrollView>
-      )}
+                {dimension.score != null ? <ProgressBar value={dimension.score} /> : null}
+              </View>
+            ))}
+          </SectionState>
+        </SectionCard>
+
+        <SectionCard title="Learning Gaps">
+          <SectionState
+            loading={learningGapsSection.loading}
+            error={learningGapsSection.error}
+            empty={!learningGaps.length}
+            emptyText="No learning gaps found."
+          >
+            {learningGaps.map((gap) => (
+              <View key={gap.id} style={styles.rowCard}>
+                <Text style={styles.rowTitle}>{gap.title}</Text>
+                {gap.detail ? <Text style={styles.rowMeta}>{gap.detail}</Text> : null}
+              </View>
+            ))}
+          </SectionState>
+        </SectionCard>
+
+        <SectionCard title="Coding Pro Progress">
+          <SectionState
+            loading={codingProSection.loading}
+            error={codingProSection.error}
+            empty={!codingProProgress.length}
+            emptyText="Coding Pro progress is not available yet."
+          >
+            {codingProProgress.map((entry) => (
+              <View key={entry.id} style={styles.rowCard}>
+                <View style={styles.rowHeader}>
+                  <Text style={styles.rowTitle}>{entry.name}</Text>
+                  <Text style={styles.rowValue}>{entry.progressPercent != null ? `${entry.progressPercent}%` : '—'}</Text>
+                </View>
+                {entry.progressPercent != null ? <ProgressBar value={entry.progressPercent} /> : null}
+              </View>
+            ))}
+          </SectionState>
+        </SectionCard>
+
+        <SectionCard title="Skills Edge Module Progress">
+          <SectionState
+            loading={skillsEdgeSection.loading}
+            error={skillsEdgeSection.error}
+            empty={!skillsEdge.length}
+            emptyText="Skills Edge selections are not available yet."
+          >
+            {skillsEdge.map((skill) => {
+              const isOpen = Boolean(expandedSkills[skill.id]);
+              return (
+                <View key={skill.id} style={styles.rowCard}>
+                  <TouchableOpacity
+                    style={styles.rowHeader}
+                    onPress={() => setExpandedSkills((prev) => ({ ...prev, [skill.id]: !prev[skill.id] }))}
+                  >
+                    <Text style={styles.rowTitle}>{skill.skillName}</Text>
+                    <Text style={styles.rowValue}>{skill.progressPercent != null ? `${skill.progressPercent}%` : '—'}</Text>
+                  </TouchableOpacity>
+                  {skill.progressPercent != null ? <ProgressBar value={skill.progressPercent} /> : null}
+
+                  {isOpen ? (
+                    <View style={styles.skillModulesWrap}>
+                      {skill.modules.length ? skill.modules.map((module) => (
+                        <View key={`${skill.id}-${module.id}`} style={styles.skillModuleRow}>
+                          <Text style={styles.skillModuleName}>{module.moduleName}</Text>
+                          <Text style={styles.skillModuleValue}>{module.progressPercent != null ? `${module.progressPercent}%` : '—'}</Text>
+                        </View>
+                      )) : <Text style={styles.emptyText}>No module-level progress available.</Text>}
+                    </View>
+                  ) : null}
+                </View>
+              );
+            })}
+          </SectionState>
+        </SectionCard>
+      </ScrollView>
     </SafeAreaView>
   );
 }
@@ -518,19 +539,8 @@ const styles = StyleSheet.create({
   headerButtonText: { color: '#fff', fontSize: 20, fontWeight: '800' },
   headerTitle: { color: '#fff', fontSize: 20, fontWeight: '800' },
   headerSpacer: { width: 40 },
-  loaderWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 10 },
-  loaderText: { color: STUDENT.textSecondary, fontWeight: '600' },
   scroll: { flex: 1 },
   scrollContent: { paddingHorizontal: 16, paddingBottom: 96, gap: 14 },
-  errorText: {
-    color: '#fecaca',
-    backgroundColor: 'rgba(127, 29, 29, 0.4)',
-    borderWidth: 1,
-    borderColor: 'rgba(248,113,113,0.35)',
-    borderRadius: 14,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-  },
   card: {
     backgroundColor: 'rgba(17,24,39,0.98)',
     borderRadius: 18,
@@ -539,22 +549,22 @@ const styles = StyleSheet.create({
     padding: 16,
     gap: 12,
   },
-  cardHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 },
-  cardHeaderTitleWrap: { flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 },
-  cardAccent: { width: 4, height: 20, borderRadius: 999 },
-  cardTitle: { color: '#fff', fontSize: 16, fontWeight: '800', flexShrink: 1 },
-  collapseBtn: {
+  cardHeader: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  cardAccent: { width: 4, height: 20, borderRadius: 999, backgroundColor: GREEN_ACCENT },
+  cardTitle: { color: '#fff', fontSize: 16, fontWeight: '800' },
+  sectionStateWrap: { paddingVertical: 12, alignItems: 'center' },
+  sectionErrorText: {
+    color: '#fecaca',
+    backgroundColor: 'rgba(127, 29, 29, 0.4)',
     borderWidth: 1,
-    borderColor: 'rgba(34,197,94,0.35)',
-    borderRadius: 999,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    backgroundColor: 'rgba(22,163,74,0.12)',
+    borderColor: 'rgba(248,113,113,0.35)',
+    borderRadius: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    fontSize: 12,
   },
-  collapseBtnText: { color: '#dcfce7', fontSize: 12, fontWeight: '700' },
-  sectionSummary: { color: STUDENT.textMuted, fontSize: 12 },
-  highlightValue: { color: '#dcfce7', fontSize: 20, fontWeight: '900' },
-  profileCardBody: { flexDirection: 'row', gap: 14, alignItems: 'center' },
+  emptyText: { color: STUDENT.textMuted, fontSize: 13, lineHeight: 18 },
+  profileRow: { flexDirection: 'row', alignItems: 'center', gap: 14 },
   profileAvatarWrap: {
     width: 86,
     height: 86,
@@ -570,62 +580,72 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     backgroundColor: 'rgba(21,128,61,0.7)',
   },
-  profileAvatarFallbackText: { color: '#fff', fontSize: 28, fontWeight: '900' },
-  profileInfo: { flex: 1, gap: 4 },
+  profileAvatarFallbackText: { color: '#fff', fontSize: 26, fontWeight: '900' },
+  profileMetaWrap: { flex: 1, gap: 4 },
   profileName: { color: '#fff', fontSize: 18, fontWeight: '800' },
-  profileMeta: { color: STUDENT.textSecondary, fontSize: 13, lineHeight: 18 },
-  metricRow: { flexDirection: 'row', gap: 10, flexWrap: 'wrap' },
-  metricChip: {
-    flexGrow: 1,
-    minWidth: '30%',
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: 'rgba(22,163,74,0.22)',
-    backgroundColor: 'rgba(5, 46, 22, 0.35)',
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-  },
-  metricValue: { color: '#fff', fontSize: 18, fontWeight: '900' },
-  metricLabel: { color: STUDENT.textSecondary, fontSize: 12, marginTop: 4 },
+  profileMeta: { color: STUDENT.textSecondary, fontSize: 13 },
+  primaryPercent: { color: '#dcfce7', fontSize: 24, fontWeight: '900' },
   progressTrack: {
+    height: 10,
+    borderRadius: 999,
     backgroundColor: 'rgba(255,255,255,0.08)',
     overflow: 'hidden',
   },
-  progressFill: { height: '100%' },
-  listItem: {
+  progressFill: { height: '100%', backgroundColor: GREEN_ACCENT },
+  metricGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  metricChip: {
+    minWidth: '30%',
+    flexGrow: 1,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(22,163,74,0.22)',
+    backgroundColor: 'rgba(5,46,22,0.35)',
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+  },
+  metricValue: { color: '#fff', fontSize: 16, fontWeight: '800' },
+  metricLabel: { color: STUDENT.textSecondary, fontSize: 11, marginTop: 2 },
+  rowCard: {
     borderRadius: 14,
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.08)',
     backgroundColor: 'rgba(10,15,30,0.72)',
     padding: 12,
     gap: 8,
+    marginBottom: 8,
   },
-  listItemHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 },
-  listItemTitle: { color: '#fff', fontSize: 14, fontWeight: '700', flex: 1 },
-  listItemValue: { color: '#dcfce7', fontSize: 13, fontWeight: '800' },
-  listItemMeta: { color: STUDENT.textSecondary, fontSize: 12, lineHeight: 17 },
-  examCard: {
-    borderRadius: 14,
+  rowHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
+  rowTitle: { color: '#fff', fontSize: 14, fontWeight: '700', flex: 1 },
+  rowValue: { color: '#dcfce7', fontSize: 13, fontWeight: '800' },
+  rowDetails: { gap: 4 },
+  rowMeta: { color: STUDENT.textSecondary, fontSize: 12, lineHeight: 17 },
+  examTabsRow: { gap: 8, paddingBottom: 8 },
+  examTab: {
     borderWidth: 1,
-    borderColor: 'rgba(22,163,74,0.22)',
-    backgroundColor: 'rgba(10,15,30,0.72)',
-    padding: 12,
-    gap: 10,
+    borderColor: 'rgba(22,163,74,0.25)',
+    borderRadius: 999,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    backgroundColor: 'rgba(5,46,22,0.35)',
   },
-  examName: { color: '#fff', fontSize: 15, fontWeight: '800' },
-  examStatsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-  areaGrid: { gap: 10 },
-  areaCard: {
-    borderRadius: 14,
+  examTabActive: { backgroundColor: 'rgba(22,163,74,0.5)', borderColor: GREEN_ACCENT },
+  examTabText: { color: '#bbf7d0', fontWeight: '700', fontSize: 12 },
+  examTabTextActive: { color: '#fff' },
+  sectionSubTitle: { color: '#fff', fontSize: 13, fontWeight: '700', marginTop: 4 },
+  attemptRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 8 },
+  attemptLabel: { color: STUDENT.textSecondary, flex: 1, fontSize: 12 },
+  attemptValue: { color: '#fff', fontWeight: '700', fontSize: 12 },
+  skillModulesWrap: { gap: 8, marginTop: 4 },
+  skillModuleRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    borderRadius: 10,
     borderWidth: 1,
-    borderColor: 'rgba(22,163,74,0.2)',
-    backgroundColor: 'rgba(10,15,30,0.72)',
-    padding: 12,
-    gap: 8,
+    borderColor: 'rgba(255,255,255,0.08)',
+    paddingHorizontal: 10,
+    paddingVertical: 8,
   },
-  areaTitle: { color: '#fff', fontSize: 14, fontWeight: '700' },
-  areaPrimary: { color: '#dcfce7', fontSize: 22, fontWeight: '900' },
-  areaSecondary: { color: STUDENT.textSecondary, fontSize: 12, lineHeight: 18 },
-  areaProgressTrack: { marginTop: 2 },
-  emptyText: { color: STUDENT.textMuted, fontSize: 13, lineHeight: 18 },
+  skillModuleName: { color: STUDENT.textSecondary, fontSize: 12, flex: 1 },
+  skillModuleValue: { color: '#dcfce7', fontSize: 12, fontWeight: '700' },
 });

@@ -263,14 +263,22 @@ function SectionHeader({ title, dark }) {
   return <Text style={dark ? styles.sectionHeaderDark : styles.sectionHeader}>{title}</Text>;
 }
 
+function FieldLabel({ label, required, hasError }) {
+  return (
+    <View style={[styles.fieldLabel, hasError && styles.fieldLabelError]}>
+      <Text style={styles.fieldLabelText}>
+        {label}
+        {required ? <Text style={styles.required}> *</Text> : null}
+      </Text>
+    </View>
+  );
+}
+
 function Field({ label, required, errorKey, errors, ...props }) {
   const hasError = Boolean(errorKey && errors && errors[errorKey]);
   return (
     <View style={styles.group}>
-      <Text style={[styles.label, hasError && styles.labelError]}>
-        {label}
-        {required ? <Text style={styles.required}> *</Text> : null}
-      </Text>
+      <FieldLabel label={label} required={required} hasError={hasError} />
       <TextInput
         {...props}
         style={[styles.input, props.multiline && styles.multiline, hasError && styles.inputError]}
@@ -284,10 +292,7 @@ function Select({ label, value, setValue, options, required, errorKey, errors, d
   const hasError = Boolean(errorKey && errors && errors[errorKey]);
   return (
     <View style={styles.group}>
-      <Text style={[styles.label, hasError && styles.labelError]}>
-        {label}
-        {required ? <Text style={styles.required}> *</Text> : null}
-      </Text>
+      <FieldLabel label={label} required={required} hasError={hasError} />
       <View style={[styles.selectWrap, hasError && styles.inputError, disabled && { opacity: 0.6 }]}>
         <Picker
           selectedValue={value}
@@ -309,7 +314,7 @@ function Select({ label, value, setValue, options, required, errorKey, errors, d
 function ReadOnly({ label, value }) {
   return (
     <View style={styles.group}>
-      <Text style={styles.label}>{label}</Text>
+      <FieldLabel label={label} />
       <View style={[styles.input, styles.readOnly]}>
         <Text style={styles.readOnlyText}>{value || '—'}</Text>
       </View>
@@ -561,7 +566,14 @@ export default function StudentProfileScreen() {
       });
       setPersonalLocked(Boolean(profile.personalLocked || profile.personalDetailsSaved || profile.isProfileSubmitted));
       setMedia({
-        pictureUrl: resolveMediaUrl(profile.profilePictureUrl || profile.pictureUrl || profile.avatar || ''),
+        pictureUrl: resolveMediaUrl(
+          profile.profilePictureUrl
+          || profile.pictureUrl
+          || profile.avatarUri
+          || profile.avatar
+          || profile.profileImage
+          || '',
+        ),
         videoUrl: resolveMediaUrl(profile.profileVideoUrl || profile.videoUrl || ''),
       });
 
@@ -1100,9 +1112,7 @@ export default function StudentProfileScreen() {
                           </View>
                           <View style={styles.halfField}>
                             <View style={styles.group}>
-                              <Text style={[styles.label, personalErrors.dob && styles.labelError]}>
-                                Date of Birth <Text style={styles.required}>*</Text>
-                              </Text>
+                              <FieldLabel label="Date of Birth" required hasError={Boolean(personalErrors.dob)} />
                               <TouchableOpacity
                                 style={[styles.input, personalErrors.dob && styles.inputError]}
                                 onPress={() => { if (!personalLocked) setShowDob(true); }}
@@ -1211,9 +1221,11 @@ export default function StudentProfileScreen() {
                           disabled={personalLocked}
                         />
                         <View style={styles.group}>
-                          <Text style={[styles.label, reflectionErrors.favSubjects && styles.labelError]}>
-                            What are your favourite subjects? <Text style={styles.required}>*</Text>
-                          </Text>
+                          <FieldLabel
+                            label="What are your favourite subjects?"
+                            required
+                            hasError={Boolean(reflectionErrors.favSubjects)}
+                          />
                           {personal.stream && STREAM_SUBJECTS[personal.stream] ? (
                             STREAM_SUBJECTS[personal.stream].map((subj) => {
                               const checked = personal.favSubjects.includes(subj);
@@ -1265,10 +1277,7 @@ export default function StudentProfileScreen() {
                             const selectedOptions = Array.isArray(surveyAnswers[question.id]) ? surveyAnswers[question.id] : [];
                             return (
                               <View key={question.id} style={styles.group}>
-                                <Text style={[styles.label, hasError && styles.labelError]}>
-                                  {question.questionText}
-                                  {question.required ? <Text style={styles.required}> *</Text> : null}
-                                </Text>
+                                <FieldLabel label={question.questionText} required={question.required} hasError={hasError} />
                                 {question.options.map((option) => {
                                   const checked = selectedOptions.includes(option);
                                   return (
@@ -1315,7 +1324,7 @@ export default function StudentProfileScreen() {
             {/* ─── Academic IQ ──────────────────────────────────────── */}
             {active === 'academic' ? (
               <>
-                <Text style={styles.subHeader}>Curriculum</Text>
+                <FieldLabel label="Curriculum" />
                 <View style={styles.chips}>
                   {filteredCurriculums.map((node) => (
                     <TouchableOpacity
@@ -1339,7 +1348,7 @@ export default function StudentProfileScreen() {
                   ))}
                 </View>
 
-                <Text style={styles.subHeader}>Class</Text>
+                <FieldLabel label="Class" />
                 <View style={styles.chips}>
                   {orderedClassOptions.map((cls) => {
                     const selected = academic.classId === cls.id || classToken(academic.classLabel) === cls.label;
@@ -1363,7 +1372,7 @@ export default function StudentProfileScreen() {
                   })}
                 </View>
 
-                <Text style={styles.subHeader}>Subjects you find challenging (Max 2)</Text>
+                <FieldLabel label="Subjects you find challenging (Max 2)" />
                 {(() => {
                   const selectedSubjectCount = challengingSubjectOptions.filter(({ label: subjectName }) => {
                     const subjectNode = subjectByName[normalizeText(subjectName)];
@@ -1430,7 +1439,7 @@ export default function StudentProfileScreen() {
 
                 {academic.preparingCompetitiveExam === true ? (
                   <>
-                    <Text style={styles.subHeader}>Which Competitive Examination are you preparing for? (Max 1)</Text>
+                    <FieldLabel label="Which Competitive Examination are you preparing for? (Max 1)" />
                     {competitiveExamOptions.map(({ id, label: examName }) => {
                       const examNode = filteredExams.find((exam) => exam.id === id) || examByName[normalizeText(examName)];
                       const selected = normalizeText(academic.competitiveExamName) === normalizeText(examName)
@@ -1455,7 +1464,7 @@ export default function StudentProfileScreen() {
                     })}
                     {entranceExamOptions.length > 0 ? (
                       <>
-                        <Text style={styles.subHeader}>Entrance Exams under {academic.competitiveExamName || (selectedExam?.name || selectedExam?.title || 'selected category')}</Text>
+                        <FieldLabel label={`Entrance Exams under ${academic.competitiveExamName || (selectedExam?.name || selectedExam?.title || 'selected category')}`} />
                         {entranceExamOptions.map((ee) => {
                           const id = ee.id;
                           const checked = academic.entranceExamIds.includes(id);
@@ -1486,7 +1495,7 @@ export default function StudentProfileScreen() {
             {/* ─── Skills Edge ──────────────────────────────────────── */}
             {active === 'skillsedge' ? (
               <>
-                <Text style={styles.subHeader}>Which of these skills are important for your future career? <Text style={styles.required}>*</Text></Text>
+                <FieldLabel label="Which of these skills are important for your future career?" required />
                 <View style={styles.skillsGrid}>
                   {skillsEdgeOptions.map((skillOpt) => {
                     const selected = skills.selectedSkillIds.includes(skillOpt.id);
@@ -1510,10 +1519,10 @@ export default function StudentProfileScreen() {
                   })}
                 </View>
 
-                <Text style={styles.subHeader}>English Communication Rating</Text>
+                <FieldLabel label="English Communication Rating" />
                 {COMMUNICATION_ROWS.map((row) => (
                   <View key={row} style={styles.ratingRow}>
-                    <Text style={styles.ratingLabel}>{row}</Text>
+                    <FieldLabel label={row} />
                     <View style={styles.ratingOptions}>
                       {COMMUNICATION_LEVELS.map((level) => {
                         const activeRating = skills.communicationRatings[row] === level;
@@ -1691,6 +1700,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(96,165,250,0.35)',
   },
   heroAvatarGlowOuter: {
+    position: 'relative',
     width: 148,
     height: 148,
     borderRadius: 74,
@@ -1704,6 +1714,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 0 },
     shadowRadius: 18,
     elevation: 10,
+    zIndex: 3,
   },
   heroAvatarGlowInner: {
     width: 120,
@@ -1716,14 +1727,15 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(147,197,253,0.9)',
     overflow: 'visible',
   },
-  heroAvatarImage: { width: 108, height: 108, borderRadius: 54 },
+  heroAvatarImage: { width: 120, height: 120, borderRadius: 60, zIndex: 4 },
   heroAvatarFallback: {
-    width: 108,
-    height: 108,
-    borderRadius: 54,
+    width: 120,
+    height: 120,
+    borderRadius: 60,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: 'rgba(30,58,138,0.9)',
+    zIndex: 4,
   },
   heroAvatarFallbackText: { fontSize: 38 },
   completionBadge: {
@@ -1773,8 +1785,18 @@ const styles = StyleSheet.create({
   formRow: { flexDirection: 'row', gap: 12 },
   halfField: { flex: 1 },
   group: { marginBottom: 14 },
-  label: { color: '#fff', marginBottom: 6, fontWeight: '700', fontSize: 13 },
-  labelError: { color: '#a80036' },
+  fieldLabel: {
+    backgroundColor: 'rgba(59, 130, 246, 0.18)',
+    borderWidth: 1,
+    borderColor: 'rgba(96, 165, 250, 0.45)',
+    borderRadius: 8,
+    paddingVertical: 4,
+    paddingHorizontal: 10,
+    alignSelf: 'flex-start',
+    marginBottom: 6,
+  },
+  fieldLabelError: { borderColor: '#a80036' },
+  fieldLabelText: { color: '#FFFFFF', fontSize: 13, fontWeight: '600' },
   required: { color: '#a80036' },
   input: {
     borderWidth: 1,
