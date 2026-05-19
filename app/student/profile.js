@@ -95,7 +95,31 @@ const STREAM_SUBJECTS = {
   Commerce: ['Economics', 'Business Studies', 'Accountancy', 'Mathematics', 'English'],
   Arts: ['History', 'Geography', 'Political Science', 'Economics', 'English'],
 };
-const PERSONAL_REQUIRED = ['fullName', 'email', 'gender', 'dob', 'mobile', 'currentClass', 'strengths', 'weakness', 'stream'];
+const PERSONAL_SUB_TABS = [
+  { key: 'information', label: 'Personal Information' },
+  { key: 'reflection', label: 'Student Reflection' },
+];
+const PERSONAL_INFO_REQUIRED = ['fullName', 'email', 'gender', 'dob', 'mobile', 'currentClass'];
+const REFLECTION_PROFILE_REQUIRED = ['strengths', 'weakness', 'stream'];
+const REFLECTION_SUBJECT_OPTIONS = ['Mathematics', 'Physics', 'Chemistry', 'Biology', 'Computer Science', 'English'];
+const REFLECTION_DEFAULT_QUESTIONS = [
+  { id: 'q6', questionText: 'How satisfied are you with your current academic performance?', required: true, type: 'single', options: ['Very satisfied', 'Satisfied', 'Needs improvement', 'Strongly dissatisfied'] },
+  { id: 'q7', questionText: 'How organized are your study habits and daily routine?', required: true, type: 'single', options: ['Very organized', 'Mostly organized', 'Sometimes irregular', 'Disorganized'] },
+  { id: 'q8', questionText: 'How often do you feel anxious due to exams or expectations?', required: true, type: 'single', options: ['Rarely', 'Sometimes', 'Often', 'Almost always'] },
+  { id: 'q9', questionText: 'When you fall behind in studies, your reaction is:', required: true, type: 'single', options: ['I calmly plan recovery', 'I feel stressed but act', 'I panic and delay', 'I avoid it'] },
+  { id: 'q10', questionText: 'How well can you focus without being distracted by screens?', required: true, type: 'single', options: ['Very well', 'Mostly manageable', 'Often distracted', 'Unable to focus'] },
+  { id: 'q11', questionText: 'In the past two weeks, how often have you felt emotionally low?', required: true, type: 'single', options: ['Never', 'Sometimes', 'Often', 'Almost daily'] },
+  { id: 'q12', questionText: 'Do worries interfere with sleep or relaxation?', required: true, type: 'single', options: ['Not at all', 'Sometimes', 'Frequently', 'Almost always'] },
+  { id: 'q13', questionText: 'When facing difficulty, you usually:', required: true, type: 'single', options: ['Ask for help early', 'Try alone first', 'Delay help', 'Give up'] },
+  { id: 'q14', questionText: 'How confident are you in handling academic workload?', required: true, type: 'single', options: ['Very confident', 'Mostly confident', 'Unsure', 'Overwhelmed'] },
+  { id: 'q15', questionText: 'How motivated do you feel toward your goals?', required: true, type: 'single', options: ['Highly motivated', 'Moderately motivated', 'Low motivation', 'No motivation'] },
+  { id: 'q16', questionText: 'When results are poor, you:', required: true, type: 'single', options: ['Reflect and improve', 'Feel upset briefly', 'Lose confidence', 'Feel hopeless'] },
+  { id: 'q17', questionText: 'How supported do you feel academically and emotionally?', required: true, type: 'single', options: ['Fully supported', 'Mostly supported', 'Sometimes unsupported', 'Often alone'] },
+  { id: 'q18', questionText: 'How often does late screen use affect your sleep?', required: true, type: 'single', options: ['Almost never', 'Occasionally', 'Frequently', 'Almost daily'] },
+  { id: 'q19', questionText: 'After long screen use, you feel:', required: true, type: 'single', options: ['Normal', 'Slightly tired', 'Mentally drained', 'Irritable/exhausted'] },
+  { id: 'q20', questionText: 'How quickly do you recover from stress?', required: true, type: 'single', options: ['Very quickly', 'With effort', 'Slowly', 'I feel stuck'] },
+  { id: 'q21', questionText: 'When you feel overwhelmed, you believe:', required: true, type: 'single', options: ['I can get help and things improve', 'Help is available but I hesitate', 'I usually handle it alone', 'No one really understands or helps'] },
+];
 
 const unwrap = (value) => (value?.data && typeof value.data === 'object' ? value.data : value || {});
 const arr = (value) => (Array.isArray(value) ? value : value ? [value] : []);
@@ -133,6 +157,60 @@ const flattenSkillOptions = (nodes) => arr(nodes).flatMap((node) => {
   const option = skillOptionFromNode(node);
   return option ? [option] : [];
 });
+const REFLECTION_PROFILE_TEXT_MATCHERS = [
+  'mention two of your strengths',
+  'mention one weakness',
+  'stream',
+  'favourite subjects',
+  'favorite subjects',
+  'hobbies or interests',
+];
+const questionKey = (question, index = 0) => String(question?.id || question?.questionId || question?.key || `question_${index}`);
+const normalizeQuestionType = (question) => {
+  const declaredType = String(question?.type || question?.questionType || question?.inputType || '').toLowerCase();
+  if (declaredType.includes('multi') || declaredType.includes('checkbox')) return 'multi';
+  if (declaredType.includes('single') || declaredType.includes('select') || declaredType.includes('radio') || declaredType.includes('choice')) return 'single';
+  const opts = arr(question?.options || question?.choices || question?.answers || question?.answerOptions);
+  return opts.length > 0 ? 'single' : 'text';
+};
+const normalizeQuestionOptions = (question) => arr(question?.options || question?.choices || question?.answers || question?.answerOptions)
+  .map((option) => (typeof option === 'string'
+    ? option
+    : option?.label || option?.value || option?.text || option?.name || ''))
+  .map((option) => String(option || '').trim())
+  .filter(Boolean);
+const normalizeSurveyQuestions = (rawQuestions) => arr(rawQuestions)
+  .map((question, index) => ({
+    id: questionKey(question, index),
+    questionText: String(question?.questionText || question?.question || question?.text || question?.label || '').trim(),
+    required: Boolean(question?.required ?? question?.mandatory),
+    type: normalizeQuestionType(question),
+    options: normalizeQuestionOptions(question),
+    raw: question,
+  }))
+  .filter((question) => question.questionText);
+const isReflectionProfileQuestion = (questionText) => {
+  const text = normalizeText(questionText);
+  return REFLECTION_PROFILE_TEXT_MATCHERS.some((needle) => text.includes(needle));
+};
+const normalizeAnswerValue = (answer, type) => {
+  if (type === 'multi') {
+    if (Array.isArray(answer)) return answer.map((item) => String(item || '').trim()).filter(Boolean);
+    if (typeof answer === 'string') return answer.split(',').map((item) => item.trim()).filter(Boolean);
+    return [];
+  }
+  if (Array.isArray(answer)) return String(answer[0] || '').trim();
+  return String(answer || '').trim();
+};
+const formatSurveyAnswersForSubmit = (answers, questions) => questions.reduce((acc, question) => {
+  const value = answers[question.id];
+  if (question.type === 'multi') {
+    if (Array.isArray(value) && value.length > 0) acc[question.id] = value.join(', ');
+    return acc;
+  }
+  if (typeof value === 'string' && value.trim()) acc[question.id] = value.trim();
+  return acc;
+}, {});
 
 function SectionHeader({ title, dark }) {
   return <Text style={dark ? styles.sectionHeaderDark : styles.sectionHeader}>{title}</Text>;
@@ -255,7 +333,13 @@ export default function StudentProfileScreen() {
   const [saving, setSaving] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [showDob, setShowDob] = useState(false);
+  const [personalSubTab, setPersonalSubTab] = useState('information');
   const [personalLocked, setPersonalLocked] = useState(false);
+  const [personalInfoLoading, setPersonalInfoLoading] = useState(false);
+  const [personalInfoError, setPersonalInfoError] = useState('');
+  const [reflectionLoading, setReflectionLoading] = useState(false);
+  const [reflectionError, setReflectionError] = useState('');
+  const [reflectionLoaded, setReflectionLoaded] = useState(false);
   const [error, setError] = useState('');
   const [personalErrors, setPersonalErrors] = useState({});
   const [media, setMedia] = useState({ pictureUrl: '', videoUrl: '' });
@@ -267,6 +351,7 @@ export default function StudentProfileScreen() {
     strengths: '', weakness: '', stream: '', favSubjects: [], hobbies: '',
     studentType: '',
   });
+  const [reflectionErrors, setReflectionErrors] = useState({});
   const [surveyQuestions, setSurveyQuestions] = useState([]);
   const [surveyAnswers, setSurveyAnswers] = useState({});
   const [academic, setAcademic] = useState({
@@ -380,10 +465,11 @@ export default function StudentProfileScreen() {
 
   const load = useCallback(async () => {
     setLoading(true);
+    setPersonalInfoLoading(true);
+    setPersonalInfoError('');
     try {
-      const [pRes, surveyRes, aTreeRes, examRes, aRes, sTreeRes, sRes, uRes, eRes, adRes, hNodeRes, hExamRes] = await Promise.all([
+      const [pRes, aTreeRes, examRes, aRes, sTreeRes, sRes, uRes, eRes, adRes, hNodeRes, hExamRes] = await Promise.all([
         studentService.getProfile(),
-        studentService.getStudentSurvey().catch(() => ({})),
         studentService.getAcademicIQTree().catch(() => ({})),
         studentService.getCompetitiveExams().catch(() => ([])),
         studentService.getAcademicProfile().catch(() => ({})),
@@ -396,7 +482,7 @@ export default function StudentProfileScreen() {
         studentService.getStudentHiddenNodes('COMPETITIVE_EXAM').catch(() => ([])),
       ]);
 
-      const p = unwrap(pRes); const sv = unwrap(surveyRes); const aTree = unwrap(aTreeRes); const a = unwrap(aRes); const sTree = unwrap(sTreeRes);
+      const p = unwrap(pRes); const aTree = unwrap(aTreeRes); const a = unwrap(aRes); const sTree = unwrap(sTreeRes);
       const s = unwrap(sRes); const u = unwrap(uRes); const e = unwrap(eRes); const ad = unwrap(adRes);
 
       const favSubjectsRaw = p.favSubjects || p.favoriteSubjects || '';
@@ -423,22 +509,6 @@ export default function StudentProfileScreen() {
       });
       setPersonalLocked(Boolean(p.personalLocked || p.personalDetailsSaved || p.isProfileSubmitted));
       setMedia({ pictureUrl: p.profilePictureUrl || p.pictureUrl || p.avatar || '', videoUrl: p.profileVideoUrl || p.videoUrl || '' });
-
-      // Survey questions — handle both flat array and wrapped { questions, answers } format
-      const questions = arr(sv.questions || sv.surveyQuestions || (Array.isArray(sv) ? sv : []));
-      const rawAnswers = sv.answers || {};
-      if (questions.length > 0) {
-        setSurveyQuestions(questions);
-        const answerMap = {};
-        questions.forEach((q) => {
-          const qId = String(q.id || q.questionId);
-          answerMap[qId] = rawAnswers[qId] || q.answer || '';
-        });
-        setSurveyAnswers(answerMap);
-      } else {
-        setSurveyQuestions([]);
-        setSurveyAnswers({});
-      }
 
       const curriculumNodes = arr(aTree.curriculums || aTree.nodes || aTree.children || aTree).filter(Boolean);
       setTree(curriculumNodes);
@@ -527,13 +597,54 @@ export default function StudentProfileScreen() {
       setAdditional({ id: ad.id || null, hobbies: ad.hobbies || '', achievements: ad.achievements || '', volunteerWork: ad.volunteerWork || '', linkedinUrl: ad.linkedinUrl || '', portfolioUrl: ad.portfolioUrl || '', aboutMe: ad.aboutMe || '' });
       await fetchCompletion();
     } catch (err) {
+      setPersonalInfoError(err?.message || 'Unable to load personal information.');
       Alert.alert('Error', err?.message || 'Unable to load profile');
     } finally {
+      setPersonalInfoLoading(false);
       setLoading(false);
     }
   }, [fetchCompletion]);
 
   useEffect(() => { load(); }, [load]);
+
+  const loadReflection = useCallback(async () => {
+    setReflectionLoading(true);
+    setReflectionError('');
+    try {
+      const response = await studentService.getStudentSurvey();
+      const payload = unwrap(response);
+      const dynamicQuestions = normalizeSurveyQuestions(payload.questions || payload.surveyQuestions || (Array.isArray(payload) ? payload : []));
+      const reflectionQuestions = dynamicQuestions.filter((question) => !isReflectionProfileQuestion(question.questionText));
+      const questionsToUse = reflectionQuestions.length > 0 ? reflectionQuestions : REFLECTION_DEFAULT_QUESTIONS;
+      const answerMap = {};
+      const rawAnswers = payload.answers || {};
+      questionsToUse.forEach((question) => {
+        const qid = question.id;
+        const seededAnswer = rawAnswers[qid]
+          ?? rawAnswers[String(question.raw?.id || '')]
+          ?? rawAnswers[String(question.raw?.questionId || '')]
+          ?? question.raw?.answer
+          ?? '';
+        answerMap[qid] = normalizeAnswerValue(seededAnswer, question.type);
+      });
+      setSurveyQuestions(questionsToUse);
+      setSurveyAnswers(answerMap);
+      setReflectionLoaded(true);
+    } catch (err) {
+      setReflectionError(err?.message || 'Unable to load student reflection.');
+      setSurveyQuestions(REFLECTION_DEFAULT_QUESTIONS);
+      setSurveyAnswers((prev) => ({ ...prev }));
+    } finally {
+      setReflectionLoaded(true);
+      setReflectionLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (active === 'personal' && personalSubTab === 'reflection' && !reflectionLoaded && !loading) {
+      loadReflection();
+    }
+  }, [active, personalSubTab, reflectionLoaded, loading, loadReflection]);
 
   const pickMedia = async (kind) => {
     try {
@@ -568,46 +679,82 @@ export default function StudentProfileScreen() {
   const save = async () => {
     setError('');
     setPersonalErrors({});
+    setReflectionErrors({});
 
     if (active === 'personal') {
-      const errs = {};
-      PERSONAL_REQUIRED.forEach((key) => {
-        const val = personal[key];
-        if (!val || (typeof val === 'string' && !val.trim())) errs[key] = true;
-      });
-      if (!personal.favSubjects || personal.favSubjects.length === 0) errs.favSubjects = true;
-      if (personal.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(personal.email.trim())) errs.email = true;
-      if (personal.mobile && !/^[0-9]{10,15}$/.test(personal.mobile.trim())) errs.mobile = true;
-      if (Object.keys(errs).length > 0) {
-        setPersonalErrors(errs);
-        setError('Please fill in all required fields correctly.');
-        return;
+      const profilePayload = {
+        fullName: personal.fullName,
+        email: personal.email,
+        mobile: personal.mobile,
+        dob: personal.dob,
+        gender: personal.gender,
+        stream: personal.stream,
+        currentClass: personal.currentClass,
+        section: personal.section,
+        strengths: personal.strengths,
+        weakness: personal.weakness,
+        favSubjects: personal.favSubjects.join(','),
+        hobbies: personal.hobbies,
+      };
+
+      if (personalSubTab === 'information') {
+        const errs = {};
+        PERSONAL_INFO_REQUIRED.forEach((key) => {
+          const val = personal[key];
+          if (!val || (typeof val === 'string' && !val.trim())) errs[key] = true;
+        });
+        if (personal.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(personal.email.trim())) errs.email = true;
+        if (personal.mobile && !/^[0-9]{10,15}$/.test(personal.mobile.trim())) errs.mobile = true;
+        if (Object.keys(errs).length > 0) {
+          setPersonalErrors(errs);
+          setError('Please fill in all required fields correctly.');
+          return;
+        }
+      } else {
+        const errs = {};
+        REFLECTION_PROFILE_REQUIRED.forEach((key) => {
+          const val = personal[key];
+          if (!val || (typeof val === 'string' && !val.trim())) errs[key] = true;
+        });
+        if (!personal.favSubjects || personal.favSubjects.length === 0) errs.favSubjects = true;
+        surveyQuestions.forEach((question) => {
+          if (!question.required) return;
+          const answer = surveyAnswers[question.id];
+          if (question.type === 'multi') {
+            if (!Array.isArray(answer) || answer.length === 0) errs[question.id] = true;
+            return;
+          }
+          if (!String(answer || '').trim()) errs[question.id] = true;
+        });
+        if (Object.keys(errs).length > 0) {
+          setReflectionErrors(errs);
+          setError('Please fill in all required reflection fields.');
+          return;
+        }
       }
+
       setSaving(true);
       try {
-        const payload = {
-          fullName: personal.fullName,
-          email: personal.email,
-          mobile: personal.mobile,
-          dob: personal.dob,
-          gender: personal.gender,
-          stream: personal.stream,
-          currentClass: personal.currentClass,
-          section: personal.section,
-          strengths: personal.strengths,
-          weakness: personal.weakness,
-          favSubjects: personal.favSubjects.join(','),
-          hobbies: personal.hobbies,
-        };
-        await studentService.updateProfile(payload);
-        if (surveyQuestions.length > 0) {
-          await studentService.saveStudentSurvey(surveyAnswers);
+        await studentService.updateProfile(profilePayload);
+        if (personalSubTab === 'reflection' && surveyQuestions.length > 0) {
+          const surveyPayload = formatSurveyAnswersForSubmit(surveyAnswers, surveyQuestions);
+          await studentService.saveStudentSurvey(surveyPayload);
         }
-        setPersonalLocked(true);
+        if (personalSubTab === 'reflection') setPersonalLocked(true);
         await fetchCompletion();
-        Alert.alert('Updated!', 'Personal details saved successfully.');
+        Alert.alert(
+          'Updated!',
+          personalSubTab === 'reflection'
+            ? 'Student reflection saved successfully.'
+            : 'Personal information saved successfully.',
+        );
       } catch (err) {
-        Alert.alert('Save failed', err?.message || 'Could not save personal details.');
+        Alert.alert(
+          'Save failed',
+          err?.message || (personalSubTab === 'reflection'
+            ? 'Could not save student reflection.'
+            : 'Could not save personal information.'),
+        );
       } finally {
         setSaving(false);
       }
@@ -809,7 +956,15 @@ export default function StudentProfileScreen() {
         <>
           <ScrollView horizontal style={styles.tabs} showsHorizontalScrollIndicator={false}>
             {TABS.map((tab) => (
-              <TouchableOpacity key={tab.key} style={[styles.tab, active === tab.key ? styles.tabActive : styles.tabInactive]} onPress={() => setActive(tab.key)}>
+              <TouchableOpacity
+                key={tab.key}
+                style={[styles.tab, active === tab.key ? styles.tabActive : styles.tabInactive]}
+                onPress={() => {
+                  setActive(tab.key);
+                  setError('');
+                  if (tab.key === 'personal') setPersonalSubTab('information');
+                }}
+              >
                 <Text style={[styles.tabText, active === tab.key && styles.tabTextActive]}>{tab.label}</Text>
               </TouchableOpacity>
             ))}
@@ -819,164 +974,283 @@ export default function StudentProfileScreen() {
             {/* ─── Personal Details ─────────────────────────────────── */}
             {active === 'personal' ? (
               <>
-                <SectionHeader title="Personal Information" />
-                <Field
-                  label="Full Name" required
-                  errorKey="fullName" errors={personalErrors}
-                  editable={!personalLocked}
-                  value={personal.fullName}
-                  onChangeText={(v) => setPersonal((p) => ({ ...p, fullName: v }))}
-                />
-                <Field
-                  label="Email ID" required
-                  errorKey="email" errors={personalErrors}
-                  editable
-                  keyboardType="email-address"
-                  autoCapitalize="none"
-                  value={personal.email}
-                  onChangeText={(v) => setPersonal((p) => ({ ...p, email: v }))}
-                />
-                <Select
-                  label="Gender" required
-                  errorKey="gender" errors={personalErrors}
-                  value={personal.gender}
-                  setValue={(v) => setPersonal((p) => ({ ...p, gender: v }))}
-                  options={GENDER_OPTIONS}
-                  disabled={personalLocked}
-                />
-                <View style={styles.group}>
-                  <Text style={[styles.label, personalErrors.dob && styles.labelError]}>
-                    Date of Birth <Text style={styles.required}>*</Text>
-                  </Text>
-                  <TouchableOpacity
-                    style={[styles.input, personalErrors.dob && styles.inputError]}
-                    onPress={() => { if (!personalLocked) setShowDob(true); }}
-                    disabled={personalLocked}
-                    accessibilityRole="button"
-                    accessibilityLabel="Select date of birth"
-                  >
-                    <Text style={personal.dob ? styles.dateText : { color: STUDENT.textMuted }}>
-                      {personal.dob || 'Select date of birth'}
-                    </Text>
-                  </TouchableOpacity>
-                  {showDob ? (
-                    <DateTimePicker
-                      value={personal.dob ? new Date(personal.dob) : new Date()}
-                      mode="date"
-                      maximumDate={new Date()}
-                      onChange={(_, d) => {
-                        setShowDob(Platform.OS === 'ios');
-                        if (d) setPersonal((p) => ({ ...p, dob: d.toISOString().slice(0, 10) }));
-                      }}
-                    />
-                  ) : null}
+                <View style={styles.subTabs}>
+                  {PERSONAL_SUB_TABS.map((tab) => {
+                    const selected = personalSubTab === tab.key;
+                    return (
+                      <TouchableOpacity
+                        key={tab.key}
+                        style={[styles.subTab, selected && styles.subTabActive]}
+                        onPress={() => {
+                          setError('');
+                          setPersonalErrors({});
+                          setReflectionErrors({});
+                          setPersonalSubTab(tab.key);
+                        }}
+                      >
+                        <Text style={[styles.subTabText, selected && styles.subTabTextActive]}>{tab.label}</Text>
+                      </TouchableOpacity>
+                    );
+                  })}
                 </View>
-                <Field
-                  label="Mobile No." required
-                  errorKey="mobile" errors={personalErrors}
-                  editable
-                  keyboardType="phone-pad"
-                  maxLength={15}
-                  value={personal.mobile}
-                  onChangeText={(v) => setPersonal((p) => ({ ...p, mobile: v }))}
-                />
-                <Select
-                  label="Current Class" required
-                  errorKey="currentClass" errors={personalErrors}
-                  value={personal.currentClass ? String(personal.currentClass) : ''}
-                  setValue={(v) => setPersonal((p) => ({ ...p, currentClass: v }))}
-                  options={CLASS_OPTIONS.map((c) => ({ label: `Class ${c}`, value: String(c) }))}
-                  disabled={personalLocked}
-                />
-                {isSchoolStudent ? (
-                  <Select
-                    label="Section"
-                    value={personal.section}
-                    setValue={(v) => setPersonal((p) => ({ ...p, section: v }))}
-                    options={SECTION_OPTIONS}
-                    disabled={personalLocked}
-                  />
-                ) : null}
-                <ReadOnly label="Your School Name" value={personal.schoolName} />
-                <ReadOnly label="Curriculum" value={personal.curriculum} />
 
-                <SectionHeader title="Student Reflection" dark />
-                <Field
-                  label="Mention two of your strengths." required
-                  errorKey="strengths" errors={personalErrors}
-                  editable={!personalLocked}
-                  multiline
-                  maxLength={120}
-                  numberOfLines={2}
-                  value={personal.strengths}
-                  onChangeText={(v) => setPersonal((p) => ({ ...p, strengths: v }))}
-                />
-                <Field
-                  label="Mention one weakness or area of improvement." required
-                  errorKey="weakness" errors={personalErrors}
-                  editable={!personalLocked}
-                  multiline
-                  maxLength={120}
-                  numberOfLines={2}
-                  value={personal.weakness}
-                  onChangeText={(v) => setPersonal((p) => ({ ...p, weakness: v }))}
-                />
-                <Select
-                  label="Stream" required
-                  errorKey="stream" errors={personalErrors}
-                  value={personal.stream}
-                  setValue={(v) => setPersonal((p) => ({ ...p, stream: v, favSubjects: [] }))}
-                  options={STREAM_OPTIONS}
-                  disabled={personalLocked}
-                />
-                <View style={styles.group}>
-                  <Text style={[styles.label, personalErrors.favSubjects && styles.labelError]}>
-                    What are your favourite subjects? <Text style={styles.required}>*</Text>
-                  </Text>
-                  {personal.stream && STREAM_SUBJECTS[personal.stream] ? (
-                    STREAM_SUBJECTS[personal.stream].map((subj) => {
-                      const checked = personal.favSubjects.includes(subj);
-                      return (
-                        <Tick
-                          key={subj}
-                          checked={checked}
-                          label={subj}
-                          onPress={() => {
-                            if (personalLocked) return;
-                            setPersonal((p) => ({
-                              ...p,
-                              favSubjects: checked
-                                ? p.favSubjects.filter((x) => x !== subj)
-                                : [...p.favSubjects, subj],
-                            }));
-                          }}
+                {personalSubTab === 'information' ? (
+                  <>
+                    <SectionHeader title="Personal Information" />
+                    {personalInfoError ? (
+                      <View style={styles.inlineErrorWrap}>
+                        <Text style={styles.err}>{personalInfoError}</Text>
+                        <TouchableOpacity style={styles.retryBtn} onPress={load}>
+                          <Text style={styles.retryBtnText}>Retry</Text>
+                        </TouchableOpacity>
+                      </View>
+                    ) : null}
+                    {personalInfoLoading ? (
+                      <View style={styles.inlineLoader}><ActivityIndicator color={STUDENT.accentGreen} /></View>
+                    ) : (
+                      <>
+                        <Field
+                          label="Full Name" required
+                          errorKey="fullName" errors={personalErrors}
+                          editable={!personalLocked}
+                          value={personal.fullName}
+                          onChangeText={(v) => setPersonal((p) => ({ ...p, fullName: v }))}
                         />
-                      );
-                    })
-                  ) : (
-                    <Text style={styles.mutedHint}>Select a stream to choose subjects</Text>
-                  )}
-                </View>
-                <Field
-                  label="What are your hobbies or interests?"
-                  editable={!personalLocked}
-                  value={personal.hobbies}
-                  onChangeText={(v) => setPersonal((p) => ({ ...p, hobbies: v }))}
-                />
-                {surveyQuestions.map((q) => {
-                  const qId = String(q.id || q.questionId);
-                  const questionText = q.questionText || q.question || q.text || '';
-                  return (
-                    <Field
-                      key={qId}
-                      label={questionText}
-                      value={surveyAnswers[qId] || ''}
-                      onChangeText={(v) => setSurveyAnswers((prev) => ({ ...prev, [qId]: v }))}
-                      multiline
-                    />
-                  );
-                })}
-                {personalLocked ? <Text style={styles.tip}>Core personal fields are locked after first save.</Text> : null}
+                        <Field
+                          label="Email ID" required
+                          errorKey="email" errors={personalErrors}
+                          editable
+                          keyboardType="email-address"
+                          autoCapitalize="none"
+                          value={personal.email}
+                          onChangeText={(v) => setPersonal((p) => ({ ...p, email: v }))}
+                        />
+                        <Select
+                          label="Gender" required
+                          errorKey="gender" errors={personalErrors}
+                          value={personal.gender}
+                          setValue={(v) => setPersonal((p) => ({ ...p, gender: v }))}
+                          options={GENDER_OPTIONS}
+                          disabled={personalLocked}
+                        />
+                        <View style={styles.group}>
+                          <Text style={[styles.label, personalErrors.dob && styles.labelError]}>
+                            Date of Birth <Text style={styles.required}>*</Text>
+                          </Text>
+                          <TouchableOpacity
+                            style={[styles.input, personalErrors.dob && styles.inputError]}
+                            onPress={() => { if (!personalLocked) setShowDob(true); }}
+                            disabled={personalLocked}
+                            accessibilityRole="button"
+                            accessibilityLabel="Select date of birth"
+                          >
+                            <Text style={personal.dob ? styles.dateText : { color: STUDENT.textMuted }}>
+                              {personal.dob || 'Select date of birth'}
+                            </Text>
+                          </TouchableOpacity>
+                          {showDob ? (
+                            <DateTimePicker
+                              value={personal.dob ? new Date(personal.dob) : new Date()}
+                              mode="date"
+                              maximumDate={new Date()}
+                              onChange={(_, d) => {
+                                setShowDob(Platform.OS === 'ios');
+                                if (d) setPersonal((p) => ({ ...p, dob: d.toISOString().slice(0, 10) }));
+                              }}
+                            />
+                          ) : null}
+                        </View>
+                        <Field
+                          label="Mobile No." required
+                          errorKey="mobile" errors={personalErrors}
+                          editable
+                          keyboardType="phone-pad"
+                          maxLength={15}
+                          value={personal.mobile}
+                          onChangeText={(v) => setPersonal((p) => ({ ...p, mobile: v }))}
+                        />
+                        <Select
+                          label="Current Class" required
+                          errorKey="currentClass" errors={personalErrors}
+                          value={personal.currentClass ? String(personal.currentClass) : ''}
+                          setValue={(v) => setPersonal((p) => ({ ...p, currentClass: v }))}
+                          options={CLASS_OPTIONS.map((c) => ({ label: `Class ${c}`, value: String(c) }))}
+                          disabled={personalLocked}
+                        />
+                        {isSchoolStudent ? (
+                          <Select
+                            label="Section"
+                            value={personal.section}
+                            setValue={(v) => setPersonal((p) => ({ ...p, section: v }))}
+                            options={SECTION_OPTIONS}
+                            disabled={personalLocked}
+                          />
+                        ) : null}
+                        <ReadOnly label="Your School Name" value={personal.schoolName} />
+                        <ReadOnly label="Curriculum" value={personal.curriculum} />
+                      </>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    <SectionHeader title="Student Reflection" dark />
+                    {reflectionError ? (
+                      <View style={styles.inlineErrorWrap}>
+                        <Text style={styles.err}>{reflectionError}</Text>
+                        <TouchableOpacity style={styles.retryBtn} onPress={loadReflection}>
+                          <Text style={styles.retryBtnText}>Retry</Text>
+                        </TouchableOpacity>
+                      </View>
+                    ) : null}
+                    {reflectionLoading ? (
+                      <View style={styles.inlineLoader}><ActivityIndicator color={STUDENT.accentGreen} /></View>
+                    ) : (
+                      <>
+                        <Field
+                          label="Mention two of your strengths." required
+                          errorKey="strengths" errors={reflectionErrors}
+                          editable={!personalLocked}
+                          multiline
+                          maxLength={120}
+                          numberOfLines={2}
+                          value={personal.strengths}
+                          onChangeText={(v) => setPersonal((p) => ({ ...p, strengths: v }))}
+                        />
+                        <Field
+                          label="Mention one weakness or area of improvement." required
+                          errorKey="weakness" errors={reflectionErrors}
+                          editable={!personalLocked}
+                          multiline
+                          maxLength={120}
+                          numberOfLines={2}
+                          value={personal.weakness}
+                          onChangeText={(v) => setPersonal((p) => ({ ...p, weakness: v }))}
+                        />
+                        <Select
+                          label="Stream" required
+                          errorKey="stream" errors={reflectionErrors}
+                          value={personal.stream}
+                          setValue={(v) => setPersonal((p) => ({ ...p, stream: v, favSubjects: [] }))}
+                          options={STREAM_OPTIONS}
+                          disabled={personalLocked}
+                        />
+                        <View style={styles.group}>
+                          <Text style={[styles.label, reflectionErrors.favSubjects && styles.labelError]}>
+                            What are your favourite subjects? <Text style={styles.required}>*</Text>
+                          </Text>
+                          {personal.stream && STREAM_SUBJECTS[personal.stream] ? (
+                            STREAM_SUBJECTS[personal.stream].map((subj) => {
+                              const checked = personal.favSubjects.includes(subj);
+                              return (
+                                <Tick
+                                  key={subj}
+                                  checked={checked}
+                                  label={subj}
+                                  onPress={() => {
+                                    if (personalLocked) return;
+                                    setPersonal((p) => ({
+                                      ...p,
+                                      favSubjects: checked
+                                        ? p.favSubjects.filter((x) => x !== subj)
+                                        : [...p.favSubjects, subj],
+                                    }));
+                                  }}
+                                />
+                              );
+                            })
+                          ) : (
+                            REFLECTION_SUBJECT_OPTIONS.map((subj) => {
+                              const checked = personal.favSubjects.includes(subj);
+                              return (
+                                <Tick
+                                  key={subj}
+                                  checked={checked}
+                                  label={subj}
+                                  onPress={() => {
+                                    if (personalLocked) return;
+                                    setPersonal((p) => ({
+                                      ...p,
+                                      favSubjects: checked
+                                        ? p.favSubjects.filter((x) => x !== subj)
+                                        : [...p.favSubjects, subj],
+                                    }));
+                                  }}
+                                />
+                              );
+                            })
+                          )}
+                        </View>
+                        <Field
+                          label="What are your hobbies or interests?"
+                          editable={!personalLocked}
+                          value={personal.hobbies}
+                          onChangeText={(v) => setPersonal((p) => ({ ...p, hobbies: v }))}
+                        />
+                        {surveyQuestions.map((question) => {
+                          const hasError = Boolean(reflectionErrors[question.id]);
+                          if (question.type === 'single') {
+                            return (
+                              <Select
+                                key={question.id}
+                                label={question.questionText}
+                                required={question.required}
+                                errorKey={question.id}
+                                errors={reflectionErrors}
+                                value={surveyAnswers[question.id] || ''}
+                                setValue={(next) => setSurveyAnswers((prev) => ({ ...prev, [question.id]: next }))}
+                                options={question.options}
+                                disabled={personalLocked}
+                              />
+                            );
+                          }
+                          if (question.type === 'multi') {
+                            const selectedOptions = Array.isArray(surveyAnswers[question.id]) ? surveyAnswers[question.id] : [];
+                            return (
+                              <View key={question.id} style={styles.group}>
+                                <Text style={[styles.label, hasError && styles.labelError]}>
+                                  {question.questionText}
+                                  {question.required ? <Text style={styles.required}> *</Text> : null}
+                                </Text>
+                                {question.options.map((option) => {
+                                  const checked = selectedOptions.includes(option);
+                                  return (
+                                    <Tick
+                                      key={option}
+                                      checked={checked}
+                                      label={option}
+                                      disabled={personalLocked}
+                                      onPress={() => setSurveyAnswers((prev) => {
+                                        const current = Array.isArray(prev[question.id]) ? prev[question.id] : [];
+                                        return {
+                                          ...prev,
+                                          [question.id]: checked ? current.filter((item) => item !== option) : [...current, option],
+                                        };
+                                      })}
+                                    />
+                                  );
+                                })}
+                              </View>
+                            );
+                          }
+                          return (
+                            <Field
+                              key={question.id}
+                              label={question.questionText}
+                              required={question.required}
+                              errorKey={question.id}
+                              errors={reflectionErrors}
+                              editable={!personalLocked}
+                              value={surveyAnswers[question.id] || ''}
+                              onChangeText={(next) => setSurveyAnswers((prev) => ({ ...prev, [question.id]: next }))}
+                              multiline
+                            />
+                          );
+                        })}
+                        {personalLocked ? <Text style={styles.tip}>Core personal fields are locked after first save.</Text> : null}
+                      </>
+                    )}
+                  </>
+                )}
               </>
             ) : null}
 
@@ -1266,11 +1540,20 @@ export default function StudentProfileScreen() {
             ) : null}
 
             {error ? <Text style={styles.err}>{error}</Text> : null}
-            <TouchableOpacity style={[styles.save, (saving || (active === 'skillsedge' && skills.locked)) && styles.disabled]} disabled={saving || (active === 'skillsedge' && skills.locked)} onPress={save}>
+            <TouchableOpacity
+              style={[styles.save, (saving || (active === 'skillsedge' && skills.locked)) && styles.disabled]}
+              disabled={
+                saving
+                || (active === 'skillsedge' && skills.locked)
+                || (active === 'personal' && personalSubTab === 'information' && personalInfoLoading)
+                || (active === 'personal' && personalSubTab === 'reflection' && reflectionLoading)
+              }
+              onPress={save}
+            >
               {saving ? <ActivityIndicator color="#fff" /> : (
                 <Text style={styles.saveTxt}>
                   {active === 'personal'
-                    ? 'Save & Continue'
+                    ? (personalSubTab === 'reflection' ? 'Save Student Reflection' : 'Save Personal Information')
                     : active === 'skillsedge'
                       ? (skills.locked ? 'Selections Saved' : 'Save & Continue')
                       : 'Save & Continue'}
@@ -1297,6 +1580,15 @@ const styles = StyleSheet.create({
   tabInactive: { backgroundColor: 'rgba(168,0,54,0.16)', borderColor: 'rgba(168,0,54,0.6)' },
   tabText: { color: STUDENT.textSecondary, fontSize: 12, fontWeight: '700' },
   tabTextActive: { color: '#fff' },
+  subTabs: { flexDirection: 'row', gap: 8, marginBottom: 12, marginTop: 4 },
+  subTab: { flex: 1, borderRadius: 999, borderWidth: 1, borderColor: STUDENT.border, backgroundColor: STUDENT.bgCard, paddingVertical: 8, alignItems: 'center' },
+  subTabActive: { borderColor: STUDENT.accentCyan, backgroundColor: 'rgba(6, 182, 212, 0.15)' },
+  subTabText: { color: STUDENT.textSecondary, fontSize: 12, fontWeight: '700' },
+  subTabTextActive: { color: STUDENT.textPrimary },
+  inlineLoader: { paddingVertical: 18, alignItems: 'center', justifyContent: 'center' },
+  inlineErrorWrap: { borderWidth: 1, borderColor: STUDENT.border, borderRadius: 10, backgroundColor: STUDENT.bgCard, padding: 10, marginBottom: 12 },
+  retryBtn: { alignSelf: 'flex-start', marginTop: 4, borderWidth: 1, borderColor: STUDENT.border, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 6, backgroundColor: STUDENT.bg },
+  retryBtnText: { color: STUDENT.textPrimary, fontWeight: '700', fontSize: 12 },
   body: { flex: 1 },
   bodyContent: { paddingHorizontal: 12, paddingBottom: 24 },
   group: { marginBottom: 12 },

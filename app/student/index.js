@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import {
   Image,
-  Pressable,
   ScrollView,
   StyleSheet,
   Text,
@@ -11,6 +10,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useAuth } from '../../context/AuthContext';
+import { useSubscription } from '../../context/SubscriptionContext';
 import { studentService } from '../../services/studentService';
 import { STUDENT } from '../../constants/theme';
 
@@ -38,7 +38,7 @@ const DASHBOARD_CARDS = [
     route: '/student/subject-career',
   },
   {
-    label: 'Skills Edge',
+    label: 'Skill Edge',
     icon: require('../../assets/images/skill-edge.png'),
     route: '/student/skills-edge',
   },
@@ -48,7 +48,7 @@ const DASHBOARD_CARDS = [
     route: '/student/language-pro',
   },
   {
-    label: 'Coding Pro',
+    label: 'Coding',
     icon: require('../../assets/images/coding.png'),
     route: '/student/coding-pro',
   },
@@ -71,14 +71,28 @@ function DashboardCard({ item, onPress }) {
 export default function StudentDashboardScreen() {
   const router = useRouter();
   const { user } = useAuth();
+  const { plan, isPremium, loading: subscriptionLoading } = useSubscription();
   const [dashData, setDashData] = useState(null);
+  const [profileData, setProfileData] = useState(null);
+  const [dashboardLoading, setDashboardLoading] = useState(true);
+  const [dashboardError, setDashboardError] = useState('');
 
   const fetchDashboard = useCallback(async () => {
+    setDashboardLoading(true);
+    setDashboardError('');
     try {
-      const data = await studentService.getDashboard();
-      setDashData(data);
-    } catch {
+      const [dashboard, profile] = await Promise.all([
+        studentService.getDashboard(),
+        studentService.getProfile().catch(() => null),
+      ]);
+      setDashData(dashboard);
+      setProfileData(profile);
+    } catch (error) {
       setDashData(null);
+      setProfileData(null);
+      setDashboardError(error?.message || 'Unable to load student dashboard.');
+    } finally {
+      setDashboardLoading(false);
     }
   }, []);
 
@@ -86,11 +100,32 @@ export default function StudentDashboardScreen() {
     fetchDashboard();
   }, [fetchDashboard]);
 
-  const studentNameRaw = dashData?.student?.name || dashData?.name || user?.name || DEFAULT_STUDENT_NAME;
+  const studentNameRaw = profileData?.fullName
+    || profileData?.name
+    || dashData?.student?.name
+    || dashData?.name
+    || user?.name
+    || DEFAULT_STUDENT_NAME;
   const normalizedStudentName = String(studentNameRaw ?? '').trim();
   const studentName = normalizedStudentName || DEFAULT_STUDENT_NAME;
 
-  const avatarUri = dashData?.student?.avatar || dashData?.avatar || user?.profilePicture || user?.avatar;
+  const avatarUri = profileData?.profilePictureUrl
+    || profileData?.pictureUrl
+    || profileData?.avatar
+    || dashData?.student?.avatar
+    || dashData?.avatar
+    || user?.profilePicture
+    || user?.avatar;
+
+  const planText = String(plan || '').trim();
+  const normalizedPlan = planText.toLowerCase();
+  const isFullyUpgraded = ['premium', 'fully upgraded', 'fully-upgraded', 'platinum', 'gold'].some((token) => normalizedPlan.includes(token));
+  const isPaidPlan = isFullyUpgraded || isPremium || ['paid', 'pro', 'subscribed', 'active'].some((token) => normalizedPlan.includes(token));
+  const planPill = subscriptionLoading
+    ? { label: 'Checking…', style: styles.planPillPending, text: styles.planPillTextPending }
+    : (!isPaidPlan
+      ? { label: 'Upgrade', style: styles.planPillUpgrade, text: styles.planPillTextUpgrade }
+      : { label: planText || (isFullyUpgraded ? 'Premium' : 'Paid'), style: isFullyUpgraded ? styles.planPillPremium : styles.planPillPaid, text: styles.planPillText });
 
   return (
     <SafeAreaView style={styles.root} edges={['top', 'left', 'right']}>
@@ -113,16 +148,6 @@ export default function StudentDashboardScreen() {
           )}
         </View>
 
-        <Pressable
-          style={({ pressed }) => [
-            styles.counsellorBtn,
-            pressed && styles.counsellorBtnPressed,
-          ]}
-          onPress={() => router.push('/student/speak-to-counsellor')}
-        >
-          <Text style={styles.counsellorText}>Speak to Counsellor</Text>
-        </Pressable>
-
         <TouchableOpacity
           style={styles.analyticsBtn}
           activeOpacity={0.9}
@@ -137,7 +162,13 @@ export default function StudentDashboardScreen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        <Text style={styles.welcomeText}>{`WELCOME, ${studentName.toUpperCase()}`}</Text>
+        <View style={styles.welcomeRow}>
+          <Text style={styles.welcomeText}>{`WELCOME, ${studentName.toUpperCase()}`}</Text>
+          <View style={[styles.planPill, planPill.style]}>
+            <Text style={[styles.planPillText, planPill.text]}>{planPill.label}</Text>
+          </View>
+        </View>
+        {!dashboardLoading && dashboardError ? <Text style={styles.errorText}>{dashboardError}</Text> : null}
 
         <View style={styles.grid}>
           {DASHBOARD_CARDS.map((item) => (
@@ -188,6 +219,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
+    flex: 1,
   },
   logo: {
     width: 44,
@@ -215,23 +247,6 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontWeight: '700',
   },
-  counsellorBtn: {
-    flex: 1,
-    minHeight: 34,
-    borderRadius: 18,
-    backgroundColor: '#4caf50',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 10,
-  },
-  counsellorBtnPressed: {
-    backgroundColor: '#45a049',
-  },
-  counsellorText: {
-    color: '#fff',
-    fontSize: 11,
-    fontWeight: '700',
-  },
   analyticsBtn: {
     minHeight: 34,
     borderRadius: 18,
@@ -254,13 +269,59 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingTop: 8,
     paddingBottom: 20,
+    flexGrow: 1,
+  },
+  welcomeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 8,
+    marginBottom: 14,
   },
   welcomeText: {
     color: '#fff',
     fontSize: 18,
     fontWeight: '800',
     letterSpacing: 0.5,
-    marginBottom: 14,
+    flexShrink: 1,
+  },
+  planPill: {
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderWidth: 1,
+  },
+  planPillUpgrade: {
+    backgroundColor: 'rgba(245, 158, 11, 0.24)',
+    borderColor: 'rgba(245, 158, 11, 0.65)',
+  },
+  planPillPaid: {
+    backgroundColor: 'rgba(59, 130, 246, 0.2)',
+    borderColor: 'rgba(59, 130, 246, 0.55)',
+  },
+  planPillPremium: {
+    backgroundColor: 'rgba(16, 185, 129, 0.24)',
+    borderColor: 'rgba(16, 185, 129, 0.65)',
+  },
+  planPillPending: {
+    backgroundColor: 'rgba(148, 163, 184, 0.2)',
+    borderColor: 'rgba(148, 163, 184, 0.5)',
+  },
+  planPillText: {
+    color: '#e2e8f0',
+    fontSize: 11,
+    fontWeight: '800',
+  },
+  planPillTextUpgrade: {
+    color: '#fde68a',
+  },
+  planPillTextPending: {
+    color: '#cbd5e1',
+  },
+  errorText: {
+    color: '#fca5a5',
+    fontSize: 12,
+    marginBottom: 8,
   },
   grid: {
     flexDirection: 'row',
@@ -270,24 +331,26 @@ const styles = StyleSheet.create({
   },
   card: {
     width: '48.6%',
-    minHeight: 88,
+    minHeight: 110,
     backgroundColor: '#fff',
     borderRadius: 14,
     paddingHorizontal: 12,
     paddingVertical: 12,
-    justifyContent: 'flex-start',
+    alignItems: 'center',
+    justifyContent: 'center',
     borderWidth: 1,
     borderColor: '#e7eaf2',
   },
   cardIcon: {
     width: 34,
     height: 34,
-    marginBottom: 10,
+    marginBottom: 8,
   },
   cardLabel: {
     fontSize: 13,
-    lineHeight: 17,
+    lineHeight: 16,
     color: '#0f172a',
     fontWeight: '700',
+    textAlign: 'center',
   },
 });
