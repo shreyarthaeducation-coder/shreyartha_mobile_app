@@ -102,8 +102,8 @@ export default function StudentDashboardScreen() {
 
       if (!Object.keys(mergedProfile).length) {
         const profileError = profileResult.status === 'rejected' ? profileResult.reason : null;
-        const dashboardErr = dashboardResult.status === 'rejected' ? dashboardResult.reason : null;
-        throw profileError || dashboardErr || new Error('Unable to load student dashboard.');
+        const dashboardErrorResult = dashboardResult.status === 'rejected' ? dashboardResult.reason : null;
+        throw profileError || dashboardErrorResult || new Error('Unable to load student dashboard.');
       }
 
       setProfileData(mergedProfile);
