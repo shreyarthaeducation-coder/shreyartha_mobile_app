@@ -111,11 +111,17 @@ const getStoredToken = async (endpoint = '') => {
       endpoint.includes('/principal/') ||
       endpoint.includes('/vice-principal/')
     ) {
-      return normalizeStoredToken((await AsyncStorage.getItem('schoolUserToken')) || null);
+      return normalizeStoredToken(
+        (await AsyncStorage.getItem('schoolUserToken')) ||
+        null
+      );
     }
 
     if (endpoint.includes('/parent/')) {
-      return normalizeStoredToken((await AsyncStorage.getItem('parentUserToken')) || null);
+      return normalizeStoredToken(
+        (await AsyncStorage.getItem('parentUserToken')) ||
+        null
+      );
     }
 
     if (endpoint.includes('/students/')) {
@@ -158,6 +164,14 @@ const fetchWithTimeout = (url, options, timeoutMs) => {
   });
 };
 
+const buildApiError = (message, status) => {
+  const resolvedMessage = message || 'An API error occurred';
+  const err = new Error(resolvedMessage);
+  err.status = status;
+  err.response = { status, data: { message: resolvedMessage } };
+  return err;
+};
+
 const apiFetch = async (endpoint, options = {}, attempt = 0) => {
   const token = await getStoredToken(endpoint);
 
@@ -197,9 +211,7 @@ const apiFetch = async (endpoint, options = {}, attempt = 0) => {
     if (!isAuthEndpoint) {
       await clearAuthAndRedirect();
     }
-    const err = new Error(errMsg);
-    err.status = response.status;
-    throw err;
+    throw buildApiError(errMsg, response.status);
   }
 
   if (!response.ok) {
@@ -207,9 +219,7 @@ const apiFetch = async (endpoint, options = {}, attempt = 0) => {
     const errMsg = contentType.includes('application/json')
       ? (await response.json()).message || response.statusText
       : response.statusText;
-    const err = new Error(errMsg || 'An API error occurred');
-    err.status = response.status;
-    throw err;
+    throw buildApiError(errMsg, response.status);
   }
 
   if (response.status === 204) return null;

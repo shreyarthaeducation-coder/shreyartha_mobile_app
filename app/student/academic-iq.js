@@ -86,7 +86,16 @@ const emptyReflectionState = {
 };
 
 function toMessage(error, fallback) {
-  return error?.response?.data?.message || error?.message || fallback;
+  return error?.response?.data?.message || error?.message || fallback || 'Server error. Please try again.';
+}
+
+function logApiError(context, error) {
+  if (!__DEV__) return;
+  console.error(`[AcademicIQ] ${context}`, {
+    status: error?.response?.status || error?.status || null,
+    message: error?.response?.data?.message || error?.message || 'Unknown error',
+    error,
+  });
 }
 
 function shuffleArray(items) {
@@ -168,16 +177,22 @@ function getAnswerStats(questions, answers, { marksMode = false } = {}) {
 
 async function requestWithFallbacks(candidates) {
   let lastError;
-  for (const candidate of candidates) {
+  for (let index = 0; index < candidates.length; index += 1) {
+    const candidate = candidates[index];
     try {
       // eslint-disable-next-line no-await-in-loop
       return await candidate();
     } catch (error) {
       lastError = error;
+      logApiError(`request fallback ${index + 1} failed`, error);
     }
   }
   if (lastError) throw lastError;
   return null;
+}
+
+function normalizeDifficultyLevel(level) {
+  return String(level || '').trim().toUpperCase();
 }
 
 function normalizeAssetItem(item, defaultType = 'link', fallbackLabel = 'Attachment') {
@@ -693,7 +708,10 @@ export default function AcademicIQScreen() {
   const [examPracticeState, setExamPracticeState] = useState(emptyRunnerState);
   const [examPracticeProgress, setExamPracticeProgress] = useState({});
   const [mockTests, setMockTests] = useState([]);
+  const [mockTestsPage, setMockTestsPage] = useState(1);
+  const [mockTestsHasMore, setMockTestsHasMore] = useState(false);
   const [mockTestsLoading, setMockTestsLoading] = useState(false);
+  const [mockTestsLoadingMore, setMockTestsLoadingMore] = useState(false);
   const [selectedMockTest, setSelectedMockTest] = useState(null);
   const [mockTestQuestions, setMockTestQuestions] = useState([]);
   const [mockTestLoading, setMockTestLoading] = useState(false);
@@ -731,7 +749,7 @@ export default function AcademicIQScreen() {
   const isSchoolStudent = useMemo(() => String(studentProfile?.studentType || academicProfile?.studentType || '').toUpperCase() === 'SCHOOL', [studentProfile?.studentType, academicProfile?.studentType]);
   const isLimitedStudent = useMemo(() => /limited/i.test(String(studentRole || studentProfile?.role || academicProfile?.role || '')), [studentRole, studentProfile?.role, academicProfile?.role]);
   const showLimitedAccess = isSchoolStudent || isLimitedStudent;
-  const hasAcademicProfile = useMemo(() => Boolean(academicProfile?.curriculumId || academicProfile?.classId || academicProfile?.className || academicProfile?.class || academicProfile?.id), [academicProfile]);
+  const hasAcademicCurriculumClassSelection = useMemo(() => Boolean(academicProfile?.curriculumId && (academicProfile?.classId || academicProfile?.className || academicProfile?.class)), [academicProfile?.curriculumId, academicProfile?.classId, academicProfile?.className, academicProfile?.class]);
   const selectedCurriculumNode = useMemo(() => {
     if (!tree.length) return null;
     return tree.find((node) => String(node?.id) === String(academicProfile?.curriculumId)) || tree[0];
@@ -884,7 +902,8 @@ export default function AcademicIQScreen() {
 
   const extractPracticeQuestions = useCallback((response, level) => {
     const payload = unwrap(response);
-    const keys = [level, level?.toLowerCase(), `${level}Questions`, `${level?.toLowerCase()}Questions`, 'questions', 'items'];
+    const upperLevel = normalizeDifficultyLevel(level);
+    const keys = [level, level?.toLowerCase(), upperLevel, `${level}Questions`, `${level?.toLowerCase()}Questions`, `${upperLevel}Questions`, 'questions', 'items', 'content'];
     for (const key of keys) {
       if (Array.isArray(payload?.[key])) return payload[key];
     }
@@ -916,17 +935,21 @@ export default function AcademicIQScreen() {
     setPracticeLoading(true);
     setPracticeError('');
     try {
+      const normalizedLevel = normalizeDifficultyLevel(level);
       const response = await requestWithFallbacks([
-        () => api.get(`/api/practicezone/topic/${encode(topicId)}/questions?level=${encode(level)}`),
-        () => api.get(`/api/academiciq/topic/${encode(topicId)}/practice?level=${encode(level)}`),
-        () => api.get(`/api/academiciq/topic/${encode(topicId)}/questions?level=${encode(level)}`),
-        () => studentService.getTopicQuestions(topicId, level),
-        () => api.get(`/api/practice/topics/${encode(topicId)}/questions?level=${encode(level)}`),
+        () => api.get(`/api/student/practice/topic/${encode(topicId)}?level=${encode(normalizedLevel)}`),
+        () => api.get(`/api/student/practice/topic/${encode(topicId)}/questions?level=${encode(normalizedLevel)}`),
+        () => api.get(`/api/practicezone/topic/${encode(topicId)}/questions?level=${encode(normalizedLevel)}`),
+        () => api.get(`/api/academiciq/topic/${encode(topicId)}/practice?level=${encode(normalizedLevel)}`),
+        () => api.get(`/api/academiciq/topic/${encode(topicId)}/questions?level=${encode(normalizedLevel)}`),
+        () => studentService.getTopicQuestions(topicId, normalizedLevel),
+        () => api.get(`/api/practice/topics/${encode(topicId)}/questions?level=${encode(normalizedLevel)}`),
       ]);
-      setPracticeQuestions(extractPracticeQuestions(response, level));
+      setPracticeQuestions(extractPracticeQuestions(response, normalizedLevel));
     } catch (error) {
+      logApiError('Practice Zone questions failed', error);
       setPracticeQuestions([]);
-      setPracticeError(toMessage(error, 'Unable to load practice questions.'));
+      setPracticeError(toMessage(error, 'Server error. Please try again.'));
     } finally {
       setPracticeLoading(false);
     }
@@ -1079,6 +1102,7 @@ export default function AcademicIQScreen() {
       const examId = selectedExam?.id || selectedExam?.examId;
       const subjectId = getNodeId(activeExamSubject);
       const response = await requestWithFallbacks([
+        () => api.get(`/api/competitiveexam/topic/${encode(topicId)}/content`),
         () => api.get(`/api/competitiveexam/topics/${encode(topicId)}/content`),
         () => api.get(`/api/competitiveexam/exams/${encode(examId)}/subjects/${encode(subjectId)}/topics/${encode(topicId)}/content`),
         () => studentService.getAcademicIQTopicContent(topicId),
@@ -1086,8 +1110,9 @@ export default function AcademicIQScreen() {
       const payload = unwrap(response);
       setExamTopicContent(payload?.content && typeof payload.content === 'object' ? { ...payload.content, ...payload } : payload);
     } catch (error) {
+      logApiError('Competitive Exam topic content failed', error);
       setExamTopicContent(null);
-      setExamTopicError(toMessage(error, 'Unable to load competitive exam topic content.'));
+      setExamTopicError(toMessage(error, 'Server error. Please try again.'));
     } finally {
       setExamTopicLoading(false);
     }
@@ -1099,16 +1124,20 @@ export default function AcademicIQScreen() {
     try {
       const examId = selectedExam?.id || selectedExam?.examId;
       const subjectId = getNodeId(activeExamSubject);
+      const normalizedLevel = normalizeDifficultyLevel(level);
       const response = await requestWithFallbacks([
-        () => api.get(`/api/competitiveexam/topics/${encode(topicId)}/questions?level=${encode(level)}`),
-        () => api.get(`/api/competitiveexam/exams/${encode(examId)}/subjects/${encode(subjectId)}/topics/${encode(topicId)}/questions?level=${encode(level)}`),
-        () => api.get(`/api/competitiveexam/practice/${encode(examId)}/${encode(subjectId)}/questions?topicId=${encode(topicId)}&level=${encode(level)}`),
-        () => api.get(`/api/practicezone/topic/${encode(topicId)}/questions?level=${encode(level)}`),
+        () => api.get(`/api/competitiveexam/topic/${encode(topicId)}/questions?level=${encode(normalizedLevel)}`),
+        () => api.get(`/api/competitiveexam/topics/${encode(topicId)}/questions?level=${encode(normalizedLevel)}`),
+        () => api.get(`/api/competitiveexam/exams/${encode(examId)}/subjects/${encode(subjectId)}/topics/${encode(topicId)}/questions?level=${encode(normalizedLevel)}`),
+        () => api.get(`/api/competitiveexam/practice/${encode(examId)}/${encode(subjectId)}/questions?topicId=${encode(topicId)}&level=${encode(normalizedLevel)}`),
+        () => api.get(`/api/student/practice/topic/${encode(topicId)}?level=${encode(normalizedLevel)}`),
+        () => api.get(`/api/practicezone/topic/${encode(topicId)}/questions?level=${encode(normalizedLevel)}`),
       ]);
-      setExamPracticeQuestions(extractPracticeQuestions(response, level));
+      setExamPracticeQuestions(extractPracticeQuestions(response, normalizedLevel));
     } catch (error) {
+      logApiError('Competitive Exam practice questions failed', error);
       setExamPracticeQuestions([]);
-      setExamPracticeError(toMessage(error, 'Unable to load competitive exam practice questions.'));
+      setExamPracticeError(toMessage(error, 'Server error. Please try again.'));
     } finally {
       setExamPracticeLoading(false);
     }
@@ -1128,25 +1157,56 @@ export default function AcademicIQScreen() {
     setExamPracticeState((prev) => ({ ...prev, submitted: true, result }));
     setExamPracticeProgress((prev) => ({ ...prev, [`${topicId}:${examPracticeDifficulty}`]: { completed: true, score: result.score, total: examPracticeQuestions.length } }));
   }, [selectedExamTopic, examPracticeQuestions, examPracticeState.answers, examPracticeDifficulty]);
-  const openMockTestList = useCallback(async () => {
+  const parseMockTestsPage = useCallback((response) => {
+    const payload = unwrap(response);
+    const pagedContent = Array.isArray(payload?.content) ? payload.content : null;
+    const list = arr(payload?.mockTests || payload?.tests || payload?.papers || payload?.items || pagedContent || payload);
+    const explicitHasMore = payload?.hasNext ?? payload?.hasNextPage ?? payload?.pagination?.hasNext ?? payload?.meta?.hasNext;
+    const rawPage = Number(payload?.page ?? payload?.currentPage ?? payload?.number ?? payload?.pagination?.page ?? payload?.meta?.page ?? 1);
+    const currentPage = rawPage >= 1 ? rawPage : rawPage + 1;
+    const totalPages = Number(payload?.totalPages ?? payload?.pages ?? payload?.pagination?.totalPages ?? payload?.meta?.totalPages ?? 0);
+    const hasMore = typeof explicitHasMore === 'boolean' ? explicitHasMore : totalPages > 0 && currentPage < totalPages;
+    return { list, hasMore };
+  }, []);
+
+  const loadMockTestsPage = useCallback(async (page, append = false) => {
     const examId = selectedExam?.id || selectedExam?.examId;
     if (!examId) return;
+    if (append) setMockTestsLoadingMore(true);
+    else setMockTestsLoading(true);
+    try {
+      const data = await requestWithFallbacks([
+        () => studentService.getExamMockTests(examId, { page, size: 10 }),
+        () => api.get(`/api/competitiveexam/exams/${encode(examId)}/mock-tests?page=${encode(page)}&size=10`),
+        () => api.get(`/api/competitiveexam/exams/${encode(examId)}/mock-tests?page=${encode(page)}&limit=10`),
+        () => api.get(`/api/competitiveexam/exams/${encode(examId)}/mocktest?page=${encode(page)}&size=10`),
+        () => api.get(`/api/competitiveexam/mock-tests?examId=${encode(examId)}&page=${encode(page)}&size=10`),
+      ]);
+      const { list, hasMore } = parseMockTestsPage(data);
+      setMockTests((prev) => (append ? [...prev, ...list] : list));
+      setMockTestsPage(page);
+      setMockTestsHasMore(hasMore);
+    } catch (error) {
+      logApiError('Mock Test list failed', error);
+      if (!append) setMockTests([]);
+      setScreenError(toMessage(error, 'Server error. Please try again.'));
+    } finally {
+      if (append) setMockTestsLoadingMore(false);
+      else setMockTestsLoading(false);
+    }
+  }, [selectedExam, parseMockTestsPage]);
+
+  const openMockTestList = useCallback(async () => {
     setView('mockTestList');
-    setMockTestsLoading(true);
     setMockTests([]);
+    setMockTestsPage(1);
+    setMockTestsHasMore(false);
     setSelectedMockTest(null);
     setMockTestQuestions([]);
     setMockTestResults(null);
     setScreenError('');
-    try {
-      const data = await requestWithFallbacks([() => studentService.getExamMockTests(examId), () => api.get(`/api/competitiveexam/exams/${encode(examId)}/mocktest`)]);
-      setMockTests(arr(unwrap(data)?.mockTests || unwrap(data)?.tests || unwrap(data)?.papers || unwrap(data)));
-    } catch (error) {
-      setScreenError(toMessage(error, 'Failed to load mock tests.'));
-    } finally {
-      setMockTestsLoading(false);
-    }
-  }, [selectedExam]);
+    await loadMockTestsPage(1, false);
+  }, [loadMockTestsPage]);
 
   const openMockTest = useCallback(async (test) => {
     const mockTestId = test?.id || test?.testId;
@@ -1159,12 +1219,15 @@ export default function AcademicIQScreen() {
     try {
       const data = await requestWithFallbacks([
         () => studentService.getMockTestQuestions(mockTestId),
+        () => api.get(`/api/competitiveexam/mock-tests/${encode(mockTestId)}`),
         () => api.get(`/api/competitiveexam/mocktest/${encode(mockTestId)}/questions`),
         () => api.get(`/api/competitiveexam/exams/${encode(selectedExam?.id || '')}/mock-tests/${encode(mockTestId)}/questions`),
+        () => api.get(`/api/competitiveexam/mock-tests/${encode(mockTestId)}/paper`),
       ]);
       setMockTestQuestions(arr(unwrap(data)?.questions || unwrap(data)?.items || unwrap(data)));
     } catch (error) {
-      setScreenError(toMessage(error, 'Failed to load mock test questions.'));
+      logApiError('Mock Test questions failed', error);
+      setScreenError(toMessage(error, 'Server error. Please try again.'));
     } finally {
       setMockTestLoading(false);
     }
@@ -1176,9 +1239,22 @@ export default function AcademicIQScreen() {
     setMockTestLoading(true);
     try {
       const payload = { answers: Object.entries(answersMap).map(([questionId, optionIndex]) => ({ questionId, selectedOption: optionIndex })) };
-      const data = await requestWithFallbacks([() => studentService.submitMockTest(mockTestId, payload), () => api.post(`/api/competitiveexam/mocktest/${encode(mockTestId)}/submit`, payload)]);
-      setMockTestResults(unwrap(data));
-    } catch {
+      const data = await requestWithFallbacks([
+        () => studentService.submitMockTest(mockTestId, payload),
+        () => api.post(`/api/competitiveexam/mocktest/${encode(mockTestId)}/submit`, payload),
+      ]);
+      const parsed = unwrap(data);
+      if (parsed?.score !== undefined || parsed?.percentage !== undefined || parsed?.total !== undefined || parsed?.totalQuestions !== undefined) {
+        setMockTestResults(parsed);
+      } else {
+        const resultData = await requestWithFallbacks([
+          () => api.get(`/api/competitiveexam/mock-tests/${encode(mockTestId)}/result`),
+          () => api.get(`/api/competitiveexam/mocktest/${encode(mockTestId)}/result`),
+        ]).catch(() => null);
+        setMockTestResults(resultData ? unwrap(resultData) : parsed);
+      }
+    } catch (error) {
+      logApiError('Mock Test submit failed', error);
       const result = getAnswerStats(mockTestQuestions, answersMap, { marksMode: false });
       setMockTestResults({ score: result.score, total: mockTestQuestions.length, percentage: mockTestQuestions.length ? Math.round((result.score / mockTestQuestions.length) * 100) : 0 });
     } finally {
@@ -1225,8 +1301,8 @@ export default function AcademicIQScreen() {
   );
 
   const renderLearningView = () => {
-    if (!hasAcademicProfile && (activeCategory === 'personalized' || activeCategory === 'practice')) {
-      return <EmptyStateCard title="Academic IQ profile required" description="Please complete your Academic IQ profile first so we can load the right curriculum, class, subjects, and topics for you." actionLabel="Open Profile" onPress={() => router.push('/student/profile')} />;
+    if (!hasAcademicCurriculumClassSelection && (activeCategory === 'personalized' || activeCategory === 'practice')) {
+      return <EmptyStateCard title="Academic IQ profile required" description="Academic IQ profile does not contain selected curriculum/class. Please set Academic IQ selections first." actionLabel="Open Profile" onPress={() => router.push('/student/profile')} />;
     }
     return (
       <>
@@ -1316,6 +1392,15 @@ export default function AcademicIQScreen() {
               <Text style={styles.placeholderText}>No mock tests are available for this exam yet.</Text>
             </View>
           )}
+          {mockTestsHasMore ? (
+            <TouchableOpacity
+              style={[styles.actionButton, mockTestsLoadingMore && styles.disabled]}
+              disabled={mockTestsLoadingMore}
+              onPress={() => loadMockTestsPage(mockTestsPage + 1, true)}
+            >
+              <Text style={styles.actionButtonText}>{mockTestsLoadingMore ? 'Loading…' : 'Load More Tests'}</Text>
+            </TouchableOpacity>
+          ) : null}
         </ScrollView>
       )}
     </>

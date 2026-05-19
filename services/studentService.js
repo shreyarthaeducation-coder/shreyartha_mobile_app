@@ -38,7 +38,13 @@ export const studentService = {
   getExamDetail: (examId) => api.get(`/api/competitiveexam/exams/${encodeURIComponent(examId)}`),
   getExamPracticeSubjects: (examId) => api.get(`/api/competitiveexam/exams/${encodeURIComponent(examId)}/practice-zone`),
   getExamSubjectQuestions: (examId, subjectId) => api.get(`/api/competitiveexam/exams/${encodeURIComponent(examId)}/subjects/${encodeURIComponent(subjectId)}/questions`),
-  getExamMockTests: (examId) => api.get(`/api/competitiveexam/exams/${encodeURIComponent(examId)}/mock-tests`),
+  getExamMockTests: (examId, { page, size } = {}) => {
+    const params = new URLSearchParams();
+    if (Number.isFinite(page) && page > 0) params.append('page', String(page));
+    if (Number.isFinite(size) && size > 0) params.append('size', String(size));
+    const qs = params.toString();
+    return api.get(`/api/competitiveexam/exams/${encodeURIComponent(examId)}/mock-tests${qs ? `?${qs}` : ''}`);
+  },
   getMockTestQuestions: (mockTestId) => api.get(`/api/competitiveexam/mock-tests/${encodeURIComponent(mockTestId)}/questions`),
   submitMockTest: (mockTestId, data) => api.post(`/api/competitiveexam/mock-tests/${encodeURIComponent(mockTestId)}/submit`, data),
   getAcademicProfile: () => api.get('/api/academic/profile'),
