@@ -460,7 +460,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.white, borderBottomWidth: 1, borderBottomColor: COLORS.border,
   },
   logoContainer: { flexDirection: 'row', alignItems: 'center' },
-  logoImage: { width: 120, height: 40 },
+  logoImage: { width: 200, height: 64 },
   loginBtn: {
     backgroundColor: COLORS.primary, paddingVertical: 10, paddingHorizontal: 18,
     borderRadius: 32,
