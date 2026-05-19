@@ -10,12 +10,14 @@ import {
   StyleSheet,
   Text,
   TouchableOpacity,
+  useWindowDimensions,
   View,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { WebView } from 'react-native-webview';
+import RenderHTML from 'react-native-render-html';
 import { STUDENT } from '../../constants/theme';
 import { studentService } from '../../services/studentService';
 
@@ -63,11 +65,26 @@ const getNodeId = (node, fallback = '') => String(
   || node?.chapterId
   || node?.subjectId
   || node?.examId
+  || node?.entranceExamId
+  || node?.competitiveExamId
+  || node?.mockTestId
+  || node?.nodeId
+  || node?.topic_id
+  || node?.subject_id
+  || node?.exam_id
+  || node?.test_id
   || node?.testId
   || node?.slug
   || fallback
   || nodeLabel(node)
 ).trim();
+const getApiId = (node, keys = []) => {
+  for (const key of keys) {
+    const value = node?.[key];
+    if (value !== undefined && value !== null && String(value).trim()) return String(value).trim();
+  }
+  return '';
+};
 const emptyRunnerState = { index: 0, answers: {}, submitted: false, result: null };
 const emptyReflectionState = {
   phase: 'idle',
@@ -85,16 +102,53 @@ const emptyReflectionState = {
 
 function toMessage(error, fallback) {
   const fallbackMessage = fallback ?? 'Server error. Please try again.';
-  return error?.response?.data?.message || error?.message || fallbackMessage;
+  const payload = error?.response?.data;
+  return payload?.message || payload?.error || payload?.details || payload?.detail || error?.message || fallbackMessage;
 }
 
 function logApiError(context, error) {
   if (!__DEV__) return;
+  const payload = error?.response?.data;
   console.error(`[AcademicIQ] ${context}`, {
     status: error?.response?.status || error?.status || null,
-    message: error?.response?.data?.message || error?.message || 'Unknown error',
-    error,
+    message: payload?.message || payload?.error || payload?.details || payload?.detail || error?.message || 'Unknown error',
+    payload,
   });
+}
+
+function HtmlContent({ html, textStyle, numberOfLines }) {
+  const { width } = useWindowDimensions();
+  const rawHtml = String(html || '').trim();
+  if (!rawHtml) return null;
+  if (!/[<>&]/.test(rawHtml)) {
+    return <Text numberOfLines={numberOfLines} style={textStyle}>{rawHtml}</Text>;
+  }
+  return (
+    <RenderHTML
+      contentWidth={Math.max(0, width - 72)}
+      source={{ html: rawHtml }}
+      baseStyle={textStyle}
+      defaultTextProps={numberOfLines ? { numberOfLines } : undefined}
+      tagsStyles={{
+        p: { marginTop: 0, marginBottom: 8 },
+        ul: { marginTop: 0, marginBottom: 8, paddingLeft: 18 },
+        ol: { marginTop: 0, marginBottom: 8, paddingLeft: 18 },
+        li: { marginBottom: 4 },
+        strong: { fontWeight: '700' },
+        em: { fontStyle: 'italic' },
+        code: {
+          backgroundColor: 'rgba(148,163,184,0.2)',
+          color: '#E2E8F0',
+          fontFamily: 'monospace',
+          paddingHorizontal: 4,
+          borderRadius: 4,
+        },
+        h1: { fontSize: 20, lineHeight: 28, marginTop: 4, marginBottom: 8, fontWeight: '800' },
+        h2: { fontSize: 18, lineHeight: 26, marginTop: 4, marginBottom: 8, fontWeight: '800' },
+        h3: { fontSize: 16, lineHeight: 24, marginTop: 4, marginBottom: 8, fontWeight: '700' },
+      }}
+    />
+  );
 }
 
 function shuffleArray(items) {
@@ -361,7 +415,7 @@ function ContentCard({ title, body, attachments, onPreview }) {
   return (
     <View style={styles.contentCardDark}>
       <Text style={styles.contentCardTitle}>{title}</Text>
-      {body ? <Text style={styles.contentBody}>{body}</Text> : <Text style={styles.placeholderText}>No content is available for this section yet.</Text>}
+      {body ? <HtmlContent html={body} textStyle={styles.contentBody} /> : <Text style={styles.placeholderText}>No content is available for this section yet.</Text>}
       {attachments?.length ? <AttachmentGrid items={attachments} onPreview={onPreview} /> : null}
     </View>
   );
@@ -418,12 +472,12 @@ function QuestionRunner({
         <Text style={styles.questionCountText}>{`Question ${state.index + 1} of ${questions.length}`}</Text>
         {question?.bloomsLevel ? <Text style={styles.metaPill}>{question.bloomsLevel}</Text> : null}
       </View>
-      <Text style={styles.questionText}>{stripHtml(question?.questionText || question?.question || question?.text || '')}</Text>
+      <HtmlContent html={question?.questionText || question?.question || question?.text || ''} textStyle={styles.questionText} />
       <View style={styles.metaInfoWrap}>
         {question?.marks != null ? <Text style={styles.metaInfo}>{`Marks: ${question.marks}`}</Text> : null}
         {question?.negativeMarks != null ? <Text style={styles.metaInfo}>{`Negative: ${question.negativeMarks}`}</Text> : null}
       </View>
-      {question?.hint ? <Text style={styles.hintText}>{`Hint: ${stripHtml(question.hint)}`}</Text> : null}
+      {question?.hint ? <View><Text style={styles.hintPrefix}>Hint:</Text><HtmlContent html={question.hint} textStyle={styles.hintText} /></View> : null}
       <View style={styles.optionsWrap}>
         {options.map((option, index) => {
           const active = selectedIndex === index;
@@ -434,7 +488,7 @@ function QuestionRunner({
               onPress={() => setState((prev) => ({ ...prev, answers: { ...prev.answers, [questionId]: index } }))}
             >
               <Text style={[styles.mockOptionLabel, active && { color: accentColor || STUDENT.accent, borderColor: accentColor || STUDENT.accent }]}>{String.fromCharCode(65 + index)}</Text>
-              <Text style={styles.optionText}>{option.text}</Text>
+              <View style={styles.optionTextWrap}><HtmlContent html={option.text} textStyle={styles.optionText} /></View>
             </Pressable>
           );
         })}
@@ -490,7 +544,7 @@ function MyReflectionPanel({ state, onStart, onAnswer, onChooseLevel, onSubmitLe
         <Text style={styles.contentCardTitle}>My Reflection</Text>
         <View style={styles.progressTrack}><View style={[styles.progressFill, { width: `${Math.min(((state.step || 1) / 12) * 100, 100)}%`, backgroundColor: REFLECTION_ACCENT }]} /></View>
         <Text style={styles.questionCountText}>{`Adaptive Question ${Math.min(state.step || 1, 12)} of 12`}</Text>
-        <Text style={styles.questionText}>{stripHtml(state.question?.questionText || state.question?.question || state.question?.text || '')}</Text>
+        <HtmlContent html={state.question?.questionText || state.question?.question || state.question?.text || ''} textStyle={styles.questionText} />
         <View style={styles.optionsWrap}>
           {options.map((option, index) => {
             const value = optionValue(option);
@@ -498,7 +552,7 @@ function MyReflectionPanel({ state, onStart, onAnswer, onChooseLevel, onSubmitLe
             return (
               <Pressable key={`${value}-${index}`} style={[styles.optionCard, selected && { borderColor: REFLECTION_ACCENT, backgroundColor: 'rgba(251,191,36,0.15)' }]} onPress={() => onAnswer(option, index)}>
                 <Text style={[styles.mockOptionLabel, selected && { color: REFLECTION_ACCENT, borderColor: REFLECTION_ACCENT }]}>{String.fromCharCode(65 + index)}</Text>
-                <Text style={styles.optionText}>{value}</Text>
+                <View style={styles.optionTextWrap}><HtmlContent html={value} textStyle={styles.optionText} /></View>
               </Pressable>
             );
           })}
@@ -548,7 +602,7 @@ function MockTestCard({ test, onPress }) {
         {duration > 0 ? <View style={styles.mockTestMetaPill}><Text style={styles.mockTestMetaText}>⏱ {duration} min</Text></View> : null}
         {questionCount > 0 ? <View style={styles.mockTestMetaPill}><Text style={styles.mockTestMetaText}>📝 {questionCount} Qs</Text></View> : null}
       </View>
-      {test?.description ? <Text style={styles.mockTestCardSub} numberOfLines={2}>{test.description}</Text> : null}
+      {test?.description ? <HtmlContent html={test.description} textStyle={styles.mockTestCardSub} numberOfLines={2} /> : null}
       <Text style={styles.mockTestStartText}>Start Test →</Text>
     </TouchableOpacity>
   );
@@ -621,14 +675,14 @@ function MockTestRunner({ questions, mockTest, onSubmit, onBack }) {
           <Text style={styles.mockQLabel}>{`Question ${currentIndex + 1}`}</Text>
           <TouchableOpacity onPress={() => setFlagged((prev) => ({ ...prev, [qId]: !prev[qId] }))} style={[styles.flagButton, isFlagged && styles.flagButtonActive]}><Text style={styles.flagButtonText}>{isFlagged ? '🚩 Flagged' : '🏳️ Flag'}</Text></TouchableOpacity>
         </View>
-        <Text style={styles.questionText}>{stripHtml(question?.questionText || question?.question || question?.text || '')}</Text>
+        <HtmlContent html={question?.questionText || question?.question || question?.text || ''} textStyle={styles.questionText} />
         <View style={styles.optionsWrap}>
           {options.map((option, index) => {
             const selected = selectedOption === index;
             return (
               <Pressable key={option.id} onPress={() => setAnswers((prev) => ({ ...prev, [qId]: index }))} style={[styles.optionCard, selected && styles.optionCardActive]}>
                 <Text style={[styles.mockOptionLabel, selected && styles.mockOptionLabelActive]}>{String.fromCharCode(65 + index)}</Text>
-                <Text style={styles.optionText}>{option.text}</Text>
+                <View style={styles.optionTextWrap}><HtmlContent html={option.text} textStyle={styles.optionText} /></View>
               </Pressable>
             );
           })}
@@ -678,6 +732,7 @@ export default function AcademicIQScreen() {
   const [sheetVisible, setSheetVisible] = useState(false);
   const [selectedExamCategory, setSelectedExamCategory] = useState(null);
   const [selectedExam, setSelectedExam] = useState(null);
+  const [examDetailError, setExamDetailError] = useState('');
   const [examSection, setExamSection] = useState('resources');
   const [selectedExamSubjectId, setSelectedExamSubjectId] = useState(null);
   const [practiceZoneSubjects, setPracticeZoneSubjects] = useState([]);
@@ -835,7 +890,7 @@ export default function AcademicIQScreen() {
     // Only show categories that contain the student's enrolled exam
     const withEnrolled = base.filter((category) =>
       arr(category?.entranceExams || category?.exams || category?.children)
-        .some((exam) => String(exam?.id || exam?.examId || '') === enrolledCompetitiveExamId),
+        .some((exam) => String(getApiId(exam, ['id', 'examId', 'entranceExamId', 'competitiveExamId', 'exam_id']) || '') === enrolledCompetitiveExamId),
     );
     return withEnrolled.length ? withEnrolled : base;
   }, [examCategories, hiddenExamIds, enrolledCompetitiveExamId]);
@@ -844,7 +899,7 @@ export default function AcademicIQScreen() {
     const all = arr(selectedExamCategory?.entranceExams || selectedExamCategory?.exams || selectedExamCategory?.children)
       .filter((item) => !hiddenExamIds.includes(String(item?.id)));
     if (!enrolledCompetitiveExamId) return all;
-    const enrolled = all.filter((item) => String(item?.id || item?.examId || '') === enrolledCompetitiveExamId);
+    const enrolled = all.filter((item) => String(getApiId(item, ['id', 'examId', 'entranceExamId', 'competitiveExamId', 'exam_id']) || '') === enrolledCompetitiveExamId);
     return enrolled.length ? enrolled : all;
   }, [selectedExamCategory, hiddenExamIds, enrolledCompetitiveExamId]);
 
@@ -861,7 +916,7 @@ export default function AcademicIQScreen() {
   // Load practice zone subjects when user enters the practice section
   useEffect(() => {
     if (examSection !== 'practice') return;
-    const examId = selectedExam?.id || selectedExam?.examId;
+    const examId = getApiId(selectedExam, ['id', 'examId', 'entranceExamId', 'competitiveExamId', 'exam_id']) || getNodeId(selectedExam);
     // Only load if we haven't loaded yet and have no error; errors require a manual Retry
     if (!examId || practiceZoneSubjectsLoading) return;
     if (practiceZoneSubjects.length > 0 || practiceZoneSubjectsError) return;
@@ -993,6 +1048,11 @@ export default function AcademicIQScreen() {
   }, []);
 
   const loadPracticeQuestions = useCallback(async (topicId, level) => {
+    if (!topicId) {
+      setPracticeQuestions([]);
+      setPracticeError('Unable to load practice questions for this topic.');
+      return;
+    }
     setPracticeLoading(true);
     setPracticeError('');
     try {
@@ -1016,7 +1076,7 @@ export default function AcademicIQScreen() {
   }, [extractPracticeQuestions]);
   useEffect(() => {
     if (!selectedTopic) return;
-    const topicId = getNodeId(selectedTopic);
+    const topicId = getApiId(selectedTopic, ['id', 'topicId', 'nodeId', 'topic_id', 'slug']) || getNodeId(selectedTopic);
     if (activeCategory === 'practice') loadPracticeQuestions(topicId, practiceDifficulty);
     else loadTopicContent(topicId);
   }, [selectedTopic, activeCategory, practiceDifficulty, loadPracticeQuestions, loadTopicContent]);
@@ -1121,23 +1181,30 @@ export default function AcademicIQScreen() {
   }, [selectedTopic, reflectionState.reflectionChoice, reflectionState.sessionState]);
 
   const openExam = useCallback(async (exam) => {
+    const selectedExamId = getApiId(exam, ['id', 'examId', 'entranceExamId', 'competitiveExamId', 'exam_id']) || getNodeId(exam);
     // Access control: block if this exam is not the student's enrolled one
-    if (enrolledCompetitiveExamId && String(exam?.id || exam?.examId || '') !== enrolledCompetitiveExamId) {
+    if (enrolledCompetitiveExamId && String(selectedExamId || '') !== enrolledCompetitiveExamId) {
       Alert.alert('Access Denied', 'This exam is not part of your enrollment. Please contact your administrator to change your exam enrollment.');
       return;
     }
     setSelectedExam(exam);
+    setExamDetailError('');
     setExamSection('resources');
     resetExamTopicState();
     setPracticeZoneSubjects([]);
     setPracticeZoneSubjectsError('');
     setSheetVisible(false);
     try {
-      const detail = await studentService.getExamDetail(exam?.id || exam?.examId);
+      if (!selectedExamId) {
+        setExamDetailError('Unable to open this exam right now.');
+        return;
+      }
+      const detail = await studentService.getExamDetail(selectedExamId);
       const payload = unwrap(detail);
-      if (payload && Object.keys(payload).length > 0) setSelectedExam((prev) => ({ ...prev, ...payload }));
+      if (payload && Object.keys(payload).length > 0) setSelectedExam((prev) => ({ ...prev, ...payload, id: prev?.id || prev?.examId || selectedExamId }));
     } catch (error) {
       logApiError('Competitive exam detail fetch failed', error);
+      setExamDetailError(toMessage(error, 'Unable to load exam details. Please try again.'));
     }
   }, [resetExamTopicState, enrolledCompetitiveExamId]);
 
@@ -1174,6 +1241,11 @@ export default function AcademicIQScreen() {
   }, []);
 
   const loadExamPracticeQuestions = useCallback(async (topicId, level) => {
+    if (!topicId) {
+      setExamPracticeQuestions([]);
+      setExamPracticeError('Unable to load practice questions for this topic.');
+      return;
+    }
     setExamPracticeLoading(true);
     setExamPracticeError('');
     try {
@@ -1198,7 +1270,7 @@ export default function AcademicIQScreen() {
 
   useEffect(() => {
     if (!selectedExamTopic) return;
-    const topicId = getNodeId(selectedExamTopic);
+    const topicId = getApiId(selectedExamTopic, ['id', 'topicId', 'nodeId', 'topic_id', 'slug']) || getNodeId(selectedExamTopic);
     if (examSection === 'practice') loadExamPracticeQuestions(topicId, examPracticeDifficulty);
     else loadExamTopicContent(topicId);
   }, [selectedExamTopic, examSection, examPracticeDifficulty, loadExamTopicContent, loadExamPracticeQuestions]);
@@ -1227,7 +1299,7 @@ export default function AcademicIQScreen() {
   }, []);
 
   const loadMockTestsPage = useCallback(async (page, append = false) => {
-    const examId = selectedExam?.id || selectedExam?.examId;
+    const examId = getApiId(selectedExam, ['id', 'examId', 'entranceExamId', 'competitiveExamId', 'exam_id']) || getNodeId(selectedExam);
     if (!examId) return;
     if (append) setMockTestsLoadingMore(true);
     else setMockTestsLoading(true);
@@ -1268,7 +1340,7 @@ export default function AcademicIQScreen() {
   }, [loadMockTestsPage]);
 
   const openMockTest = useCallback(async (test) => {
-    const mockTestId = test?.id || test?.testId;
+    const mockTestId = getApiId(test, ['id', 'testId', 'mockTestId', 'test_id']) || getNodeId(test);
     setSelectedMockTest(test);
     setView('mockTestRunner');
     setMockTestLoading(true);
@@ -1292,7 +1364,7 @@ export default function AcademicIQScreen() {
   }, []);
 
   const handleSubmitMockTest = useCallback(async (answersMap) => {
-    const mockTestId = selectedMockTest?.id || selectedMockTest?.testId;
+    const mockTestId = getApiId(selectedMockTest, ['id', 'testId', 'mockTestId', 'test_id']) || getNodeId(selectedMockTest);
     setView('mockTestResults');
     setMockTestLoading(true);
     try {
@@ -1334,7 +1406,7 @@ export default function AcademicIQScreen() {
     if (activeTopicTab === 'understanding') {
       if (understandingLoading) return <View style={styles.centerWrap}><ActivityIndicator color="#FACC15" /><Text style={styles.mutedText}>Loading Test Your Understanding…</Text></View>;
       const maxScore = getAnswerStats(understandingQuestions, {}, { marksMode: true }).totalPossible || 0;
-      return <><InlineNotice text={understandingError} /><QuestionRunner title="Test Your Understanding" subtitle={stripHtml(understandingInfo?.title || understandingInfo?.description || '')} questions={understandingQuestions} state={understandingState} setState={setUnderstandingState} onSubmit={submitUnderstanding} emptyMessage="No understanding questions are currently available for this topic." accentColor="#FACC15" progressFillStyle={styles.tyuProgressFill} scoreSuffix={`/ ${maxScore}`} /></>;
+      return <><InlineNotice text={understandingError} /><QuestionRunner title="Test Your Understanding" subtitle={understandingInfo?.title || understandingInfo?.description || ''} questions={understandingQuestions} state={understandingState} setState={setUnderstandingState} onSubmit={submitUnderstanding} emptyMessage="No understanding questions are currently available for this topic." accentColor="#FACC15" progressFillStyle={styles.tyuProgressFill} scoreSuffix={`/ ${maxScore}`} /></>;
     }
     if (activeTopicTab === 'reflection') {
       return <><InlineNotice text={reflectionState.error} /><MyReflectionPanel state={reflectionState} onStart={beginReflection} onAnswer={answerReflection} onChooseLevel={(value) => setReflectionState((prev) => ({ ...prev, reflectionChoice: value }))} onSubmitLevel={submitReflectionLevel} /></>;
@@ -1342,8 +1414,8 @@ export default function AcademicIQScreen() {
     if (activeTopicTab === 'videos' || activeTopicTab === 'images' || activeTopicTab === 'pdfs') {
       return <ContentCard title={learningTabs.find((tab) => tab.key === activeTopicTab)?.label || 'Media'} attachments={assets[activeTopicTab]} onPreview={setPreviewAsset} />;
     }
-    const handwrittenText = topicContent?.handwrittenNotes && !Array.isArray(topicContent.handwrittenNotes) && !isProbablyUrl(topicContent.handwrittenNotes) ? stripHtml(topicContent.handwrittenNotes) : '';
-    return <><InlineNotice text={topicError} /><ContentCard title={learningTabs.find((tab) => tab.key === activeTopicTab)?.label || 'Topic'} body={activeTopicTab === 'handwrittenNotes' ? handwrittenText : stripHtml(topicContent?.[activeTopicTab])} attachments={activeTopicTab === 'handwrittenNotes' ? assets.noteAttachments : []} onPreview={setPreviewAsset} /></>;
+    const handwrittenText = topicContent?.handwrittenNotes && !Array.isArray(topicContent.handwrittenNotes) && !isProbablyUrl(topicContent.handwrittenNotes) ? topicContent.handwrittenNotes : '';
+    return <><InlineNotice text={topicError} /><ContentCard title={learningTabs.find((tab) => tab.key === activeTopicTab)?.label || 'Topic'} body={activeTopicTab === 'handwrittenNotes' ? handwrittenText : topicContent?.[activeTopicTab]} attachments={activeTopicTab === 'handwrittenNotes' ? assets.noteAttachments : []} onPreview={setPreviewAsset} /></>;
   };
 
   const renderPracticePanel = () => (
@@ -1359,7 +1431,7 @@ export default function AcademicIQScreen() {
       {practiceError ? (
         <View style={styles.errorRetryWrap}>
           <InlineNotice text={practiceError} />
-          <TouchableOpacity style={styles.retryButton} onPress={() => { setPracticeError(''); loadPracticeQuestions(getNodeId(selectedTopic), practiceDifficulty); }}>
+          <TouchableOpacity style={styles.retryButton} onPress={() => { setPracticeError(''); loadPracticeQuestions(getApiId(selectedTopic, ['id', 'topicId', 'nodeId', 'topic_id', 'slug']) || getNodeId(selectedTopic), practiceDifficulty); }}>
             <Text style={styles.retryButtonText}>↺ Retry</Text>
           </TouchableOpacity>
         </View>
@@ -1403,6 +1475,7 @@ export default function AcademicIQScreen() {
         <>
           <View style={styles.headerRowCompact}><TouchableOpacity onPress={() => { setSelectedExam(null); setSelectedExamSubjectId(null); resetExamTopicState(); }}><Text style={styles.backText}>{`← ${nodeLabel(selectedExamCategory, 'Categories')}`}</Text></TouchableOpacity><TouchableOpacity style={styles.analyticsPill} onPress={() => router.push('/student/academic')}><Text style={styles.analyticsPillText}>My Analytics</Text></TouchableOpacity></View>
           <View style={styles.examBanner}><Text style={styles.examBannerTitle}>{nodeLabel(selectedExam, 'Exam')}</Text><Text style={styles.examBannerSub}>{`Part of ${nodeLabel(selectedExamCategory, 'Category')}`}</Text></View>
+          <InlineNotice text={examDetailError} />
           {showLimitedAccess ? <LimitedAccessBanner /> : null}
           <ScrollView horizontal style={styles.subjectTabsScroll} contentContainerStyle={styles.subjectTabsContent} showsHorizontalScrollIndicator={false}>{[{ key: 'resources', label: 'Resources' }, { key: 'practice', label: 'Practice Zone' }, { key: 'mock', label: 'Mock Test' }].map((section) => <TouchableOpacity key={section.key} style={[styles.subjectPill, examSection === section.key && styles.subjectPillActive]} onPress={() => { if (section.key === 'mock') { openMockTestList(); return; } setExamSection(section.key); resetExamTopicState(); }}><Text style={[styles.subjectPillText, examSection === section.key && styles.subjectPillTextActive]}>{section.label}</Text></TouchableOpacity>)}</ScrollView>
           {examSection === 'practice' && practiceZoneSubjectsLoading ? (
@@ -1410,9 +1483,9 @@ export default function AcademicIQScreen() {
           ) : examSection === 'practice' && practiceZoneSubjectsError && !examSubjects.length ? (
             <View style={styles.errorRetryWrap}>
               <InlineNotice text={practiceZoneSubjectsError} />
-              <TouchableOpacity style={styles.retryButton} onPress={() => { setPracticeZoneSubjectsError(''); loadPracticeZoneSubjects(selectedExam?.id || selectedExam?.examId); }}>
-                <Text style={styles.retryButtonText}>↺ Retry</Text>
-              </TouchableOpacity>
+                <TouchableOpacity style={styles.retryButton} onPress={() => { setPracticeZoneSubjectsError(''); loadPracticeZoneSubjects(getApiId(selectedExam, ['id', 'examId', 'entranceExamId', 'competitiveExamId', 'exam_id']) || getNodeId(selectedExam)); }}>
+                  <Text style={styles.retryButtonText}>↺ Retry</Text>
+                </TouchableOpacity>
             </View>
           ) : (
             <SubjectTabs items={examSubjects} activeId={selectedExamSubjectId} onSelect={(subject) => { setSelectedExamSubjectId(getNodeId(subject)); resetExamTopicState(); }} />
@@ -1428,7 +1501,7 @@ export default function AcademicIQScreen() {
                     {examPracticeError ? (
                       <View style={styles.errorRetryWrap}>
                         <InlineNotice text={examPracticeError} />
-                        <TouchableOpacity style={styles.retryButton} onPress={() => { setExamPracticeError(''); loadExamPracticeQuestions(getNodeId(selectedExamTopic), examPracticeDifficulty); }}>
+                        <TouchableOpacity style={styles.retryButton} onPress={() => { setExamPracticeError(''); loadExamPracticeQuestions(getApiId(selectedExamTopic, ['id', 'topicId', 'nodeId', 'topic_id', 'slug']) || getNodeId(selectedExamTopic), examPracticeDifficulty); }}>
                           <Text style={styles.retryButtonText}>↺ Retry</Text>
                         </TouchableOpacity>
                       </View>
@@ -1436,7 +1509,7 @@ export default function AcademicIQScreen() {
                     {examPracticeLoading ? <View style={styles.centerWrap}><ActivityIndicator color={STUDENT.accentCyan} /><Text style={styles.mutedText}>Loading questions…</Text></View> : <QuestionRunner title="Competitive Practice Zone" questions={examPracticeQuestions} state={examPracticeState} setState={setExamPracticeState} onSubmit={submitExamPractice} emptyMessage="No practice questions are currently available for this topic." accentColor={STUDENT.accentCyan} scoreSuffix={`/ ${examPracticeQuestions.length}`} />}
                   </>
                 ) : (
-                  <>{examTopicLoading ? <View style={styles.centerWrap}><ActivityIndicator color={STUDENT.accent} /><Text style={styles.mutedText}>Loading topic…</Text></View> : <><TopicTabBar tabs={examTabs} activeKey={examActiveTab} onSelect={setExamActiveTab} /><InlineNotice text={examTopicError} />{examActiveTab === 'videos' || examActiveTab === 'images' || examActiveTab === 'pdfs' ? <ContentCard title={examTabs.find((tab) => tab.key === examActiveTab)?.label || 'Media'} attachments={collectTopicAssets(examTopicContent || {})[examActiveTab]} onPreview={setPreviewAsset} /> : <ContentCard title={examTabs.find((tab) => tab.key === examActiveTab)?.label || 'Topic'} body={stripHtml(examTopicContent?.[examActiveTab])} attachments={examActiveTab === 'handwrittenNotes' ? collectTopicAssets(examTopicContent || {}).noteAttachments : []} onPreview={setPreviewAsset} />}</>}</>
+                  <>{examTopicLoading ? <View style={styles.centerWrap}><ActivityIndicator color={STUDENT.accent} /><Text style={styles.mutedText}>Loading topic…</Text></View> : <><TopicTabBar tabs={examTabs} activeKey={examActiveTab} onSelect={setExamActiveTab} /><InlineNotice text={examTopicError} />{examActiveTab === 'videos' || examActiveTab === 'images' || examActiveTab === 'pdfs' ? <ContentCard title={examTabs.find((tab) => tab.key === examActiveTab)?.label || 'Media'} attachments={collectTopicAssets(examTopicContent || {})[examActiveTab]} onPreview={setPreviewAsset} /> : <ContentCard title={examTabs.find((tab) => tab.key === examActiveTab)?.label || 'Topic'} body={examTopicContent?.[examActiveTab]} attachments={examActiveTab === 'handwrittenNotes' ? collectTopicAssets(examTopicContent || {}).noteAttachments : []} onPreview={setPreviewAsset} />}</>}</>
                 )}
               </>
             ) : examTopics.length > 0 ? examTopics.map((topic, index) => <NodeCard key={getNodeId(topic, `${index}`)} index={index} title={nodeLabel(topic, `Topic ${index + 1}`)} subtitle={topic?.description || topic?.summary} onPress={() => openExamTopic(topic)} />) : <Text style={styles.placeholderText}>Topics will appear here when this exam subject is available.</Text>}
@@ -1640,10 +1713,12 @@ const styles = StyleSheet.create({
   metaInfoWrap: { flexDirection: 'row', gap: 12, flexWrap: 'wrap' },
   metaInfo: { color: STUDENT.textSecondary, fontSize: 12 },
   questionText: { color: '#fff', fontSize: 15, lineHeight: 22 },
+  hintPrefix: { color: '#FDE68A', fontSize: 12, fontWeight: '700', marginBottom: 2 },
   hintText: { color: '#FDE68A', fontSize: 12, lineHeight: 18 },
   optionsWrap: { gap: 10 },
   optionCard: { borderWidth: 1, borderColor: STUDENT.border, borderRadius: 12, padding: 12, backgroundColor: 'rgba(10,15,30,0.85)', flexDirection: 'row', alignItems: 'center', gap: 10 },
   optionCardActive: { borderColor: STUDENT.accent, backgroundColor: 'rgba(79,70,229,0.16)' },
+  optionTextWrap: { flex: 1 },
   optionText: { color: '#fff', fontSize: 13, flex: 1, lineHeight: 19 },
   mockOptionLabel: { width: 24, height: 24, borderRadius: 12, borderWidth: 1, borderColor: STUDENT.border, color: STUDENT.textSecondary, textAlign: 'center', lineHeight: 22, fontWeight: '700' },
   mockOptionLabelActive: { color: '#fff', borderColor: '#fff' },
