@@ -458,11 +458,21 @@ const styles = StyleSheet.create({
   // ── Header ──
   header: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-    paddingLeft: SPACING.sm, paddingRight: SPACING.lg, paddingTop: 50, paddingBottom: 0,
+    paddingLeft: 0, paddingRight: SPACING.lg, paddingTop: 50, paddingBottom: 0,
+    marginLeft: 0,
     backgroundColor: COLORS.white, borderBottomWidth: 1, borderBottomColor: COLORS.border,
   },
-  logoContainer: { flexDirection: 'row', alignItems: 'center', height: HEADER_LOGO_HEIGHT },
-  logoImage: { width: HEADER_LOGO_WIDTH, height: HEADER_LOGO_HEIGHT },
+  logoContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    height: HEADER_LOGO_HEIGHT,
+    paddingLeft: 0,
+    marginLeft: 0,
+  },
+  logoImage: {
+    width: HEADER_LOGO_WIDTH,
+    height: HEADER_LOGO_HEIGHT,
+  },
   loginBtn: {
     backgroundColor: COLORS.primary, paddingVertical: 10, paddingHorizontal: 18,
     borderRadius: 32,
