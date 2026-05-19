@@ -18,6 +18,8 @@ const arr = (value) => (Array.isArray(value) ? value : value ? [value] : []);
 const unwrap = (value) => (value?.data && typeof value.data === 'object' ? value.data : value || {});
 const labelOf = (node, fallback = '') => String(node?.title || node?.name || node?.label || fallback || '').trim();
 const toMessage = (err) => err?.response?.data?.message || err?.message || 'Server error. Please try again.';
+const findFirstValidId = (item, keys = []) =>
+  keys.map((key) => item?.[key]).find((value) => value !== undefined && value !== null && String(value).trim());
 
 const SECTION_TABS = [
   { key: 'about-courses', label: 'About Courses' },
@@ -31,9 +33,7 @@ const normalizeOptions = (payload, fallbackLabel, idKeys = []) => {
   const data = unwrap(payload);
   return arr(data?.streams || data?.majors || data?.careers || data?.items || data)
     .map((item, index) => ({
-      id: idKeys.map((key) => item?.[key]).find((value) => value !== undefined && value !== null && String(value).trim())
-        || item?.slug
-        || `${index}`,
+      id: findFirstValidId(item, idKeys) || item?.slug || `${index}`,
       name: labelOf(item, `${fallbackLabel} ${index + 1}`),
       raw: item,
     }))

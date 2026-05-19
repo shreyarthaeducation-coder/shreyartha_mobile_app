@@ -12,6 +12,10 @@ const withFallback = async (candidates, retryStatuses = FALLBACK_RETRY_STATUSES)
   const queue = candidates.filter((candidate) => typeof candidate === 'function');
   let lastError = null;
 
+  if (!queue.length) {
+    throw new Error('No API request candidates were provided.');
+  }
+
   for (let index = 0; index < queue.length; index += 1) {
     try {
       return await queue[index]();
@@ -52,7 +56,7 @@ const buildPsychometricSubmitCandidates = (basePath, categoryId, data) => {
     { endpoint: `${basePath}/categories/${encodedCategoryId}/answers`, body: data },
   ];
   if (Array.isArray(data?.answers) && !Array.isArray(data?.responses)) {
-    candidates.splice(1, 0, {
+    candidates.push({
       endpoint: `${basePath}/categories/${encodedCategoryId}/submit`,
       body: { ...data, responses: data.answers },
     });
