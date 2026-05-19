@@ -84,6 +84,14 @@ const getMockTestPaperQuestions = (paperId) => getFirst([
 export const studentService = {
   // ── Dashboard ──────────────────────────────────────────────────────────────
   getDashboard: () => api.get('/api/students/dashboard'),
+  getStudentSubscription: () => getFirst([
+    '/api/students/subscription',
+    '/api/student/subscription',
+    '/api/students/plan',
+    '/api/students/entitlement',
+    '/api/students/profile',
+    '/api/students/dashboard',
+  ]),
 
   // ── Profile ────────────────────────────────────────────────────────────────
   getProfile: () => api.get('/api/students/profile'),
