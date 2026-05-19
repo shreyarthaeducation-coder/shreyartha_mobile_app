@@ -27,7 +27,7 @@ const TABS = [
   { key: 'academic', label: 'Academic IQ' },
   { key: 'skillsedge', label: 'Skills Edge' },
   { key: 'university', label: 'University & Course Preference' },
-  { key: 'education', label: 'Education and Certification details' },
+  { key: 'education', label: 'Education Details' },
   { key: 'additional', label: 'Additional Details' },
 ];
 
@@ -378,7 +378,6 @@ export default function StudentProfileScreen() {
   const [active, setActive] = useState('personal');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [drawerOpen, setDrawerOpen] = useState(false);
   const [showDob, setShowDob] = useState(false);
   const [personalSubTab, setPersonalSubTab] = useState('information');
   const [personalLocked, setPersonalLocked] = useState(false);
@@ -977,46 +976,50 @@ export default function StudentProfileScreen() {
 
   return (
     <SafeAreaView style={styles.root} edges={['top', 'left', 'right']}>
-      <Drawer
-        open={drawerOpen}
-        onClose={() => setDrawerOpen(false)}
-        progress={progress}
-        media={media}
-        onPhotoPick={() => pickMedia('image')}
-        onPhotoDelete={async () => {
-          try {
-            await studentService.deleteProfilePicture();
-            await load();
-          } catch (err) {
-            Alert.alert('Delete failed', err?.message || 'Could not remove the profile photo.');
-          }
-        }}
-        onVideoPick={() => pickMedia('video')}
-        onVideoDelete={async () => {
-          try {
-            await studentService.deleteProfileVideo();
-            await load();
-          } catch (err) {
-            Alert.alert('Delete failed', err?.message || 'Could not remove the profile video.');
-          }
-        }}
-      />
-
       <View style={styles.header}>
-        <TouchableOpacity style={styles.headerBtn} onPress={() => router.back()}><Text style={styles.headerBtnText}>← Back</Text></TouchableOpacity>
-        <Text style={styles.title}>Student Profile</Text>
-        <TouchableOpacity style={styles.headerBtn} onPress={() => setDrawerOpen(true)}><Text style={styles.headerBtnText}>☰</Text></TouchableOpacity>
+        <TouchableOpacity style={styles.headerIconBtn} onPress={() => router.back()}><Text style={styles.headerIconText}>{'<'}</Text></TouchableOpacity>
+        <Text style={styles.title}>Students Profile</Text>
+        <View style={styles.headerSpacer} />
       </View>
 
       {loading ? (
         <View style={styles.loader}><ActivityIndicator color={STUDENT.accentGreen} size="large" /></View>
       ) : (
         <>
-          <ScrollView horizontal style={styles.tabs} showsHorizontalScrollIndicator={false}>
+          <View style={styles.heroPanel}>
+            <View style={styles.heroCircuitDotOne} />
+            <View style={styles.heroCircuitDotTwo} />
+            <View style={styles.heroCircuitLineLeft} />
+            <View style={styles.heroCircuitLineRight} />
+            <View style={styles.heroAvatarGlowOuter}>
+              <View style={styles.heroAvatarGlowInner}>
+                {media.pictureUrl ? (
+                  <Animated.Image source={{ uri: media.pictureUrl }} style={styles.heroAvatarImage} />
+                ) : (
+                  <View style={styles.heroAvatarFallback}>
+                    <Text style={styles.heroAvatarFallbackText}>👤</Text>
+                  </View>
+                )}
+                <View style={styles.completionBadge}>
+                  <Text style={styles.completionBadgeText}>{`${progress.toFixed(0)}%`}</Text>
+                </View>
+              </View>
+            </View>
+            <View style={styles.heroActionRow}>
+              <TouchableOpacity style={styles.heroActionBtn} onPress={() => pickMedia('image')}>
+                <Text style={styles.heroActionText}>📷 Change Photo</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.heroActionBtn} onPress={() => pickMedia('video')}>
+                <Text style={styles.heroActionText}>⬆ Upload Video</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          <ScrollView horizontal style={styles.tabs} contentContainerStyle={styles.tabsContent} showsHorizontalScrollIndicator={false}>
             {TABS.map((tab) => (
               <TouchableOpacity
                 key={tab.key}
-                style={[styles.tab, active === tab.key ? styles.tabActive : styles.tabInactive]}
+                style={[styles.tab, active === tab.key && styles.tabActive]}
                 onPress={() => {
                   setActive(tab.key);
                   setError('');
@@ -1024,6 +1027,7 @@ export default function StudentProfileScreen() {
                 }}
               >
                 <Text style={[styles.tabText, active === tab.key && styles.tabTextActive]}>{tab.label}</Text>
+                <View style={[styles.tabUnderline, active === tab.key && styles.tabUnderlineActive]} />
               </TouchableOpacity>
             ))}
           </ScrollView>
@@ -1083,66 +1087,80 @@ export default function StudentProfileScreen() {
                           value={personal.email}
                           onChangeText={(v) => setPersonal((p) => ({ ...p, email: v }))}
                         />
-                        <Select
-                          label="Gender" required
-                          errorKey="gender" errors={personalErrors}
-                          value={personal.gender}
-                          setValue={(v) => setPersonal((p) => ({ ...p, gender: v }))}
-                          options={GENDER_OPTIONS}
-                          disabled={personalLocked}
-                        />
-                        <View style={styles.group}>
-                          <Text style={[styles.label, personalErrors.dob && styles.labelError]}>
-                            Date of Birth <Text style={styles.required}>*</Text>
-                          </Text>
-                          <TouchableOpacity
-                            style={[styles.input, personalErrors.dob && styles.inputError]}
-                            onPress={() => { if (!personalLocked) setShowDob(true); }}
-                            disabled={personalLocked}
-                            accessibilityRole="button"
-                            accessibilityLabel="Select date of birth"
-                          >
-                            <Text style={personal.dob ? styles.dateText : { color: STUDENT.textMuted }}>
-                              {personal.dob || 'Select date of birth'}
-                            </Text>
-                          </TouchableOpacity>
-                          {showDob ? (
-                            <DateTimePicker
-                              value={personal.dob ? new Date(personal.dob) : new Date()}
-                              mode="date"
-                              maximumDate={new Date()}
-                              onChange={(_, d) => {
-                                setShowDob(Platform.OS === 'ios');
-                                if (d) setPersonal((p) => ({ ...p, dob: d.toISOString().slice(0, 10) }));
-                              }}
+                        <View style={styles.formRow}>
+                          <View style={styles.halfField}>
+                            <Select
+                              label="Gender" required
+                              errorKey="gender" errors={personalErrors}
+                              value={personal.gender}
+                              setValue={(v) => setPersonal((p) => ({ ...p, gender: v }))}
+                              options={GENDER_OPTIONS}
+                              disabled={personalLocked}
                             />
-                          ) : null}
+                          </View>
+                          <View style={styles.halfField}>
+                            <View style={styles.group}>
+                              <Text style={[styles.label, personalErrors.dob && styles.labelError]}>
+                                Date of Birth <Text style={styles.required}>*</Text>
+                              </Text>
+                              <TouchableOpacity
+                                style={[styles.input, personalErrors.dob && styles.inputError]}
+                                onPress={() => { if (!personalLocked) setShowDob(true); }}
+                                disabled={personalLocked}
+                                accessibilityRole="button"
+                                accessibilityLabel="Select date of birth"
+                              >
+                                <Text style={personal.dob ? styles.dateText : styles.placeholderText}>
+                                  {personal.dob || 'Select date of birth'}
+                                </Text>
+                              </TouchableOpacity>
+                              {showDob ? (
+                                <DateTimePicker
+                                  value={personal.dob ? new Date(personal.dob) : new Date()}
+                                  mode="date"
+                                  maximumDate={new Date()}
+                                  onChange={(_, d) => {
+                                    setShowDob(Platform.OS === 'ios');
+                                    if (d) setPersonal((p) => ({ ...p, dob: d.toISOString().slice(0, 10) }));
+                                  }}
+                                />
+                              ) : null}
+                            </View>
+                          </View>
                         </View>
-                        <Field
-                          label="Mobile No." required
-                          errorKey="mobile" errors={personalErrors}
-                          editable
-                          keyboardType="phone-pad"
-                          maxLength={15}
-                          value={personal.mobile}
-                          onChangeText={(v) => setPersonal((p) => ({ ...p, mobile: v }))}
-                        />
-                        <Select
-                          label="Current Class" required
-                          errorKey="currentClass" errors={personalErrors}
-                          value={personal.currentClass ? String(personal.currentClass) : ''}
-                          setValue={(v) => setPersonal((p) => ({ ...p, currentClass: v }))}
-                          options={CLASS_OPTIONS.map((c) => ({ label: `Class ${c}`, value: String(c) }))}
-                          disabled={personalLocked}
-                        />
+                        <View style={styles.formRow}>
+                          <View style={styles.halfField}>
+                            <Field
+                              label="Mobile No." required
+                              errorKey="mobile" errors={personalErrors}
+                              editable
+                              keyboardType="phone-pad"
+                              maxLength={15}
+                              value={personal.mobile}
+                              onChangeText={(v) => setPersonal((p) => ({ ...p, mobile: v }))}
+                            />
+                          </View>
+                          <View style={styles.halfField}>
+                            <Select
+                              label="Current Class" required
+                              errorKey="currentClass" errors={personalErrors}
+                              value={personal.currentClass ? String(personal.currentClass) : ''}
+                              setValue={(v) => setPersonal((p) => ({ ...p, currentClass: v }))}
+                              options={CLASS_OPTIONS.map((c) => ({ label: `Class ${c}`, value: String(c) }))}
+                              disabled={personalLocked}
+                            />
+                          </View>
+                        </View>
                         {isSchoolStudent ? (
-                          <Select
-                            label="Section"
-                            value={personal.section}
-                            setValue={(v) => setPersonal((p) => ({ ...p, section: v }))}
-                            options={SECTION_OPTIONS}
-                            disabled={personalLocked}
-                          />
+                          <View>
+                            <Select
+                              label="Section"
+                              value={personal.section}
+                              setValue={(v) => setPersonal((p) => ({ ...p, section: v }))}
+                              options={SECTION_OPTIONS}
+                              disabled={personalLocked}
+                            />
+                          </View>
                         ) : null}
                         <ReadOnly label="Your School Name" value={personal.schoolName} />
                         <ReadOnly label="Curriculum" value={personal.curriculum} />
@@ -1609,17 +1627,138 @@ export default function StudentProfileScreen() {
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: 'transparent' },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 12, paddingBottom: 10 },
-  headerBtn: { minWidth: 64, paddingVertical: 8, alignItems: 'center', borderRadius: 10, borderWidth: 1, borderColor: STUDENT.border, backgroundColor: STUDENT.bgCard },
-  headerBtnText: { color: STUDENT.textPrimary, fontWeight: '700' },
-  title: { color: STUDENT.textPrimary, fontWeight: '800', fontSize: 17 },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingBottom: 6 },
+  headerIconBtn: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(59,130,246,0.5)',
+    backgroundColor: 'rgba(17,24,39,0.92)',
+  },
+  headerIconText: { color: STUDENT.textPrimary, fontWeight: '800', fontSize: 18 },
+  headerSpacer: { width: 42 },
+  title: { color: STUDENT.textPrimary, fontWeight: '800', fontSize: 20 },
   loader: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  tabs: { maxHeight: 52, paddingHorizontal: 10 },
-  tab: { borderRadius: 999, borderWidth: 1, paddingVertical: 8, paddingHorizontal: 14, marginRight: 8, alignSelf: 'center' },
-  tabActive: { backgroundColor: 'rgba(79,70,229,0.35)', borderColor: STUDENT.accent },
-  tabInactive: { backgroundColor: 'rgba(168,0,54,0.16)', borderColor: 'rgba(168,0,54,0.6)' },
-  tabText: { color: STUDENT.textSecondary, fontSize: 12, fontWeight: '700' },
-  tabTextActive: { color: '#fff' },
+  heroPanel: {
+    marginHorizontal: 16,
+    marginTop: 6,
+    marginBottom: 10,
+    paddingHorizontal: 18,
+    paddingTop: 16,
+    paddingBottom: 18,
+    borderRadius: 24,
+    borderWidth: 1,
+    borderColor: 'rgba(59,130,246,0.4)',
+    backgroundColor: 'rgba(10,15,30,0.9)',
+    alignItems: 'center',
+    overflow: 'hidden',
+  },
+  heroCircuitDotOne: {
+    position: 'absolute',
+    top: 26,
+    left: 26,
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: 'rgba(96,165,250,0.8)',
+  },
+  heroCircuitDotTwo: {
+    position: 'absolute',
+    top: 32,
+    right: 30,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: 'rgba(125,211,252,0.7)',
+  },
+  heroCircuitLineLeft: {
+    position: 'absolute',
+    top: 68,
+    left: 0,
+    width: 84,
+    height: 1,
+    backgroundColor: 'rgba(96,165,250,0.35)',
+  },
+  heroCircuitLineRight: {
+    position: 'absolute',
+    top: 68,
+    right: 0,
+    width: 84,
+    height: 1,
+    backgroundColor: 'rgba(96,165,250,0.35)',
+  },
+  heroAvatarGlowOuter: {
+    width: 148,
+    height: 148,
+    borderRadius: 74,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(37,99,235,0.12)',
+    borderWidth: 1,
+    borderColor: 'rgba(96,165,250,0.3)',
+    shadowColor: '#3b82f6',
+    shadowOpacity: 0.28,
+    shadowOffset: { width: 0, height: 0 },
+    shadowRadius: 18,
+    elevation: 10,
+  },
+  heroAvatarGlowInner: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#081120',
+    borderWidth: 3,
+    borderColor: 'rgba(147,197,253,0.9)',
+    overflow: 'visible',
+  },
+  heroAvatarImage: { width: 108, height: 108, borderRadius: 54 },
+  heroAvatarFallback: {
+    width: 108,
+    height: 108,
+    borderRadius: 54,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(30,58,138,0.9)',
+  },
+  heroAvatarFallbackText: { fontSize: 38 },
+  completionBadge: {
+    position: 'absolute',
+    bottom: -8,
+    minWidth: 54,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 999,
+    backgroundColor: '#2563eb',
+    borderWidth: 1,
+    borderColor: 'rgba(191,219,254,0.85)',
+  },
+  completionBadgeText: { color: '#fff', fontSize: 13, fontWeight: '800', textAlign: 'center' },
+  heroActionRow: { flexDirection: 'row', gap: 12, width: '100%', marginTop: 18 },
+  heroActionBtn: {
+    flex: 1,
+    minHeight: 44,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 10,
+    backgroundColor: '#2563eb',
+    borderWidth: 1,
+    borderColor: 'rgba(147,197,253,0.45)',
+  },
+  heroActionText: { color: '#fff', fontWeight: '700', fontSize: 13, textAlign: 'center' },
+  tabs: { maxHeight: 58, paddingHorizontal: 16, marginBottom: 6 },
+  tabsContent: { paddingRight: 18 },
+  tab: { paddingVertical: 8, marginRight: 20, alignSelf: 'center' },
+  tabActive: {},
+  tabText: { color: 'rgba(255,255,255,0.64)', fontSize: 13, fontWeight: '700' },
+  tabTextActive: { color: '#60a5fa' },
+  tabUnderline: { marginTop: 8, height: 3, borderRadius: 999, backgroundColor: 'transparent' },
+  tabUnderlineActive: { backgroundColor: '#2563eb' },
   subTabs: { flexDirection: 'row', gap: 8, marginBottom: 12, marginTop: 4 },
   subTab: { flex: 1, borderRadius: 999, borderWidth: 1, borderColor: STUDENT.border, backgroundColor: STUDENT.bgCard, paddingVertical: 8, alignItems: 'center' },
   subTabActive: { borderColor: STUDENT.accentCyan, backgroundColor: 'rgba(6, 182, 212, 0.15)' },
@@ -1630,21 +1769,38 @@ const styles = StyleSheet.create({
   retryBtn: { alignSelf: 'flex-start', marginTop: 4, borderWidth: 1, borderColor: STUDENT.border, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 6, backgroundColor: STUDENT.bg },
   retryBtnText: { color: STUDENT.textPrimary, fontWeight: '700', fontSize: 12 },
   body: { flex: 1 },
-  bodyContent: { paddingHorizontal: 12, paddingBottom: 24 },
-  group: { marginBottom: 12 },
-  label: { color: STUDENT.textSecondary, marginBottom: 4, fontWeight: '600', fontSize: 13 },
+  bodyContent: { paddingHorizontal: 16, paddingBottom: 120 },
+  formRow: { flexDirection: 'row', gap: 12 },
+  halfField: { flex: 1 },
+  group: { marginBottom: 14 },
+  label: { color: '#fff', marginBottom: 6, fontWeight: '700', fontSize: 13 },
   labelError: { color: '#a80036' },
   required: { color: '#a80036' },
-  input: { borderWidth: 1, borderColor: STUDENT.border, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 11, color: STUDENT.textPrimary, backgroundColor: STUDENT.bgCard },
+  input: {
+    borderWidth: 1,
+    borderColor: 'rgba(59,130,246,0.4)',
+    borderRadius: 14,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    color: STUDENT.textPrimary,
+    backgroundColor: 'rgba(8,17,32,0.95)',
+  },
   inputError: { borderColor: '#a80036' },
   dateText: { color: STUDENT.textPrimary },
+  placeholderText: { color: STUDENT.textMuted },
   multiline: { minHeight: 72, textAlignVertical: 'top' },
-  selectWrap: { borderWidth: 1, borderColor: STUDENT.border, borderRadius: 10, backgroundColor: STUDENT.bgCard, overflow: 'hidden' },
+  selectWrap: {
+    borderWidth: 1,
+    borderColor: 'rgba(59,130,246,0.4)',
+    borderRadius: 14,
+    backgroundColor: 'rgba(8,17,32,0.95)',
+    overflow: 'hidden',
+  },
   picker: { color: STUDENT.textPrimary },
   readOnly: { justifyContent: 'center' },
-  readOnlyText: { color: STUDENT.textMuted },
-  sectionHeader: { color: '#ffffff', fontWeight: '800', fontSize: 15, marginBottom: 10, marginTop: 6, backgroundColor: '#162a6a', padding: 8, borderRadius: 8 },
-  sectionHeaderDark: { color: '#ffffff', fontWeight: '800', fontSize: 15, marginBottom: 10, marginTop: 6, backgroundColor: '#162a6a', padding: 8, borderRadius: 8, borderLeftWidth: 4, borderLeftColor: STUDENT.accentCyan },
+  readOnlyText: { color: STUDENT.textSecondary },
+  sectionHeader: { color: '#ffffff', fontWeight: '800', fontSize: 15, marginBottom: 10, marginTop: 6, backgroundColor: '#162a6a', paddingVertical: 10, paddingHorizontal: 12, borderRadius: 12 },
+  sectionHeaderDark: { color: '#ffffff', fontWeight: '800', fontSize: 15, marginBottom: 10, marginTop: 6, backgroundColor: '#162a6a', paddingVertical: 10, paddingHorizontal: 12, borderRadius: 12, borderLeftWidth: 4, borderLeftColor: STUDENT.accentCyan },
   subHeader: { color: STUDENT.accentCyan, fontWeight: '700', marginBottom: 6, marginTop: 4 },
   subHeaderSm: { color: STUDENT.accentGold, fontWeight: '600', fontSize: 12, marginBottom: 4, marginTop: 4, paddingLeft: 8 },
   mutedHint: { color: STUDENT.textMuted, fontStyle: 'italic', fontSize: 13, marginTop: 4 },

@@ -109,6 +109,53 @@ export const studentService = {
     '/api/students/profile',
     '/api/student/profile',
   ]),
+  getStudentAnalytics: () => getFirst([
+    '/api/students/analytics',
+    '/api/student/analytics',
+  ]),
+  getSyllabusCompletion: () => getFirst([
+    '/api/students/syllabus-completion',
+    '/api/student/syllabus-completion',
+  ]),
+  getMyProgressAnalytics: () => getFirst([
+    '/api/student/my-progress',
+    '/api/student/my-progress/',
+    '/api/students/my-progress',
+  ]),
+  getCompetitiveExamAnalytics: () => getFirst([
+    '/api/student/competitiveexam/analytics',
+    '/api/student/competitive-exam/analytics',
+    '/api/students/competitiveexam/analytics',
+    '/api/students/competitive-exam/analytics',
+  ]),
+  getPsychometricAnalytics: () => getFirst(psychometricBasePaths.flatMap((basePath) => [
+    `${basePath}/analytics`,
+    `${basePath}/analysis`,
+    `${basePath}/summary`,
+    `${basePath}/results`,
+  ])),
+  getLearningGapsAnalytics: () => getFirst([
+    '/api/student/learning-gaps',
+    '/api/students/learning-gaps',
+    '/api/student/learninggaps',
+    '/api/students/learninggaps',
+    '/api/student/learning-gap',
+    '/api/students/learning-gap',
+    '/api/student/learning-gaps/analytics',
+    '/api/students/learning-gaps/analytics',
+  ]),
+  getCodingProAnalytics: () => getFirst(codingProBasePaths.flatMap((basePath) => [
+    `${basePath}/analytics`,
+    `${basePath}/analysis`,
+    `${basePath}/summary`,
+    `${basePath}/progress`,
+  ])),
+  getSkillsEdgeAnalytics: () => getFirst(skillsEdgeBasePaths.flatMap((basePath) => [
+    `${basePath}/analytics`,
+    `${basePath}/analysis`,
+    `${basePath}/summary`,
+    `${basePath}/progress`,
+  ])),
   /**
    * Resolves student subscription/plan entitlements using backend fallbacks.
    * Different deployments expose this data under different endpoints, so this
