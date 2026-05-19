@@ -18,6 +18,8 @@ const arr = (value) => (Array.isArray(value) ? value : value ? [value] : []);
 const unwrap = (value) => (value?.data && typeof value.data === 'object' ? value.data : value || {});
 const labelOf = (node, fallback = '') => String(node?.title || node?.name || node?.label || fallback || '').trim();
 const toMessage = (err) => err?.response?.data?.message || err?.message || 'Server error. Please try again.';
+const findFirstValidId = (item, keys = []) =>
+  keys.map((key) => item?.[key]).find((value) => value !== undefined && value !== null && String(value).trim() !== '');
 
 const SECTION_TABS = [
   { key: 'about-courses', label: 'About Courses' },
@@ -27,11 +29,11 @@ const SECTION_TABS = [
   { key: 'scholarship-details', label: 'Scholarship Details' },
 ];
 
-const normalizeOptions = (payload, fallbackLabel) => {
+const normalizeOptions = (payload, fallbackLabel, idKeys = []) => {
   const data = unwrap(payload);
   return arr(data?.streams || data?.majors || data?.careers || data?.items || data)
     .map((item, index) => ({
-      id: item?.id || item?.streamId || item?.majorId || item?.careerId || item?.slug || `${index}`,
+      id: findFirstValidId(item, idKeys) || item?.slug || `${index}`,
       name: labelOf(item, `${fallbackLabel} ${index + 1}`),
       raw: item,
     }))
@@ -141,7 +143,7 @@ export default function SubjectCareerScreen() {
     try {
       const data = await studentService.getSubjectCareerStreams();
 
-      const parsed = normalizeOptions(data, 'Stream');
+      const parsed = normalizeOptions(data, 'Stream', ['streamId', 'id', 'slug']);
       setStreams(parsed);
       if (!streamId && parsed.length > 0) {
         setStreamId(String(parsed[0].id));
@@ -176,7 +178,7 @@ export default function SubjectCareerScreen() {
         const data = await studentService.getSubjectCareerMajors(streamId);
 
         if (!mounted) return;
-        const parsed = normalizeOptions(data, 'Major');
+        const parsed = normalizeOptions(data, 'Major', ['majorId', 'id', 'slug']);
         setMajors(parsed);
         setMajorId(parsed.length > 0 ? String(parsed[0].id) : '');
         setCareers([]);
@@ -210,7 +212,7 @@ export default function SubjectCareerScreen() {
         const data = await studentService.getSubjectCareerOptics(streamId, majorId);
 
         if (!mounted) return;
-        const parsed = normalizeOptions(data, 'Career');
+        const parsed = normalizeOptions(data, 'Career', ['careerId', 'id', 'slug']);
         setCareers(parsed);
         setCareerId(parsed.length > 0 ? String(parsed[0].id) : '');
       } catch (loadError) {

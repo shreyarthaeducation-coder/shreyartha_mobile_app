@@ -92,6 +92,7 @@ const getApiId = (node, keys = []) => {
   }
   return '';
 };
+const getTopicApiId = (node) => getApiId(node, ['topicId', 'topic_id', 'id', 'nodeId', 'slug']) || getNodeId(node);
 const emptyRunnerState = { index: 0, answers: {}, submitted: false, result: null };
 const emptyReflectionState = {
   phase: 'idle',
@@ -1060,14 +1061,14 @@ export default function AcademicIQScreen() {
   }, [extractPracticeQuestions]);
   useEffect(() => {
     if (!selectedTopic) return;
-    const topicId = getApiId(selectedTopic, ['id', 'topicId', 'nodeId', 'topic_id', 'slug']) || getNodeId(selectedTopic);
+    const topicId = getTopicApiId(selectedTopic);
     if (activeCategory === 'practice') loadPracticeQuestions(topicId, practiceDifficulty);
     else loadTopicContent(topicId);
   }, [selectedTopic, activeCategory, practiceDifficulty, loadPracticeQuestions, loadTopicContent]);
 
   const loadUnderstanding = useCallback(async () => {
     if (!selectedTopic) return;
-    const topicId = getNodeId(selectedTopic);
+    const topicId = getTopicApiId(selectedTopic);
     setUnderstandingLoading(true);
     setUnderstandingError('');
     try {
@@ -1108,7 +1109,7 @@ export default function AcademicIQScreen() {
 
   const beginReflection = useCallback(async () => {
     if (!selectedTopic) return;
-    const topicId = getNodeId(selectedTopic);
+    const topicId = getTopicApiId(selectedTopic);
     setReflectionState((prev) => ({ ...prev, loading: true, error: '' }));
     try {
       const response = await studentService.startTopicReflection(topicId, {});
@@ -1130,7 +1131,7 @@ export default function AcademicIQScreen() {
 
   const answerReflection = useCallback(async (option, index) => {
     if (!selectedTopic || !reflectionState.question) return;
-    const topicId = getNodeId(selectedTopic);
+    const topicId = getTopicApiId(selectedTopic);
     const answer = optionValue(option);
     const questionId = reflectionState.question?.id || reflectionState.question?.questionId;
     const history = [...reflectionState.history, { questionId, answer }];
@@ -1153,7 +1154,7 @@ export default function AcademicIQScreen() {
 
   const submitReflectionLevel = useCallback(async () => {
     if (!selectedTopic || !reflectionState.reflectionChoice) return;
-    const topicId = getNodeId(selectedTopic);
+    const topicId = getTopicApiId(selectedTopic);
     setReflectionState((prev) => ({ ...prev, loading: true, error: '' }));
     try {
       const response = await studentService.submitTopicReflectionLevel(topicId, { sessionState: reflectionState.sessionState, reflectionLevel: reflectionState.reflectionChoice });
@@ -1254,7 +1255,7 @@ export default function AcademicIQScreen() {
 
   useEffect(() => {
     if (!selectedExamTopic) return;
-    const topicId = getApiId(selectedExamTopic, ['id', 'topicId', 'nodeId', 'topic_id', 'slug']) || getNodeId(selectedExamTopic);
+    const topicId = getTopicApiId(selectedExamTopic);
     if (examSection === 'practice') loadExamPracticeQuestions(topicId, examPracticeDifficulty);
     else loadExamTopicContent(topicId);
   }, [selectedExamTopic, examSection, examPracticeDifficulty, loadExamTopicContent, loadExamPracticeQuestions]);
@@ -1419,7 +1420,7 @@ export default function AcademicIQScreen() {
       {practiceError ? (
         <View style={styles.errorRetryWrap}>
           <InlineNotice text={practiceError} />
-          <TouchableOpacity style={styles.retryButton} onPress={() => { setPracticeError(''); loadPracticeQuestions(getApiId(selectedTopic, ['id', 'topicId', 'nodeId', 'topic_id', 'slug']) || getNodeId(selectedTopic), practiceDifficulty); }}>
+          <TouchableOpacity style={styles.retryButton} onPress={() => { setPracticeError(''); loadPracticeQuestions(getTopicApiId(selectedTopic), practiceDifficulty); }}>
             <Text style={styles.retryButtonText}>↺ Retry</Text>
           </TouchableOpacity>
         </View>
@@ -1489,7 +1490,7 @@ export default function AcademicIQScreen() {
                     {examPracticeError ? (
                       <View style={styles.errorRetryWrap}>
                         <InlineNotice text={examPracticeError} />
-                        <TouchableOpacity style={styles.retryButton} onPress={() => { setExamPracticeError(''); loadExamPracticeQuestions(getApiId(selectedExamTopic, ['id', 'topicId', 'nodeId', 'topic_id', 'slug']) || getNodeId(selectedExamTopic), examPracticeDifficulty); }}>
+                        <TouchableOpacity style={styles.retryButton} onPress={() => { setExamPracticeError(''); loadExamPracticeQuestions(getTopicApiId(selectedExamTopic), examPracticeDifficulty); }}>
                           <Text style={styles.retryButtonText}>↺ Retry</Text>
                         </TouchableOpacity>
                       </View>

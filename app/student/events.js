@@ -282,7 +282,7 @@ function EventDetailModal({ event, visible, onClose, onRegisterChange }) {
 
   const handleRegister = useCallback(async () => {
     if (!event?.id && !event?.eventId) return;
-    const eventId = event?.id || event?.eventId;
+    const eventId = event?.eventId || event?.id;
     setLoading(true);
     try {
       await studentService.registerForEvent(eventId);
@@ -298,7 +298,7 @@ function EventDetailModal({ event, visible, onClose, onRegisterChange }) {
 
   const handleCancel = useCallback(async () => {
     if (!event?.id && !event?.eventId) return;
-    const eventId = event?.id || event?.eventId;
+    const eventId = event?.eventId || event?.id;
     Alert.alert(
       'Cancel Registration',
       'Are you sure you want to cancel your registration for this event?',
@@ -826,7 +826,7 @@ export default function EventsScreen() {
           {displayedEvents.length > 0 ? (
             displayedEvents.map((event, i) => (
               <EventCard
-                key={event?.id || event?.eventId || i}
+                key={event?.eventId || event?.id || i}
                 event={event}
                 onPress={openEventDetail}
               />

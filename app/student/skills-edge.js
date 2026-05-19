@@ -39,7 +39,7 @@ function extractSkills(tree) {
       const label = nodeLabel(node);
       if (!label) return;
       leaves.push({
-        id: node?.id || node?.skillId || label,
+        id: node?.skillId || node?.id || label,
         emoji: node?.emoji || node?.icon || '✨',
         name: label,
         description: node?.description || node?.summary || node?.tagline || '',
@@ -63,13 +63,13 @@ function extractChapterPayload(chapterData, chapterNode) {
   ).map((item, index) => {
     if (typeof item === 'string') return { id: `obj-${index}`, title: item, detail: '' };
     return {
-      id: item?.id || item?.objectiveId || `obj-${index}`,
+      id: item?.objectiveId || item?.id || `obj-${index}`,
       title: item?.title || item?.name || item?.objective || item?.text || `Objective ${index + 1}`,
       detail: item?.detail || item?.description || item?.content || item?.explanation || '',
     };
   });
   const modules = arr(merged?.modules || merged?.lessons || merged?.contentModules || merged?.items).map((item, index) => ({
-    id: item?.id || item?.moduleId || `module-${index}`,
+    id: item?.moduleId || item?.id || `module-${index}`,
     title: item?.title || item?.name || `Module ${index + 1}`,
     description: item?.description || item?.summary || item?.subtitle || '',
     attachments: arr(item?.attachments || item?.resources || item?.files || item?.media),
@@ -137,12 +137,12 @@ export default function SkillsEdgeScreen() {
 
   const chapters = useMemo(() => arr(selectedSkill?.chapters || selectedSkill?.raw?.chapters), [selectedSkill]);
   const activeChapter = useMemo(
-    () => chapters.find((chapter) => String(chapter?.id || nodeLabel(chapter)) === String(activeChapterId)) || null,
+    () => chapters.find((chapter) => String(chapter?.chapterId || chapter?.id || nodeLabel(chapter)) === String(activeChapterId)) || null,
     [chapters, activeChapterId],
   );
 
   const loadChapter = useCallback(async (chapterNode) => {
-    const chapterId = chapterNode?.id || chapterNode?.chapterId || nodeLabel(chapterNode);
+    const chapterId = chapterNode?.chapterId || chapterNode?.id || nodeLabel(chapterNode);
     if (!chapterId) return;
     setActiveChapterId(chapterId);
     setExpandedObjectiveId(null);
@@ -177,7 +177,7 @@ export default function SkillsEdgeScreen() {
   }, [selectedSkill, chapters, loadChapter]);
 
   const openModule = useCallback(async (module) => {
-    const moduleId = module?.id || module?.raw?.moduleId;
+    const moduleId = module?.raw?.moduleId || module?.moduleId || module?.id;
     try {
       if (!moduleId) {
         setModuleModal(module);
@@ -197,7 +197,7 @@ export default function SkillsEdgeScreen() {
 
   const openAssessment = useCallback(async () => {
     if (!activeChapter) return;
-    const chapterId = activeChapter?.id || activeChapter?.chapterId || nodeLabel(activeChapter);
+    const chapterId = activeChapter?.chapterId || activeChapter?.id || nodeLabel(activeChapter);
     setAssessmentLoading(true);
     setDetailView('assessment');
     setAssessmentState({ index: 0, answers: {}, submitted: false });
@@ -214,7 +214,7 @@ export default function SkillsEdgeScreen() {
 
   const openProject = useCallback(async () => {
     if (!activeChapter) return;
-    const chapterId = activeChapter?.id || activeChapter?.chapterId || nodeLabel(activeChapter);
+    const chapterId = activeChapter?.chapterId || activeChapter?.id || nodeLabel(activeChapter);
     setProjectLoading(true);
     setDetailView('project');
     try {
@@ -334,7 +334,7 @@ export default function SkillsEdgeScreen() {
     <>
       <ScrollView horizontal contentContainerStyle={styles.tabsContent} style={styles.tabsScroll} showsHorizontalScrollIndicator={false}>
         {chapters.map((chapter) => {
-          const chapterId = chapter?.id || chapter?.chapterId || nodeLabel(chapter);
+          const chapterId = chapter?.chapterId || chapter?.id || nodeLabel(chapter);
           const active = String(chapterId) === String(activeChapterId);
           return (
             <TouchableOpacity key={String(chapterId)} style={[styles.tabPill, active && styles.tabPillActive]} onPress={() => loadChapter(chapter)}>

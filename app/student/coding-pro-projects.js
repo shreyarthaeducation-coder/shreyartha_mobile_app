@@ -33,7 +33,7 @@ export default function CodingProProjectsScreen() {
       const data = await studentService.getCodingProProjects({ stream: streamValue, classValue: classParam });
       const payload = unwrap(data);
       const projectItems = arr(payload.projects || payload.items || payload.tools || payload.resources || payload).map((item, index) => ({
-        id: item?.id || item?._id || item?.toolId || `${index}`,
+        id: item?.toolId || item?.id || item?._id || `${index}`,
         title: item?.title || item?.name || item?.label || `Project Tool ${index + 1}`,
         description: item?.description || item?.summary || item?.subtitle || '',
         url: item?.url || item?.link || item?.fileUrl || '',

@@ -5,8 +5,81 @@
 
 import { api } from './apiService';
 
-const getExamSubjectTree = (subExamId) => api.get(`/api/competitiveexam/subject/${encodeURIComponent(subExamId)}/tree`);
-const getMockTestPaperQuestions = (paperId) => api.get(`/api/admin/competitiveexam/mocktest-papers/student/${encodeURIComponent(paperId)}/questions`);
+const FALLBACK_RETRY_STATUSES = new Set([404, 405, 500, 501, 502, 503, 504]);
+const WRITE_FALLBACK_RETRY_STATUSES = new Set([400, 404, 405, 500, 501, 502, 503, 504]);
+
+const withFallback = async (candidates, retryStatuses = FALLBACK_RETRY_STATUSES) => {
+  const queue = candidates.filter((candidate) => typeof candidate === 'function');
+  let lastError = null;
+
+  if (!queue.length) {
+    throw new Error('No API request candidates were provided.');
+  }
+
+  for (let index = 0; index < queue.length; index += 1) {
+    try {
+      return await queue[index]();
+    } catch (error) {
+      lastError = error;
+      const status = error?.response?.status || error?.status || null;
+      const shouldRetry = index < queue.length - 1 && (!status || retryStatuses.has(status));
+      if (!shouldRetry) throw error;
+    }
+  }
+
+  throw lastError;
+};
+
+const buildQuery = (params = {}) => {
+  const query = new URLSearchParams();
+
+  Object.entries(params).forEach(([key, value]) => {
+    if (value === undefined || value === null) return;
+    const normalizedValue = typeof value === 'string' ? value.trim() : value;
+    if (normalizedValue === '') return;
+    query.append(key, String(normalizedValue));
+  });
+
+  const serialized = query.toString();
+  return serialized ? `?${serialized}` : '';
+};
+
+const getFirst = (endpoints) => withFallback(endpoints.map((endpoint) => () => api.get(endpoint)));
+const deleteFirst = (endpoints) => withFallback(endpoints.map((endpoint) => () => api.delete(endpoint)));
+const postFirst = (candidates, retryStatuses = WRITE_FALLBACK_RETRY_STATUSES) =>
+  withFallback(candidates.map(({ endpoint, body }) => () => api.post(endpoint, body)), retryStatuses);
+const buildBasePaths = (prefixes, baseNames) => prefixes.flatMap((prefix) => baseNames.map((baseName) => `/api${prefix}/${baseName}`));
+const buildPsychometricSubmitCandidates = (basePath, categoryId, data) => {
+  const responsePayload = Array.isArray(data?.answers) && !Array.isArray(data?.responses)
+    ? { ...data, responses: data.answers }
+    : data;
+  return [
+    { endpoint: `${basePath}/categories/${encodeURIComponent(categoryId)}/submit`, body: data },
+    { endpoint: `${basePath}/categories/${encodeURIComponent(categoryId)}/answers`, body: responsePayload },
+  ];
+};
+
+const psychometricBasePaths = buildBasePaths(['', '/student', '/students'], ['psychometric', 'psychometric-assessment']);
+const subjectCareerBasePaths = buildBasePaths(['', '/student', '/students'], ['subject-career', 'subjectcareer']);
+const skillsEdgeBasePaths = buildBasePaths(['', '/student', '/students'], ['skillsedge', 'skills-edge']);
+const languageProBasePaths = buildBasePaths(['', '/student', '/students'], ['languagepro', 'language-pro']);
+const codingProBasePaths = buildBasePaths(['', '/student', '/students'], ['codingpro', 'coding-pro']);
+
+const eventsBasePaths = ['/api/events', '/api/student/events', '/api/students/events'];
+
+const getExamSubjectTree = (subExamId) => getFirst([
+  `/api/competitiveexam/subject/${encodeURIComponent(subExamId)}/tree`,
+  `/api/competitive-exam/subject/${encodeURIComponent(subExamId)}/tree`,
+  `/api/student/competitiveexam/subject/${encodeURIComponent(subExamId)}/tree`,
+  `/api/student/competitive-exam/subject/${encodeURIComponent(subExamId)}/tree`,
+  `/api/competitiveexam/subjects/${encodeURIComponent(subExamId)}/tree`,
+  `/api/competitive-exam/subjects/${encodeURIComponent(subExamId)}/tree`,
+]);
+const getMockTestPaperQuestions = (paperId) => getFirst([
+  `/api/admin/competitiveexam/mocktest-papers/student/${encodeURIComponent(paperId)}/questions`,
+  `/api/admin/competitive-exam/mocktest-papers/student/${encodeURIComponent(paperId)}/questions`,
+  `/api/student/competitiveexam/mocktest-papers/${encodeURIComponent(paperId)}/questions`,
+]);
 
 export const studentService = {
   // ── Dashboard ──────────────────────────────────────────────────────────────
@@ -28,7 +101,12 @@ export const studentService = {
   getGrades: () => api.get('/api/students/grades'),
   getAssessments: () => api.get('/api/students/assessments'),
   getAcademicIQTree: () => api.get('/api/academiciq/tree'),
-  getCompetitiveExams: () => api.get('/api/competitiveexam/exams'),
+  getCompetitiveExams: () => getFirst([
+    '/api/competitiveexam/exams',
+    '/api/competitive-exam/exams',
+    '/api/student/competitiveexam/exams',
+    '/api/student/competitive-exam/exams',
+  ]),
   getAcademicIQTopicContent: (topicId) => api.get(`/api/academiciq/topic/${encodeURIComponent(topicId)}/content`),
   getPracticeZoneQuestions: (topicId) => api.get(`/api/practice/topic/${encodeURIComponent(topicId)}/questions`),
   getPracticeZoneQuestionsByDifficulty: (topicId, level) =>
@@ -44,14 +122,41 @@ export const studentService = {
   getExamSubjectTree,
   getExamDetail: getExamSubjectTree,
   getExamPracticeSubjects: getExamSubjectTree,
-  getExamSubjectQuestions: (topicId) => api.get(`/api/student/competitiveexam/practice/${encodeURIComponent(topicId)}/questions`),
-  getExamTopicContent: (topicId) => api.get(`/api/competitiveexam/topic/${encodeURIComponent(topicId)}/content`),
-  getExamTopicPracticeQuestions: (topicId) => api.get(`/api/student/competitiveexam/practice/${encodeURIComponent(topicId)}/questions`),
+  getExamSubjectQuestions: (topicId) => getFirst([
+    `/api/student/competitiveexam/practice/${encodeURIComponent(topicId)}/questions`,
+    `/api/student/competitive-exam/practice/${encodeURIComponent(topicId)}/questions`,
+    `/api/competitiveexam/practice/${encodeURIComponent(topicId)}/questions`,
+    `/api/competitive-exam/practice/${encodeURIComponent(topicId)}/questions`,
+    `/api/student/competitiveexam/topic/${encodeURIComponent(topicId)}/questions`,
+    `/api/student/competitiveexam/topics/${encodeURIComponent(topicId)}/questions`,
+  ]),
+  getExamTopicContent: (topicId) => getFirst([
+    `/api/competitiveexam/topic/${encodeURIComponent(topicId)}/content`,
+    `/api/competitiveexam/topics/${encodeURIComponent(topicId)}/content`,
+    `/api/competitive-exam/topic/${encodeURIComponent(topicId)}/content`,
+    `/api/competitive-exam/topics/${encodeURIComponent(topicId)}/content`,
+    `/api/student/competitiveexam/topic/${encodeURIComponent(topicId)}/content`,
+    `/api/student/competitiveexam/topics/${encodeURIComponent(topicId)}/content`,
+  ]),
+  getExamTopicPracticeQuestions: (topicId) => getFirst([
+    `/api/student/competitiveexam/practice/${encodeURIComponent(topicId)}/questions`,
+    `/api/student/competitive-exam/practice/${encodeURIComponent(topicId)}/questions`,
+    `/api/competitiveexam/practice/${encodeURIComponent(topicId)}/questions`,
+    `/api/competitive-exam/practice/${encodeURIComponent(topicId)}/questions`,
+    `/api/student/competitiveexam/topic/${encodeURIComponent(topicId)}/questions`,
+    `/api/student/competitiveexam/topics/${encodeURIComponent(topicId)}/questions`,
+    `/api/competitiveexam/topic/${encodeURIComponent(topicId)}/questions`,
+    `/api/competitiveexam/topics/${encodeURIComponent(topicId)}/questions`,
+  ]),
   getExamMockTests: (entranceExamId, { page } = {}) => {
     const params = new URLSearchParams();
     if (Number.isFinite(page) && page > 0) params.append('page', String(page));
     const qs = params.toString();
-    return api.get(`/api/student/competitiveexam/mocktest/entrance-exam/${encodeURIComponent(entranceExamId)}${qs ? `?${qs}` : ''}`);
+    return getFirst([
+      `/api/student/competitiveexam/mocktest/entrance-exam/${encodeURIComponent(entranceExamId)}${qs ? `?${qs}` : ''}`,
+      `/api/student/competitive-exam/mocktest/entrance-exam/${encodeURIComponent(entranceExamId)}${qs ? `?${qs}` : ''}`,
+      `/api/competitiveexam/mocktest/entrance-exam/${encodeURIComponent(entranceExamId)}${qs ? `?${qs}` : ''}`,
+    ]);
   },
   getMockTestPapersForSubject: (subExamId) => api.get(`/api/admin/competitiveexam/mocktest-papers/student/subject/${encodeURIComponent(subExamId)}`),
   getMockTestPaperQuestions,
@@ -62,24 +167,41 @@ export const studentService = {
   createAcademicProfile: (data) => api.post('/api/academic/profile', data),
   updateAcademicProfile: (data) => api.put('/api/academic/profile', data),
   getStudentHiddenNodes: (type) => api.get(`/api/students/hidden-nodes?type=${encodeURIComponent(type)}`),
-  getSkillsEdgeTree: () => api.get('/api/skillsedge/tree'),
-  getSkillDetail: (skillId) => api.get(`/api/skillsedge/skills/${encodeURIComponent(skillId)}`),
-  getSkillChapterDetail: (chapterId) => api.get(`/api/skillsedge/chapters/${encodeURIComponent(chapterId)}`),
-  getSkillModuleDetail: (moduleId) => api.get(`/api/skillsedge/modules/${encodeURIComponent(moduleId)}`),
-  getSkillChapterAssessment: (chapterId) => api.get(`/api/skillsedge/chapters/${encodeURIComponent(chapterId)}/assessment`),
-  getSkillChapterProject: (chapterId) => api.get(`/api/skillsedge/chapters/${encodeURIComponent(chapterId)}/project`),
+  getSkillsEdgeTree: () => getFirst(skillsEdgeBasePaths.map((basePath) => `${basePath}/tree`)),
+  getSkillDetail: (skillId) => getFirst(skillsEdgeBasePaths.flatMap((basePath) => [
+    `${basePath}/skills/${encodeURIComponent(skillId)}`,
+    `${basePath}/skill/${encodeURIComponent(skillId)}`,
+  ])),
+  getSkillChapterDetail: (chapterId) => getFirst(skillsEdgeBasePaths.flatMap((basePath) => [
+    `${basePath}/chapters/${encodeURIComponent(chapterId)}`,
+    `${basePath}/chapter/${encodeURIComponent(chapterId)}`,
+  ])),
+  getSkillModuleDetail: (moduleId) => getFirst(skillsEdgeBasePaths.flatMap((basePath) => [
+    `${basePath}/modules/${encodeURIComponent(moduleId)}`,
+    `${basePath}/module/${encodeURIComponent(moduleId)}`,
+  ])),
+  getSkillChapterAssessment: (chapterId) => getFirst(skillsEdgeBasePaths.flatMap((basePath) => [
+    `${basePath}/chapters/${encodeURIComponent(chapterId)}/assessment`,
+    `${basePath}/chapter/${encodeURIComponent(chapterId)}/assessment`,
+  ])),
+  getSkillChapterProject: (chapterId) => getFirst(skillsEdgeBasePaths.flatMap((basePath) => [
+    `${basePath}/chapters/${encodeURIComponent(chapterId)}/project`,
+    `${basePath}/chapter/${encodeURIComponent(chapterId)}/project`,
+  ])),
   getSkillsProfile: () => api.get('/api/skills/profile'),
   createSkillsProfile: (data) => api.post('/api/skills/profile', data),
   updateSkillsProfile: (data) => api.put('/api/skills/profile', data),
-  getLanguageProTree: () => api.get('/api/languagepro/tree'),
+  getLanguageProTree: () => getFirst(languageProBasePaths.map((basePath) => `${basePath}/tree`)),
   getLanguageProTopics: ({ resourceType, focusArea, level, mode }) =>
-    api.get(
-      `/api/languagepro/topics?resourceType=${encodeURIComponent(resourceType)}&focusArea=${encodeURIComponent(focusArea)}&level=${encodeURIComponent(level || '')}&mode=${encodeURIComponent(mode)}`,
-    ),
+    getFirst(languageProBasePaths.flatMap((basePath) => [
+      `${basePath}/topics${buildQuery({ resourceType, focusArea, level, mode })}`,
+      `${basePath}/resources${buildQuery({ resourceType, focusArea, level, mode })}`,
+    ])),
   getLanguageProTopicContent: (topicId, { resourceType, focusArea, level, mode } = {}) =>
-    api.get(
-      `/api/languagepro/topics/${encodeURIComponent(topicId)}/content?resourceType=${encodeURIComponent(resourceType || '')}&focusArea=${encodeURIComponent(focusArea || '')}&level=${encodeURIComponent(level || '')}&mode=${encodeURIComponent(mode || '')}`,
-    ),
+    getFirst(languageProBasePaths.flatMap((basePath) => [
+      `${basePath}/topics/${encodeURIComponent(topicId)}/content${buildQuery({ resourceType, focusArea, level, mode })}`,
+      `${basePath}/content/${encodeURIComponent(topicId)}${buildQuery({ resourceType, focusArea, level, mode })}`,
+    ])),
   getUniversityProfile: () => api.get('/api/university/profile'),
   createUniversityProfile: (data) => api.post('/api/university/profile', data),
   updateUniversityProfile: (data) => api.put('/api/university/profile', data),
@@ -91,42 +213,59 @@ export const studentService = {
   updateAdditionalProfile: (data) => api.put('/api/additional/profile', data),
 
   // ── Psychometric Assessment ───────────────────────────────────────────────
-  getPsychometricCategories: () => api.get('/api/psychometric/categories'),
-  getPsychometricIntro: (categoryId) => api.get(`/api/psychometric/categories/${encodeURIComponent(categoryId)}`),
-  getPsychometricQuestions: (categoryId) => api.get(`/api/psychometric/categories/${encodeURIComponent(categoryId)}/questions`),
-  submitPsychometricAssessment: (categoryId, data) => api.post(`/api/psychometric/categories/${encodeURIComponent(categoryId)}/submit`, data),
-  getPsychometricResult: (categoryId) => api.get(`/api/psychometric/categories/${encodeURIComponent(categoryId)}/result`),
+  getPsychometricCategories: () => getFirst(psychometricBasePaths.map((basePath) => `${basePath}/categories`)),
+  getPsychometricIntro: (categoryId) => getFirst(psychometricBasePaths.map((basePath) => `${basePath}/categories/${encodeURIComponent(categoryId)}`)),
+  getPsychometricQuestions: (categoryId) =>
+    getFirst(psychometricBasePaths.flatMap((basePath) => [
+      `${basePath}/categories/${encodeURIComponent(categoryId)}/questions`,
+      `${basePath}/categories/${encodeURIComponent(categoryId)}/assessment`,
+    ])),
+  submitPsychometricAssessment: (categoryId, data) => postFirst(
+    psychometricBasePaths.flatMap((basePath) => buildPsychometricSubmitCandidates(basePath, categoryId, data)),
+  ),
+  getPsychometricResult: (categoryId) =>
+    getFirst(psychometricBasePaths.flatMap((basePath) => [
+      `${basePath}/categories/${encodeURIComponent(categoryId)}/result`,
+      `${basePath}/categories/${encodeURIComponent(categoryId)}/report`,
+    ])),
 
   // ── Subject & Career ──────────────────────────────────────────────────────
-  getSubjectCareerStreams: () => api.get('/api/subject-career/streams'),
-  getSubjectCareerMajors: (streamId) => api.get(`/api/subject-career/streams/${encodeURIComponent(streamId)}/majors`),
-  getSubjectCareerOptics: (streamId, majorId) => api.get(`/api/subject-career/streams/${encodeURIComponent(streamId)}/majors/${encodeURIComponent(majorId)}/careers`),
+  getSubjectCareerStreams: () => getFirst(subjectCareerBasePaths.map((basePath) => `${basePath}/streams`)),
+  getSubjectCareerMajors: (streamId) =>
+    getFirst(subjectCareerBasePaths.flatMap((basePath) => [
+      `${basePath}/streams/${encodeURIComponent(streamId)}/majors`,
+      `${basePath}/majors${buildQuery({ streamId })}`,
+    ])),
+  getSubjectCareerOptics: (streamId, majorId) =>
+    getFirst(subjectCareerBasePaths.flatMap((basePath) => [
+      `${basePath}/streams/${encodeURIComponent(streamId)}/majors/${encodeURIComponent(majorId)}/careers`,
+      `${basePath}/careers${buildQuery({ streamId, majorId })}`,
+      `${basePath}/optics${buildQuery({ streamId, majorId })}`,
+    ])),
   getSubjectCareerContent: ({ streamId, majorId, careerId, section }) =>
-    api.get(
-      `/api/subject-career/content?streamId=${encodeURIComponent(streamId)}&majorId=${encodeURIComponent(majorId)}&careerId=${encodeURIComponent(careerId)}&section=${encodeURIComponent(section)}`,
-    ),
+    getFirst(subjectCareerBasePaths.flatMap((basePath) => [
+      `${basePath}/content${buildQuery({ streamId, majorId, careerId, section })}`,
+      `${basePath}/careers/${encodeURIComponent(careerId)}/content${buildQuery({ streamId, majorId, section })}`,
+    ])),
 
   // ── Coding Pro ──────────────────────────────────────────────────────────────
-  getCodingProLanding: () => api.get('/api/codingpro/landing'),
-  getCodingProTree: () => api.get('/api/codingpro/tree'),
+  getCodingProLanding: () => getFirst(codingProBasePaths.map((basePath) => `${basePath}/landing`)),
+  getCodingProTree: () => getFirst(codingProBasePaths.map((basePath) => `${basePath}/tree`)),
   getCodingProStreamTopics: (stream, classValue) =>
-    api.get(
-      `/api/codingpro/streams/${encodeURIComponent(stream)}/topics${classValue ? `?class=${encodeURIComponent(classValue)}` : ''}`,
-    ),
+    getFirst(codingProBasePaths.flatMap((basePath) => [
+      `${basePath}/streams/${encodeURIComponent(stream)}/topics${buildQuery({ class: classValue })}`,
+      `${basePath}/topics${buildQuery({ stream, class: classValue })}`,
+    ])),
   getCodingProTopicContent: ({ topicId, stream, classValue }) =>
-    api.get(
-      `/api/codingpro/topics/${encodeURIComponent(topicId)}/content${stream || classValue ? `?${[
-        stream ? `stream=${encodeURIComponent(stream)}` : '',
-        classValue ? `class=${encodeURIComponent(classValue)}` : '',
-      ].filter(Boolean).join('&')}` : ''}`,
-    ),
+    getFirst(codingProBasePaths.flatMap((basePath) => [
+      `${basePath}/topics/${encodeURIComponent(topicId)}/content${buildQuery({ stream, class: classValue })}`,
+      `${basePath}/content/${encodeURIComponent(topicId)}${buildQuery({ stream, class: classValue })}`,
+    ])),
   getCodingProProjects: ({ stream, classValue }) =>
-    api.get(
-      `/api/codingpro/projects${stream || classValue ? `?${[
-        stream ? `stream=${encodeURIComponent(stream)}` : '',
-        classValue ? `class=${encodeURIComponent(classValue)}` : '',
-      ].filter(Boolean).join('&')}` : ''}`,
-    ),
+    getFirst(codingProBasePaths.flatMap((basePath) => [
+      `${basePath}/projects${buildQuery({ stream, class: classValue })}`,
+      `${basePath}/project-tools${buildQuery({ stream, class: classValue })}`,
+    ])),
 
   // ── Resources ──────────────────────────────────────────────────────────────
   getResources: () => api.get('/api/students/resources'),
@@ -135,18 +274,28 @@ export const studentService = {
 
   // ── Events ─────────────────────────────────────────────────────────────────
   getEvents: ({ filter, search, category, page } = {}) => {
-    const params = new URLSearchParams();
-    if (filter) params.append('filter', filter);
-    if (search) params.append('search', search);
-    if (category) params.append('category', category);
-    if (page && page > 1) params.append('page', String(page));
-    const qs = params.toString();
-    return api.get(`/api/events${qs ? `?${qs}` : ''}`);
+    const pageParam = Number.isFinite(page) && page > 1 ? page : undefined;
+    const qs = buildQuery({ filter, search, category, page: pageParam });
+    return getFirst(eventsBasePaths.map((basePath) => `${basePath}${qs}`));
   },
-  getEventDetail: (eventId) => api.get(`/api/events/${encodeURIComponent(eventId)}`),
-  registerForEvent: (eventId) => api.post(`/api/events/${encodeURIComponent(eventId)}/register`, {}),
-  cancelEventRegistration: (eventId) => api.delete(`/api/events/${encodeURIComponent(eventId)}/register`),
-  getMyEvents: () => api.get('/api/students/my-events'),
+  getEventDetail: (eventId) => getFirst(eventsBasePaths.flatMap((basePath) => [
+    `${basePath}/${encodeURIComponent(eventId)}`,
+    `${basePath}/${encodeURIComponent(eventId)}/detail`,
+  ])),
+  registerForEvent: (eventId) => postFirst(eventsBasePaths.flatMap((basePath) => ([
+    { endpoint: `${basePath}/${encodeURIComponent(eventId)}/register`, body: {} },
+    { endpoint: `${basePath}/${encodeURIComponent(eventId)}/registration`, body: {} },
+  ]))),
+  cancelEventRegistration: (eventId) => deleteFirst(eventsBasePaths.flatMap((basePath) => [
+    `${basePath}/${encodeURIComponent(eventId)}/register`,
+    `${basePath}/${encodeURIComponent(eventId)}/registration`,
+  ])),
+  getMyEvents: () => getFirst([
+    '/api/students/my-events',
+    '/api/student/events/my',
+    '/api/students/events/my',
+    '/api/events/my',
+  ]),
 
   // ── Notifications ──────────────────────────────────────────────────────────
   getNotifications: () => api.get('/api/students/notifications'),

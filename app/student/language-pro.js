@@ -42,7 +42,7 @@ function levelBadge(levelRaw) {
 
 function mapTopics(data) {
   return arr(data?.topics || data?.items || data).map((topic, index) => ({
-    id: topic?.id || topic?.topicId || topic?.slug || `topic-${index}`,
+    id: topic?.topicId || topic?.id || topic?.slug || `topic-${index}`,
     name: topic?.name || topic?.title || topic?.label || `Topic ${index + 1}`,
     description: topic?.description || topic?.summary || '',
     raw: topic,
@@ -121,7 +121,7 @@ export default function LanguageProScreen() {
   }, [view, loadTopics]);
 
   const openTopic = useCallback(async (topic) => {
-    const topicId = topic?.id || topic?.topicId || topic?.slug || nodeLabel(topic);
+    const topicId = topic?.topicId || topic?.id || topic?.slug || nodeLabel(topic);
     setSelectedTopic(topic);
     setTopicContentLoading(true);
     setTopicContent(null);
