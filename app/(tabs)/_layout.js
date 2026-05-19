@@ -46,6 +46,15 @@ export default function TabsLayout() {
           ),
         }}
       />
+      <Tabs.Screen
+        name="support"
+        options={{
+          title: 'Support',
+          tabBarIcon: ({ focused }) => (
+            <TabIcon emoji={focused ? '🎧' : '💬'} />
+          ),
+        }}
+      />
     </Tabs>
   );
 }

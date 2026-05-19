@@ -1,18 +1,17 @@
 import {
-  View, Text, ScrollView, TouchableOpacity, StyleSheet,
+  View, Text, Image, ScrollView, TouchableOpacity, StyleSheet,
   Dimensions, Linking, Modal, TextInput, ActivityIndicator,
 } from 'react-native';
 import { useState } from 'react';
 import { useRouter } from 'expo-router';
 import { COLORS, SPACING, SHADOWS } from '../../constants/theme';
 import SearchBar from '../components/SearchBar';
-import ChatbotWidget from '../components/ChatbotWidget';
 import { api } from '../../services/apiService';
 
 const { width } = Dimensions.get('window');
 const CARD_WIDTH = (width - SPACING.lg * 2 - SPACING.sm) / 2;
 
-const LOGO_URL = null; // Local asset not available; using text logo
+const APP_LOGO = require('../../assets/images/AppLogo.png');
 
 // Per-card icon background tints
 const ICON_BG = [
@@ -104,7 +103,7 @@ export default function LandingScreen() {
         {/* ── HEADER ── */}
         <View style={styles.header}>
           <View style={styles.logoContainer}>
-            <Text style={styles.logoText}>The <Text style={styles.logoHighlight}>3C</Text> Edge</Text>
+            <Image source={APP_LOGO} style={styles.logoImage} resizeMode="contain" />
           </View>
           <TouchableOpacity style={styles.loginBtn} onPress={() => setLoginDropdownVisible(true)}>
             <Text style={styles.loginBtnText}>🔒 Login ▼</Text>
@@ -160,7 +159,7 @@ export default function LandingScreen() {
           </Text>
           <View style={styles.heroButtons}>
             <TouchableOpacity style={styles.ctaButton} onPress={() => router.push('/auth/student-login')}>
-              <Text style={styles.ctaButtonText}>Get Started Free</Text>
+              <Text style={styles.ctaButtonText}>Get Started</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.ctaSecondary} onPress={() => router.push('/auth/login-select')}>
               <Text style={styles.ctaSecondaryText}>Login</Text>
@@ -447,7 +446,6 @@ export default function LandingScreen() {
         </View>
 
       </ScrollView>
-      <ChatbotWidget />
     </View>
   );
 }
@@ -462,9 +460,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.white, borderBottomWidth: 1, borderBottomColor: COLORS.border,
   },
   logoContainer: { flexDirection: 'row', alignItems: 'center' },
-  logoText: { fontSize: 18, fontWeight: '800', color: COLORS.secondary },
-  logoHighlight: { color: COLORS.primary },
-  logoFallback: { fontSize: 18, fontWeight: '800', color: COLORS.primary },
+  logoImage: { width: 120, height: 40 },
   loginBtn: {
     backgroundColor: COLORS.primary, paddingVertical: 10, paddingHorizontal: 18,
     borderRadius: 32,
