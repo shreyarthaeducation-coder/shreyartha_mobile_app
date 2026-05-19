@@ -12,6 +12,7 @@ const { width } = Dimensions.get('window');
 const CARD_WIDTH = (width - SPACING.lg * 2 - SPACING.sm) / 2;
 
 const APP_LOGO = require('../../assets/images/AppLogo.png');
+const APP_LOGO_ASPECT_RATIO = 488 / 392;
 
 // Per-card icon background tints
 const ICON_BG = [
@@ -459,8 +460,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: SPACING.lg, paddingTop: 50, paddingBottom: SPACING.md,
     backgroundColor: COLORS.white, borderBottomWidth: 1, borderBottomColor: COLORS.border,
   },
-  logoContainer: { flexDirection: 'row', alignItems: 'center' },
-  logoImage: { width: 120, height: 40 },
+  logoContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexShrink: 1,
+    marginRight: SPACING.md,
+  },
+  logoImage: { height: 96, aspectRatio: APP_LOGO_ASPECT_RATIO },
   loginBtn: {
     backgroundColor: COLORS.primary, paddingVertical: 10, paddingHorizontal: 18,
     borderRadius: 32,

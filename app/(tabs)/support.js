@@ -387,8 +387,7 @@ export default function SupportScreen() {
       {/* Landing view */}
       <View style={styles.landing}>
         <Image source={CHATBOT_IMAGE} style={styles.chatbotImage} resizeMode="contain" />
-        <Text style={styles.title}>AI Support</Text>
-        <Text style={styles.subtitle}>Speak to Shreya</Text>
+        <Text style={styles.title}>AI Support – Speak to Shreya</Text>
         <Text style={styles.description}>
           Get personalised guidance on career paths, academic subjects, and more — powered by AI.
         </Text>
@@ -409,7 +408,7 @@ export default function SupportScreen() {
               <View style={styles.chatHeader}>
                 <View style={styles.chatHeaderLeft}>
                   <View style={styles.avatarCircle}>
-                    <Text style={styles.avatarText}>🤖</Text>
+                    <Image source={CHATBOT_IMAGE} style={styles.avatarImage} resizeMode="contain" />
                   </View>
                   <View>
                     <Text style={styles.chatHeaderTitle}>AI Support — Speak to Shreya</Text>
@@ -497,13 +496,6 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     color: COLORS.secondary,
     textAlign: 'center',
-  },
-  subtitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: COLORS.primary,
-    textAlign: 'center',
-    marginTop: 4,
     marginBottom: SPACING.md,
   },
   description: {
@@ -557,7 +549,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.2)',
     alignItems: 'center', justifyContent: 'center',
   },
-  avatarText: { fontSize: 20 },
+  avatarImage: { width: 28, height: 28 },
   chatHeaderTitle: { color: '#fff', fontWeight: '700', fontSize: 15 },
   chatHeaderSubtitle: { color: 'rgba(255,255,255,0.75)', fontSize: 11 },
   closeBtn: { padding: 4 },
