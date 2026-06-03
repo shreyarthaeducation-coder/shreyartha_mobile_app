@@ -1,13 +1,20 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, BackHandler, Platform, StyleSheet, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { WebView } from 'react-native-webview';
-import { useAuth } from '../../context/AuthContext';
+import { useEffect, useMemo, useRef, useState } from "react";
+import {
+  ActivityIndicator,
+  BackHandler,
+  Platform,
+  StyleSheet,
+  View,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { useRouter } from "expo-router";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { WebView } from "react-native-webview";
+import { useAuth } from "../../context/AuthContext";
 
-const DASHBOARD_URL = 'https://shreyartha.com/parent/platform/dashboard';
-const MOBILE_USER_AGENT = 'Mozilla/5.0 (Linux; Android 14; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36';
+const DASHBOARD_URL = "https://shreyartha.com/parent/platform/dashboard";
+const MOBILE_USER_AGENT =
+  "Mozilla/5.0 (Linux; Android 14; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36";
 
 const getInjectedJS = (values) => `
 (function() {
@@ -32,21 +39,21 @@ export default function ParentDashboard() {
   useEffect(() => {
     const loadStorage = async () => {
       const entries = await AsyncStorage.multiGet([
-        'parentUserToken',
-        'parentLoggedIn',
-        'parentUserVerified',
-        'parentUserName',
-        'linkedStudentName',
-        'linkedStudentEmail',
+        "parentUserToken",
+        "parentLoggedIn",
+        "parentUserVerified",
+        "parentUserName",
+        "linkedStudentName",
+        "linkedStudentEmail",
       ]);
       const values = Object.fromEntries(entries);
       setInjectValues({
-        parentUserToken: values.parentUserToken || '',
-        parentLoggedIn: values.parentLoggedIn || 'true',
-        parentUserVerified: values.parentUserVerified || '',
-        parentUserName: values.parentUserName || '',
-        linkedStudentName: values.linkedStudentName || '',
-        linkedStudentEmail: values.linkedStudentEmail || '',
+        parentUserToken: values.parentUserToken || "",
+        parentLoggedIn: values.parentLoggedIn || "true",
+        parentUserVerified: values.parentUserVerified || "",
+        parentUserName: values.parentUserName || "",
+        linkedStudentName: values.linkedStudentName || "",
+        linkedStudentEmail: values.linkedStudentEmail || "",
       });
     };
 
@@ -54,14 +61,14 @@ export default function ParentDashboard() {
   }, []);
 
   useEffect(() => {
-    if (Platform.OS !== 'android') return undefined;
+    if (Platform.OS !== "android") return undefined;
 
-    const sub = BackHandler.addEventListener('hardwareBackPress', () => {
+    const sub = BackHandler.addEventListener("hardwareBackPress", () => {
       if (canGoBack && webViewRef.current) {
         webViewRef.current.goBack();
         return true;
       }
-      router.replace('/(tabs)');
+      router.replace("/(tabs)");
       return true;
     });
 
@@ -69,19 +76,19 @@ export default function ParentDashboard() {
   }, [canGoBack, router]);
 
   const handleLogoutNav = async (url) => {
-    if (url.includes('/parentlogin')) {
+    if (url.includes("/parentlogin")) {
       await logout();
-      router.replace('/(tabs)');
+      router.replace("/(tabs)");
     }
   };
 
   const injectedBeforeLoad = useMemo(() => {
-    if (!injectValues) return 'true;';
+    if (!injectValues) return "true;";
     return getInjectedJS(injectValues);
   }, [injectValues]);
 
   return (
-    <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
+    <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
       {injectValues ? (
         <WebView
           ref={webViewRef}
@@ -90,19 +97,19 @@ export default function ParentDashboard() {
           javaScriptEnabled
           domStorageEnabled
           mixedContentMode="always"
-          originWhitelist={['*']}
+          originWhitelist={["*"]}
           setSupportMultipleWindows={false}
           injectedJavaScriptBeforeContentLoaded={injectedBeforeLoad}
           onNavigationStateChange={(navState) => {
             setCanGoBack(navState.canGoBack);
-            handleLogoutNav(navState.url || '');
+            handleLogoutNav(navState.url || "");
           }}
           onLoadStart={() => setLoading(true)}
           onLoadEnd={() => setLoading(false)}
         />
       ) : null}
 
-      {(loading || !injectValues) ? (
+      {loading || !injectValues ? (
         <View style={styles.loaderOverlay}>
           <ActivityIndicator size="large" color="#B0003A" />
         </View>
@@ -112,11 +119,11 @@ export default function ParentDashboard() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff' },
+  container: { flex: 1, backgroundColor: "#fff" },
   loaderOverlay: {
     ...StyleSheet.absoluteFillObject,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.55)',
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(255,255,255,0.55)",
   },
 });

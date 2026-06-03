@@ -1,8 +1,8 @@
-import { Stack } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
-import { AuthProvider } from '../context/AuthContext';
-import { LanguageProvider } from '../context/LanguageContext';
-import { SubscriptionProvider } from '../context/SubscriptionContext';
+import { Stack } from "expo-router";
+import { StatusBar } from "expo-status-bar";
+import { AuthProvider } from "../context/AuthContext";
+import { LanguageProvider } from "../context/LanguageContext";
+import { SubscriptionProvider } from "../context/SubscriptionContext";
 
 export default function RootLayout() {
   return (
@@ -19,19 +19,34 @@ export default function RootLayout() {
             <Stack.Screen name="auth/student-login" />
             <Stack.Screen name="auth/school-login" />
             <Stack.Screen name="auth/parent-login" />
-            <Stack.Screen name="auth/admin-login" />
+            <Stack.Screen name="auth/partner-login" />
 
             {/* Individual service pages */}
-            <Stack.Screen name="pages/[slug]" options={{ headerShown: false }} />
+            <Stack.Screen
+              name="pages/[slug]"
+              options={{ headerShown: false }}
+            />
 
             {/* Native student panel (tab group) */}
             <Stack.Screen name="student" options={{ headerShown: false }} />
 
             {/* Legacy dashboard redirect screens */}
-            <Stack.Screen name="dashboard/student" options={{ headerShown: false }} />
-            <Stack.Screen name="dashboard/school" options={{ headerShown: false }} />
-            <Stack.Screen name="dashboard/parent" options={{ headerShown: false }} />
-            <Stack.Screen name="dashboard/admin" options={{ headerShown: false }} />
+            <Stack.Screen
+              name="dashboard/student"
+              options={{ headerShown: false }}
+            />
+            <Stack.Screen
+              name="dashboard/school"
+              options={{ headerShown: false }}
+            />
+            <Stack.Screen
+              name="dashboard/parent"
+              options={{ headerShown: false }}
+            />
+            <Stack.Screen
+              name="dashboard/partner"
+              options={{ headerShown: false }}
+            />
           </Stack>
         </SubscriptionProvider>
       </LanguageProvider>

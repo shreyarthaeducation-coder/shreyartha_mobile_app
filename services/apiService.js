@@ -2,9 +2,9 @@
 // Mirrors: frontendmain/src/services/apiService.js
 // Adapted for React Native (AsyncStorage instead of localStorage)
 
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import Constants from 'expo-constants';
-import { router } from 'expo-router';
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import Constants from "expo-constants";
+import { router } from "expo-router";
 
 const resolveApiBaseUrl = () => {
   const fromExpoConfig =
@@ -12,8 +12,10 @@ const resolveApiBaseUrl = () => {
     Constants?.manifest2?.extra?.expoClient?.extra?.apiBaseUrl ||
     Constants?.manifest?.extra?.apiBaseUrl;
   const fromEnv = process?.env?.EXPO_PUBLIC_API_BASE_URL;
-  const rawBaseUrl = String(fromEnv || fromExpoConfig || 'https://shreyartha.com').trim();
-  return rawBaseUrl.replace(/\/+$/, '');
+  const rawBaseUrl = String(
+    fromEnv || fromExpoConfig || "https://shreyartha.com",
+  ).trim();
+  return rawBaseUrl.replace(/\/+$/, "");
 };
 
 const API_BASE_URL = resolveApiBaseUrl();
@@ -26,9 +28,11 @@ let clearAuthRedirectPromise = null;
 
 const normalizeStoredToken = (rawToken) => {
   if (!rawToken) return null;
-  const token = String(rawToken).trim().replace(/^["']|["']$/g, '');
+  const token = String(rawToken)
+    .trim()
+    .replace(/^["']|["']$/g, "");
   if (!token) return null;
-  return token.replace(/^Bearer\s+/i, '').trim();
+  return token.replace(/^Bearer\s+/i, "").trim();
 };
 
 const clearAuthAndRedirect = async () => {
@@ -40,38 +44,39 @@ const clearAuthAndRedirect = async () => {
 
     let userType = null;
     try {
-      userType = await AsyncStorage.getItem('userType');
+      userType = await AsyncStorage.getItem("userType");
     } catch {
       userType = null;
     }
 
     try {
       await AsyncStorage.multiRemove([
-        'studentToken',
-        'userToken',
-        'accessToken',
-        'token',
-        'adminToken',
-        'schoolUserToken',
-        'parentUserToken',
-        'studentLoggedIn',
-        'schoolLoggedIn',
-        'parentLoggedIn',
-        'adminLoggedIn',
-        'userType',
-        'userData',
-        'studentRole',
-        'cachedStudentRole',
+        "studentToken",
+        "userToken",
+        "accessToken",
+        "token",
+        "schoolUserToken",
+        "parentUserToken",
+        "partnerUserToken",
+        "studentLoggedIn",
+        "schoolLoggedIn",
+        "parentLoggedIn",
+        "partnerLoggedIn",
+        "userType",
+        "userData",
+        "studentRole",
+        "cachedStudentRole",
       ]);
     } catch {
       // Ignore storage clear failures; we still want to force a login redirect.
     } finally {
       const authRouteByUserType = {
-        admin: '/auth/admin-login',
-        school: '/auth/school-login',
-        parent: '/auth/parent-login',
+        school: "/auth/school-login",
+        parent: "/auth/parent-login",
+        partner: "/auth/partner-login",
       };
-      const targetRoute = authRouteByUserType[userType] || '/auth/student-login';
+      const targetRoute =
+        authRouteByUserType[userType] || "/auth/student-login";
       try {
         router.replace(targetRoute);
       } catch {
@@ -94,55 +99,51 @@ const clearAuthAndRedirect = async () => {
  * Get stored token — checks all possible token storage locations.
  * Uses the endpoint to determine which token to prioritize.
  */
-const getStoredToken = async (endpoint = '') => {
+const getStoredToken = async (endpoint = "") => {
   try {
-    if (endpoint.includes('/admin/')) {
-      return normalizeStoredToken(
-        (await AsyncStorage.getItem('adminToken')) ||
-        (await AsyncStorage.getItem('userToken')) ||
-        null
-      );
-    }
-
     if (
-      endpoint.includes('/school/') ||
-      endpoint.includes('/teacher/') ||
-      endpoint.includes('/counselor/') ||
-      endpoint.includes('/principal/') ||
-      endpoint.includes('/vice-principal/')
+      endpoint.includes("/school/") ||
+      endpoint.includes("/teacher/") ||
+      endpoint.includes("/counselor/") ||
+      endpoint.includes("/principal/") ||
+      endpoint.includes("/vice-principal/")
     ) {
       return normalizeStoredToken(
-        (await AsyncStorage.getItem('schoolUserToken')) ||
-        null
+        (await AsyncStorage.getItem("schoolUserToken")) || null,
       );
     }
 
-    if (endpoint.includes('/parent/')) {
+    if (endpoint.includes("/parent/")) {
       return normalizeStoredToken(
-        (await AsyncStorage.getItem('parentUserToken')) ||
-        null
+        (await AsyncStorage.getItem("parentUserToken")) || null,
       );
     }
 
-    if (endpoint.includes('/students/')) {
+    if (endpoint.includes("/partner/")) {
       return normalizeStoredToken(
-        (await AsyncStorage.getItem('studentToken')) ||
-        (await AsyncStorage.getItem('userToken')) ||
-        (await AsyncStorage.getItem('accessToken')) ||
-        (await AsyncStorage.getItem('token')) ||
-        null
+        (await AsyncStorage.getItem("partnerUserToken")) || null,
+      );
+    }
+
+    if (endpoint.includes("/students/")) {
+      return normalizeStoredToken(
+        (await AsyncStorage.getItem("studentToken")) ||
+          (await AsyncStorage.getItem("userToken")) ||
+          (await AsyncStorage.getItem("accessToken")) ||
+          (await AsyncStorage.getItem("token")) ||
+          null,
       );
     }
 
     return normalizeStoredToken(
-      (await AsyncStorage.getItem('studentToken')) ||
-      (await AsyncStorage.getItem('userToken')) ||
-      (await AsyncStorage.getItem('accessToken')) ||
-      (await AsyncStorage.getItem('token')) ||
-      (await AsyncStorage.getItem('adminToken')) ||
-      (await AsyncStorage.getItem('schoolUserToken')) ||
-      (await AsyncStorage.getItem('parentUserToken')) ||
-      null
+      (await AsyncStorage.getItem("studentToken")) ||
+        (await AsyncStorage.getItem("userToken")) ||
+        (await AsyncStorage.getItem("accessToken")) ||
+        (await AsyncStorage.getItem("token")) ||
+        (await AsyncStorage.getItem("schoolUserToken")) ||
+        (await AsyncStorage.getItem("parentUserToken")) ||
+        (await AsyncStorage.getItem("partnerUserToken")) ||
+        null,
     );
   } catch {
     return null;
@@ -155,17 +156,27 @@ const getStoredToken = async (endpoint = '') => {
 const fetchWithTimeout = (url, options, timeoutMs) => {
   return new Promise((resolve, reject) => {
     const timer = setTimeout(() => {
-      reject(new Error('Request timed out. Please check your connection and try again.'));
+      reject(
+        new Error(
+          "Request timed out. Please check your connection and try again.",
+        ),
+      );
     }, timeoutMs);
 
     fetch(url, options)
-      .then((res) => { clearTimeout(timer); resolve(res); })
-      .catch((err) => { clearTimeout(timer); reject(err); });
+      .then((res) => {
+        clearTimeout(timer);
+        resolve(res);
+      })
+      .catch((err) => {
+        clearTimeout(timer);
+        reject(err);
+      });
   });
 };
 
 const buildApiError = (message, status) => {
-  const resolvedMessage = message || 'An API error occurred';
+  const resolvedMessage = message || "An API error occurred";
   const err = new Error(resolvedMessage);
   err.status = status;
   err.response = { status, data: { message: resolvedMessage } };
@@ -177,24 +188,28 @@ const apiFetch = async (endpoint, options = {}, attempt = 0) => {
 
   const headers = { ...(options.headers || {}) };
 
-  if (!headers['Content-Type'] && !(options.body instanceof FormData)) {
-    headers['Content-Type'] = 'application/json';
+  if (!headers["Content-Type"] && !(options.body instanceof FormData)) {
+    headers["Content-Type"] = "application/json";
   }
 
   const isAuthEndpoint =
-    endpoint.includes('/auth/login') ||
-    endpoint.includes('/auth/signup') ||
-    endpoint.includes('/auth/forgot-password');
+    endpoint.includes("/auth/login") ||
+    endpoint.includes("/auth/signup") ||
+    endpoint.includes("/auth/forgot-password");
 
   if (token && !isAuthEndpoint) {
-    headers['Authorization'] = `Bearer ${token}`;
+    headers["Authorization"] = `Bearer ${token}`;
   }
 
   const url = `${API_BASE_URL}${endpoint}`;
 
   let response;
   try {
-    response = await fetchWithTimeout(url, { ...options, headers }, REQUEST_TIMEOUT_MS);
+    response = await fetchWithTimeout(
+      url,
+      { ...options, headers },
+      REQUEST_TIMEOUT_MS,
+    );
   } catch (networkErr) {
     // Retry once on network errors (timeout or connection failure)
     if (attempt < MAX_RETRIES) {
@@ -204,10 +219,10 @@ const apiFetch = async (endpoint, options = {}, attempt = 0) => {
   }
 
   if (response.status === 401 || response.status === 403) {
-    const contentType = response.headers.get('content-type') || '';
-    const errMsg = contentType.includes('application/json')
-      ? (await response.json()).message || 'Unauthorized'
-      : 'Unauthorized';
+    const contentType = response.headers.get("content-type") || "";
+    const errMsg = contentType.includes("application/json")
+      ? (await response.json()).message || "Unauthorized"
+      : "Unauthorized";
     if (!isAuthEndpoint) {
       await clearAuthAndRedirect();
     }
@@ -215,8 +230,8 @@ const apiFetch = async (endpoint, options = {}, attempt = 0) => {
   }
 
   if (!response.ok) {
-    const contentType = response.headers.get('content-type') || '';
-    const errMsg = contentType.includes('application/json')
+    const contentType = response.headers.get("content-type") || "";
+    const errMsg = contentType.includes("application/json")
       ? (await response.json()).message || response.statusText
       : response.statusText;
     throw buildApiError(errMsg, response.status);
@@ -224,8 +239,10 @@ const apiFetch = async (endpoint, options = {}, attempt = 0) => {
 
   if (response.status === 204) return null;
 
-  const contentType = response.headers.get('content-type') || '';
-  return contentType.includes('application/json') ? response.json() : response.text();
+  const contentType = response.headers.get("content-type") || "";
+  return contentType.includes("application/json")
+    ? response.json()
+    : response.text();
 };
 
 export const api = {
@@ -233,25 +250,25 @@ export const api = {
 
   post: (endpoint, body) => {
     if (body instanceof FormData) {
-      return apiFetch(endpoint, { method: 'POST', body, headers: {} });
+      return apiFetch(endpoint, { method: "POST", body, headers: {} });
     }
     return apiFetch(endpoint, {
-      method: 'POST',
+      method: "POST",
       body: JSON.stringify(body),
     });
   },
 
   put: (endpoint, body) => {
     if (body instanceof FormData) {
-      return apiFetch(endpoint, { method: 'PUT', body, headers: {} });
+      return apiFetch(endpoint, { method: "PUT", body, headers: {} });
     }
     return apiFetch(endpoint, {
-      method: 'PUT',
+      method: "PUT",
       body: JSON.stringify(body),
     });
   },
 
-  delete: (endpoint) => apiFetch(endpoint, { method: 'DELETE' }),
+  delete: (endpoint) => apiFetch(endpoint, { method: "DELETE" }),
 };
 
 export default api;

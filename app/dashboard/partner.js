@@ -1,13 +1,20 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, BackHandler, Platform, StyleSheet, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { WebView } from 'react-native-webview';
-import { useAuth } from '../../context/AuthContext';
+import { useEffect, useMemo, useRef, useState } from "react";
+import {
+  ActivityIndicator,
+  BackHandler,
+  Platform,
+  StyleSheet,
+  View,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { useRouter } from "expo-router";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { WebView } from "react-native-webview";
+import { useAuth } from "../../context/AuthContext";
 
-const DASHBOARD_URL = 'https://shreyartha.com/admin/dashboard';
-const MOBILE_USER_AGENT = 'Mozilla/5.0 (Linux; Android 14; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36';
+const DASHBOARD_URL = "https://shreyartha.com/partner/platform/dashboard";
+const MOBILE_USER_AGENT =
+  "Mozilla/5.0 (Linux; Android 14; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36";
 
 const getInjectedJS = (values) => `
 (function() {
@@ -21,16 +28,7 @@ const getInjectedJS = (values) => `
 true;
 `;
 
-const isAdminLoginUrl = (url) => {
-  try {
-    const parsed = new URL(url);
-    return parsed.pathname === '/admin' || parsed.pathname === '/admin/';
-  } catch {
-    return url.endsWith('/admin') || url.endsWith('/admin/');
-  }
-};
-
-export default function AdminDashboard() {
+export default function PartnerDashboard() {
   const router = useRouter();
   const { logout } = useAuth();
   const webViewRef = useRef(null);
@@ -40,11 +38,22 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     const loadStorage = async () => {
-      const entries = await AsyncStorage.multiGet(['adminToken', 'adminLoggedIn']);
+      const entries = await AsyncStorage.multiGet([
+        "partnerUserToken",
+        "partnerLoggedIn",
+        "partnerUserType",
+        "partnerUserName",
+        "partnerUserEmail",
+        "partnerCode",
+      ]);
       const values = Object.fromEntries(entries);
       setInjectValues({
-        adminToken: values.adminToken || '',
-        adminLoggedIn: values.adminLoggedIn || 'true',
+        partnerUserToken: values.partnerUserToken || "",
+        partnerLoggedIn: values.partnerLoggedIn || "true",
+        partnerUserType: values.partnerUserType || "",
+        partnerUserName: values.partnerUserName || "",
+        partnerUserEmail: values.partnerUserEmail || "",
+        partnerCode: values.partnerCode || "",
       });
     };
 
@@ -52,14 +61,14 @@ export default function AdminDashboard() {
   }, []);
 
   useEffect(() => {
-    if (Platform.OS !== 'android') return undefined;
+    if (Platform.OS !== "android") return undefined;
 
-    const sub = BackHandler.addEventListener('hardwareBackPress', () => {
+    const sub = BackHandler.addEventListener("hardwareBackPress", () => {
       if (canGoBack && webViewRef.current) {
         webViewRef.current.goBack();
         return true;
       }
-      router.replace('/(tabs)');
+      router.replace("/(tabs)");
       return true;
     });
 
@@ -67,19 +76,19 @@ export default function AdminDashboard() {
   }, [canGoBack, router]);
 
   const handleLogoutNav = async (url) => {
-    if (isAdminLoginUrl(url)) {
+    if (url.includes("/partnerlogin")) {
       await logout();
-      router.replace('/(tabs)');
+      router.replace("/(tabs)");
     }
   };
 
   const injectedBeforeLoad = useMemo(() => {
-    if (!injectValues) return 'true;';
+    if (!injectValues) return "true;";
     return getInjectedJS(injectValues);
   }, [injectValues]);
 
   return (
-    <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
+    <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
       {injectValues ? (
         <WebView
           ref={webViewRef}
@@ -88,19 +97,19 @@ export default function AdminDashboard() {
           javaScriptEnabled
           domStorageEnabled
           mixedContentMode="always"
-          originWhitelist={['*']}
+          originWhitelist={["*"]}
           setSupportMultipleWindows={false}
           injectedJavaScriptBeforeContentLoaded={injectedBeforeLoad}
           onNavigationStateChange={(navState) => {
             setCanGoBack(navState.canGoBack);
-            handleLogoutNav(navState.url || '');
+            handleLogoutNav(navState.url || "");
           }}
           onLoadStart={() => setLoading(true)}
           onLoadEnd={() => setLoading(false)}
         />
       ) : null}
 
-      {(loading || !injectValues) ? (
+      {loading || !injectValues ? (
         <View style={styles.loaderOverlay}>
           <ActivityIndicator size="large" color="#B0003A" />
         </View>
@@ -110,11 +119,11 @@ export default function AdminDashboard() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff' },
+  container: { flex: 1, backgroundColor: "#fff" },
   loaderOverlay: {
     ...StyleSheet.absoluteFillObject,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.55)',
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(255,255,255,0.55)",
   },
 });
