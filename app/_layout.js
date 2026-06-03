@@ -17,9 +17,18 @@ export default function RootLayout() {
             {/* Auth screens */}
             <Stack.Screen name="auth/login-select" />
             <Stack.Screen name="auth/student-login" />
-            <Stack.Screen name="auth/school-login" />
-            <Stack.Screen name="auth/parent-login" />
-            <Stack.Screen name="auth/partner-login" />
+            <Stack.Screen
+              name="auth/school-login"
+              options={{ headerShown: false }}
+            />
+            <Stack.Screen
+              name="auth/parent-login"
+              options={{ headerShown: false }}
+            />
+            <Stack.Screen
+              name="auth/partner-login"
+              options={{ headerShown: false }}
+            />
 
             {/* Individual service pages */}
             <Stack.Screen

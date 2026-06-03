@@ -1,14 +1,21 @@
-import { useRef, useState } from 'react';
-import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { WebView } from 'react-native-webview';
-import { useAuth } from '../../context/AuthContext';
+import { useRef, useState } from "react";
+import {
+  ActivityIndicator,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { useRouter } from "expo-router";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { WebView } from "react-native-webview";
+import { useAuth } from "../../context/AuthContext";
 
-const LOGIN_URL = 'https://shreyartha.com/parentlogin';
-const DASHBOARD_PATH = '/parent/platform/dashboard';
-const MOBILE_USER_AGENT = 'Mozilla/5.0 (Linux; Android 14; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36';
+const LOGIN_URL = "https://shreyartha.com/parentlogin";
+const DASHBOARD_PATH = "/parent/platform/dashboard";
+const MOBILE_USER_AGENT =
+  "Mozilla/5.0 (Linux; Android 14; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36";
 
 const LOGIN_POLL_JS = `
 (function() {
@@ -66,39 +73,57 @@ export default function ParentLoginScreen() {
 
   const onMessage = async (event) => {
     try {
-      const payload = JSON.parse(event.nativeEvent.data || '{}');
-      if (payload?.type !== 'LOGIN_SUCCESS' || handledLoginRef.current || !payload.parentUserToken) return;
+      const payload = JSON.parse(event.nativeEvent.data || "{}");
+      if (
+        payload?.type !== "LOGIN_SUCCESS" ||
+        handledLoginRef.current ||
+        !payload.parentUserToken
+      )
+        return;
 
       handledLoginRef.current = true;
       const pairs = [
-        ['parentUserToken', payload.parentUserToken],
-        ['parentLoggedIn', 'true'],
-        ['userType', 'parent'],
+        ["parentUserToken", payload.parentUserToken],
+        ["parentLoggedIn", "true"],
+        ["userType", "parent"],
       ];
 
-      if (payload.parentUserVerified) pairs.push(['parentUserVerified', payload.parentUserVerified]);
-      if (payload.parentUserName) pairs.push(['parentUserName', payload.parentUserName]);
-      if (payload.linkedStudentName) pairs.push(['linkedStudentName', payload.linkedStudentName]);
-      if (payload.linkedStudentEmail) pairs.push(['linkedStudentEmail', payload.linkedStudentEmail]);
+      if (payload.parentUserVerified)
+        pairs.push(["parentUserVerified", payload.parentUserVerified]);
+      if (payload.parentUserName)
+        pairs.push(["parentUserName", payload.parentUserName]);
+      if (payload.linkedStudentName)
+        pairs.push(["linkedStudentName", payload.linkedStudentName]);
+      if (payload.linkedStudentEmail)
+        pairs.push(["linkedStudentEmail", payload.linkedStudentEmail]);
 
       await AsyncStorage.multiSet(pairs);
-      setUserType('parent');
-      router.replace('/dashboard/parent');
+      setUserType("parent");
+      router.replace("/dashboard/parent");
     } catch {
       // Ignore malformed payloads posted by website scripts.
     }
   };
 
   const onNavigationStateChange = (navState) => {
-    if (navState?.url?.includes(DASHBOARD_PATH) && webViewRef.current && !handledLoginRef.current) {
+    if (
+      navState?.url?.includes(DASHBOARD_PATH) &&
+      webViewRef.current &&
+      !handledLoginRef.current
+    ) {
       webViewRef.current.injectJavaScript(READ_STORAGE_JS);
     }
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
+    <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))} style={styles.backButton}>
+        <TouchableOpacity
+          onPress={() =>
+            router.canGoBack() ? router.back() : router.replace("/")
+          }
+          style={styles.backButton}
+        >
           <Text style={styles.backText}>← Back</Text>
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Parent Login</Text>
@@ -113,7 +138,7 @@ export default function ParentLoginScreen() {
           javaScriptEnabled
           domStorageEnabled
           mixedContentMode="always"
-          originWhitelist={['*']}
+          originWhitelist={["*"]}
           setSupportMultipleWindows={false}
           injectedJavaScript={LOGIN_POLL_JS}
           onMessage={onMessage}
@@ -123,7 +148,10 @@ export default function ParentLoginScreen() {
           renderError={() => (
             <View style={styles.errorView}>
               <Text style={styles.errorText}>Failed to load page.</Text>
-              <TouchableOpacity style={styles.retryBtn} onPress={() => webViewRef.current?.reload()}>
+              <TouchableOpacity
+                style={styles.retryBtn}
+                onPress={() => webViewRef.current?.reload()}
+              >
                 <Text style={styles.retryText}>Retry</Text>
               </TouchableOpacity>
             </View>
@@ -141,55 +169,55 @@ export default function ParentLoginScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#1a1a2e' },
+  container: { flex: 1, backgroundColor: "#1a1a2e" },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#1a1a2e',
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#1a1a2e",
     paddingHorizontal: 12,
     paddingVertical: 10,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255,255,255,0.1)',
+    borderBottomColor: "rgba(255,255,255,0.1)",
   },
   backButton: {
     paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: 8,
-    backgroundColor: 'rgba(255,255,255,0.1)',
+    backgroundColor: "rgba(255,255,255,0.1)",
   },
   backText: {
-    color: '#fff',
-    fontWeight: '700',
+    color: "#fff",
+    fontWeight: "700",
     fontSize: 13,
   },
   headerTitle: {
     flex: 1,
-    textAlign: 'center',
-    color: '#fff',
-    fontWeight: '700',
+    textAlign: "center",
+    color: "#fff",
+    fontWeight: "700",
     fontSize: 15,
   },
   headerSpacer: { width: 56 },
-  webViewContainer: { flex: 1 },
+  webViewContainer: { flex: 1, backgroundColor: "#fff" },
   loaderOverlay: {
     ...StyleSheet.absoluteFillObject,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.5)',
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(255,255,255,0.5)",
   },
   errorView: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     padding: 24,
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
   },
-  errorText: { fontSize: 15, color: '#333', marginBottom: 16 },
+  errorText: { fontSize: 15, color: "#333", marginBottom: 16 },
   retryBtn: {
-    backgroundColor: '#b0003a',
+    backgroundColor: "#b0003a",
     paddingHorizontal: 24,
     paddingVertical: 10,
     borderRadius: 8,
   },
-  retryText: { color: '#fff', fontWeight: '700', fontSize: 14 },
+  retryText: { color: "#fff", fontWeight: "700", fontSize: 14 },
 });

@@ -12,7 +12,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { WebView } from "react-native-webview";
 import { useAuth } from "../../context/AuthContext";
 
-const LOGIN_URL = "https://shreyartha.com/partner";
+const LOGIN_URL = "https://shreyartha.com/partnerlogin";
 const DASHBOARD_PATH = "/partner/platform/dashboard";
 const MOBILE_USER_AGENT =
   "Mozilla/5.0 (Linux; Android 14; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36";
@@ -196,7 +196,7 @@ const styles = StyleSheet.create({
     fontSize: 15,
   },
   headerSpacer: { width: 56 },
-  webViewContainer: { flex: 1 },
+  webViewContainer: { flex: 1, backgroundColor: "#fff" },
   loaderOverlay: {
     ...StyleSheet.absoluteFillObject,
     justifyContent: "center",
