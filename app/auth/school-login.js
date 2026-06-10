@@ -1,6 +1,7 @@
 import { useRef, useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -9,7 +10,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { WebView } from "react-native-webview";
+import AppWebView from "../../components/AppWebView";
 import { useAuth } from "../../context/AuthContext";
 
 const LOGIN_URL = "https://shreyartha.com/schoollogin";
@@ -97,6 +98,18 @@ export default function SchoolLoginScreen() {
 
       await AsyncStorage.multiSet(pairs);
       setUserType("school");
+
+      const role = (payload.schoolUserType || "").toLowerCase();
+      if (role === "admin") {
+        handledLoginRef.current = false; // allow retry with another account
+        Alert.alert(
+          "Access Not Available",
+          "Admin access is not available on the mobile app. Please use the web portal at shreyartha.com.",
+          [{ text: "OK" }]
+        );
+        return;
+      }
+
       router.replace("/dashboard/school");
     } catch {
       // Ignore malformed payloads posted by website scripts.
@@ -129,7 +142,7 @@ export default function SchoolLoginScreen() {
       </View>
 
       <View style={styles.webViewContainer}>
-        <WebView
+        <AppWebView
           ref={webViewRef}
           source={{ uri: LOGIN_URL }}
           userAgent={MOBILE_USER_AGENT}

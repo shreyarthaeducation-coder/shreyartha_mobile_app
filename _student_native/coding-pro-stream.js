@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { studentService } from '../../services/studentService';
+import RichText from '../../components/RichText';
 
 const STREAM_LABELS = {
   ai: 'Artificial Intelligence (AI)',
@@ -118,9 +119,8 @@ export default function CodingProStreamScreen() {
     }
   }, [router, streamKey, studentClass]);
 
-  const contentText = useMemo(() => {
-    const raw = topicContent?.html || topicContent?.content || topicContent?.body || topicContent?.text || topicContent?.description || '';
-    return String(raw).replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+  const contentHtml = useMemo(() => {
+    return topicContent?.html || topicContent?.content || topicContent?.body || topicContent?.text || topicContent?.description || '';
   }, [topicContent]);
 
   const links = useMemo(() => normalizeLinks(topicContent || {}), [topicContent]);
@@ -173,7 +173,7 @@ export default function CodingProStreamScreen() {
               <Text style={styles.errorText}>⚠️ {topicError}</Text>
             ) : activeTopicId ? (
               <>
-                {contentText ? <Text style={styles.contentText}>{contentText}</Text> : <Text style={styles.placeholderText}>No content available for this topic.</Text>}
+                {contentHtml ? <RichText html={contentHtml} textStyle={styles.contentText} /> : <Text style={styles.placeholderText}>No content available for this topic.</Text>}
                 {links.length > 0 ? (
                   <View style={styles.linksWrap}>
                     {links.map((item) => (

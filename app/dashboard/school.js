@@ -3,18 +3,17 @@ import { ActivityIndicator, BackHandler, Platform, StyleSheet, View } from 'reac
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { WebView } from 'react-native-webview';
+import AppWebView, { FORCE_DESKTOP_VIEWPORT_JS } from '../../components/AppWebView';
 import { useAuth } from '../../context/AuthContext';
 
 const BASE_URL = 'https://shreyartha.com';
-const MOBILE_USER_AGENT = 'Mozilla/5.0 (Linux; Android 14; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36';
+const DESKTOP_USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36';
 
 const roleToPath = {
   teacher: '/school/platform/teacher/dashboard',
   counselor: '/school/platform/counselor/dashboard',
   principal: '/school/platform/principal/dashboard',
   vice_principal: '/school/platform/vice_principal/dashboard',
-  admin: '/school/platform/admin/dashboard',
 };
 
 const getInjectedJS = (values) => `
@@ -33,7 +32,6 @@ export default function SchoolDashboard() {
   const router = useRouter();
   const { logout } = useAuth();
   const webViewRef = useRef(null);
-  const [loading, setLoading] = useState(true);
   const [canGoBack, setCanGoBack] = useState(false);
   const [injectValues, setInjectValues] = useState(null);
   const [dashboardUrl, setDashboardUrl] = useState(`${BASE_URL}${roleToPath.teacher}`);
@@ -90,16 +88,16 @@ export default function SchoolDashboard() {
 
   const injectedBeforeLoad = useMemo(() => {
     if (!injectValues) return 'true;';
-    return getInjectedJS(injectValues);
+    return FORCE_DESKTOP_VIEWPORT_JS + '\n' + getInjectedJS(injectValues);
   }, [injectValues]);
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
       {injectValues ? (
-        <WebView
+        <AppWebView
           ref={webViewRef}
           source={{ uri: dashboardUrl }}
-          userAgent={MOBILE_USER_AGENT}
+          userAgent={DESKTOP_USER_AGENT}
           javaScriptEnabled
           domStorageEnabled
           mixedContentMode="always"
@@ -110,12 +108,10 @@ export default function SchoolDashboard() {
             setCanGoBack(navState.canGoBack);
             handleLogoutNav(navState.url || '');
           }}
-          onLoadStart={() => setLoading(true)}
-          onLoadEnd={() => setLoading(false)}
         />
       ) : null}
 
-      {(loading || !injectValues) ? (
+      {!injectValues ? (
         <View style={styles.loaderOverlay}>
           <ActivityIndicator size="large" color="#B0003A" />
         </View>

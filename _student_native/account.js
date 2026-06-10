@@ -3,7 +3,9 @@ import {
   ActivityIndicator,
   Alert,
   KeyboardAvoidingView,
+  Modal,
   Platform,
+  Pressable,
   ScrollView,
   StyleSheet,
   Text,
@@ -18,8 +20,26 @@ import { useLanguage } from '../../context/LanguageContext';
 import { studentService } from '../../services/studentService';
 import { cacheService } from '../../services/cacheService';
 import { STUDENT } from '../../constants/theme';
+import { useTranslations } from '../../hooks/useTranslations';
 
-const SUPPORT_TAB_TITLE = 'Support';
+const UI_STRINGS = {
+  support:             'Support',
+  accountHelp:         'Account help & settings',
+  needHelpFast:        'Need Help Fast?',
+  speakToCounsellor:   'Speak to Counsellor',
+  supportHeroSubtitle: 'Book the same counselling support flow from the dashboard here.',
+  supportOptions:      'Support Options',
+  changePassword:      'Change Password',
+  updateAccountPwd:    'Update your account password',
+  changeLanguage:      'Change Language',
+  logOut:              'Log Out',
+  signOut:             'Sign out from this device',
+  selectLanguage:      'Select Language',
+  cancel:              'Cancel',
+  updatePassword:      'Update Password',
+  submitting:          'Submitting…',
+};
+
 
 function SectionCard({ title, children }) {
   return (
@@ -75,6 +95,9 @@ export default function AccountScreen() {
     supportedLanguages,
     setLanguage,
   } = useLanguage();
+  const t = useTranslations(UI_STRINGS);
+
+  const [langModalVisible, setLangModalVisible] = useState(false);
 
   const [pwdForm, setPwdForm] = useState({
     currentPassword: '',
@@ -115,12 +138,14 @@ export default function AccountScreen() {
     }
   };
 
-  const handleLanguageChange = async () => {
-    const currentIndex = supportedLanguages.findIndex((item) => item.code === language.code);
-    const next = supportedLanguages[(currentIndex + 1) % supportedLanguages.length];
+  const handleLanguageChange = () => {
+    setLangModalVisible(true);
+  };
+
+  const handleSelectLanguage = async (lang) => {
+    setLangModalVisible(false);
     try {
-      await setLanguage(next);
-      Alert.alert('Language Updated', `Selected language: ${next.label}`);
+      await setLanguage(lang);
     } catch {
       Alert.alert('Update Failed', 'Could not save language preference right now.');
     }
@@ -150,8 +175,8 @@ export default function AccountScreen() {
   return (
     <SafeAreaView style={styles.root} edges={['top', 'left', 'right']}>
       <View style={styles.screenHeader}>
-        <Text style={styles.screenTitle}>{SUPPORT_TAB_TITLE}</Text>
-        <Text style={styles.screenSub}>Account help & settings</Text>
+        <Text style={styles.screenTitle}>{t.support}</Text>
+        <Text style={styles.screenSub}>{t.accountHelp}</Text>
       </View>
 
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
@@ -161,7 +186,7 @@ export default function AccountScreen() {
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
-          <SectionCard title="Need Help Fast?">
+          <SectionCard title={t.needHelpFast}>
             <TouchableOpacity
               style={styles.supportHeroButton}
               onPress={handleSpeakToCounsellor}
@@ -169,20 +194,18 @@ export default function AccountScreen() {
             >
               <Text style={styles.supportHeroIcon}>🎓</Text>
               <View style={styles.supportHeroTextWrap}>
-                <Text style={styles.supportHeroTitle}>Speak to Counsellor</Text>
-                <Text style={styles.supportHeroSubtitle}>
-                  Book the same counselling support flow from the dashboard here.
-                </Text>
+                <Text style={styles.supportHeroTitle}>{t.speakToCounsellor}</Text>
+                <Text style={styles.supportHeroSubtitle}>{t.supportHeroSubtitle}</Text>
               </View>
               <Text style={styles.supportHeroChevron}>›</Text>
             </TouchableOpacity>
           </SectionCard>
 
-          <SectionCard title="Support Options">
+          <SectionCard title={t.supportOptions}>
             <SettingRow
               icon="🔑"
-              label="Change Password"
-              sublabel="Update your account password"
+              label={t.changePassword}
+              sublabel={t.updateAccountPwd}
               onPress={() => toggleExpand('password')}
             />
 
@@ -218,7 +241,7 @@ export default function AccountScreen() {
                   {pwdLoading ? (
                     <ActivityIndicator size="small" color="#fff" />
                   ) : (
-                    <Text style={styles.actionBtnText}>Update Password</Text>
+                    <Text style={styles.actionBtnText}>{t.updatePassword}</Text>
                   )}
                 </TouchableOpacity>
               </View>
@@ -226,15 +249,15 @@ export default function AccountScreen() {
 
             <SettingRow
               icon="🌐"
-              label="Change Language"
-              sublabel={`Current: ${language.label}`}
+              label={t.changeLanguage}
+              sublabel={`${language.nativeName ?? language.englishName ?? language.code}`}
               onPress={handleLanguageChange}
             />
 
             <SettingRow
               icon="🚪"
-              label="Log Out"
-              sublabel="Sign out from this device"
+              label={t.logOut}
+              sublabel={t.signOut}
               onPress={handleLogout}
               danger
             />
@@ -243,6 +266,53 @@ export default function AccountScreen() {
           <View style={{ height: 24 }} />
         </ScrollView>
       </KeyboardAvoidingView>
+
+      <Modal
+        visible={langModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setLangModalVisible(false)}
+      >
+        <Pressable style={styles.langOverlay} onPress={() => setLangModalVisible(false)}>
+          <Pressable style={styles.langCard} onPress={() => {}}>
+            <Text style={styles.langCardTitle}>{t.selectLanguage}</Text>
+            <ScrollView
+              style={styles.langScrollView}
+              showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled"
+            >
+              {supportedLanguages.map((lang) => {
+                const active = language.code === lang.code;
+                return (
+                  <TouchableOpacity
+                    key={lang.code}
+                    style={[styles.langOption, active && styles.langOptionActive]}
+                    onPress={() => handleSelectLanguage(lang)}
+                    activeOpacity={0.75}
+                  >
+                    <View style={styles.langOptionTextWrap}>
+                      <Text style={[styles.langOptionNative, active && styles.langOptionNativeActive]}>
+                        {lang.nativeName ?? lang.label}
+                      </Text>
+                      <Text style={styles.langOptionEnglish}>
+                        {lang.englishName ?? lang.label}
+                      </Text>
+                    </View>
+                    {active && <Text style={styles.langCheck}>✓</Text>}
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
+            <TouchableOpacity
+              style={styles.langCancelBtn}
+              onPress={() => setLangModalVisible(false)}
+              activeOpacity={0.75}
+            >
+              <Text style={styles.langCancelText}>{t.cancel}</Text>
+            </TouchableOpacity>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -357,4 +427,84 @@ const styles = StyleSheet.create({
   supportHeroTitle: { fontSize: 15, fontWeight: '800', color: STUDENT.textPrimary },
   supportHeroSubtitle: { fontSize: 12, lineHeight: 17, color: STUDENT.textSecondary },
   supportHeroChevron: { fontSize: 22, color: STUDENT.textPrimary },
+  langOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.55)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 32,
+  },
+  langCard: {
+    width: '100%',
+    backgroundColor: STUDENT.bgCard,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: STUDENT.border,
+    paddingTop: 20,
+    paddingBottom: 4,
+    maxHeight: '78%',
+    overflow: 'hidden',
+  },
+  langCardTitle: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: STUDENT.textPrimary,
+    textAlign: 'center',
+    marginBottom: 8,
+    paddingHorizontal: 20,
+  },
+  langScrollView: {
+    maxHeight: 380,
+  },
+  langOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255,255,255,0.06)',
+  },
+  langOptionActive: {
+    backgroundColor: 'rgba(79,70,229,0.12)',
+  },
+  langOptionTextWrap: {
+    flex: 1,
+  },
+  langOptionNative: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: STUDENT.textPrimary,
+  },
+  langOptionNativeActive: {
+    color: STUDENT.accent,
+  },
+  langOptionEnglish: {
+    fontSize: 11,
+    color: STUDENT.textMuted,
+    marginTop: 2,
+  },
+  langOptionLabel: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: STUDENT.textPrimary,
+  },
+  langCheck: {
+    fontSize: 17,
+    color: STUDENT.accent,
+    fontWeight: '700',
+    marginLeft: 8,
+  },
+  langCancelBtn: {
+    paddingVertical: 14,
+    alignItems: 'center',
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255,255,255,0.06)',
+    marginTop: 4,
+  },
+  langCancelText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: STUDENT.accentRose,
+  },
 });

@@ -9,7 +9,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { WebView } from "react-native-webview";
+import AppWebView from "../../components/AppWebView";
 import { useAuth } from "../../context/AuthContext";
 
 const LOGIN_URL = "https://shreyartha.com/partnerlogin";
@@ -129,7 +129,7 @@ export default function PartnerLoginScreen() {
       </View>
 
       <View style={styles.webViewContainer}>
-        <WebView
+        <AppWebView
           ref={webViewRef}
           source={{ uri: LOGIN_URL }}
           userAgent={MOBILE_USER_AGENT}

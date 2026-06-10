@@ -20,6 +20,7 @@ import { useRouter } from 'expo-router';
 import { useAuth } from '../../context/AuthContext';
 import { STUDENT } from '../../constants/theme';
 import { studentService } from '../../services/studentService';
+import StudentChatbotModal from '../components/StudentChatbotModal';
 
 const CHATBOT_IMAGE = require('../../assets/images/Chatbot.png');
 
@@ -132,6 +133,7 @@ export default function SpeakToCounsellorScreen() {
   const { width } = useWindowDimensions();
   const [profileName, setProfileName] = useState(user?.name || '');
   const [modalVisible, setModalVisible] = useState(false);
+  const [chatbotVisible, setChatbotVisible] = useState(false);
   const [form, setForm] = useState(() => createInitialForm(user?.name || ''));
   const [errors, setErrors] = useState({});
   const [showDatePicker, setShowDatePicker] = useState(false);
@@ -296,7 +298,7 @@ export default function SpeakToCounsellorScreen() {
             description="Get instant answers and guidance from our AI-powered counselor, Shreya."
             buttonLabel="Start Chat"
             imageSource={CHATBOT_IMAGE}
-            onPress={() => Alert.alert('Coming Soon', 'Chat coming soon')}
+            onPress={() => setChatbotVisible(true)}
             wide={isWide}
           />
           <OptionCard
@@ -310,6 +312,15 @@ export default function SpeakToCounsellorScreen() {
           />
         </View>
       </ScrollView>
+
+      <StudentChatbotModal
+        visible={chatbotVisible}
+        onClose={() => setChatbotVisible(false)}
+        onBook={() => {
+          setChatbotVisible(false);
+          openBookingModal();
+        }}
+      />
 
       <Modal
         animationType="slide"
