@@ -34,6 +34,7 @@ export default function ParentDashboard() {
   const webViewRef = useRef(null);
   const [canGoBack, setCanGoBack] = useState(false);
   const [injectValues, setInjectValues] = useState(null);
+  const [webLoading, setWebLoading] = useState(true);
 
   useEffect(() => {
     const loadStorage = async () => {
@@ -49,7 +50,7 @@ export default function ParentDashboard() {
       setInjectValues({
         parentUserToken: values.parentUserToken || "",
         parentLoggedIn: values.parentLoggedIn || "true",
-        parentUserVerified: values.parentUserVerified || "",
+        parentUserVerified: values.parentUserVerified || "true",
         parentUserName: values.parentUserName || "",
         linkedStudentName: values.linkedStudentName || "",
         linkedStudentEmail: values.linkedStudentEmail || "",
@@ -99,6 +100,8 @@ export default function ParentDashboard() {
           originWhitelist={["*"]}
           setSupportMultipleWindows={false}
           injectedJavaScriptBeforeContentLoaded={injectedBeforeLoad}
+          onLoadStart={() => setWebLoading(true)}
+          onLoadEnd={() => setWebLoading(false)}
           onNavigationStateChange={(navState) => {
             setCanGoBack(navState.canGoBack);
             handleLogoutNav(navState.url || "");
@@ -106,7 +109,7 @@ export default function ParentDashboard() {
         />
       ) : null}
 
-      {!injectValues ? (
+      {(!injectValues || webLoading) ? (
         <View style={styles.loaderOverlay}>
           <ActivityIndicator size="large" color="#B0003A" />
         </View>

@@ -122,7 +122,7 @@ export default function PsychometricSuiteScreen() {
 
         {/* FOOTER */}
         <View style={styles.footer}>
-          <Text style={styles.footerBrand}>The 3C Edge</Text>
+          <Text style={styles.footerBrand}>Shreyartha</Text>
           <Text style={styles.footerTagline}>Empowering students with Curriculum, Counselling & Career guidance.</Text>
           <View style={styles.footerLinks}>
             {FOOTER_LINKS.map((link, i) => (

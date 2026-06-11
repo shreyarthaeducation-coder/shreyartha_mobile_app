@@ -34,12 +34,14 @@ export default function PartnerDashboard() {
   const webViewRef = useRef(null);
   const [canGoBack, setCanGoBack] = useState(false);
   const [injectValues, setInjectValues] = useState(null);
+  const [webLoading, setWebLoading] = useState(true);
 
   useEffect(() => {
     const loadStorage = async () => {
       const entries = await AsyncStorage.multiGet([
         "partnerUserToken",
         "partnerLoggedIn",
+        "partnerUserVerified",
         "partnerUserType",
         "partnerUserName",
         "partnerUserEmail",
@@ -49,6 +51,7 @@ export default function PartnerDashboard() {
       setInjectValues({
         partnerUserToken: values.partnerUserToken || "",
         partnerLoggedIn: values.partnerLoggedIn || "true",
+        partnerUserVerified: values.partnerUserVerified || "true",
         partnerUserType: values.partnerUserType || "",
         partnerUserName: values.partnerUserName || "",
         partnerUserEmail: values.partnerUserEmail || "",
@@ -99,6 +102,8 @@ export default function PartnerDashboard() {
           originWhitelist={["*"]}
           setSupportMultipleWindows={false}
           injectedJavaScriptBeforeContentLoaded={injectedBeforeLoad}
+          onLoadStart={() => setWebLoading(true)}
+          onLoadEnd={() => setWebLoading(false)}
           onNavigationStateChange={(navState) => {
             setCanGoBack(navState.canGoBack);
             handleLogoutNav(navState.url || "");
@@ -106,7 +111,7 @@ export default function PartnerDashboard() {
         />
       ) : null}
 
-      {!injectValues ? (
+      {(!injectValues || webLoading) ? (
         <View style={styles.loaderOverlay}>
           <ActivityIndicator size="large" color="#B0003A" />
         </View>

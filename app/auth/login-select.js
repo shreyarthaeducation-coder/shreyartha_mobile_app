@@ -10,7 +10,7 @@ import { useRouter } from "expo-router";
 import { COLORS, SPACING, SHADOWS } from "../../constants/theme";
 import ChatbotWidget from "../components/ChatbotWidget";
 
-const LOGO_URL = "https://the3cedge.com/images/The3CEdge.png";
+const LOGO = require("../../assets/images/ShreyarthaLogo.png");
 
 export default function LoginSelectScreen() {
   const router = useRouter();
@@ -65,7 +65,7 @@ export default function LoginSelectScreen() {
           <Text style={styles.backBtnHeaderText}>← Back</Text>
         </TouchableOpacity>
         <Image
-          source={{ uri: LOGO_URL }}
+          source={LOGO}
           style={styles.headerLogo}
           resizeMode="contain"
         />

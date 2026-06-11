@@ -1,223 +1,238 @@
-import { useRef, useState } from "react";
+import { useState } from 'react';
 import {
   ActivityIndicator,
+  Image,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   TouchableOpacity,
   View,
-} from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { useRouter } from "expo-router";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import AppWebView from "../../components/AppWebView";
-import { useAuth } from "../../context/AuthContext";
-
-const LOGIN_URL = "https://shreyartha.com/parentlogin";
-const DASHBOARD_PATH = "/parent/platform/dashboard";
-const MOBILE_USER_AGENT =
-  "Mozilla/5.0 (Linux; Android 14; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36";
-
-const LOGIN_POLL_JS = `
-(function() {
-  function sendPayload() {
-    var parentUserToken = localStorage.getItem('parentUserToken');
-    var parentLoggedIn = localStorage.getItem('parentLoggedIn');
-    if (parentUserToken && parentLoggedIn === 'true') {
-      window.ReactNativeWebView.postMessage(JSON.stringify({
-        type: 'LOGIN_SUCCESS',
-        parentUserToken: parentUserToken,
-        parentLoggedIn: parentLoggedIn,
-        parentUserVerified: localStorage.getItem('parentUserVerified') || '',
-        parentUserName: localStorage.getItem('parentUserName') || '',
-        linkedStudentName: localStorage.getItem('linkedStudentName') || '',
-        linkedStudentEmail: localStorage.getItem('linkedStudentEmail') || ''
-      }));
-      return true;
-    }
-    return false;
-  }
-
-  if (!sendPayload()) {
-    var interval = setInterval(function() {
-      if (sendPayload()) {
-        clearInterval(interval);
-      }
-    }, 500);
-    setTimeout(function() { clearInterval(interval); }, 20000);
-  }
-})();
-true;
-`;
-
-const READ_STORAGE_JS = `
-(function() {
-  window.ReactNativeWebView.postMessage(JSON.stringify({
-    type: 'LOGIN_SUCCESS',
-    parentUserToken: localStorage.getItem('parentUserToken'),
-    parentLoggedIn: localStorage.getItem('parentLoggedIn') || 'true',
-    parentUserVerified: localStorage.getItem('parentUserVerified') || '',
-    parentUserName: localStorage.getItem('parentUserName') || '',
-    linkedStudentName: localStorage.getItem('linkedStudentName') || '',
-    linkedStudentEmail: localStorage.getItem('linkedStudentEmail') || ''
-  }));
-})();
-true;
-`;
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useAuth } from '../../context/AuthContext';
+import { loginParent } from '../../services/authService';
 
 export default function ParentLoginScreen() {
   const router = useRouter();
   const { setUserType } = useAuth();
-  const webViewRef = useRef(null);
-  const handledLoginRef = useRef(false);
-  const [loading, setLoading] = useState(true);
+  const [emailOrMobile, setEmailOrMobile] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
-  const onMessage = async (event) => {
-    try {
-      const payload = JSON.parse(event.nativeEvent.data || "{}");
-      if (
-        payload?.type !== "LOGIN_SUCCESS" ||
-        handledLoginRef.current ||
-        !payload.parentUserToken
-      )
-        return;
-
-      handledLoginRef.current = true;
-      const pairs = [
-        ["parentUserToken", payload.parentUserToken],
-        ["parentLoggedIn", "true"],
-        ["userType", "parent"],
-      ];
-
-      if (payload.parentUserVerified)
-        pairs.push(["parentUserVerified", payload.parentUserVerified]);
-      if (payload.parentUserName)
-        pairs.push(["parentUserName", payload.parentUserName]);
-      if (payload.linkedStudentName)
-        pairs.push(["linkedStudentName", payload.linkedStudentName]);
-      if (payload.linkedStudentEmail)
-        pairs.push(["linkedStudentEmail", payload.linkedStudentEmail]);
-
-      await AsyncStorage.multiSet(pairs);
-      setUserType("parent");
-      router.replace("/dashboard/parent");
-    } catch {
-      // Ignore malformed payloads posted by website scripts.
+  const handleLogin = async () => {
+    const trimInput = emailOrMobile.trim();
+    if (!trimInput || !password) {
+      setError('Please enter your email/mobile and password.');
+      return;
     }
-  };
+    setError('');
+    setLoading(true);
+    try {
+      const res = await loginParent(trimInput, password);
+      if (!res.success || !res.data?.token) {
+        throw new Error(res.message || 'Login failed. Please try again.');
+      }
+      const { data } = res;
 
-  const onNavigationStateChange = (navState) => {
-    if (
-      navState?.url?.includes(DASHBOARD_PATH) &&
-      webViewRef.current &&
-      !handledLoginRef.current
-    ) {
-      webViewRef.current.injectJavaScript(READ_STORAGE_JS);
+      await AsyncStorage.multiSet([
+        ['parentUserToken', data.token],
+        ['parentLoggedIn', 'true'],
+        ['parentUserVerified', data.verified === false ? 'false' : 'true'],
+        ['parentUserName', data.fullName || ''],
+        ['linkedStudentName', data.studentName || ''],
+        ['linkedStudentEmail', data.studentEmail || ''],
+        ['userType', 'parent'],
+        ['userData', JSON.stringify(data)],
+      ]);
+
+      setUserType('parent');
+      router.replace('/dashboard/parent');
+    } catch (e) {
+      setError(e.message || 'Login failed. Please check your credentials.');
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
-      <View style={styles.header}>
-        <TouchableOpacity
-          onPress={() =>
-            router.canGoBack() ? router.back() : router.replace("/")
-          }
-          style={styles.backButton}
+    <SafeAreaView style={styles.safe} edges={['top', 'left', 'right', 'bottom']}>
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      >
+        <ScrollView
+          contentContainerStyle={styles.scroll}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
         >
-          <Text style={styles.backText}>← Back</Text>
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Parent Login</Text>
-        <View style={styles.headerSpacer} />
-      </View>
+          <TouchableOpacity
+            onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))}
+            style={styles.backBtn}
+          >
+            <Text style={styles.backText}>← Back</Text>
+          </TouchableOpacity>
 
-      <View style={styles.webViewContainer}>
-        <AppWebView
-          ref={webViewRef}
-          source={{ uri: LOGIN_URL }}
-          userAgent={MOBILE_USER_AGENT}
-          javaScriptEnabled
-          domStorageEnabled
-          mixedContentMode="always"
-          originWhitelist={["*"]}
-          setSupportMultipleWindows={false}
-          injectedJavaScript={LOGIN_POLL_JS}
-          onMessage={onMessage}
-          onNavigationStateChange={onNavigationStateChange}
-          onLoadStart={() => setLoading(true)}
-          onLoadEnd={() => setLoading(false)}
-          renderError={() => (
-            <View style={styles.errorView}>
-              <Text style={styles.errorText}>Failed to load page.</Text>
+          <View style={styles.logoContainer}>
+            <Image
+              source={require('../../assets/images/ShreyarthaLogo.png')}
+              style={styles.logo}
+              resizeMode="contain"
+            />
+            <Text style={styles.appName}>Shreyartha</Text>
+            <Text style={styles.tagline}>Parent Portal</Text>
+          </View>
+
+          <View style={styles.card}>
+            <Text style={styles.cardTitle}>Parent Login</Text>
+            <Text style={styles.cardSubtitle}>Monitor your child's progress</Text>
+
+            {error ? (
+              <View style={styles.errorBox}>
+                <Text style={styles.errorText}>{error}</Text>
+              </View>
+            ) : null}
+
+            <Text style={styles.label}>Email or Mobile Number</Text>
+            <TextInput
+              style={styles.input}
+              value={emailOrMobile}
+              onChangeText={setEmailOrMobile}
+              placeholder="Enter email or mobile"
+              placeholderTextColor="#aaa"
+              keyboardType="email-address"
+              autoCapitalize="none"
+              autoCorrect={false}
+              returnKeyType="next"
+              editable={!loading}
+            />
+
+            <Text style={styles.label}>Password</Text>
+            <View style={styles.passwordRow}>
+              <TextInput
+                style={[styles.input, styles.passwordInput]}
+                value={password}
+                onChangeText={setPassword}
+                placeholder="Enter your password"
+                placeholderTextColor="#aaa"
+                secureTextEntry={!showPassword}
+                returnKeyType="done"
+                onSubmitEditing={handleLogin}
+                editable={!loading}
+              />
               <TouchableOpacity
-                style={styles.retryBtn}
-                onPress={() => webViewRef.current?.reload()}
+                style={styles.eyeBtn}
+                onPress={() => setShowPassword(!showPassword)}
               >
-                <Text style={styles.retryText}>Retry</Text>
+                <Text style={styles.eyeText}>{showPassword ? '🙈' : '👁️'}</Text>
               </TouchableOpacity>
             </View>
-          )}
-        />
 
-        {loading ? (
-          <View style={styles.loaderOverlay}>
-            <ActivityIndicator size="large" color="#b0003a" />
+            <TouchableOpacity
+              style={styles.forgotLink}
+              onPress={() => router.push('/auth/forgot-password?type=parent')}
+            >
+              <Text style={styles.forgotText}>Forgot Password?</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.loginBtn, loading && styles.loginBtnDisabled]}
+              onPress={handleLogin}
+              disabled={loading}
+            >
+              {loading ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <Text style={styles.loginBtnText}>Login</Text>
+              )}
+            </TouchableOpacity>
           </View>
-        ) : null}
-      </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#1a1a2e" },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#1a1a2e",
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: "rgba(255,255,255,0.1)",
+  safe: { flex: 1, backgroundColor: '#1a1a2e' },
+  scroll: { flexGrow: 1, paddingHorizontal: 20, paddingTop: 16, paddingBottom: 32 },
+  backBtn: {
+    alignSelf: 'flex-start',
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 10,
+    backgroundColor: 'rgba(255,255,255,0.12)',
+    marginBottom: 8,
   },
-  backButton: {
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 8,
-    backgroundColor: "rgba(255,255,255,0.1)",
-  },
-  backText: {
-    color: "#fff",
-    fontWeight: "700",
-    fontSize: 13,
-  },
-  headerTitle: {
-    flex: 1,
-    textAlign: "center",
-    color: "#fff",
-    fontWeight: "700",
-    fontSize: 15,
-  },
-  headerSpacer: { width: 56 },
-  webViewContainer: { flex: 1, backgroundColor: "#fff" },
-  loaderOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "rgba(255,255,255,0.5)",
-  },
-  errorView: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
+  backText: { color: '#fff', fontWeight: '700', fontSize: 14 },
+  logoContainer: { alignItems: 'center', marginVertical: 28 },
+  logo: { width: 90, height: 90, borderRadius: 18 },
+  appName: { color: '#fff', fontSize: 22, fontWeight: '800', marginTop: 12 },
+  tagline: { color: 'rgba(255,255,255,0.6)', fontSize: 13, marginTop: 2 },
+  card: {
+    backgroundColor: '#fff',
+    borderRadius: 20,
     padding: 24,
-    backgroundColor: "#fff",
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.18,
+    shadowRadius: 16,
+    elevation: 10,
   },
-  errorText: { fontSize: 15, color: "#333", marginBottom: 16 },
-  retryBtn: {
-    backgroundColor: "#b0003a",
-    paddingHorizontal: 24,
-    paddingVertical: 10,
-    borderRadius: 8,
+  cardTitle: { fontSize: 22, fontWeight: '800', color: '#1a1a2e', marginBottom: 4 },
+  cardSubtitle: { fontSize: 13, color: '#64748b', marginBottom: 20 },
+  errorBox: {
+    backgroundColor: '#fef2f2',
+    borderRadius: 10,
+    padding: 12,
+    marginBottom: 16,
+    borderLeftWidth: 3,
+    borderLeftColor: '#ef4444',
   },
-  retryText: { color: "#fff", fontWeight: "700", fontSize: 14 },
+  errorText: { color: '#dc2626', fontSize: 13, lineHeight: 18 },
+  label: { fontSize: 13, fontWeight: '600', color: '#374151', marginBottom: 6, marginTop: 14 },
+  input: {
+    backgroundColor: '#f9fafb',
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 13,
+    fontSize: 15,
+    color: '#111827',
+  },
+  passwordRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  passwordInput: { flex: 1 },
+  eyeBtn: {
+    width: 48,
+    height: 48,
+    borderRadius: 12,
+    backgroundColor: '#f3f4f6',
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  eyeText: { fontSize: 18 },
+  forgotLink: { alignSelf: 'flex-end', marginTop: 10, marginBottom: 22 },
+  forgotText: { fontSize: 13, color: '#b0003a', fontWeight: '600' },
+  loginBtn: {
+    backgroundColor: '#b0003a',
+    borderRadius: 14,
+    paddingVertical: 15,
+    alignItems: 'center',
+    shadowColor: '#b0003a',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  loginBtnDisabled: { opacity: 0.7 },
+  loginBtnText: { color: '#fff', fontSize: 16, fontWeight: '700', letterSpacing: 0.3 },
 });

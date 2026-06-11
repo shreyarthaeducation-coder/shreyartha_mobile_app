@@ -14,6 +14,8 @@ const roleToPath = {
   counselor: '/school/platform/counselor/dashboard',
   principal: '/school/platform/principal/dashboard',
   vice_principal: '/school/platform/vice_principal/dashboard',
+  shreyartha_teacher: '/school/platform/teacher/dashboard',
+  shreyartha_councellor: '/school/platform/counselor/dashboard',
 };
 
 const getInjectedJS = (values) => `
@@ -34,6 +36,7 @@ export default function SchoolDashboard() {
   const webViewRef = useRef(null);
   const [canGoBack, setCanGoBack] = useState(false);
   const [injectValues, setInjectValues] = useState(null);
+  const [webLoading, setWebLoading] = useState(true);
   const [dashboardUrl, setDashboardUrl] = useState(`${BASE_URL}${roleToPath.teacher}`);
 
   useEffect(() => {
@@ -41,6 +44,7 @@ export default function SchoolDashboard() {
       const entries = await AsyncStorage.multiGet([
         'schoolUserToken',
         'schoolLoggedIn',
+        'schoolUserVerified',
         'schoolUserType',
         'schoolUserName',
         'schoolUserEmail',
@@ -54,6 +58,7 @@ export default function SchoolDashboard() {
       setInjectValues({
         schoolUserToken: values.schoolUserToken || '',
         schoolLoggedIn: values.schoolLoggedIn || 'true',
+        schoolUserVerified: values.schoolUserVerified || 'true',
         schoolUserType: values.schoolUserType || 'TEACHER',
         schoolUserName: values.schoolUserName || '',
         schoolUserEmail: values.schoolUserEmail || '',
@@ -104,6 +109,8 @@ export default function SchoolDashboard() {
           originWhitelist={['*']}
           setSupportMultipleWindows={false}
           injectedJavaScriptBeforeContentLoaded={injectedBeforeLoad}
+          onLoadStart={() => setWebLoading(true)}
+          onLoadEnd={() => setWebLoading(false)}
           onNavigationStateChange={(navState) => {
             setCanGoBack(navState.canGoBack);
             handleLogoutNav(navState.url || '');
@@ -111,7 +118,7 @@ export default function SchoolDashboard() {
         />
       ) : null}
 
-      {!injectValues ? (
+      {(!injectValues || webLoading) ? (
         <View style={styles.loaderOverlay}>
           <ActivityIndicator size="large" color="#B0003A" />
         </View>

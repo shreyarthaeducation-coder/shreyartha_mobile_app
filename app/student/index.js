@@ -34,6 +34,7 @@ export default function StudentDashboard() {
   const webViewRef = useRef(null);
   const [canGoBack, setCanGoBack] = useState(false);
   const [injectValues, setInjectValues] = useState(null);
+  const [webLoading, setWebLoading] = useState(true);
 
   useEffect(() => {
     const loadStorage = async () => {
@@ -100,6 +101,8 @@ export default function StudentDashboard() {
           originWhitelist={['*']}
           setSupportMultipleWindows={false}
           injectedJavaScriptBeforeContentLoaded={injectedBeforeLoad}
+          onLoadStart={() => setWebLoading(true)}
+          onLoadEnd={() => setWebLoading(false)}
           onNavigationStateChange={(navState) => {
             setCanGoBack(navState.canGoBack);
             handleLogoutNav(navState.url || '');
@@ -107,7 +110,7 @@ export default function StudentDashboard() {
         />
       ) : null}
 
-      {!injectValues ? (
+      {(!injectValues || webLoading) ? (
         <View style={styles.loaderOverlay}>
           <ActivityIndicator size="large" color="#B0003A" />
         </View>

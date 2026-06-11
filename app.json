@@ -1,37 +1,73 @@
 {
   "expo": {
-    "name": "The 3C Edge",
+    "name": "Shreyartha",
     "slug": "shreyartha-mobile-app",
-    "version": "1.2.0",
+    "version": "1.3.0",
     "scheme": "shreyartha",
     "orientation": "portrait",
-    "icon": "./assets/images/AppLogo.png",
+    "icon": "./assets/images/ShreyarthaLogo.png",
     "userInterfaceStyle": "light",
     "platforms": ["ios", "android"],
+    "privacy": "public",
     "splash": {
-      "image": "./assets/images/AppLogo.png",
-      "resizeMode": "contain",
+      "image": "./assets/images/ShreyarthaLogo.png",
+      "resizeMode": "cover",
       "backgroundColor": "#ffffff"
     },
     "ios": {
       "bundleIdentifier": "com.the3cedgeai.app",
-      "supportsTablet": true
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSCameraUsageDescription": "Shreyartha uses your camera to let you upload a profile photo.",
+        "NSPhotoLibraryUsageDescription": "Shreyartha accesses your photo library so you can choose a profile photo.",
+        "NSPhotoLibraryAddUsageDescription": "Shreyartha saves images to your photo library.",
+        "NSMicrophoneUsageDescription": "Shreyartha uses your microphone for audio features in learning modules.",
+        "NSUserTrackingUsageDescription": "This identifier is used to measure app performance and improve your learning experience.",
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "package": "com.the3cedgeai.app",
-      "versionCode": 9,
-      "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
+      "versionCode": 10,
+      "splash": {
+        "image": "./assets/images/ShreyarthaLogo.png",
+        "resizeMode": "cover",
         "backgroundColor": "#ffffff"
-      }
+      },
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/images/ShreyarthaLogo.png",
+        "backgroundColor": "#ffffff"
+      },
+      "permissions": [
+        "android.permission.INTERNET",
+        "android.permission.ACCESS_NETWORK_STATE",
+        "android.permission.CAMERA",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.READ_MEDIA_IMAGES",
+        "android.permission.READ_MEDIA_VIDEO",
+        "android.permission.RECORD_AUDIO"
+      ],
+      "allowBackup": false
     },
     "web": {
       "bundler": "metro"
     },
-    "plugins": ["expo-router", "@react-native-community/datetimepicker"],
+    "plugins": [
+      "expo-router",
+      "@react-native-community/datetimepicker",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Shreyartha accesses your photos so you can set a profile picture.",
+          "cameraPermission": "Shreyartha uses your camera to take a profile photo."
+        }
+      ]
+    ],
     "extra": {
       "router": {},
       "apiBaseUrl": "https://shreyartha.com",
+      "privacyPolicyUrl": "https://shreyartha.com/privacy",
       "eas": {
         "projectId": "3895f096-be3e-4a55-b755-ebc8c28181a2"
       }

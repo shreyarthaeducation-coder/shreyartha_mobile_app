@@ -19,12 +19,12 @@ import { api } from "../../services/apiService";
 
 const { width } = Dimensions.get("window");
 const CARD_WIDTH = (width - SPACING.lg * 2 - SPACING.sm) / 2;
-const HEADER_LOGO_HEIGHT = 80;
-const HEADER_LOGO_WIDTH = 205;
-// Slight negative offset trims transparent left whitespace in the source logo asset.
-const LOGO_ALIGNMENT_OFFSET = -14;
+const HEADER_LOGO_HEIGHT = 56;
+const HEADER_LOGO_WIDTH = 200;
+// Negative offset trims transparent left whitespace in the Shreyartha logo asset.
+const LOGO_ALIGNMENT_OFFSET = -10;
 
-const APP_LOGO = require("../../assets/images/AppLogo.png");
+const APP_LOGO = require("../../assets/images/ShreyarthaLogo.png");
 
 // Per-card icon background tints
 const ICON_BG = [
@@ -170,7 +170,7 @@ export default function LandingScreen() {
     {
       name: "Priya Sharma",
       role: "Class 12, Delhi",
-      text: "The 3C Edge helped me understand my strengths and choose the right career path. I'm now studying at my dream university!",
+      text: "Shreyartha helped me understand my strengths and choose the right career path. I'm now studying at my dream university!",
       avatar: "PS",
       stars: 5,
     },
@@ -242,7 +242,7 @@ export default function LandingScreen() {
               style={styles.logoImage}
               resizeMode="contain"
               accessible
-              accessibilityLabel="The 3C Edge Logo"
+              accessibilityLabel="Shreyartha Logo"
             />
           </View>
           <TouchableOpacity
@@ -348,7 +348,7 @@ export default function LandingScreen() {
         {/* ── FEATURES — 2-column grid ── */}
         <View style={styles.section}>
           <Text style={styles.sectionEyebrow}>OUR PLATFORM</Text>
-          <Text style={styles.sectionTitle}>Why Choose The 3C Edge?</Text>
+          <Text style={styles.sectionTitle}>Why Choose Shreyartha?</Text>
           <Text style={styles.sectionSubtitle}>
             11 comprehensive tools and expert guidance to help you succeed.
           </Text>
@@ -423,9 +423,9 @@ export default function LandingScreen() {
         {/* ── ABOUT ── */}
         <View style={styles.section}>
           <Text style={styles.sectionEyebrow}>WHO WE ARE</Text>
-          <Text style={styles.sectionTitle}>About The 3C Edge</Text>
+          <Text style={styles.sectionTitle}>About Shreyartha</Text>
           <Text style={styles.aboutText}>
-            The 3C Edge is a comprehensive educational platform designed to
+            Shreyartha is a comprehensive educational platform designed to
             bridge the gap between classroom learning and career success. We
             combine cutting-edge technology with expert guidance to provide
             students with personalized learning experiences.
@@ -460,7 +460,7 @@ export default function LandingScreen() {
           </Text>
           <Text style={styles.ctaSectionSubtitle}>
             Join thousands of students who have already discovered their
-            potential with The 3C Edge.
+            potential with Shreyartha.
           </Text>
           <View style={styles.ctaBannerButtons}>
             <TouchableOpacity
@@ -710,8 +710,7 @@ export default function LandingScreen() {
 
           <View style={styles.footerDivider} />
           <Text style={styles.footerCopy}>
-            © 2026 The 3C Edge · Shreyartha Education Pvt. Ltd. All rights
-            reserved.
+            © 2026 Shreyartha Education Pvt. Ltd. All rights reserved.
           </Text>
         </View>
       </ScrollView>
@@ -727,7 +726,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingLeft: 0,
+    paddingLeft: 10,
     paddingRight: SPACING.lg,
     paddingTop: 50,
     paddingBottom: 0,

@@ -4,6 +4,9 @@ import { AuthProvider } from "../context/AuthContext";
 import { LanguageProvider } from "../context/LanguageContext";
 import { SubscriptionProvider } from "../context/SubscriptionContext";
 
+// Always start at the tabs landing page regardless of previous navigation state.
+export const unstable_settings = { initialRouteName: "(tabs)" };
+
 export default function RootLayout() {
   return (
     <AuthProvider>
@@ -27,6 +30,10 @@ export default function RootLayout() {
             />
             <Stack.Screen
               name="auth/partner-login"
+              options={{ headerShown: false }}
+            />
+            <Stack.Screen
+              name="auth/forgot-password"
               options={{ headerShown: false }}
             />
 
