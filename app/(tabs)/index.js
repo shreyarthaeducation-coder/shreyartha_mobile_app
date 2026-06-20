@@ -24,7 +24,7 @@ const HEADER_LOGO_WIDTH = 200;
 // Negative offset trims transparent left whitespace in the Shreyartha logo asset.
 const LOGO_ALIGNMENT_OFFSET = -10;
 
-const APP_LOGO = require("../../assets/images/ShreyarthaLogo.png");
+const APP_LOGO = require("../../assets/images/AppLogo.png");
 
 // Per-card icon background tints
 const ICON_BG = [

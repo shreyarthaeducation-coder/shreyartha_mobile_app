@@ -75,7 +75,7 @@ export default function CodingProLandingScreen() {
         <TouchableOpacity onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))}>
           <Text style={styles.backText}>← Back</Text>
         </TouchableOpacity>
-        <Image source={require('../../assets/images/ShreyarthaLogo.png')} style={styles.logo} resizeMode="contain" />
+        <Image source={require('../../assets/images/AppLogo.png')} style={styles.logo} resizeMode="contain" />
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>

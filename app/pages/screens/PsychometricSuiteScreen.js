@@ -4,7 +4,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Stack, useRouter } from 'expo-router';
 import { COLORS, SPACING, SHADOWS, FONTS } from '../../../constants/theme';
 import SearchBar from '../../components/SearchBar';
-import ChatbotWidget from '../../components/ChatbotWidget';
 
 const HERO_COLOR = '#6d28d9';
 
@@ -136,8 +135,6 @@ export default function PsychometricSuiteScreen() {
 
         <View style={{ height: SPACING.xxl }} />
       </ScrollView>
-
-      <ChatbotWidget />
     </SafeAreaView>
   );
 }

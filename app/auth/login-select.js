@@ -8,9 +8,7 @@ import {
 } from "react-native";
 import { useRouter } from "expo-router";
 import { COLORS, SPACING, SHADOWS } from "../../constants/theme";
-import ChatbotWidget from "../components/ChatbotWidget";
-
-const LOGO = require("../../assets/images/ShreyarthaLogo.png");
+const LOGO = require("../../assets/images/AppLogo.png");
 
 export default function LoginSelectScreen() {
   const router = useRouter();
@@ -95,7 +93,6 @@ export default function LoginSelectScreen() {
           </TouchableOpacity>
         ))}
       </View>
-      <ChatbotWidget />
     </View>
   );
 }

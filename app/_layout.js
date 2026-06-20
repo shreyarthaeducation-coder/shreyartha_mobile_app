@@ -1,13 +1,48 @@
-import { Stack } from "expo-router";
+import { useEffect, useRef, useState } from "react";
+import { Image, StyleSheet, View } from "react-native";
+import { Stack, useRouter, useRootNavigationState } from "expo-router";
 import { StatusBar } from "expo-status-bar";
+import * as SplashScreen from "expo-splash-screen";
 import { AuthProvider } from "../context/AuthContext";
 import { LanguageProvider } from "../context/LanguageContext";
 import { SubscriptionProvider } from "../context/SubscriptionContext";
 
+SplashScreen.preventAutoHideAsync().catch(() => {});
+
 // Always start at the tabs landing page regardless of previous navigation state.
 export const unstable_settings = { initialRouteName: "(tabs)" };
 
+const LOGO = require("../assets/images/AppLogo.png");
+
 export default function RootLayout() {
+  const [ready, setReady] = useState(false);
+  const router = useRouter();
+  const navState = useRootNavigationState();
+  const didNavigate = useRef(false);
+
+  useEffect(() => {
+    SplashScreen.hideAsync().catch(() => {});
+    const t = setTimeout(() => setReady(true), 600);
+    return () => clearTimeout(t);
+  }, []);
+
+  // Once the splash finishes AND the navigator is mounted, force start at tabs.
+  // This overrides any persisted navigation state so the app always opens at landing.
+  useEffect(() => {
+    if (ready && navState?.key && !didNavigate.current) {
+      didNavigate.current = true;
+      router.replace("/(tabs)");
+    }
+  }, [ready, navState?.key]);
+
+  if (!ready) {
+    return (
+      <View style={styles.splash}>
+        <Image source={LOGO} style={styles.splashLogo} resizeMode="contain" />
+      </View>
+    );
+  }
+
   return (
     <AuthProvider>
       <LanguageProvider>
@@ -69,3 +104,16 @@ export default function RootLayout() {
     </AuthProvider>
   );
 }
+
+const styles = StyleSheet.create({
+  splash: {
+    flex: 1,
+    backgroundColor: "#ffffff",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  splashLogo: {
+    width: "80%",
+    height: "40%",
+  },
+});

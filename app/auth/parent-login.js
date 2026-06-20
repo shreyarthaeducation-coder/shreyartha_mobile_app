@@ -81,7 +81,7 @@ export default function ParentLoginScreen() {
 
           <View style={styles.logoContainer}>
             <Image
-              source={require('../../assets/images/ShreyarthaLogo.png')}
+              source={require('../../assets/images/AppLogo.png')}
               style={styles.logo}
               resizeMode="contain"
             />

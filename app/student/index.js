@@ -101,7 +101,6 @@ export default function StudentDashboard() {
           originWhitelist={['*']}
           setSupportMultipleWindows={false}
           injectedJavaScriptBeforeContentLoaded={injectedBeforeLoad}
-          onLoadStart={() => setWebLoading(true)}
           onLoadEnd={() => setWebLoading(false)}
           onNavigationStateChange={(navState) => {
             setCanGoBack(navState.canGoBack);

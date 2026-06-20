@@ -4,7 +4,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Stack, useRouter } from 'expo-router';
 import { COLORS, SPACING, SHADOWS, FONTS } from '../../../constants/theme';
 import SearchBar from '../../components/SearchBar';
-import ChatbotWidget from '../../components/ChatbotWidget';
 
 const HERO_COLOR = '#0369a1';
 
@@ -135,8 +134,6 @@ export default function CodingAIRoboticsScreen() {
 
         <View style={{ height: SPACING.xxl }} />
       </ScrollView>
-
-      <ChatbotWidget />
     </SafeAreaView>
   );
 }

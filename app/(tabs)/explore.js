@@ -7,7 +7,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { COLORS, SPACING, SHADOWS } from '../../constants/theme';
 import SearchBar from '../components/SearchBar';
-import ChatbotWidget from '../components/ChatbotWidget';
+
 
 const { width } = Dimensions.get('window');
 const CARD_WIDTH = (width - SPACING.lg * 2 - SPACING.sm) / 2;
@@ -89,7 +89,6 @@ export default function ExploreScreen() {
         <View style={{ height: SPACING.xxl }} />
       </ScrollView>
 
-      <ChatbotWidget />
     </SafeAreaView>
   );
 }
