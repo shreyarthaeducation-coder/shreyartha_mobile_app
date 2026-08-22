@@ -1,0 +1,126 @@
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { SLATE } from '../../constants/theme';
+import { usePalette } from './PaletteContext';
+
+/**
+ * In-page tab switcher — the native form of the web's `.view-tabs` / `.hr-tabs` / `.sub-tabs`
+ * button rows (Create/View groups, Exams/View Report, Balances/Requests, Assign/Submitted).
+ *
+ * Not to be confused with expo-router's `<Tabs>`, which is navigation. This switches a mode
+ * inside one screen.
+ *
+ * `scrollable` is OPT-IN, for rows of four or more where equal-width tabs would truncate the
+ * labels to nothing useful ("Mark Completed" → "Mark C…" on a 360dp phone). It sizes tabs to
+ * their content inside a horizontal ScrollView instead. Every existing two- and three-tab call
+ * site omits it and keeps the equal-width row byte for byte.
+ *
+ * @param {Array<{ value: string, label: string, icon?: string }>} options
+ */
+
+export default function SegmentedTabs({
+  options = [],
+  value,
+  onChange,
+  palette: paletteProp,
+  style,
+  scrollable = false,
+}) {
+  const contextPalette = usePalette();
+  // Explicit prop wins; otherwise the surrounding portal palette (teal by default).
+  const palette = paletteProp || contextPalette;
+
+  const tabs = (
+    <>
+      {options.map((option) => {
+        const active = option.value === value;
+        return (
+          <Pressable
+            key={option.value}
+            onPress={() => !active && onChange(option.value)}
+            style={({ pressed }) => [
+              styles.tab,
+              scrollable && styles.tabAuto,
+              active && styles.tabActive,
+              pressed && !active && styles.tabPressed,
+            ]}
+            accessibilityRole="tab"
+            accessibilityState={{ selected: active }}
+          >
+            {option.icon ? (
+              <Ionicons
+                name={option.icon}
+                size={15}
+                color={active ? palette.primaryDark : SLATE[500]}
+              />
+            ) : null}
+            <Text
+              style={[styles.label, active && { color: palette.primaryDark }]}
+              numberOfLines={1}
+            >
+              {option.label}
+            </Text>
+          </Pressable>
+        );
+      })}
+    </>
+  );
+
+  if (scrollable) {
+    return (
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        style={[styles.scroller, style]}
+        // flexGrow keeps the grey track full-width on a screen wide enough to fit every tab;
+        // without it the track would stop where the labels do.
+        contentContainerStyle={[styles.wrap, styles.wrapScroll]}
+        accessibilityRole="tablist"
+      >
+        {tabs}
+      </ScrollView>
+    );
+  }
+
+  return (
+    <View style={[styles.wrap, style]} accessibilityRole="tablist">
+      {tabs}
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  wrap: {
+    flexDirection: 'row',
+    backgroundColor: SLATE[100],
+    borderRadius: 10,
+    padding: 3,
+    gap: 3,
+  },
+  tab: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 5,
+    paddingVertical: 9,
+    borderRadius: 8,
+  },
+  // A horizontal ScrollView in a column parent must not stretch vertically.
+  scroller: { flexGrow: 0 },
+  wrapScroll: { flexGrow: 1 },
+  // Scrollable rows size to their label instead of sharing the width equally.
+  tabAuto: { flex: 0, paddingHorizontal: 14 },
+  // The active tab is a raised white pill on the grey track — the standard iOS/Android segmented
+  // control, rather than the web's underline, which reads as a link on touch.
+  tabActive: {
+    backgroundColor: '#ffffff',
+    shadowColor: '#000',
+    shadowOpacity: 0.08,
+    shadowOffset: { width: 0, height: 1 },
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  tabPressed: { backgroundColor: SLATE[200] },
+  label: { fontSize: 13.5, fontWeight: '700', color: SLATE[500] },
+});

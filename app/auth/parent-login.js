@@ -15,7 +15,16 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuth } from '../../context/AuthContext';
-import { loginParent } from '../../services/authService';
+import { loginParent, signupParent } from '../../services/authService';
+
+const EMPTY_SIGNUP = {
+  fullName: '',
+  email: '',
+  mobile: '',
+  studentMobileOrEmail: '',
+  password: '',
+  terms: false,
+};
 
 export default function ParentLoginScreen() {
   const router = useRouter();
@@ -25,6 +34,16 @@ export default function ParentLoginScreen() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  // login | signup. Mirrors app/auth/student-login.js, which is the shipped precedent for adding a
+  // sign-up tab to one of these hand-rolled login screens.
+  const [tab, setTab] = useState('login');
+  const [signup, setSignup] = useState(EMPTY_SIGNUP);
+  const [signupBusy, setSignupBusy] = useState(false);
+  const [signupError, setSignupError] = useState('');
+  const [signupNotice, setSignupNotice] = useState('');
+
+  const patchSignup = (next) => setSignup((prev) => ({ ...prev, ...next }));
 
   const handleLogin = async () => {
     const trimInput = emailOrMobile.trim();
@@ -53,7 +72,7 @@ export default function ParentLoginScreen() {
       ]);
 
       setUserType('parent');
-      router.replace('/dashboard/parent');
+      router.replace('/parent');
     } catch (e) {
       setError(e.message || 'Login failed. Please check your credentials.');
     } finally {
@@ -61,11 +80,62 @@ export default function ParentLoginScreen() {
     }
   };
 
+  const handleSignup = async () => {
+    const fullName = signup.fullName.trim();
+    const email = signup.email.trim();
+    const mobile = signup.mobile.trim();
+    const child = signup.studentMobileOrEmail.trim();
+
+    // The web's own checks, in its order, so the same first message surfaces.
+    if (!fullName || !email || !mobile) {
+      setSignupError('Please fill in your name, email and mobile number.');
+      return;
+    }
+    if (!child) {
+      setSignupError("Please enter your child's mobile number or email.");
+      return;
+    }
+    if (!signup.password || signup.password.length < 8) {
+      setSignupError('Password must be at least 8 characters long.');
+      return;
+    }
+    if (!signup.terms) {
+      setSignupError('Please accept the terms to continue.');
+      return;
+    }
+
+    setSignupError('');
+    setSignupNotice('');
+    setSignupBusy(true);
+    try {
+      const res = await signupParent({
+        fullName,
+        email,
+        mobile,
+        studentMobileOrEmail: child,
+        password: signup.password,
+      });
+      // NO TOKEN COMES BACK — the account waits for admin verification. So return the user to the
+      // Login tab with the server's message rather than trying to enter the panel.
+      setSignup(EMPTY_SIGNUP);
+      setEmailOrMobile(email);
+      setTab('login');
+      setError('');
+      setSignupNotice(
+        res?.message || 'Signup successful! Your account will be verified soon.',
+      );
+    } catch (e) {
+      setSignupError(e?.message || 'Server error. Please try again.');
+    } finally {
+      setSignupBusy(false);
+    }
+  };
+
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'left', 'right', 'bottom']}>
       <KeyboardAvoidingView
         style={{ flex: 1 }}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
         <ScrollView
           contentContainerStyle={styles.scroll}
@@ -90,9 +160,136 @@ export default function ParentLoginScreen() {
           </View>
 
           <View style={styles.card}>
-            <Text style={styles.cardTitle}>Parent Login</Text>
-            <Text style={styles.cardSubtitle}>Monitor your child's progress</Text>
+            <View style={styles.tabRow}>
+              {['login', 'signup'].map((key) => (
+                <TouchableOpacity
+                  key={key}
+                  onPress={() => {
+                    setTab(key);
+                    setError('');
+                    setSignupError('');
+                  }}
+                  style={[styles.tabBtn, tab === key && styles.tabBtnActive]}
+                >
+                  <Text style={[styles.tabText, tab === key && styles.tabTextActive]}>
+                    {key === 'login' ? 'Login' : 'Sign Up'}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
 
+            <Text style={styles.cardTitle}>
+              {tab === 'login' ? 'Parent Login' : 'Create a Parent Account'}
+            </Text>
+            <Text style={styles.cardSubtitle}>
+              {tab === 'login'
+                ? "Monitor your child's progress"
+                : 'We will link your account to your child once an admin verifies it'}
+            </Text>
+
+            {/* The signup success notice lands on the LOGIN tab, because signup issues no token. */}
+            {tab === 'login' && signupNotice ? (
+              <View style={styles.noticeBox}>
+                <Text style={styles.noticeText}>{signupNotice}</Text>
+              </View>
+            ) : null}
+
+            {tab === 'signup' ? (
+              <>
+                {signupError ? (
+                  <View style={styles.errorBox}>
+                    <Text style={styles.errorText}>{signupError}</Text>
+                  </View>
+                ) : null}
+
+                <Text style={styles.label}>Full Name</Text>
+                <TextInput
+                  style={styles.input}
+                  value={signup.fullName}
+                  onChangeText={(fullName) => patchSignup({ fullName })}
+                  placeholder="Your full name"
+                  placeholderTextColor="#aaa"
+                  editable={!signupBusy}
+                />
+
+                <Text style={styles.label}>Email</Text>
+                <TextInput
+                  style={styles.input}
+                  value={signup.email}
+                  onChangeText={(email) => patchSignup({ email })}
+                  placeholder="you@example.com"
+                  placeholderTextColor="#aaa"
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  editable={!signupBusy}
+                />
+
+                <Text style={styles.label}>Mobile Number</Text>
+                <TextInput
+                  style={styles.input}
+                  value={signup.mobile}
+                  onChangeText={(mobile) => patchSignup({ mobile: mobile.replace(/[^0-9]/g, '') })}
+                  placeholder="10-digit mobile number"
+                  placeholderTextColor="#aaa"
+                  keyboardType="number-pad"
+                  maxLength={10}
+                  editable={!signupBusy}
+                />
+
+                <Text style={styles.label}>Child&apos;s Mobile or Email</Text>
+                <TextInput
+                  style={styles.input}
+                  value={signup.studentMobileOrEmail}
+                  onChangeText={(studentMobileOrEmail) => patchSignup({ studentMobileOrEmail })}
+                  placeholder="Your child&apos;s registered mobile or email"
+                  placeholderTextColor="#aaa"
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  editable={!signupBusy}
+                />
+                <Text style={styles.helper}>
+                  This helps us link your account to your child&apos;s profile.
+                </Text>
+
+                <Text style={styles.label}>Password</Text>
+                <TextInput
+                  style={styles.input}
+                  value={signup.password}
+                  onChangeText={(password) => patchSignup({ password })}
+                  placeholder="At least 8 characters"
+                  placeholderTextColor="#aaa"
+                  secureTextEntry
+                  editable={!signupBusy}
+                />
+
+                <TouchableOpacity
+                  style={styles.termsRow}
+                  onPress={() => patchSignup({ terms: !signup.terms })}
+                  disabled={signupBusy}
+                >
+                  <View style={[styles.checkbox, signup.terms && styles.checkboxOn]}>
+                    {signup.terms ? <Text style={styles.checkboxTick}>✓</Text> : null}
+                  </View>
+                  <Text style={styles.termsText}>
+                    I agree to the Terms of Use and Privacy Policy.
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[styles.loginBtn, signupBusy && styles.loginBtnDisabled]}
+                  onPress={handleSignup}
+                  disabled={signupBusy}
+                >
+                  {signupBusy ? (
+                    <ActivityIndicator color="#fff" />
+                  ) : (
+                    <Text style={styles.loginBtnText}>Create Account</Text>
+                  )}
+                </TouchableOpacity>
+              </>
+            ) : (
+              <>
             {error ? (
               <View style={styles.errorBox}>
                 <Text style={styles.errorText}>{error}</Text>
@@ -152,6 +349,8 @@ export default function ParentLoginScreen() {
                 <Text style={styles.loginBtnText}>Login</Text>
               )}
             </TouchableOpacity>
+              </>
+            )}
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -187,6 +386,56 @@ const styles = StyleSheet.create({
   },
   cardTitle: { fontSize: 22, fontWeight: '800', color: '#1a1a2e', marginBottom: 4 },
   cardSubtitle: { fontSize: 13, color: '#64748b', marginBottom: 20 },
+  // ── Sign-up tab ──────────────────────────────────────────────────────────
+  // The accent matches the screen's existing `loginBtn` (#b0003a) rather than the web's purple:
+  // this file already paints a dark #1a1a2e ground with a crimson primary, and changing that
+  // wholesale is a design pass, not a sign-up feature.
+  tabRow: {
+    flexDirection: 'row',
+    backgroundColor: '#f1f5f9',
+    borderRadius: 12,
+    padding: 4,
+    gap: 4,
+    marginBottom: 18,
+  },
+  tabBtn: { flex: 1, paddingVertical: 9, borderRadius: 9, alignItems: 'center' },
+  tabBtnActive: {
+    backgroundColor: '#ffffff',
+    shadowColor: '#000',
+    shadowOpacity: 0.08,
+    shadowOffset: { width: 0, height: 1 },
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  tabText: { fontSize: 14, fontWeight: '700', color: '#64748b' },
+  tabTextActive: { color: '#b0003a' },
+
+  noticeBox: {
+    backgroundColor: '#f0fdf4',
+    borderRadius: 10,
+    padding: 12,
+    marginBottom: 16,
+    borderLeftWidth: 3,
+    borderLeftColor: '#22c55e',
+  },
+  noticeText: { color: '#15803d', fontSize: 13, lineHeight: 18 },
+
+  helper: { fontSize: 11.5, color: '#64748b', marginTop: 5, lineHeight: 16 },
+
+  termsRow: { flexDirection: 'row', alignItems: 'center', gap: 9, marginTop: 18 },
+  checkbox: {
+    width: 20,
+    height: 20,
+    borderRadius: 5,
+    borderWidth: 1.5,
+    borderColor: '#cbd5e1',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  checkboxOn: { backgroundColor: '#b0003a', borderColor: '#b0003a' },
+  checkboxTick: { color: '#ffffff', fontSize: 12, fontWeight: '800' },
+  termsText: { flex: 1, fontSize: 12.5, color: '#475569', lineHeight: 18 },
+
   errorBox: {
     backgroundColor: '#fef2f2',
     borderRadius: 10,

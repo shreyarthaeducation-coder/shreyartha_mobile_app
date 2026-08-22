@@ -48,7 +48,13 @@ export default function RootLayout() {
       <LanguageProvider>
         <SubscriptionProvider>
           <StatusBar style="dark" />
-          <Stack screenOptions={{ headerShown: false }}>
+          {/*
+            freezeOnBlur: screens beneath a pushed one are frozen (react-freeze). Without it the
+            landing page's TextInputs (search bar, contact form) stay live under a login screen
+            and Android's focus search can hand them focus during the keyboard's re-layout —
+            which blurs the login field and instantly closes the keyboard.
+          */}
+          <Stack screenOptions={{ headerShown: false, freezeOnBlur: true }}>
             {/* Tab navigation group */}
             <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
 
@@ -81,13 +87,15 @@ export default function RootLayout() {
             {/* Native student panel (tab group) */}
             <Stack.Screen name="student" options={{ headerShown: false }} />
 
+            {/* Native teacher panel (route group) */}
+            <Stack.Screen name="teacher" options={{ headerShown: false }} />
+
+            {/* Native staff shells for the other school roles (config-driven route group) */}
+            <Stack.Screen name="staff" options={{ headerShown: false }} />
+
             {/* Legacy dashboard redirect screens */}
             <Stack.Screen
               name="dashboard/student"
-              options={{ headerShown: false }}
-            />
-            <Stack.Screen
-              name="dashboard/school"
               options={{ headerShown: false }}
             />
             <Stack.Screen

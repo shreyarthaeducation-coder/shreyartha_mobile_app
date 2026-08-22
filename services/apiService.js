@@ -5,6 +5,7 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import Constants from "expo-constants";
 import { router } from "expo-router";
+import { ALL_AUTH_KEYS } from "../constants/storageKeys";
 
 const resolveApiBaseUrl = () => {
   const fromExpoConfig =
@@ -43,30 +44,31 @@ const clearAuthAndRedirect = async () => {
     redirectingAfterAuthError = true;
 
     let userType = null;
+    let hadToken = false;
     try {
       userType = await AsyncStorage.getItem("userType");
+      // A 401 with no stored token means the user is already logged out — almost certainly
+      // sitting on a login screen (a background fetch fired without credentials). Redirecting
+      // "to login" would replace the login screen they are typing on, dropping the keyboard.
+      const tokenKeys = [
+        "schoolUserToken",
+        "studentToken",
+        "userToken",
+        "accessToken",
+        "parentUserToken",
+        "partnerUserToken",
+      ];
+      const stored = await AsyncStorage.multiGet(tokenKeys);
+      hadToken = stored.some(([, value]) => !!value);
     } catch {
       userType = null;
     }
 
     try {
-      await AsyncStorage.multiRemove([
-        "studentToken",
-        "userToken",
-        "accessToken",
-        "token",
-        "schoolUserToken",
-        "parentUserToken",
-        "partnerUserToken",
-        "studentLoggedIn",
-        "schoolLoggedIn",
-        "parentLoggedIn",
-        "partnerLoggedIn",
-        "userType",
-        "userData",
-        "studentRole",
-        "cachedStudentRole",
-      ]);
+      // Shared with AuthContext.logout — see constants/storageKeys.js. Previously this list and
+      // AuthContext's were maintained separately and both were incomplete, so profile keys
+      // (schoolUserName, schoolCode, schoolUserVerified…) survived into the next session.
+      await AsyncStorage.multiRemove(ALL_AUTH_KEYS);
     } catch {
       // Ignore storage clear failures; we still want to force a login redirect.
     } finally {
@@ -77,10 +79,12 @@ const clearAuthAndRedirect = async () => {
       };
       const targetRoute =
         authRouteByUserType[userType] || "/auth/student-login";
-      try {
-        router.replace(targetRoute);
-      } catch {
-        // Ignore navigation errors if router is not ready yet.
+      if (hadToken) {
+        try {
+          router.replace(targetRoute);
+        } catch {
+          // Ignore navigation errors if router is not ready yet.
+        }
       }
       setTimeout(() => {
         redirectingAfterAuthError = false;
@@ -103,6 +107,10 @@ const getStoredToken = async (endpoint = "") => {
   try {
     if (
       endpoint.includes("/school/") ||
+      endpoint.includes("/school-admin/") ||
+      endpoint.includes("/shreyartha/") ||
+      endpoint.includes("/shreya01/") ||
+      endpoint.includes("/staff/") ||
       endpoint.includes("/teacher/") ||
       endpoint.includes("/counselor/") ||
       endpoint.includes("/principal/") ||

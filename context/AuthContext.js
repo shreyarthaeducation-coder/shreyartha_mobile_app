@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { ALL_AUTH_KEYS } from "../constants/storageKeys";
 
 const AuthContext = createContext({});
 
@@ -32,24 +33,18 @@ export function AuthProvider({ children }) {
     }
   };
 
+  /**
+   * Clear every auth key for every role.
+   *
+   * Staff callers must run endStaffAttendanceSession() BEFORE this — the attendance end-ping
+   * needs the token this removes.
+   */
   const logout = async () => {
     try {
-      await AsyncStorage.multiRemove([
-        "studentToken",
-        "userToken",
-        "accessToken",
-        "token",
-        "schoolUserToken",
-        "parentUserToken",
-        "partnerUserToken",
-        "studentLoggedIn",
-        "schoolLoggedIn",
-        "parentLoggedIn",
-        "partnerLoggedIn",
-        "userType",
-        "userData",
-        "schoolUserType",
-      ]);
+      // Shared with apiService.clearAuthAndRedirect — see constants/storageKeys.js. This list
+      // used to be maintained here separately and missed schoolUserVerified/Name/Email and
+      // schoolCode, so stale profile data survived a logout.
+      await AsyncStorage.multiRemove(ALL_AUTH_KEYS);
       setUser(null);
       setUserType(null);
     } catch (e) {

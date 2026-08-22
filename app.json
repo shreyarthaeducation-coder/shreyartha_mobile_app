@@ -2,7 +2,7 @@
   "expo": {
     "name": "Shreyartha",
     "slug": "shreyartha-mobile-app",
-    "version": "1.3.0",
+    "version": "2.0.0",
     "scheme": "shreyartha",
     "orientation": "portrait",
     "icon": "./assets/images/AppLogo.png",
@@ -28,7 +28,8 @@
     },
     "android": {
       "package": "com.the3cedgeai.app",
-      "versionCode": 13,
+      "versionCode": 14,
+      "softwareKeyboardLayoutMode": "pan",
       "splash": {
         "image": "./assets/images/AppLogo.png",
         "resizeMode": "contain",
@@ -58,7 +59,15 @@
           "photosPermission": "Shreyartha accesses your photos so you can set a profile picture.",
           "cameraPermission": "Shreyartha uses your camera to take a profile photo."
         }
-      ]
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Shreyartha uses your location to record staff attendance check-in and check-out."
+        }
+      ],
+      "@config-plugins/react-native-blob-util",
+      "@config-plugins/react-native-pdf"
     ],
     "extra": {
       "router": {},

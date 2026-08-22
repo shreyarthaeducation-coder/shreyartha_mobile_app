@@ -11,7 +11,7 @@ import {
   TextInput,
   ActivityIndicator,
 } from "react-native";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "expo-router";
 import { COLORS, SPACING, SHADOWS } from "../../constants/theme";
 import SearchBar from "../components/SearchBar";
@@ -59,6 +59,20 @@ const ICON_COLOR = [
 export default function LandingScreen() {
   const router = useRouter();
   const [loginDropdownVisible, setLoginDropdownVisible] = useState(false);
+  const [pendingLoginRoute, setPendingLoginRoute] = useState(null);
+
+  // The dropdown is a real <Modal> — a separate Android Dialog window. Pushing a route in the
+  // same tap that closes it makes the dialog teardown race the navigation, and the new screen's
+  // first focus (the login TextInput) can be stolen mid-transition. Navigate only after the
+  // modal has actually left the screen.
+  useEffect(() => {
+    if (loginDropdownVisible || !pendingLoginRoute) return;
+    const t = setTimeout(() => {
+      setPendingLoginRoute(null);
+      router.push(pendingLoginRoute);
+    }, 150); // fade-out duration of the dialog
+    return () => clearTimeout(t);
+  }, [loginDropdownVisible, pendingLoginRoute, router]);
 
   // Contact form state
   const [contactForm, setContactForm] = useState({
@@ -276,8 +290,8 @@ export default function LandingScreen() {
                   ]}
                   accessibilityRole="menuitem"
                   onPress={() => {
+                    setPendingLoginRoute(opt.route);
                     setLoginDropdownVisible(false);
-                    router.push(opt.route);
                   }}
                 >
                   <Text style={styles.loginDropdownItemText}>{opt.label}</Text>

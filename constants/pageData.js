@@ -27,7 +27,7 @@ export const PAGE_DATA = {
         title: 'Subjects Covered',
         icon: '📖',
         content:
-          'Mathematics, Science, English, Social Studies, Computer Science and more — all aligned with CBSE, ICSE and state board syllabi for Classes 1 through 12.',
+          'Mathematics, Science, English, Social Studies, Computer Science and more — all aligned with your school board syllabus for Classes 1 through 12.',
       },
       {
         title: 'Parent & Teacher Insights',
@@ -355,7 +355,7 @@ export const PAGE_DATA = {
         title: 'Curriculum Alignment',
         icon: '📚',
         content:
-          'Language courses are aligned with CBSE and ICSE board requirements as well as CEFR levels (A1 through C2), so students can prepare for both school exams and international certifications simultaneously.',
+          'Language courses are aligned with school board requirements as well as CEFR levels (A1 through C2), so students can prepare for both school exams and international certifications simultaneously.',
       },
       {
         title: 'For Global Opportunities',

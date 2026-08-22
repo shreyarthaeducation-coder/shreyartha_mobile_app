@@ -1,4 +1,5 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { studentService } from '../services/studentService';
 
 const SubscriptionContext = createContext({
@@ -94,6 +95,20 @@ export function SubscriptionProvider({ children }) {
   const refresh = useCallback(async () => {
     setLoading(true);
     try {
+      // Subscriptions are a student-only concept, and the endpoints live under /api/students/**
+      // where apiService only ever attaches a STUDENT token. Calling this while anyone else — or
+      // NOBODY (userType null on a logged-out app) — is active sends no Authorization header,
+      // earns a 401, and trips apiService's "session dead" handler, which wipes storage and
+      // router.replaces to a login screen up to ~20s after launch — yanking whatever screen the
+      // user is typing on. Fetch only when a student is actually signed in.
+      const userType = await AsyncStorage.getItem('userType');
+      if (userType !== 'student') {
+        setIsPremium(false);
+        setPlan('Free');
+        setRaw(null);
+        return;
+      }
+
       const payload = await studentService.getStudentSubscription();
       const parsed = extractSubscription(payload);
       setIsPremium(parsed.isPremium);
