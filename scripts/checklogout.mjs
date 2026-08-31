@@ -48,7 +48,12 @@ const LOGOUT_SCREENS = [
   ['components/partner/PartnerPendingScreen.js', '/auth/partner-login'],
   ['components/parent/ParentMenuScreen.js', '/auth/parent-login'],
   ['components/parent/ParentPendingScreen.js', '/auth/parent-login'],
-  ['components/student/StudentHome.js', '/auth/student-login'],
+  // MOVED from StudentHome.js by the dashboard redesign. The design's brand bar has no room for a
+  // logout icon and its footer has exactly three tabs, so Log Out is a row at the bottom of the
+  // Profile screen — which is itself one of those three tabs, so it stays one tap away. Retargeted
+  // rather than left naming StudentHome: an assertion pointing at a file that no longer has the
+  // control passes while covering nothing, which has happened twice in this repo already.
+  ['components/student/ProfileScreen.js', '/auth/student-login'],
 ];
 
 const PORTAL_HOOK = 'hooks/usePortalLogout.js';
@@ -158,7 +163,7 @@ const MUTATIONS = [
   {
     name: 'a screen reverts to the bare storage-wipe handler',
     mutate: (p, s) =>
-      p === 'components/student/StudentHome.js'
+      p === 'components/student/ProfileScreen.js'
         ? s.replace('onPress={confirmLogout}', 'onPress={logout}')
         : s,
   },

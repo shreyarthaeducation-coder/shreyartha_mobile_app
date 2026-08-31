@@ -59,6 +59,10 @@ export default function ScreenScaffold({
   scroll = true,
   toast,
   contentStyle,
+  // Optional handle on the scroll view, for a screen that has to jump to one of its own
+  // sections. Added for the parent fee screen, whose dashboard tile promises Payment History and
+  // must land there rather than at the top. Every other caller omits it and is unchanged.
+  scrollRef,
   palette: paletteProp,
   children,
 }) {
@@ -78,6 +82,7 @@ export default function ScreenScaffold({
   } else if (scroll) {
     body = (
       <ScrollView
+        ref={scrollRef}
         contentContainerStyle={[styles.scroll, contentStyle]}
         showsVerticalScrollIndicator={false}
         refreshControl={

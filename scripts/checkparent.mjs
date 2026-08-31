@@ -576,18 +576,43 @@ function assertions(menu, calendar, layoutSrc, src, fee, chatbot, routeNames) {
     bad('PARENT_CHATBOT_CONFIG does not pass resolveParentLink — the sheet falls back to identity');
   }
 
-  // Read the TAG, not the file: `includes('<ShreyaLauncher')` is also true of `<ShreyaLauncherGone`,
+  // THE FAB BECAME A CARD. The dashboard redesign replaced `<ShreyaLauncher />` with the design's
+  // "For Support" card, which opens `ShreyaChatSheet` directly. The launcher was only ever mounted
+  // on this one screen, so the card has identical reach — but the three things this assertion
+  // actually protects are unchanged and are re-asserted here rather than left pointing at a tag
+  // that no longer exists:
+  //
+  //   1. the sheet gets the PARENT's config, or a parent is served the teacher chatbot;
+  //   2. it gets basePath="/parent", or every ChapterLink is double-prefixed;
+  //   3. it is mounted BELOW the unverified redirect, or an unverified parent reaches a chat the
+  //      website denies them.
+  //
+  // Read the TAG, not the file: `includes('<ShreyaChatSheet')` is also true of a renamed component,
   // and the config's NAME survives deleting the prop because the import line still mentions it.
-  const mount = home.match(/<ShreyaLauncher\b[^>]*\/>/);
-  if (!mount) bad('the parent home does not mount ShreyaLauncher');
+  // `[\s\S]*?` rather than `[^>]*` because this mount is attribute-per-line.
+  const mount = home.match(/<ShreyaChatSheet\b[\s\S]*?\/>/);
+  if (!mount) bad('the parent home does not mount ShreyaChatSheet');
   else {
     if (!mount[0].includes('config={PARENT_CHATBOT_CONFIG}')) {
-      bad('the parent home mounts the launcher without the parent config — a parent gets the teacher chatbot');
+      bad('the parent home mounts the sheet without the parent config — a parent gets the teacher chatbot');
     }
-    if (!mount[0].includes('basePath="/parent"')) bad('the parent launcher does not pass basePath="/parent"');
+    if (!mount[0].includes('basePath="/parent"')) bad('the parent chat does not pass basePath="/parent"');
+
     // The mount must sit after the redirect, or an unverified parent gets a chatbot the web denies.
-    if (mount.index < home.indexOf('pending-verification')) {
-      bad('ShreyaLauncher is mounted before the unverified-parent redirect');
+    //
+    // THE REDIRECT'S PRESENCE IS ASSERTED FIRST, and that is not padding. The previous version was
+    // a bare `mount.index < home.indexOf(...)`, so DELETING the redirect made `indexOf` return -1
+    // and the comparison false — the check passed precisely when the gate was gone. Reading the
+    // `<Redirect>` tag rather than the bare string also stops a mention in prose from satisfying it.
+    const gate = home.search(/<Redirect\b[^>]*pending-verification/);
+    if (gate < 0) {
+      bad('the unverified-parent redirect is gone — an unverified parent would reach the dashboard');
+    } else if (mount.index < gate) {
+      bad('ShreyaChatSheet is mounted before the unverified-parent redirect');
+    }
+    // The card is the only way in now, so it has to be there.
+    if (!/<AssistantCard\b/.test(home)) {
+      bad('the parent home has no Shreya card — the chat sheet has nothing to open it');
     }
   }
 
@@ -794,13 +819,31 @@ const MUTATIONS = [
     src: (k, s) => (k === 'chatLauncher' ? s.replaceAll('usePalette', 'PORTALS.school &&') : s),
   },
   {
-    name: 'the launcher mounted without the parent config (a parent gets the teacher chatbot)',
+    name: 'the chat mounted without the parent config (a parent gets the teacher chatbot)',
     src: (k, s) =>
-      k === 'parentMenuScreen' ? s.replace(' config={PARENT_CHATBOT_CONFIG}', '') : s,
+      k === 'parentMenuScreen' ? s.replace('config={PARENT_CHATBOT_CONFIG}', '') : s,
   },
   {
-    name: 'the launcher not mounted at all',
-    src: (k, s) => (k === 'parentMenuScreen' ? s.replace('<ShreyaLauncher', '<ShreyaLauncherGone') : s),
+    name: 'the chat not mounted at all',
+    src: (k, s) => (k === 'parentMenuScreen' ? s.replace('<ShreyaChatSheet', '<ShreyaChatSheetGone') : s),
+  },
+  {
+    // Deletes the gate outright. This is the case the old bare-indexOf assertion could not see:
+    // with the string gone it returned -1 and the ordering comparison went false, so removing the
+    // redirect entirely "passed".
+    name: 'the unverified-parent redirect deleted (the gate disappears)',
+    src: (k, s) =>
+      k === 'parentMenuScreen'
+        ? s.replace('if (verified === false) return <Redirect href="/parent/pending-verification" />;', '')
+        : s,
+  },
+  {
+    name: 'the Shreya card removed, leaving nothing to open the chat',
+    src: (k, s) => (k === 'parentMenuScreen' ? s.replace('<AssistantCard', '<NoCard') : s),
+  },
+  {
+    name: 'the parent chat pointed at the teacher base path',
+    src: (k, s) => (k === 'parentMenuScreen' ? s.replace('basePath="/parent"', 'basePath="/teacher"') : s),
   },
   {
     name: 'the config no longer passing the link resolver (silently falls back to identity)',

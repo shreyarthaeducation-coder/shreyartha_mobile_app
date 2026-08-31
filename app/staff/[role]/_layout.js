@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
-import { Redirect, Stack, useLocalSearchParams } from 'expo-router';
+import { Redirect, Stack, useLocalSearchParams, usePathname } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Constants from 'expo-constants';
 import { staffPalette } from '../../../constants/theme';
 import { api } from '../../../services/apiService';
 import { getStaffRoleConfig } from '../../../constants/staffRoles';
 import { PaletteProvider } from '../../../components/ui/PaletteContext';
+import PortalTabBar, { isTabRoot, staffTabsFor } from '../../../components/shared/home/PortalTabBar';
 
 /**
  * Route guard for the config-driven staff shells (counselor, principal, vice_principal and the
@@ -15,6 +16,26 @@ import { PaletteProvider } from '../../../components/ui/PaletteContext';
  *
  * A user whose stored role doesn't match the segment is sent to their own shell, so a stale deep
  * link can never show someone another role's menu.
+ *
+ * ── THE VERIFICATION GATE, WHICH THIS GROUP NEVER HAD ───────────────────────
+ * `app/teacher/_layout.js` has gated its whole group on `schoolUserVerified` since the teacher
+ * redesign. This layout read only the token and the role, so the ONLY verification check for all
+ * six staff shells lived inside `StaffMenuScreen` — covering the home screen and none of the other
+ * thirty-seven routes registered below.
+ *
+ * Login sends an unverified staff member to the pending screen, so nothing routine landed them
+ * elsewhere. But a deep link, a back-stack pop, or a chatbot route straight to
+ * `/staff/vice_principal/attendance` put them on a full, working-looking screen whose every call
+ * 403s — with no error anywhere, because a refused list renders as an empty one. Gating here covers
+ * the whole group at once, exactly as the teacher's does.
+ *
+ * `schoolUserVerified` is written for every school role at login by `services/schoolSession.js`,
+ * where an ABSENT flag deliberately means NOT verified — so this gate cannot be defeated by a
+ * response that simply omits it.
+ *
+ * The pending screen is itself in this group and must be exempt, or the redirect loops. Nothing
+ * else is exempt: unlike the parent shell, the staff pending screen offers only Log Out, so there
+ * is no second route an unverified staff member needs to reach.
  */
 
 const BASE_URL = (
@@ -28,7 +49,16 @@ export default function StaffRoleLayout() {
   const roleKey = String(role || '').toLowerCase();
   const config = getStaffRoleConfig(roleKey);
 
-  const [state, setState] = useState({ checking: true, token: null, storedRole: '' });
+  // Drives the verification gate only. Read here rather than inside each screen so one check
+  // covers all thirty-eight routes registered below.
+  const pathname = usePathname();
+
+  const [state, setState] = useState({
+    checking: true,
+    token: null,
+    storedRole: '',
+    verified: false,
+  });
 
   useEffect(() => {
     let alive = true;
@@ -36,7 +66,11 @@ export default function StaffRoleLayout() {
     (async () => {
       let entries = [];
       try {
-        entries = await AsyncStorage.multiGet(['schoolUserToken', 'schoolUserType']);
+        entries = await AsyncStorage.multiGet([
+          'schoolUserToken',
+          'schoolUserType',
+          'schoolUserVerified',
+        ]);
       } catch {
         // Fall through with empty values — treated as "no session".
       }
@@ -48,6 +82,9 @@ export default function StaffRoleLayout() {
         checking: false,
         token,
         storedRole: String(values.schoolUserType || '').toLowerCase(),
+        // Anything other than the literal 'true' is unverified, matching both the web and the way
+        // schoolSession.js writes it. '1' is accepted too because TeacherHomeScreen tolerates it.
+        verified: values.schoolUserVerified === 'true' || values.schoolUserVerified === '1',
       });
 
       if (!token) return;
@@ -98,10 +135,35 @@ export default function StaffRoleLayout() {
     return <Redirect href="/auth/school-login" />;
   }
 
+  // See the docblock. The pending screen is in this group, so exempting it is what stops the
+  // redirect looping on itself.
+  const pendingRoute = `/staff/${roleKey}/pending-verification`;
+  if (!state.verified && pathname !== pendingRoute) {
+    return <Redirect href={pendingRoute} />;
+  }
+
+  // The footer, for the redesigned shells only. `staffTabsFor` returns [] for every other role and
+  // `isTabRoot(pathname, [])` is false, so nothing renders and no unredesigned panel gains a bar it
+  // never padded for.
+  //
+  // Read here rather than inside PortalTabBar so the bar is not mounted at all on the inner
+  // screens — an absolutely-positioned View over a scroll area still eats touches along its edge
+  // even when it renders nothing.
+  const tabs = staffTabsFor(roleKey);
+
   return (
     <PaletteProvider palette={palette}>
+    <View style={styles.shell}>
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Screen name="index" />
+      {/* The redesigned shell: a hero grid, the self-service HR hub and the support tab.
+          Each returns null for a role with no constants/staffHome.js descriptor. */}
+      <Stack.Screen name="workspace" />
+      <Stack.Screen name="my-attendance" />
+      {/* The multi-tile hero hub. One route, not one per hero — see admin-hub.js. */}
+      <Stack.Screen name="admin-hub" />
+      <Stack.Screen name="support" />
+      <Stack.Screen name="search" />
       <Stack.Screen name="profile" />
       <Stack.Screen name="self-attendance" />
       <Stack.Screen name="attendance" />
@@ -120,6 +182,8 @@ export default function StaffRoleLayout() {
       <Stack.Screen name="syllabus" />
       <Stack.Screen name="subjects" />
       <Stack.Screen name="upskill" />
+      {/* Shreyartha teacher only — the wrapper returns null for every other role. */}
+      <Stack.Screen name="adaptive-assessment" />
       {/* Vice principal: the teacher exam screen, on a route the other shells don't use. */}
       <Stack.Screen name="reports" />
       {/* Principal (and later the Shreyartha admin): the admin-flavoured pages. */}
@@ -149,11 +213,18 @@ export default function StaffRoleLayout() {
       <Stack.Screen name="change-password" />
       <Stack.Screen name="feature" />
     </Stack>
+
+    {/* tone="light" like every staff BrandBar: these palettes carry none of the dark-glass tokens
+        the bar's default styles read, and an undefined colour renders as unset, not as an error. */}
+    {isTabRoot(pathname, tabs) ? <PortalTabBar tabs={tabs} tone="light" /> : null}
+    </View>
     </PaletteProvider>
   );
 }
 
 const styles = StyleSheet.create({
+  // The footer is absolutely positioned over the navigator, so the Stack needs a positioned parent.
+  shell: { flex: 1 },
   loader: {
     flex: 1,
     alignItems: 'center',

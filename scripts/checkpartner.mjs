@@ -73,6 +73,31 @@ const loadTerms = (mutate) => loadModule('constants/partnerTerms.js', mutate);
 const loadKeys = (mutate) => loadModule('constants/storageKeys.js', mutate);
 
 /** The profile service is pure but sits beside `partnerApi` calls, so the transport is stubbed. */
+/**
+ * Stage services/partner/dashboardService.js so its pure rules can be CALLED.
+ *
+ * `resolveTier` is the important one. It used to be an inline `if (liveType) setPartnerType(liveType);`
+ * in the home screen, and this checker matched that line character for character — which proved the
+ * line existed and never proved the behaviour, and broke the moment the load was reflowed.
+ * Extracted and evaluated, the rule itself is what is tested.
+ */
+async function loadDashboardService(mutate) {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'partnerdash-'));
+  fs.writeFileSync(
+    path.join(dir, 'stub.mjs'),
+    'export const partnerApi = { get: async () => ({}), settleAll: async () => ({}) };\nexport default partnerApi;\n',
+  );
+  fs.writeFileSync(path.join(dir, 'currency.mjs'), read(path.join(APP, 'utils', 'currency.js')));
+
+  let src = read(path.join(APP, 'services', 'partner', 'dashboardService.js'));
+  if (mutate) src = mutate(src);
+  src = src
+    .replace("from '../partnerApi'", "from './stub.mjs'")
+    .replace("from '../../utils/currency'", "from './currency.mjs'");
+  fs.writeFileSync(path.join(dir, 'dashboardService.mjs'), src);
+  return import(`${pathToFileURL(path.join(dir, 'dashboardService.mjs')).href}?t=${Math.random()}`);
+}
+
 async function loadProfileService(mutate) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'partnerprof-'));
   fs.writeFileSync(
@@ -184,7 +209,7 @@ function loadSources(mutate) {
   return out;
 }
 
-function assertions(menu, terms, keys, profileSvc, src) {
+function assertions(menu, terms, keys, profileSvc, dashSvc, src) {
   const out = [];
   const bad = (m) => out.push(m);
   const { PARTNER_MENU, PARTNER_MASTER_MENU, ALL_PARTNER_TILES, partnerMenuFor, partnerWebPath } =
@@ -338,11 +363,29 @@ function assertions(menu, terms, keys, profileSvc, src) {
   if (!/verified === null/.test(home)) {
     bad('the home screen has no "unknown" verification state — the grid will flash before the gate');
   }
-  // The tier must only be overwritten when the SERVER actually named one. `PartnerLayout.js` does
-  // `profile?.partnerType || "NORMAL"`, so on the website a dropped connection demotes a Master and
-  // removes their Linked Partners tile until the next reload.
-  if (!/if \(liveType\) setPartnerType\(liveType\);/.test(home)) {
-    bad('the home screen overwrites partnerType unconditionally — a failed fetch demotes a Master');
+  // ── THE TIER MUST NEVER SILENTLY DEMOTE ───────────────────────────────────
+  //
+  // `PartnerLayout.js` does `profile?.partnerType || "NORMAL"`, so on the website one dropped
+  // connection takes a Master's Linked Partners tile away until they reload.
+  //
+  // RETARGETED FROM A STRING MATCH. This assertion used to be
+  // `/if \(liveType\) setPartnerType\(liveType\);/` — character for character, semicolon included.
+  // That proved a line existed and never proved what it did, and it broke the moment the dashboard
+  // redesign moved the load. The rule now lives in `dashboardService.resolveTier` and is CALLED.
+  if (typeof dashSvc.resolveTier !== 'function') {
+    bad('resolveTier is gone — the never-demote rule has nowhere to live');
+  } else {
+    if (dashSvc.resolveTier(null, 'MASTER') !== 'MASTER') {
+      bad('a failed profile read demotes a known Master — the website bug this panel exists to avoid');
+    }
+    if (dashSvc.resolveTier('MASTER', null) !== 'MASTER') bad('resolveTier ignores what the server said');
+    if (dashSvc.resolveTier('NORMAL', 'MASTER') !== 'NORMAL') {
+      bad('resolveTier prefers a stale stored tier over a live one — a real demotion would never apply');
+    }
+    if (dashSvc.resolveTier(null, null) !== null) bad('resolveTier guesses a tier from nothing');
+  }
+  if (!/resolveTier\(/.test(home)) {
+    bad('the home screen no longer routes its tier through resolveTier');
   }
   // UNVERIFIED_PARTNER is granted NO endpoint, so the pending screen must offer no panel route.
   const pending = codeOnly(src.pendingScreen);
@@ -422,9 +465,22 @@ const MUTATIONS = [
     // THE WEB BUG, and it does not live in partnerMenuFor — `partnerMenuFor(null)` returning the
     // NORMAL list is intended. The demotion happens in the SCREEN, when a failed or partial fetch
     // is allowed to overwrite a tier that was already known.
+    // Mutates the RULE, not the call site. The old form edited a line of the home screen; the rule
+    // now lives in dashboardService, so that is what has to break for this to mean anything.
     name: 'a failed profile fetch overwriting a known MASTER tier (the web bug that demotes a Master)',
-    src: (k, s) =>
-      k === 'menuScreen' ? s.replace('if (liveType) setPartnerType(liveType);', 'setPartnerType(liveType);') : s,
+    dash: (s) => s.replace('  if (live) return String(live).trim().toUpperCase();', '  return live ? String(live).trim().toUpperCase() : null;'),
+  },
+  {
+    name: 'the home screen bypassing resolveTier entirely',
+    src: (k, s) => (k === 'menuScreen' ? s.replaceAll('resolveTier(', 'rawTier(') : s),
+  },
+  {
+    name: 'resolveTier preferring the stale stored tier over a live one',
+    dash: (s) =>
+      s.replace(
+        '  if (live) return String(live).trim().toUpperCase();\n  if (stored) return String(stored).trim().toUpperCase();',
+        '  if (stored) return String(stored).trim().toUpperCase();\n  if (live) return String(live).trim().toUpperCase();',
+      ),
   },
   {
     name: 'a NORMAL partner shown the master-only tile',
@@ -542,13 +598,14 @@ console.log('Self-tests (each mutation must be caught):');
 for (const m of MUTATIONS) {
   let caught;
   try {
-    const [menu, terms, keys, profileSvc] = await Promise.all([
+    const [menu, terms, keys, profileSvc, dashSvc] = await Promise.all([
       loadMenu(m.menu),
       loadTerms(m.terms),
       loadKeys(m.keys),
       loadProfileService(m.profile),
+      loadDashboardService(m.dash),
     ]);
-    caught = assertions(menu, terms, keys, profileSvc, loadSources(m.src)).length > 0;
+    caught = assertions(menu, terms, keys, profileSvc, dashSvc, loadSources(m.src)).length > 0;
   } catch {
     caught = true; // a mutation that will not even load is caught, loudly
   }
@@ -558,13 +615,14 @@ for (const m of MUTATIONS) {
 
 console.log('\nPartner panel:');
 {
-  const [menu, terms, keys, profileSvc] = await Promise.all([
+  const [menu, terms, keys, profileSvc, dashSvc] = await Promise.all([
     loadMenu(),
     loadTerms(),
     loadKeys(),
     loadProfileService(),
+    loadDashboardService(),
   ]);
-  const problems = assertions(menu, terms, keys, profileSvc, loadSources());
+  const problems = assertions(menu, terms, keys, profileSvc, dashSvc, loadSources());
   if (problems.length === 0) {
     const native = menu.ALL_PARTNER_TILES.filter((i) =>
       read(path.join(ROUTES, `${i.native.replace('/partner/', '')}.js`)).includes('PartnerFeatureScreen')

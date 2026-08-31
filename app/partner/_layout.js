@@ -69,6 +69,8 @@ export default function PartnerLayout() {
         <Stack.Screen name="bank-info" />
         <Stack.Screen name="linked-partners" />
         <Stack.Screen name="feature" />
+        <Stack.Screen name="change-password" />
+        <Stack.Screen name="search" />
       </Stack>
     </PaletteProvider>
   );

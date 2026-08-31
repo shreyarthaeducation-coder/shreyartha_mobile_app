@@ -29,7 +29,17 @@
 
 const TEACHER_BASE = '/school/platform/teacher/dashboard';
 
-export const TEACHER_GROUPS = [
+/**
+ * The groups that make up **My Workspace**.
+ *
+ * The dashboard redesign split the original five into two destinations. These four are Workspace;
+ * HR & Payroll became My Attendance below. Nothing was added, removed or renamed — the item SET is
+ * what must not drift, and `TEACHER_MENU` is still derived from both lists so it cannot.
+ *
+ * `My Profile` left this list for the footer's Profile tab, which is the only item that changed
+ * home rather than group.
+ */
+export const TEACHER_WORKSPACE_GROUPS = [
   {
     key: 'classroom',
     label: 'Classroom',
@@ -62,35 +72,69 @@ export const TEACHER_GROUPS = [
     ],
   },
   {
-    key: 'my-workspace',
-    label: 'My Workspace',
+    // Renamed from 'my-workspace': the whole screen is My Workspace now, so a group inside it with
+    // the same name reads as a mistake. `My Profile` moved out to the footer's Profile tab.
+    key: 'personal',
+    label: 'Personal',
     icon: 'briefcase-outline',
     items: [
-      { key: 'profile', label: 'My Profile', icon: 'person-circle-outline', native: '/teacher/profile' },
       { key: 'myCalendar', label: 'My Calendar', icon: 'calendar-outline', native: '/teacher/my-calendar' },
       { key: 'upskill', label: 'Upskill Your Self', icon: 'school-outline', native: '/teacher/upskill' },
-    ],
-  },
-  {
-    // Self Attendance sits here rather than under Classroom: it is the teacher's own employment
-    // record, and it feeds the same HR module as Leave and Payroll (backend HrStatutoryConstants).
-    // "Mark Attendance", which is about students, stays in Classroom.
-    key: 'hr-payroll',
-    label: 'HR & Payroll',
-    icon: 'wallet-outline',
-    items: [
-      { key: 'selfAttendance', label: 'Self Attendance', icon: 'time-outline', native: '/teacher/self-attendance' },
-      { key: 'leave', label: 'Leave Management', icon: 'calendar-number-outline', native: '/teacher/leave' },
-      { key: 'payroll', label: 'Payroll Management', icon: 'cash-outline', native: '/teacher/payroll' },
     ],
   },
 ];
 
 /**
- * The flat list, DERIVED — never edit this directly. Anything that wants "every teacher tab"
- * (route checks, the chatbot's suffix map, tooling) reads this and stays correct as groups change.
+ * **My Attendance** — the teacher's own employment record.
+ *
+ * This was the `hr-payroll` group, moved out whole rather than split. Its original comment already
+ * drew exactly the line the redesign needed: Self Attendance belongs with Leave and Payroll because
+ * it is the teacher's own record and feeds the same HR module (backend `HrStatutoryConstants`),
+ * while **"Mark Attendance", which is about students, stays in Classroom**. The design's "view and
+ * manage your attendance records" is these three and not that one.
  */
-export const TEACHER_MENU = TEACHER_GROUPS.flatMap((group) => group.items);
+export const TEACHER_ATTENDANCE_ITEMS = [
+  { key: 'selfAttendance', label: 'Self Attendance', icon: 'time-outline', native: '/teacher/self-attendance' },
+  { key: 'leave', label: 'Leave Management', icon: 'calendar-number-outline', native: '/teacher/leave' },
+  { key: 'payroll', label: 'Payroll Management', icon: 'cash-outline', native: '/teacher/payroll' },
+];
+
+/**
+ * **My Profile** — the footer's Profile tab.
+ *
+ * Kept as a declared item rather than an inline route so it still appears in `TEACHER_MENU`, which
+ * every route check and the search index read. A tab is a destination like any other; leaving it out
+ * of the derived list is how it would quietly stop being verified.
+ */
+export const TEACHER_PROFILE_ITEM = {
+  key: 'profile',
+  label: 'My Profile',
+  icon: 'person-circle-outline',
+  native: '/teacher/profile',
+};
+
+/**
+ * The flat list, DERIVED — never edit this directly. Anything that wants "every teacher tab"
+ * (route checks, the chatbot's suffix map, the search index) reads this and stays correct as the
+ * grouping changes.
+ *
+ * All three sources are included, so the sixteen original items are still exactly sixteen after the
+ * redesign split them across two destinations and a tab.
+ */
+export const TEACHER_MENU = [
+  ...TEACHER_WORKSPACE_GROUPS.flatMap((group) => group.items),
+  ...TEACHER_ATTENDANCE_ITEMS,
+  TEACHER_PROFILE_ITEM,
+];
+
+/**
+ * Kept for the shared staff shell's config shape, which still expects `groups`.
+ *
+ * The teacher home no longer renders through `StaffMenuScreen`, but nothing else should have to care
+ * that the grouping was reorganised — and if a future role wants the old accordion, this is what it
+ * reads.
+ */
+export const TEACHER_GROUPS = TEACHER_WORKSPACE_GROUPS;
 
 /** Header actions — the web renders these in the dashboard top bar rather than the sidebar. */
 export const TEACHER_HEADER_ACTIONS = [

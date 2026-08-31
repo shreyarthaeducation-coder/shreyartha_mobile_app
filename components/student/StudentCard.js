@@ -1,26 +1,70 @@
+import { createContext, useContext, useMemo } from 'react';
 import { Text, View } from 'react-native';
-import { SLATE, SPACING, TYPE } from '../../constants/theme';
+import { INK, SPACING, TYPE } from '../../constants/theme';
+import { usePalette } from '../ui/PaletteContext';
 import { makeStyles } from '../../utils/makeStyles';
 
 /**
- * A translucent white panel on the fixed background — the student panel's equivalent of
- * `components/ui/Card`, which is opaque white on a slate page and would look wrong here.
+ * A panel on the fixed background photograph, in one of two tones.
  *
- * `rgba(255,255,255,0.93)` and the light-blue hairline come straight from the web
- * (`.profile-main-flex`, `.dashboard-section-card`). The translucency is the point: the
- * background photograph has to read through, or the panel looks pasted on.
+ * ── LIGHT (the default, and what every existing screen gets) ─────────────────
+ * `rgba(255,255,255,0.93)` with a light-blue hairline, straight from the web (`.profile-main-flex`,
+ * `.dashboard-section-card`). Dark text inside. The translucency is the point: the background has
+ * to read through, or the panel looks pasted on.
  *
- * Text inside is dark, because the card is light — only text directly on the background uses the
- * palette's `onDark`.
+ * ── DARK (`tone="dark"`, the redesign) ───────────────────────────────────────
+ * `glassDark` — 72% of the page navy — with light text. This is what requirement 6 asked for: the
+ * photograph stays, and every line of copy gets a legible bed underneath it instead of sitting on
+ * whatever the image happens to be doing at that pixel.
+ *
+ * ── WHY A CONTEXT AND NOT A PROP ─────────────────────────────────────────────
+ * `StudentCardTitle`, `StudentNote` and `StudentInfoRow` are rendered as children, often several
+ * levels down inside a screen's own markup. Threading a `tone` prop through each of them is how the
+ * twelfth copy of a style gets it wrong. The card publishes its tone; the primitives read it. A
+ * primitive used OUTSIDE any card falls back to light, which is what the default context gives.
+ *
+ * Screens still holding their own `SLATE[800]` / `SLATE[500]` literals keep working unchanged —
+ * they are on light cards, which is what those values were chosen for. Converting one is
+ * `tone="dark"` plus deleting the literals so the ink comes from here.
  */
-export function StudentCard({ children, style }) {
-  const styles = useStyles();
-  return <View style={[styles.card, style]}>{children}</View>;
+
+/** The resolved ink for the surface a subtree sits on. Default light — see the note above. */
+const CardToneContext = createContext(INK.light);
+
+/** Text colours for the nearest enclosing StudentCard. */
+export function useCardInk() {
+  return useContext(CardToneContext);
 }
 
+export function StudentCard({ children, style, tone = 'light' }) {
+  const styles = useStyles();
+  const ink = tone === 'dark' ? INK.dark : INK.light;
+
+  return (
+    <CardToneContext.Provider value={ink}>
+      <View style={[styles.card, tone === 'dark' && styles.cardDark, style]}>{children}</View>
+    </CardToneContext.Provider>
+  );
+}
+
+/**
+ * A section heading inside a card.
+ *
+ * On a light card this is `palette.deep` — a blue that only works against near-white. On a dark one
+ * it would be barely visible, so the dark tone uses the palette's `primary` (the light blue), which
+ * is the same hue read the other way round.
+ */
 export function StudentCardTitle({ children, style }) {
   const styles = useStyles();
-  return <Text style={[styles.title, style]}>{children}</Text>;
+  const palette = usePalette();
+  const ink = useCardInk();
+  const onDark = ink === INK.dark;
+
+  return (
+    <Text style={[styles.title, { color: onDark ? palette.primary : palette.deep }, style]}>
+      {children}
+    </Text>
+  );
 }
 
 /**
@@ -37,16 +81,29 @@ export function StudentCardTitle({ children, style }) {
  */
 export function StudentNote({ children, style }) {
   const styles = useStyles();
-  return <Text style={[styles.note, style]}>{children}</Text>;
+  const ink = useCardInk();
+  return <Text style={[styles.note, { color: ink.muted }, style]}>{children}</Text>;
 }
 
-/** A label/value row, matching components/ui/Card's InfoRow but on the light card. */
+/** Body copy inside a card, inked for whichever tone the card is. */
+export function StudentCardText({ children, style, numberOfLines }) {
+  const styles = useStyles();
+  const ink = useCardInk();
+  return (
+    <Text style={[styles.body, { color: ink.body }, style]} numberOfLines={numberOfLines}>
+      {children}
+    </Text>
+  );
+}
+
+/** A label/value row, matching components/ui/Card's InfoRow but on a student card. */
 export function StudentInfoRow({ label, value }) {
   const styles = useStyles();
+  const ink = useCardInk();
   return (
     <View style={styles.row}>
-      <Text style={styles.rowLabel}>{label}</Text>
-      <Text style={styles.rowValue}>{value || '—'}</Text>
+      <Text style={[styles.rowLabel, { color: ink.muted }]}>{label}</Text>
+      <Text style={[styles.rowValue, { color: ink.title }]}>{value || '—'}</Text>
     </View>
   );
 }
@@ -66,18 +123,25 @@ const useStyles = makeStyles((p) => ({
     shadowRadius: 14,
     elevation: 4,
   },
+  // Only the two surface colours change. Radius, padding and shadow are the same object either way,
+  // so a screen converted to dark keeps its exact rhythm.
+  cardDark: {
+    backgroundColor: p.glassDark,
+    borderColor: p.glassDarkBorder,
+    borderRadius: 20,
+  },
   title: {
     fontSize: TYPE.label,
     fontWeight: '700',
-    color: p.deep,
     textTransform: 'uppercase',
     letterSpacing: 0.4,
     marginBottom: SPACING.sm,
   },
-  note: { fontSize: TYPE.body, color: SLATE[500], lineHeight: 19 },
+  body: { fontSize: TYPE.body, lineHeight: 19 },
+  note: { fontSize: TYPE.body, lineHeight: 19 },
   row: { flexDirection: 'row', alignItems: 'center', paddingVertical: 7, gap: SPACING.sm },
-  rowLabel: { flex: 1, fontSize: TYPE.label, fontWeight: '600', color: SLATE[500] },
-  rowValue: { flex: 1.4, fontSize: TYPE.body, color: SLATE[800], textAlign: 'right' },
+  rowLabel: { flex: 1, fontSize: TYPE.label, fontWeight: '600' },
+  rowValue: { flex: 1.4, fontSize: TYPE.body, textAlign: 'right' },
 }));
 
 export default StudentCard;

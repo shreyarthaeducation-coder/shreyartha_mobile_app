@@ -15,6 +15,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuth } from '../../context/AuthContext';
+import { ALL_AUTH_KEYS } from '../../constants/storageKeys';
 import { loginParent, signupParent } from '../../services/authService';
 
 const EMPTY_SIGNUP = {
@@ -60,11 +61,33 @@ export default function ParentLoginScreen() {
       }
       const { data } = res;
 
+      // Drop whoever was signed in before writing this session. Nothing else does: logout and the
+      // 401 handler are the only two clears, so a session ended by force-closing the app used to
+      // survive under the next person's login — and every panel's guard admits on the mere presence
+      // of its own token. See app/auth/student-login.js for the full note. After the token is in
+      // hand, never before, so a mistyped password cannot end a working session.
+      await AsyncStorage.multiRemove(ALL_AUTH_KEYS);
+
       await AsyncStorage.multiSet([
         ['parentUserToken', data.token],
         ['parentLoggedIn', 'true'],
-        ['parentUserVerified', data.verified === false ? 'false' : 'true'],
+        // FAIL CLOSED. This read `data.verified === false ? 'false' : 'true'`, so anything that was
+        // not literally `false` — null, undefined, a missing field — stored the parent as VERIFIED.
+        // `services/schoolSession.js` carries a note about that exact expression: the school login
+        // had it, and it let an unverified teacher past the pending-verification gate. It is correct
+        // today only because `ParentUser.verified` is `@Column(nullable = false)` with a Java-side
+        // default, so `ParentUserResponse.verified` is always a real boolean — a property of the
+        // schema, not of this line. `=== true` does not depend on that.
+        ['parentUserVerified', data.verified === true ? 'true' : 'false'],
         ['parentUserName', data.fullName || ''],
+        // THE ONLY SOURCE OF THE PARENT'S EMAIL ANYWHERE. There is no `GET /api/parent/me` — the
+        // account controller serves exactly one endpoint, change-password — so `ParentUserResponse`
+        // from this login is the sole place `email` is ever returned. Not storing it here means the
+        // dashboard's "Email ID" row can never be filled at all.
+        //
+        // `ParentFeatureScreen` has read this key since the WebView port and it has always resolved
+        // to '' because nothing wrote it. It is in ALL_AUTH_KEYS, so it dies with the session.
+        ['parentUserEmail', data.email || ''],
         ['linkedStudentName', data.studentName || ''],
         ['linkedStudentEmail', data.studentEmail || ''],
         ['userType', 'parent'],

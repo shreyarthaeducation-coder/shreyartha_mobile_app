@@ -70,7 +70,10 @@ export default function ParentFeatureScreen({ title, path, homeRoute = '/parent'
       setInjectValues({
         parentUserToken: values.parentUserToken || '',
         parentLoggedIn: values.parentLoggedIn || 'true',
-        parentUserVerified: values.parentUserVerified || 'true',
+        // Fail closed, like the login that writes it. A stored 'false' already survives (the string
+        // is truthy), so this only decides the absent case — and injecting 'true' there would hand
+        // the WEB guard a verified session the app itself never established.
+        parentUserVerified: values.parentUserVerified || 'false',
         parentUserName: values.parentUserName || '',
         parentUserEmail: values.parentUserEmail || '',
         linkedStudentName: values.linkedStudentName || '',

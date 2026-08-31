@@ -33,6 +33,10 @@ const SRC = {
   shreyaService: 'services/student/shreyaService.js',
   chatbotConfig: 'constants/studentChatbotConfig.js',
   barrel: 'components/student/index.js',
+  // Speak to Counselor moved here from STUDENT_HEADER_ACTIONS in the dashboard redesign: it is the
+  // footer's Support tab now. The old list no longer exists, so an assertion still naming it would
+  // pass while covering nothing.
+  tabBar: 'components/shared/home/PortalTabBar.js',
 };
 
 let failures = 0;
@@ -145,24 +149,33 @@ function assertions(menu, keys, chat, webChat, links, src) {
   const bad = (m) => out.push(m);
   const files = routeNames();
 
-  // ── 1. the header action is native, and NOTHING student-side is on a path any more ────
-  const counselor = menu.STUDENT_HEADER_ACTIONS.find((i) => i.key === 'counselor');
-  if (!counselor) bad('the Speak to Counselor header action is gone');
-  else {
-    if (counselor.path !== undefined) {
-      bad('Speak to Counselor still carries a `path:` — it opens the website, not the native screen');
+  // ── 1. Speak to Counselor is a native footer tab, and NOTHING student-side is on a path ────
+  //
+  // It was a chip in STUDENT_HEADER_ACTIONS until the dashboard redesign; that list is gone and the
+  // screen is now the Support tab. The tab bar imports react-native so it cannot be evaluated the
+  // way studentMenu.js is — asserted on source, comments stripped.
+  // SCOPED TO THE STUDENT LIST. The bar is shared with the teacher panel now, and both portals
+  // declare a `support` key — so a bare grep for one still matches after the student's is deleted.
+  const tabBar = codeOnly(src.tabBar);
+  const studentTabs = tabBar.match(/export const STUDENT_TABS = \[[\s\S]*?\];/);
+  if (!studentTabs) {
+    bad('STUDENT_TABS is gone from the shared footer — the student panel has no tab list');
+  } else {
+    if (!/route:\s*'\/student\/counselor'/.test(studentTabs[0])) {
+      bad('no student footer tab points at /student/counselor — Speak to Counselor is unreachable');
     }
-    if (counselor.native !== '/student/counselor') {
-      bad(`Speak to Counselor points at ${JSON.stringify(counselor.native)}, expected /student/counselor`);
+    if (!/key:\s*'support'/.test(studentTabs[0])) {
+      bad('the Support tab is gone from the student footer');
     }
   }
+
   // The three surviving student WebView hand-offs (Coding Arena, and Plans twice) are buttons in
-  // components, not menu entries — both menus should now be entirely native.
+  // components, not menu entries — every menu should be entirely native.
   for (const [name, list] of [
     ['STUDENT_MENU', menu.STUDENT_MENU],
-    ['STUDENT_HEADER_ACTIONS', menu.STUDENT_HEADER_ACTIONS],
+    ['STUDENT_TEACHER_LINKS', menu.STUDENT_TEACHER_LINKS],
   ]) {
-    const web = list.filter((i) => !i.native);
+    const web = (list || []).filter((i) => !i.native);
     if (web.length) bad(`${name} still has WebView entries: ${web.map((i) => i.key).join(', ')}`);
   }
 
@@ -356,16 +369,26 @@ function assertions(menu, keys, chat, webChat, links, src) {
 
 const MUTATIONS = [
   {
-    name: 'Speak to Counselor flipped back to the website',
-    menu: (s) =>
-      s.replace(
-        "native: '/student/counselor' }",
-        'path: `${STUDENT_BASE}/counselor` }',
-      ),
+    name: 'the Support tab pointed at a route with no file',
+    src: (k, s) =>
+      k === 'tabBar' ? s.replace("route: '/student/counselor'", "route: '/student/counsellor'") : s,
   },
   {
-    name: 'the counselor header action pointed at a route with no file',
-    menu: (s) => s.replace("native: '/student/counselor'", "native: '/student/counsellor'"),
+    // Targets the STUDENT list specifically. A bare replace hits whichever list comes first in the
+    // file, which is exactly how this mutation went vacuous when the teacher's tabs were added.
+    name: 'the Support tab removed from the STUDENT footer',
+    src: (k, s) =>
+      k === 'tabBar'
+        ? s.replace(/(STUDENT_TABS = \[[\s\S]*?)key: 'support'/, "$1key: 'settings'")
+        : s,
+  },
+  {
+    name: 'a workspace teacher link flipped back to the website',
+    menu: (s) =>
+      s.replace(
+        "native: '/student/personalised-resources',",
+        'path: `${STUDENT_BASE}/personalised-resources`,',
+      ),
   },
   {
     name: 'THE STORAGE LEAK: studentUserName dropped from ALL_AUTH_KEYS',
@@ -511,7 +534,8 @@ console.log('\nSpeak to Counselor:');
   if (problems.length === 0) {
     ok(
       `native; ${chat.STUDENT_SECTIONS.length} chatbot sections verbatim, ` +
-        `${menu.STUDENT_MENU.length} tiles + ${menu.STUDENT_HEADER_ACTIONS.length} header actions all native`,
+        `${menu.STUDENT_MENU.length} workspace tiles + ${menu.STUDENT_TEACHER_LINKS.length} teacher links all native, ` +
+        'and Speak to Counselor is the footer Support tab',
     );
   } else problems.forEach(fail);
 }

@@ -21,7 +21,40 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const APP = path.resolve(HERE, '..');
+/**
+ * The roots the budgets apply to.
+ *
+ * `components/shared/home` and the shared `LanguagePicker` joined the list when the parent redesign
+ * promoted the dashboard kit out of `components/student/home`. Those files did not change — but the
+ * scan root did, and for a moment they were silently outside every budget in this file. A design
+ * checker that stops seeing the components a redesign is actively editing is worse than not having
+ * one.
+ *
+ * ── WHY `components/shared` IS NOT SCANNED WHOLE ────────────────────────────
+ * `components/shared/AdaptiveReportBody.js` also lives there, and it is deliberately EXCLUDED. It
+ * predates the type scale (15 sizes off it) and is rendered by the STAFF panels as well as the
+ * student's — staff screens were never under this design system, and re-typesetting a shipped
+ * cross-panel report to satisfy a student-panel budget would be a real visual change dressed up as
+ * tidying. Scoping to the dashboard kit keeps the assertion honest instead of loud.
+ *
+ * `relOf` stays PANEL-relative, so the per-file allow-lists keyed on a basename keep matching
+ * whichever root a file now lives under.
+ */
 const PANEL = path.join(APP, 'components/student');
+const SHARED_DIRS = [
+  path.join(APP, 'components/shared/home'),
+  path.join(APP, 'components/teacher'),
+  // The redesigned staff panels. NOT `components/staff` — that directory carries 523 numeric
+  // fontSize literals and 190 raw hexes in shipped screens this redesign never touches, so turning
+  // the budget on there would fail instantly against other people's code. Same reasoning, and the
+  // same shape, as scanning `components/shared/home` rather than `components/shared`.
+  path.join(APP, 'components/staff/home'),
+  // The shared search results screen. `components/shared` is NOT scanned whole — see the note
+  // above — so a new subdirectory there lands outside every budget in this file and the
+  // checker still exits 0. Named explicitly for the same reason `shared/home` is.
+  path.join(APP, 'components/shared/search'),
+];
+const SHARED_FILES = [path.join(APP, 'components/shared/LanguagePicker.js')];
 const THEME = path.join(APP, 'constants/theme.js');
 
 let failures = 0;
@@ -42,13 +75,16 @@ const relOf = (f) => path.relative(PANEL, f).split(path.sep).join('/');
 
 function panelFiles() {
   const out = [];
-  (function walk(dir) {
+  const walk = (dir) => {
     for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
       const p = path.join(dir, e.name);
       if (e.isDirectory()) walk(p);
       else if (e.name.endsWith('.js')) out.push(p);
     }
-  })(PANEL);
+  };
+  walk(PANEL);
+  SHARED_DIRS.forEach(walk);
+  SHARED_FILES.forEach((f) => out.push(f));
   return out;
 }
 

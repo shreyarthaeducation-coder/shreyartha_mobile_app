@@ -28,6 +28,7 @@ import { router } from 'expo-router';
 import { ALL_AUTH_KEYS } from '../constants/storageKeys';
 import { endStaffAttendanceSession } from './staffAttendanceService';
 import { API_BASE_URL } from './apiService';
+import settleAll from './shared/settleAll';
 
 const DEFAULT_TIMEOUT_MS = 15000;
 
@@ -282,6 +283,19 @@ export const staffApi = {
   del: (endpoint, options) => request(endpoint, { ...options, method: 'DELETE' }),
   multipart,
   blob: (endpoint, options) => request(endpoint, { ...options, parse: 'blob' }),
+  /**
+   * Parallel reads, each guarded on its own — the shared implementation, not a fourth copy.
+   *
+   * This client was the only one of the four without it, which is why
+   * `services/teacher/searchService.js` hand-rolls `Promise.allSettled` and documents the gap. It
+   * matters more here than anywhere else: `staffApi` treats a 403 as an ordinary renderable error
+   * rather than a dead session, and `settleAll` is what turns that into a per-key `forbidden` flag
+   * a screen can report as "not included" instead of "went wrong".
+   *
+   * `StaffApiError.isForbidden` is the same `status === 403` getter the other clients' errors carry,
+   * so the shared implementation is correct here unchanged.
+   */
+  settleAll,
 };
 
 export default staffApi;

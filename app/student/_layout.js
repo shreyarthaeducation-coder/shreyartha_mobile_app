@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, ImageBackground, StyleSheet, View } from 'react-native';
-import { Redirect, Stack } from 'expo-router';
+import { Redirect, Stack, usePathname } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { PORTALS } from '../../constants/theme';
 import { PaletteProvider } from '../../components/ui/PaletteContext';
+import PortalTabBar, { STUDENT_TABS, isTabRoot } from '../../components/shared/home/PortalTabBar';
 
 /**
  * Route guard and theme host for the native student panel — the student counterpart of
@@ -25,6 +26,10 @@ const BACKGROUND = require('../../assets/images/Background.png');
 
 export default function StudentLayout() {
   const [state, setState] = useState({ checking: true, token: null });
+  // Drives the footer only. Read here rather than inside PortalTabBar so the bar is not mounted at
+  // all on the sixteen inner screens — an absolutely-positioned View over a scroll area still eats
+  // touches along its edge even when it renders nothing.
+  const pathname = usePathname();
 
   useEffect(() => {
     let alive = true;
@@ -93,7 +98,14 @@ export default function StudentLayout() {
           <Stack.Screen name="change-password" />
           <Stack.Screen name="feature" />
           <Stack.Screen name="counselor" />
+          <Stack.Screen name="workspace" />
+          <Stack.Screen name="search" />
+          <Stack.Screen name="jyora" />
+          <Stack.Screen name="teacher-resources" />
+          <Stack.Screen name="personalised-resources" />
         </Stack>
+
+        {isTabRoot(pathname, STUDENT_TABS) ? <PortalTabBar tabs={STUDENT_TABS} /> : null}
       </ImageBackground>
     </PaletteProvider>
   );

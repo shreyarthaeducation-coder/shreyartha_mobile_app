@@ -135,7 +135,11 @@ export default function JyoraSheet({ visible, onClose, context, contentLabel }) 
     return (
       <>
         <View style={styles.aiBadgeRow}>
-          <Text style={styles.aiBadge}>AI generated</Text>
+          {/* The label is longer than the "AI generated" it replaced, and this row also carries the
+              speak button — so it shrinks rather than pushing that button off a 360dp screen. */}
+          <Text style={styles.aiBadge} numberOfLines={1}>
+            Shreyartha.ai content
+          </Text>
           <ShreyaSpeakButton text={speakText} compact />
         </View>
 
@@ -303,6 +307,7 @@ const useStyles = makeStyles(() => ({
     paddingHorizontal: 9,
     borderRadius: 999,
     overflow: 'hidden',
+    flexShrink: 1,
   },
 
   figure: { marginTop: SPACING.md, alignItems: 'center' },

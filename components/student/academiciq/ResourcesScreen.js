@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Linking, Pressable, ScrollView, Text, View } from 'react-native';
+import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { SLATE, SPACING, TYPE } from '../../../constants/theme';
 import { usePalette } from '../../ui/PaletteContext';
 import { makeStyles } from '../../../utils/makeStyles';
+import { formatLongDateTime } from '../../../utils/dates';
 import { EmptyState, useToast } from '../../ui';
 import RichText from '../../RichText';
 import StudentScaffold from '../StudentScaffold';
@@ -46,6 +48,7 @@ import {
 export default function ResourcesScreen({ source = 'school' }) {
   const styles = useStyles();
   const palette = usePalette();
+  const router = useRouter();
   const { toast, showToast } = useToast();
   const gate = useStudentAccess('ACADEMIC_IQ');
 
@@ -53,6 +56,10 @@ export default function ResourcesScreen({ source = 'school' }) {
 
   const [subjects, setSubjects] = useState([]);
   const [header, setHeader] = useState({ boardName: '', className: '' });
+  // When the student last saved their Academic IQ profile. The web shows it on this screen
+  // (`PersonalizedResources.js`) precisely because an empty tree here usually means the profile was
+  // never saved, and a date — or its absence — is the fastest way for a student to tell.
+  const [lastSavedAt, setLastSavedAt] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -80,6 +87,7 @@ export default function ResourcesScreen({ source = 'school' }) {
     const tree = treeRes.status === 'fulfilled' ? treeRes.value : [];
     const resolved = resolveClassSubjects(tree, profile);
     setHeader({ boardName: resolved.boardName, className: resolved.className });
+    setLastSavedAt(profile?.lastSavedAt || null);
 
     if (isPersonalized) {
       if (personalRes.status !== 'fulfilled') {
@@ -254,13 +262,29 @@ export default function ResourcesScreen({ source = 'school' }) {
 
   const renderTree = () =>
     visibleSubjects.length === 0 ? (
+      /* THE OLD COPY HERE BLAMED THE TEACHER, AND THAT WAS WRONG.
+         It said "your teacher has not assigned any resources to you yet". This endpoint —
+         `/api/students/personalized-resources`, the American `z` — reads the student's OWN
+         AcademicProfile: `PersonalizedResourcesService` walks profile_subjects → profile_chapters
+         → profile_topics and returns an empty list when the student has no profile at all. No
+         teacher is involved anywhere in it. A student who had simply never saved their subject
+         selections was told their teacher had done nothing, and sent to a dead end.
+
+         The teacher-assigned material is the OTHER spelling — `/api/students/personalised-resources`
+         with an `s` — which is now its own screen. Hence the second action below. */
       <EmptyState
         icon="library-outline"
-        title={isPersonalized ? 'Nothing assigned yet' : 'No subjects yet'}
+        title={isPersonalized ? 'No subjects selected yet' : 'No subjects yet'}
         message={
           isPersonalized
-            ? 'Your teacher has not assigned any resources to you yet.'
+            ? 'These are the subjects, chapters and topics you picked in your Academic IQ profile. Choose some there and they will appear here.'
             : 'No subjects have been published for your class yet.'
+        }
+        actionLabel={isPersonalized ? 'Open my Academic IQ profile' : undefined}
+        onAction={
+          isPersonalized
+            ? () => router.push({ pathname: '/student/profile', params: { tab: 'academic' } })
+            : undefined
         }
       />
     ) : (
@@ -379,6 +403,17 @@ export default function ResourcesScreen({ source = 'school' }) {
         </Text>
       ) : null}
 
+      {/* The web's `lastSavedAt` line, ported. On this screen the tree IS the student's saved
+          profile, so when it looks wrong the first question is always "when did I last save it" —
+          and "never" is the answer that explains an empty list. */}
+      {isPersonalized && !topic ? (
+        <Text style={styles.saved}>
+          {lastSavedAt
+            ? `Your selections were last saved ${formatLongDateTime(lastSavedAt)}.`
+            : 'You have not saved your Academic IQ selections yet.'}
+        </Text>
+      ) : null}
+
       {topic ? renderTopic() : renderTree()}
     </StudentScaffold>
   );
@@ -396,6 +431,7 @@ const useStyles = makeStyles((p) => ({
     letterSpacing: 0.5,
     marginBottom: SPACING.sm,
   },
+  saved: { fontSize: TYPE.caption, color: p.onDark, marginBottom: SPACING.sm },
   crumb: {
     flexDirection: 'row',
     alignItems: 'center',

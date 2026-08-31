@@ -1,5 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { SCHOOL_SESSION_KEYS } from '../constants/storageKeys';
+import { ALL_AUTH_KEYS, SCHOOL_SESSION_KEYS } from '../constants/storageKeys';
 import { isShreyarthaRole, SHREYARTHA_SCHOOL_CODE } from '../constants/authPortals';
 import { getStaffRoleConfig } from '../constants/staffRoles';
 
@@ -30,6 +30,16 @@ export async function storeSchoolSession(data = {}) {
   // code defaulted the other way (`verified === false ? 'false' : 'true'`), which let an
   // unverified teacher slip past the pending-verification gate.
   const verified = data.verified ?? false;
+
+  // Drop whoever was signed in before writing this session — see app/auth/student-login.js for the
+  // full note. This is the seam for the school side because it is where the session is written, and
+  // its one caller reaches it only after the token is in hand.
+  //
+  // Ordering matters: `STAFF_ATTENDANCE_ACTIVE_KEY` is in ALL_AUTH_KEYS, and school-login starts the
+  // new attendance session AFTER this returns. Clearing here therefore ends the previous staff
+  // member's dangling attendance session — which is correct, it was never going to be closed — and
+  // cannot race the new one.
+  await AsyncStorage.multiRemove(ALL_AUTH_KEYS);
 
   await AsyncStorage.multiSet([
     ['schoolUserToken', data.token],

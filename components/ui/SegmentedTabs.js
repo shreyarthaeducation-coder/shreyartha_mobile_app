@@ -15,6 +15,11 @@ import { usePalette } from './PaletteContext';
  * their content inside a horizontal ScrollView instead. Every existing two- and three-tab call
  * site omits it and keeps the equal-width row byte for byte.
  *
+ * `tone="dark"` is the third of the opt-in dark variants (with CalendarGrid and MonthNavigator),
+ * added for the student panel's dark-glass screens. The default light track is SLATE[100], which on
+ * a dark screen reads as a glaring white bar rather than a control. Every existing call site omits
+ * it and is byte-for-byte unchanged.
+ *
  * @param {Array<{ value: string, label: string, icon?: string }>} options
  */
 
@@ -22,6 +27,7 @@ export default function SegmentedTabs({
   options = [],
   value,
   onChange,
+  tone = 'light',
   palette: paletteProp,
   style,
   scrollable = false,
@@ -29,6 +35,7 @@ export default function SegmentedTabs({
   const contextPalette = usePalette();
   // Explicit prop wins; otherwise the surrounding portal palette (teal by default).
   const palette = paletteProp || contextPalette;
+  const dark = tone === 'dark';
 
   const tabs = (
     <>
@@ -41,7 +48,7 @@ export default function SegmentedTabs({
             style={({ pressed }) => [
               styles.tab,
               scrollable && styles.tabAuto,
-              active && styles.tabActive,
+              active && (dark ? { backgroundColor: palette.primary } : styles.tabActive),
               pressed && !active && styles.tabPressed,
             ]}
             accessibilityRole="tab"
@@ -51,11 +58,11 @@ export default function SegmentedTabs({
               <Ionicons
                 name={option.icon}
                 size={15}
-                color={active ? palette.primaryDark : SLATE[500]}
+                color={tabInk(active, dark, palette)}
               />
             ) : null}
             <Text
-              style={[styles.label, active && { color: palette.primaryDark }]}
+              style={[styles.label, { color: tabInk(active, dark, palette) }]}
               numberOfLines={1}
             >
               {option.label}
@@ -83,10 +90,23 @@ export default function SegmentedTabs({
   }
 
   return (
-    <View style={[styles.wrap, style]} accessibilityRole="tablist">
+    <View style={[styles.wrap, dark && styles.wrapDark, style]} accessibilityRole="tablist">
       {tabs}
     </View>
   );
+}
+
+/**
+ * Label and icon colour for one tab.
+ *
+ * Four cases, not two: on the light track the active pill is white so the ink is `primaryDark`,
+ * but on the dark track the active pill IS `primary`, so its ink has to be `onPrimary` — which for
+ * the student palette is the dark navy, not white. Getting that pair backwards is how a selected
+ * tab ends up light-on-light.
+ */
+function tabInk(active, dark, palette) {
+  if (active) return dark ? palette.onPrimary : palette.primaryDark;
+  return dark ? '#ffffff' : SLATE[500];
 }
 
 const styles = StyleSheet.create({
@@ -97,6 +117,9 @@ const styles = StyleSheet.create({
     padding: 3,
     gap: 3,
   },
+  // tone="dark". Literal rgba rather than a palette token: this component renders under six portal
+  // palettes and a white wash reads correctly on every one.
+  wrapDark: { backgroundColor: 'rgba(255,255,255,0.12)' },
   tab: {
     flex: 1,
     flexDirection: 'row',

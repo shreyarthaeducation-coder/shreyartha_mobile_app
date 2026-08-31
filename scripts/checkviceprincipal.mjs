@@ -50,12 +50,30 @@ const read = (p) => fs.readFileSync(p, 'utf8').replace(/\r\n/g, '\n');
 // SAME values the app does rather than a regex's idea of them.
 // ─────────────────────────────────────────────────────────────────────────────
 
+/**
+ * Roles for which NO Shreya backend exists, and none can be widened to.
+ *
+ * `TeacherShreyaController` is `hasAnyRole('TEACHER','SHREYARTHA_TEACHER')`; the VP passes that
+ * guard through `VICE_PRINCIPAL implies TEACHER` and is then refused inside the service by a
+ * userType comparison, producing a 400 about account types. The two counsellors do not pass the
+ * guard at all. `PrincipalShreyaController` is school-admin scoped and admits none of the three.
+ */
+const SHREYA_REFUSES = new Set(['vice_principal', 'counselor', 'shreyartha_councellor']);
+
 const CONSTANT_FILES = [
   'staffRoles.js',
   'vicePrincipalPortal.js',
   'counsellorPortals.js',
   'shreya01TeacherPortal.js',
   'staffScope.js',
+  // The redesigned shell's arrangement, and the palette module it imports.
+  //
+  // BOTH are required, and leaving either out does not fail an assertion — it CRASHES the loader.
+  // The rewrite below turns `from './theme'` into `from './theme.mjs'`, and a file that is not in
+  // the temp dir cannot be resolved. Worse, a crash counts as "caught" in the self-test loop, so
+  // every mutation would report a tick while testing nothing at all.
+  'staffHome.js',
+  'theme.js',
 ];
 
 /** @param {(name: string, src: string) => string} [mutate] applied to each file's source */
@@ -73,6 +91,7 @@ async function loadConstants(mutate) {
     staffRoles: await load('staffRoles'),
     vp: await load('vicePrincipalPortal'),
     scope: await load('staffScope'),
+    home: await load('staffHome'),
   };
 }
 
@@ -96,7 +115,7 @@ function webSidebarItems() {
   return items;
 }
 
-function assertions({ staffRoles, vp, scope }, sources) {
+function assertions({ staffRoles, vp, scope, home }, sources) {
   const out = [];
   const bad = (m) => out.push(m);
 
@@ -119,19 +138,46 @@ function assertions({ staffRoles, vp, scope }, sources) {
 
   // ── 2. Menu mirrors the web sidebar, in order ──────────────────────────────
   //
-  // TWO TILES DELIBERATELY GO BEYOND IT, pinned to the END so the mirror above stays exact.
-  // `SchoolAdminHrController` names VICE_PRINCIPAL in its class-level guard, so a VP genuinely is a
-  // leave approver and payroll admin — the backend was built for it and the flat web sidebar just
-  // never mounted it. **Fee Management is NOT among them**: that controller is
-  // `hasRole('SCHOOL_ADMIN')` and VICE_PRINCIPAL implies only TEACHER, so it would 403 on every
-  // call. scripts/checkadminhr.mjs asserts that asymmetry in both directions.
-  const BEYOND_WEB = ['leaveManagement', 'payrollManagement'];
+  // FOUR TILES DELIBERATELY GO BEYOND IT, pinned to the END so the mirror above stays exact.
+  //
+  // The list is enumerated rather than merely counted, because "how many tiles are beyond the web"
+  // is not the thing worth protecting — WHICH ones are is. Every entry here needs a one-line reason:
+  //
+  //   leaveManagement / payrollManagement  — the APPROVER queue on /api/school-admin/hr.
+  //       `SchoolAdminHrController` names VICE_PRINCIPAL in its class-level guard, so a VP genuinely
+  //       is a leave approver and payroll admin; the flat web sidebar just never mounted it.
+  //   leave / payroll                      — SELF-SERVICE on /api/staff/hr, this VP's own balances
+  //       and payslips. `StaffHrController` names VICE_PRINCIPAL too. Added in the staff redesign.
+  //
+  // Those two pairs share verb names and different namespaces, which is why their LABELS must stay
+  // distinguishable — asserted separately below.
+  //
+  // **Fee Management is NOT among them**: that controller is `hasRole('SCHOOL_ADMIN')` and
+  // VICE_PRINCIPAL implies only TEACHER, so it would 403 on every call.
+  // scripts/checkadminhr.mjs asserts that asymmetry in both directions.
+  const BEYOND_WEB = ['leaveManagement', 'payrollManagement', 'leave', 'payroll'];
   const tail = config.menu.slice(-BEYOND_WEB.length).map((i) => i.key);
   if (tail.join(',') !== BEYOND_WEB.join(',')) {
     bad(
-      `the two beyond-the-web HR tiles must be the LAST two, in order.\n` +
+      `the ${BEYOND_WEB.length} beyond-the-web tiles must be the LAST ${BEYOND_WEB.length}, in order.\n` +
         `      got:  ${tail.join(',')}\n      want: ${BEYOND_WEB.join(',')}`,
     );
+  }
+  // THE APPROVER/SELF-SERVICE LABEL SPLIT. `/api/staff/hr` and `/api/school-admin/hr` share verb
+  // names and differ only in the prefix — swap them and a VP sees their OWN leave under "Pending
+  // Approval", with no error. On this panel the two live side by side, so the labels are the only
+  // thing telling a user which is which: anything reading "Management" administers OTHER staff.
+  for (const key of ['leave', 'payroll']) {
+    const label = config.menu.find((i) => i.key === key)?.label || '';
+    if (!label.startsWith('My ')) {
+      bad(`"${key}" is self-service on /api/staff/hr but is labelled "${label}" — it must read "My …"`);
+    }
+  }
+  for (const key of ['leaveManagement', 'payrollManagement']) {
+    const label = config.menu.find((i) => i.key === key)?.label || '';
+    if (!/Management$/.test(label)) {
+      bad(`"${key}" is the approver queue but is labelled "${label}" — it must read "… Management"`);
+    }
   }
   if (config.menu.some((i) => i.key === 'fees')) {
     bad('Fee Management is on the VP menu — a VP token 403s on every /api/school-admin/fees call');
@@ -187,6 +233,77 @@ function assertions({ staffRoles, vp, scope }, sources) {
     } else if (!new RegExp(`name="${name}"`).test(layout)) {
       bad(`"${name}" is not registered as a Stack.Screen in _layout.js`);
     }
+  }
+
+  // ── 5a. THE REDESIGNED SHELL'S ARRANGEMENT ─────────────────────────────────
+  //
+  // The panel no longer renders `config.menu` as a flat grid: constants/staffHome.js decides which
+  // tiles sit behind My Workspace, which behind My Attendance, and which is the Profile tab. That
+  // arrangement is the app's own — it is free to differ from the web sidebar's order, and does.
+  //
+  // What is NOT free is coverage. A key that lands in no destination is simply gone from the panel:
+  // the route still resolves, the screen still renders, `checkroutes` is still green, and the only
+  // symptom is a tile nobody can find. A key in two destinations is a duplicate for the same reason.
+  // `assertArrangementCovers` is CALLED here rather than grepped so it is the real answer.
+  const vpHome = home.getStaffHome(ROLE);
+  if (!vpHome) {
+    bad('no vice_principal entry in staffHome — the panel would fall back to StaffMenuScreen');
+  } else {
+    const resolved = staffRoles.resolveStaffMenus(ROLE);
+    const cover = home.assertArrangementCovers(resolved.menu, vpHome);
+    if (cover.missing.length) {
+      bad(`tile(s) in the menu but in no destination — invisible on the panel: ${cover.missing.join(', ')}`);
+    }
+    if (cover.duplicated.length) bad(`tile(s) placed twice: ${cover.duplicated.join(', ')}`);
+    if (cover.unknown.length) {
+      bad(`arrangement names tile(s) the menu does not have: ${cover.unknown.join(', ')}`);
+    }
+
+    // THE HR SPLIT, asserted structurally rather than by label this time. My Attendance is the
+    // holder's OWN record; the approver queue belongs in Workspace. Putting /api/school-admin/hr
+    // screens under "My Attendance" is the single most confusing thing this panel could do.
+    for (const key of ['leaveManagement', 'payrollManagement']) {
+      if ((vpHome.attendanceItemKeys || []).includes(key)) {
+        bad(`"${key}" is the approver queue and must not sit under My Attendance`);
+      }
+    }
+    for (const key of ['leave', 'payroll', 'selfAttendance']) {
+      if (!(vpHome.attendanceItemKeys || []).includes(key)) {
+        bad(`"${key}" is the VP's own record and belongs under My Attendance`);
+      }
+    }
+
+    // Shreya is refused to this role by a userType comparison inside the service, AFTER the
+    // endpoint guard admits it — an HTTP 400 that reads as a data bug. A card here would render,
+    // be tapped and fail.
+    if (vpHome.support !== 'help') {
+      bad(`VP support is "${vpHome.support}" — TeacherShreyaChatbotService refuses VICE_PRINCIPAL`);
+    }
+  }
+
+  // ── 5b. THE VERIFICATION GATE, which this group did not have until it was added ─
+  //
+  // app/teacher/_layout.js has gated its whole group on `schoolUserVerified` since the teacher
+  // redesign; this shell read only the token and the role, so the ONLY verification check for all
+  // six staff shells lived inside StaffMenuScreen — covering the home screen and none of the other
+  // thirty-seven routes registered in this layout.
+  //
+  // It matters most for the two SHREYARTHA roles. The school-bound roles are protected server-side
+  // by a role SWAP (a pending VP literally holds ROLE_UNVERIFIED_VICE_PRINCIPAL, so every
+  // @PreAuthorize refuses them). There is no ROLE_UNVERIFIED_SHREYARTHA_* at all — signup sets
+  // verified=true and un-verifying flips a boolean the server never reads. So for those two roles
+  // THIS CLIENT GATE IS THE ONLY GATE, and losing it hands out a fully working panel rather than
+  // an empty one.
+  if (!/schoolUserVerified/.test(layout)) {
+    bad('_layout.js does not read schoolUserVerified — the staff group has no verification gate');
+  }
+  if (!/<Redirect href={pendingRoute}/.test(layout)) {
+    bad('_layout.js never redirects to the pending screen — unverified staff reach every route');
+  }
+  // The pending screen lives inside this same group, so the redirect MUST exempt it or it loops
+  // against itself and the panel becomes unreachable for everyone unverified.
+  if (!/pathname !== pendingRoute/.test(layout)) {
+    bad('_layout.js does not exempt the pending route from its own redirect — this loops');
   }
 
   // ── 6. The two wrappers whose fallback would silently serve the wrong screen ─
@@ -316,6 +433,77 @@ const MUTATIONS = [
     name: 'the reports route unregistered in _layout.js',
     sources: (n, s) => (n === '_layout.js' ? s.replace('<Stack.Screen name="reports" />', '') : s),
   },
+  {
+    // The confusion this guards against is real: swap the two namespaces and a VP sees their own
+    // leave under "Pending Approval", with no error anywhere.
+    name: 'self-service leave relabelled as if it were the approver queue',
+    constants: (n, s) =>
+      n === 'staffRoles.js'
+        ? s.replace(
+            "{ key: 'leave', label: 'My Leave', icon: 'today-outline', native: '/staff/vice_principal/leave' }",
+            "{ key: 'leave', label: 'Leave Management', icon: 'today-outline', native: '/staff/vice_principal/leave' }",
+          )
+        : s,
+  },
+  {
+    name: 'the approver queue relabelled as if it were personal',
+    constants: (n, s) =>
+      n === 'staffRoles.js'
+        ? s.replace(
+            "{ key: 'payrollManagement', label: 'Payroll Management', icon: 'wallet-outline', native: '/staff/vice_principal/payroll-management' }",
+            "{ key: 'payrollManagement', label: 'My Payslips', icon: 'wallet-outline', native: '/staff/vice_principal/payroll-management' }",
+          )
+        : s,
+  },
+  {
+    name: 'the VP losing its self-service HR tiles',
+    constants: (n, s) =>
+      n === 'staffRoles.js'
+        ? s.replace(/^.*'\/staff\/vice_principal\/payroll'.*$/m, '')
+        : s,
+  },
+  {
+    name: 'a workspace tile dropped from every group (invisible on the panel)',
+    constants: (n, c) =>
+      n === 'staffHome.js' ? c.replace("'reports'", "'reportsTYPO'") : c,
+  },
+  {
+    name: 'a tile placed in two destinations at once',
+    constants: (n, c) =>
+      n === 'staffHome.js'
+        ? c.replace("attendanceItemKeys: ['selfAttendance', 'leave', 'payroll']",
+                    "attendanceItemKeys: ['selfAttendance', 'leave', 'payroll', 'myCalendar']")
+        : c,
+  },
+  {
+    name: 'the approver queue filed under My Attendance',
+    constants: (n, c) =>
+      n === 'staffHome.js'
+        ? c.replace("attendanceItemKeys: ['selfAttendance', 'leave', 'payroll']",
+                    "attendanceItemKeys: ['selfAttendance', 'leaveManagement', 'payrollManagement']")
+        : c,
+  },
+  {
+    name: 'a Shreya card given to a role the service refuses',
+    constants: (n, c) => (n === 'staffHome.js' ? c.replace("support: 'help'", "support: 'shreya'") : c),
+  },
+  {
+    name: 'the staff verification gate removed entirely',
+    sources: (n, s) =>
+      n === '_layout.js'
+        ? s.replace(/if \(!state\.verified && pathname !== pendingRoute\) \{[\s\S]*?\n {2}\}/, '')
+        : s,
+  },
+  {
+    name: 'the layout no longer reading schoolUserVerified',
+    sources: (n, s) => (n === '_layout.js' ? s.replaceAll('schoolUserVerified', 'schoolUserChecked') : s),
+  },
+  {
+    // Drops the exemption, so the pending screen redirects to itself forever.
+    name: 'the pending route not exempted from its own redirect',
+    sources: (n, s) =>
+      n === '_layout.js' ? s.replace('!state.verified && pathname !== pendingRoute', '!state.verified') : s,
+  },
 ];
 
 const WRAPPER_FILES = ['_layout.js', 'groups.js', 'counselling.js', 'homework.js'];
@@ -351,6 +539,53 @@ if (real.length === 0) {
 } else real.forEach(fail);
 
 // ── Regression: the four finished panels, and the untouched tab sets ─────────
+// Every redesigned panel's arrangement stays complete.
+//
+// The assertions above are Vice-Principal-specific, because that role has web-sidebar fidelity
+// rules nobody else does. THIS block is role-agnostic and grows on its own: it walks whatever is
+// in STAFF_HOME, so a role added in a later phase is covered the moment its descriptor lands
+// rather than whenever someone remembers to widen a checker.
+//
+// Phase 5 replaces this with a fuller parameterised checker. Until then this is the invariant that
+// matters most: a tile in the menu but in no destination is invisible on the panel, its route
+// still resolves, and nothing else in the repo would notice.
+console.log('\nArrangement coverage:');
+{
+  const { staffRoles, home } = await loadConstants();
+  for (const role of Object.keys(home.STAFF_HOME)) {
+    const cfg = staffRoles.resolveStaffMenus(role);
+    const desc = home.getStaffHome(role);
+    const c = home.assertArrangementCovers(cfg.menu, desc);
+    const problems = [
+      c.missing.length ? `in no destination: ${c.missing.join(', ')}` : '',
+      c.duplicated.length ? `placed twice: ${c.duplicated.join(', ')}` : '',
+      c.unknown.length ? `not in the menu: ${c.unknown.join(', ')}` : '',
+    ].filter(Boolean);
+    if (problems.length) fail(`${role} arrangement — ${problems.join('; ')}`);
+    else ok(`${role}: all ${cfg.menu.length} tiles placed exactly once`);
+
+    // A pair tile naming nothing renders a card with an empty label and a dead CTA.
+    if (desc.supportPairKey && !cfg.menu.some((i) => i.key === desc.supportPairKey)) {
+      fail(`${role} supportPairKey "${desc.supportPairKey}" names no menu tile`);
+    }
+    // ── THE THREE ROLES THAT MUST NOT HAVE A SHREYA CARD ─────────────────────
+    //
+    // This used to read "any role but shreyartha_teacher", which was correct while one chatbot
+    // existed and became wrong the moment the Principal got its own backend. Narrowed rather than
+    // deleted, because the danger it guards is unchanged and specific to these three: their card
+    // would render, be tapped, and fail — a 403 for the counsellors and, worse, a 400 about account
+    // types for the Vice Principal, which reads as a data bug rather than a permission.
+    //
+    // Whether a role that DOES declare Shreya points at a backend admitting it is a different and
+    // larger question, and it belongs to scripts/checkstaffshreya.mjs, which checks the service
+    // base, both mount sites, every section key and the userType gate. Asserting it here too would
+    // be a second, weaker copy free to disagree with the first.
+    if (desc.support === 'shreya' && SHREYA_REFUSES.has(role)) {
+      fail(`${role} declares a Shreya card, but every Shreya service refuses that role`);
+    }
+  }
+}
+
 console.log('\nRegression:');
 {
   const { staffRoles } = await loadConstants();

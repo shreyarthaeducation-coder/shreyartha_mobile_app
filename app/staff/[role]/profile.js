@@ -1,9 +1,11 @@
 import { useLocalSearchParams } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StaffProfileScreen } from '../../../components/staff';
 import ScopeBrowserTab from '../../../components/staff/profile/ScopeBrowserTab';
 import { resolveStaffMenus } from '../../../constants/staffRoles';
 import { getCounsellorPortal } from '../../../constants/counsellorPortals';
 import { isVicePrincipal } from '../../../constants/vicePrincipalPortal';
+import { TAB_BAR_HEIGHT, staffTabsFor } from '../../../components/shared/home/PortalTabBar';
 
 /**
  * My Profile for the config-driven staff shells.
@@ -24,6 +26,7 @@ import { isVicePrincipal } from '../../../constants/vicePrincipalPortal';
  */
 export default function StaffProfile() {
   const { role } = useLocalSearchParams();
+  const insets = useSafeAreaInsets();
   const roleKey = String(role || '').toLowerCase();
   const config = resolveStaffMenus(roleKey);
   if (!config) return null; // the layout guard has already redirected
@@ -42,7 +45,14 @@ export default function StaffProfile() {
       // like app/teacher/profile.js rather than inventing a third vocabulary for the same tabs.
       academicLabel={portal ? 'Academic Management' : undefined}
       showAcademic={canAssignClasses}
-      showHr={vicePrincipal}
+      // HR is the Details/Classes/HR third tab. The VP gets it because SchoolAdminHrController names
+      // it; the Shreyartha teacher gets it because StaffHrController does — that role has had My
+      // Leave and My Payslips all along, so the tab has real data behind it either way.
+      showHr={vicePrincipal || roleKey === 'shreyartha_teacher'}
+      // Profile is a footer tab root on the redesigned shells, so its last control would otherwise
+      // sit under the bar. Zero for every other role: a fixed 62pt of dead space at the foot of the
+      // panels that have no footer is not a fix, which is why this is a prop and not a constant.
+      bottomInset={staffTabsFor(roleKey).length ? TAB_BAR_HEIGHT + (insets.bottom || 8) : 0}
       // Undefined falls back to the screen's own '/api/teacher' default, which is what the VP uses.
       academicApiBase={portal?.profile || undefined}
       extraTab={

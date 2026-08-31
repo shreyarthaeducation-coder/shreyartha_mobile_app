@@ -20,5 +20,11 @@ export default function FeeManagement() {
   const portal = getAdminPortal(roleKey);
   if (!portal?.fees) return null;
 
-  return <FeeManagementScreen homeRoute={`/staff/${roleKey}`} apiBase={portal.classes} />;
+  return (
+    <FeeManagementScreen
+      homeRoute={`/staff/${roleKey}`}
+      apiBase={portal.classes}
+      initialTab={typeof view === 'string' ? view : undefined}
+    />
+  );
 }

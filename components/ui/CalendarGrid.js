@@ -18,6 +18,14 @@ import { dayOfMonth, mondayFirstIndex } from '../../utils/dates';
  *          color?: string, dot?: string, bold?: boolean }} [getDay]
  * @param {string} [selectedDate]
  * @param {(dateStr: string) => void} [onDayPress]
+ * @param {'light'|'dark'} [tone]  surface this grid is printed on; see below
+ *
+ * ── `tone` ──────────────────────────────────────────────────────────────────
+ * Everything above was written for a white card on a slate page, which is what the staff screens
+ * are. The student panel's redesigned screens put their calendar on dark glass, where a white cell
+ * and SLATE weekday initials are the wrong way round. `tone="dark"` swaps the two surface colours
+ * and nothing else — `getDay` still wins over both, so a caller that already tints its cells keeps
+ * behaving identically. Default is `light`, so every existing caller is untouched.
  */
 
 const WEEKDAY_INITIALS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
@@ -27,12 +35,14 @@ export default function CalendarGrid({
   getDay,
   selectedDate,
   onDayPress,
+  tone = 'light',
   palette: paletteProp,
   style,
 }) {
   const contextPalette = usePalette();
   // Explicit prop wins; otherwise the surrounding portal palette (teal by default).
   const palette = paletteProp || contextPalette;
+  const dark = tone === 'dark';
   // Blank cells so the 1st lands under its real weekday.
   const leadingBlanks = dates.length ? mondayFirstIndex(dates[0]) : 0;
 
@@ -41,7 +51,15 @@ export default function CalendarGrid({
       <View style={styles.weekRow}>
         {WEEKDAY_INITIALS.map((initial, index) => (
           <View key={`${initial}-${index}`} style={styles.weekCell}>
-            <Text style={[styles.weekText, index === 6 && styles.weekTextSunday]}>{initial}</Text>
+            <Text
+              style={[
+                styles.weekText,
+                index === 6 && styles.weekTextSunday,
+                dark && { color: palette.onDark },
+              ]}
+            >
+              {initial}
+            </Text>
           </View>
         ))}
       </View>
@@ -72,6 +90,8 @@ export default function CalendarGrid({
               <View
                 style={[
                   styles.day,
+                  // Tone first, so an explicit `getDay` colour still overrides it.
+                  dark ? styles.dayDark : null,
                   state.bg ? { backgroundColor: state.bg } : null,
                   state.borderColor ? { borderColor: state.borderColor, borderWidth: 1 } : null,
                   selected ? { borderColor: palette.primary, borderWidth: 2 } : null,
@@ -80,6 +100,7 @@ export default function CalendarGrid({
                 <Text
                   style={[
                     styles.dayText,
+                    dark ? styles.dayTextDark : null,
                     state.color ? { color: state.color } : null,
                     state.bold ? styles.dayTextBold : null,
                     state.disabled ? styles.dayTextDisabled : null,
@@ -118,7 +139,12 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: SLATE[200],
   },
+  // tone="dark". Literal rgba rather than a palette token because this component is portal-agnostic
+  // — it renders under the teal, purple, red, orange and blue palettes alike, and a white wash reads
+  // correctly on every one of them.
+  dayDark: { backgroundColor: 'rgba(255,255,255,0.10)', borderColor: 'rgba(255,255,255,0.18)' },
   dayText: { fontSize: 14, fontWeight: '600', color: SLATE[700] },
+  dayTextDark: { color: '#ffffff' },
   dayTextBold: { fontWeight: '800' },
   dayTextDisabled: { color: SLATE[300] },
   dotSlot: { height: 8, justifyContent: 'center' },

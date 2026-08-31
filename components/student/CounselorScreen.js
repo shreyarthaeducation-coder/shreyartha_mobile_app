@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Image, Pressable, Text, TextInput, View } from 'react-native';
+import { useLocalSearchParams } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { FEEDBACK, SLATE, SPACING, TYPE } from '../../constants/theme';
 import { usePalette } from '../ui/PaletteContext';
@@ -7,6 +9,7 @@ import { DateTimeField, FormSheet, Select, useToast } from '../ui';
 import { makeStyles } from '../../utils/makeStyles';
 import StudentScaffold from './StudentScaffold';
 import { StudentCard } from './StudentCard';
+import { TAB_BAR_HEIGHT } from '../shared/home/PortalTabBar';
 import { fetchProfileSection } from '../../services/student/profileService';
 import {
   PREFERRED_MODES,
@@ -50,6 +53,8 @@ export default function CounselorScreen() {
   const styles = useStyles();
   const palette = usePalette();
   const { toast, showToast } = useToast();
+  const insets = useSafeAreaInsets();
+  const { chat: chatParam } = useLocalSearchParams();
 
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -84,6 +89,18 @@ export default function CounselorScreen() {
   useEffect(() => {
     load();
   }, [load]);
+
+  /**
+   * `?chat=1` opens the sheet on arrival.
+   *
+   * The dashboard's Shreya card promises a conversation ("Ask anything, get instant answers"), so
+   * landing on a menu with a Start Chat button would make the student tap twice for the thing they
+   * already asked for. Deliberately gated on `!loading`: the sheet greets by name, and that name
+   * comes from the profile `load()` writes to storage — opening first would greet a blank.
+   */
+  useEffect(() => {
+    if (chatParam === '1' && !loading) setChatOpen(true);
+  }, [chatParam, loading]);
 
   const queryOptions = useMemo(() => QUERY_OPTIONS.map((o) => ({ value: o, label: o })), []);
 
@@ -188,6 +205,9 @@ export default function CounselorScreen() {
             <Text style={styles.btnText}>Book a Session</Text>
           </Pressable>
         </StudentCard>
+
+        {/* This screen is the footer's Support tab, and the layout paints that bar over it. */}
+        <View style={{ height: TAB_BAR_HEIGHT + (insets.bottom || SPACING.sm) }} />
       </StudentScaffold>
 
       <FormSheet

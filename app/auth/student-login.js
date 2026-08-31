@@ -15,6 +15,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuth } from '../../context/AuthContext';
+import { ALL_AUTH_KEYS } from '../../constants/storageKeys';
 import { loginStudent, lookupInstitutionCode, signupStudent } from '../../services/authService';
 
 /**
@@ -84,6 +85,19 @@ export default function StudentLoginScreen() {
       const data = await loginStudent(trimEmail, password);
       const token = data.token;
       if (!token) throw new Error('Authentication failed. Please try again.');
+
+      // ── CLEAR WHOEVER WAS HERE BEFORE, FIRST ────────────────────────────────
+      // A login used to write its eight keys ON TOP of whatever was already stored. Nothing else
+      // clears them: `AuthContext.logout` and `apiService.clearAuthAndRedirect` only run on an
+      // explicit log out or a 401, so a session that ended by force-closing the app persisted
+      // indefinitely. On a shared device — a staffroom tablet, a family phone — that left the
+      // previous person's JWT, name, email, school code and cached photo in storage under the new
+      // person's session, and each panel's route guard admits on the PRESENCE of its own token, so
+      // `/teacher` would open the previous teacher's panel without asking for a password.
+      //
+      // Runs AFTER the token is in hand, never before: clearing on submit would log a student out
+      // of a working session just because they mistyped their password.
+      await AsyncStorage.multiRemove(ALL_AUTH_KEYS);
 
       await AsyncStorage.multiSet([
         ['studentToken', token],
@@ -203,6 +217,15 @@ export default function StudentLoginScreen() {
           placeholder="Enter your password"
           placeholderTextColor="#aaa"
           secureTextEntry={!showPassword}
+          // These three matter ONLY once the eye toggle is tapped. While `secureTextEntry` is true
+          // Android suppresses autocapitalise and autocorrect on its own; the moment the password is
+          // revealed the field becomes ordinary text and RN's default `autoCapitalize="sentences"`
+          // takes over, so the next character typed is silently capitalised and the login fails with
+          // a password the student can see is right. `components/auth/PasswordField` — which every
+          // other login funnels through — has always set all three.
+          autoCapitalize="none"
+          autoCorrect={false}
+          textContentType="password"
           returnKeyType="done"
           onSubmitEditing={handleLogin}
           editable={!loading}
@@ -325,6 +348,11 @@ export default function StudentLoginScreen() {
           placeholder="At least 8 characters"
           placeholderTextColor="#aaa"
           secureTextEntry={!showSignupPassword}
+          // Same reason as the login field above, and it bites harder here: a capital letter the
+          // student never typed gets baked into the account they are creating.
+          autoCapitalize="none"
+          autoCorrect={false}
+          textContentType="newPassword"
           editable={!signupBusy}
         />
         <TouchableOpacity

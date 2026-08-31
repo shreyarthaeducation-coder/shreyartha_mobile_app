@@ -107,12 +107,22 @@ const EMPTY_STRUCTURE = {
 
 const EMPTY_OFFLINE = { amount: '', installmentId: '', paymentDate: '', adminNotes: '' };
 
-export default function FeeManagementScreen({ homeRoute = '/staff/principal', apiBase }) {
+/**
+ * @param {object} props
+ * @param {string} [props.initialTab] which tab to open on. The Principal's home has two fee cards —
+ *   Total Fees Collected and Fees Pending — and they are two views of THIS screen rather than two
+ *   screens, so each deep-links to its own tab. Anything not in `TABS` is ignored rather than
+ *   trusted: the value arrives from a URL, and an unrecognised one would otherwise render a screen
+ *   with every tab inactive and no content at all.
+ */
+export default function FeeManagementScreen({ homeRoute = '/staff/principal', apiBase, initialTab }) {
   const styles = useStyles();
   const palette = usePalette();
   const { toast, showToast } = useToast();
 
-  const [tab, setTab] = useState('setup');
+  const [tab, setTab] = useState(
+    TABS.some((t) => t.value === initialTab) ? initialTab : 'setup',
+  );
   const [academicYear, setAcademicYear] = useState(defaultAcademicYear());
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');

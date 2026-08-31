@@ -177,6 +177,24 @@ export const PORTALS = {
     tile: '#ffffff',
     glass: 'rgba(255, 255, 255, 0.10)',
     glassBorder: 'rgba(79, 195, 247, 0.25)',
+    // A FOURTH treatment, added by the dashboard redesign: dark glass that can carry BODY COPY.
+    //
+    // The three above cannot. `card` and `tile` are light surfaces that need dark text, so on a
+    // photograph they read as opaque sheets of paper pasted over it — which is precisely the "white
+    // background" the redesign was asked to remove. `glass` is 10% WHITE: it lightens the photo
+    // underneath instead of darkening it, so a bright region of Background.png stays bright and the
+    // white text on it disappears. That is the readability complaint, exactly.
+    //
+    // `glassDark` darkens instead. 72% of #0a1628 over the busiest part of the image still measures
+    // better than 7:1 against white text, and the photo remains legible through it — which is the
+    // whole point of keeping a photographic background at all.
+    //
+    // `glassDarkRaised` is for a panel INSIDE a glassDark panel (a row, an inset). Stacking two
+    // 72% layers would compound to 92% and go flat black, so nested surfaces take this instead of
+    // a second copy of the same token.
+    glassDark: 'rgba(10, 22, 40, 0.72)',
+    glassDarkBorder: 'rgba(79, 195, 247, 0.28)',
+    glassDarkRaised: 'rgba(10, 22, 40, 0.84)',
     tint: 'rgba(79, 195, 247, 0.14)',
     inputBg: '#ffffff',
     inputBorder: SLATE[200],
@@ -243,6 +261,51 @@ export const PORTALS = {
     inputBorder: SLATE[200],
     inputFocus: '#ea580c',
   },
+  // frontendmain/src/School/ShreyarthaTeacher/ShreyarthaTeacherDashboard.css — this panel's header
+  // is a NEUTRAL slate (#1e293b), so the accent rather than the header carries its identity: #6366f1
+  // on every active nav item, with #a5b4fc as its light pairing. #4338ca completes the ramp
+  // downwards, the same way the counsellor and principal entries take their dark end from their own
+  // CSS.
+  //
+  // ADDED AFTER THE FACT, for the same reason the vicePrincipal entry above was: shreyartha_teacher
+  // had no STAFF_ROLE_PALETTES row at all, so `staffPalette` fell through to PORTALS.school and the
+  // panel rendered in exactly the teal of app/teacher. Two different logins, one colour.
+  shreyarthaTeacher: {
+    key: 'shreyarthaTeacher',
+    gradient: ['#4338ca', '#6366f1', '#a5b4fc'],
+    primary: '#6366f1',
+    primaryDark: '#4338ca',
+    accent: '#a5b4fc',
+    onPrimary: '#ffffff',
+    link: '#4338ca',
+    headerBg: '#4338ca',
+    tint: 'rgba(99, 102, 241, 0.12)',
+    inputBg: '#ffffff',
+    inputBorder: SLATE[200],
+    inputFocus: '#6366f1',
+  },
+  // frontendmain/src/School/ShreyarthaCounsellor/ShreyarthaCouncellorDashboard.css — the header is
+  // `linear-gradient(135deg, #0f766e 0%, #14b8a6 100%)`. #5eead4 completes the ramp upwards.
+  //
+  // ADDED AFTER THE FACT: this portal shipped on PORTALS.counsellor (purple), inherited from the
+  // SCHOOL counsellor's CounselorDashboard.css during the counsellor port. But this panel has its
+  // own dashboard CSS and it is teal — so the two counsellor portals were being shown as one panel
+  // when the website presents them as two. Separate `key` from `counsellor` on purpose:
+  // `makeStyles` caches per key, and checkprincipal asserts every PORTALS value has a unique one.
+  shreyarthaCounsellor: {
+    key: 'shreyarthaCounsellor',
+    gradient: ['#0f766e', '#14b8a6', '#5eead4'],
+    primary: '#14b8a6',
+    primaryDark: '#0f766e',
+    accent: '#5eead4',
+    onPrimary: '#ffffff',
+    link: '#0f766e',
+    headerBg: '#0f766e',
+    tint: 'rgba(20, 184, 166, 0.12)',
+    inputBg: '#ffffff',
+    inputBorder: SLATE[200],
+    inputFocus: '#14b8a6',
+  },
   // frontendmain/src/Parent/ParentAuth.css — #6b21a8 → #9333ea → #c084fc
   parent: {
     key: 'parent',
@@ -257,6 +320,26 @@ export const PORTALS = {
     inputBg: '#ffffff',
     inputBorder: SLATE[200],
     inputFocus: '#9333ea',
+
+    // ── ADDED BY THE PARENT DASHBOARD REDESIGN ────────────────────────────────
+    //
+    // THIS FIXES A LIVE BUG, not just a future one. `components/ui/AnalyticsSummaryCard` reads
+    // `p.glass || p.tint`, `p.glassBorder || p.cardBorder` and — with no fallback at all —
+    // `color: p.onDark`. Under this palette `onDark` was `undefined`, so React Native fell back to
+    // its default BLACK and that card has been rendering black text on a purple wash on the parent
+    // home. Nothing crashed and no build complained, which is exactly how it survived.
+    //
+    // These are LIGHT-THEME values, unlike the student's. The parent panel has no photographic
+    // background and its cards are opaque white on a slate page, so `deep` is a readable purple on
+    // white and `onDark` is the muted ink used on the coloured header band — not a pale blue.
+    deep: '#6b21a8',
+    onDark: '#e9d5ff', // on the purple header band only
+    pageBg: SLATE[50],
+    card: '#ffffff',
+    cardBorder: SLATE[200],
+    tile: '#ffffff',
+    glass: 'rgba(147, 51, 234, 0.10)',
+    glassBorder: 'rgba(147, 51, 234, 0.22)',
   },
   // frontendmain/src/student/StudentAuth.css — dark gradient with the brand rose accent.
   //
@@ -291,14 +374,20 @@ export const PORTALS = {
  * anyway — so an unlisted role behaves exactly as it did before this map existed, and
  * `app/teacher/` (which has no provider at all) cannot be recoloured by accident.
  *
- * Kept here rather than in staffRoles.js so it can be evaluated without pulling in the menus, and
- * so the two counsellor spellings sit next to the colour they share.
+ * Kept here rather than in staffRoles.js so it can be evaluated without pulling in the menus.
+ *
+ * ── THE TWO COUNSELLOR PORTALS NO LONGER SHARE A COLOUR ─────────────────────
+ * They used to, because the counsellor port read `CounselorDashboard.css` and applied its purple to
+ * both. But `ShreyarthaCouncellorDashboard.css` is its own file and it is TEAL — the website
+ * presents these as two panels and the app was presenting them as one. Same correction, and same
+ * reason, as the vice_principal row: mirror the panel's own CSS, not a sibling's.
  */
 export const STAFF_ROLE_PALETTES = {
   counselor: PORTALS.counsellor,
-  shreyartha_councellor: PORTALS.counsellor,
+  shreyartha_councellor: PORTALS.shreyarthaCounsellor,
   principal: PORTALS.principal,
   vice_principal: PORTALS.vicePrincipal,
+  shreyartha_teacher: PORTALS.shreyarthaTeacher,
 };
 
 /** Palette for a staff shell, defaulting to the school teal. */
@@ -399,6 +488,58 @@ export const DONE = BAND.good;
  * `ShreyaChapterScreen`, `PhonemeDetailPanel`) each hardcoded the same hex for their mic-on state.
  */
 export const RECORDING = '#dc2626';
+
+/**
+ * Text colour by SURFACE, not by role.
+ *
+ * The student panel has two kinds of surface and they need opposite ink. Until now only one of them
+ * existed in practice, so every screen wrote `SLATE[800]` for a title and `SLATE[500]` for a hint
+ * directly into its style block — about 200 literals across ~25 files. That was fine while every
+ * card was light. The redesign adds `glassDark`, and on it those same values are unreadable.
+ *
+ * Rather than fork every screen, `StudentCard` now publishes its tone through `CardToneContext` and
+ * the text primitives read the matching column here. Converting a screen becomes `tone="dark"` plus
+ * deleting its colour literals — mechanical, one file at a time, and reversible.
+ *
+ * `dark.body` is #e2eefc rather than plain white on purpose: a full-white paragraph on a 72% navy
+ * panel over a photograph vibrates. The title stays white so the hierarchy survives.
+ *
+ * NOT a replacement for `onDark` in the palette. That one is for text sitting DIRECTLY on the
+ * background photograph with no panel under it at all, where the requirement is different again.
+ */
+export const INK = {
+  light: { title: SLATE[800], body: SLATE[700], muted: SLATE[500] },
+  dark: { title: '#ffffff', body: '#e2eefc', muted: '#9fc4e4' },
+};
+
+/**
+ * The two hero-card gradients.
+ *
+ * These are IDENTITY, taken from the approved designs: the first card on a dashboard is the violet
+ * one and the second is blue, so a user learns to aim for one by its colour before they read its
+ * label. Both redesigned dashboards use the same pair — student (My Workspace / My Analytics) and
+ * partner (My Schools / My Revenue) — which is the whole reason they live here rather than in a
+ * component: the failure mode is a third hero card inventing a third gradient that clashes.
+ *
+ * NAMED FOR THE COLOUR, NOT THE CARD. They were `workspace` and `analytics` while only the student
+ * dashboard had them; the partner's cards are neither of those things, and a partner reading
+ * `colors={GRADIENT.workspace}` on their revenue card would reasonably assume it was a mistake.
+ *
+ * Ordered light-to-dark is wrong for these: `expo-linear-gradient` paints `colors[0]` at the start
+ * point, and the design has the saturated end at the top-left.
+ */
+export const GRADIENT = {
+  violet: ['#7c5cff', '#a78bfa'],
+  blue: ['#38bdf8', '#60a5fa'],
+  // The teacher dashboard's third card. Added when a design first called for three heroes rather
+  // than two; the pair above is untouched, so the student and partner dashboards are unaffected.
+  teal: ['#2dd4bf', '#5eead4'],
+  // Added for the Principal panel, whose design leads with six differently-coloured cards rather
+  // than three. Same two-stop shape as the others.
+  green: ['#10b981', '#6ee7b7'],
+  amber: ['#f59e0b', '#fcd34d'],
+  indigo: ['#6366f1', '#a5b4fc'],
+};
 
 /**
  * Student ability bands, shared across the platform: Create Group assigns them, and homework and

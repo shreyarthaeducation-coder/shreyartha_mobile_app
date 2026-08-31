@@ -11,14 +11,15 @@ import { makeStyles } from '../../../utils/makeStyles';
  *
  * Port of `frontendmain/src/student/platform/LanguagePro/SoundStudio/SoundStudioTutorial.js`.
  *
- * ── ASYNCSTORAGE IS CORRECT HERE, UNLIKE THE WELCOME SCREEN ──────────────────
+ * ── ASYNCSTORAGE IS CORRECT HERE ─────────────────────────────────────────────
  * The web gates this on **`localStorage`**, not `sessionStorage` — "once ever", not "once per
- * session". That is the opposite of the student welcome interstitial
- * (`components/student/welcome/sessionFlag.js`), which deliberately uses an in-memory flag because
- * showing a student their progress once and never again would be useless.
+ * session", and that is right for what this screen is FOR: it explains a chart that does not
+ * change. Once you know how the IPA grid is arranged, you know.
  *
- * The difference is what the screen is FOR. The welcome screen shows data that changes; this
- * explains a chart that does not. Once you know how the chart is arranged, you know.
+ * Contrast the student welcome interstitial, which showed data that changes and was therefore
+ * gated in memory rather than on disk. That screen has since been retired — the dashboard now
+ * carries its identity block and its progress bars permanently, which is strictly better than
+ * once a session.
  *
  * The key is the web's, verbatim, so a student who has seen it on the website is not shown it again.
  *

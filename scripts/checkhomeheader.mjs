@@ -36,6 +36,12 @@ const CONSTANTS = ['studentProfileForms.js', 'storageKeys.js'];
 const SOURCES = {
   surveyTab: 'components/student/profile/SurveyTab.js',
   studentHome: 'components/student/StudentHome.js',
+  // The student home's identity block. It was `WelcomeHeader` until the dashboard redesign, which
+  // replaced it with a card carrying three more facts — grade, stream and career preferences —
+  // laid out beside the photo rather than under it. WelcomeHeader itself is unchanged and still
+  // serves the staff and parent homes, so its own assertions below stay exactly as they were; only
+  // the student half is retargeted.
+  identityCard: 'components/shared/home/IdentityCard.js',
   staffMenu: 'components/staff/StaffMenuScreen.js',
   welcomeHeader: 'components/ui/WelcomeHeader.js',
   profileService: 'services/student/profileService.js',
@@ -142,10 +148,42 @@ async function assertions(mods, sources, profileService) {
     bad('STAFF_PHOTO_KEY is missing from ALL_AUTH_KEYS — the next user on the device would inherit the previous one’s photo');
   }
 
-  // ── 5. the Welcome header is actually used, on both home screens ──────────
-  for (const [key, label] of [['studentHome', 'student home'], ['staffMenu', 'staff home']]) {
-    if (!/<WelcomeHeader/.test(sources[key])) bad(`the ${label} does not render WelcomeHeader`);
+  // ── 5. every home screen shows an identity block, with an initials fallback ────
+  //
+  // The REQUEST was "his image and below name should be there on home page — for every user". The
+  // student home now satisfies it with its own card rather than WelcomeHeader, so what is asserted
+  // is the requirement, not the component that used to implement it.
+  if (!/<IdentityCard/.test(sources.studentHome)) {
+    bad('the student home does not render IdentityCard — it has no identity block');
   }
+  // Scoped deliberately: StaffMenuScreen now serves only Principal and Shreyartha Admin. The four
+  // redesigned panels render StaffHomeScreen, whose identity block is IdentityCard — so this
+  // asserts the header those two still depend on, not "the staff home" in general.
+  if (!/<WelcomeHeader/.test(sources.staffMenu)) {
+    bad('StaffMenuScreen does not render WelcomeHeader — Principal and Shreyartha Admin lost their identity block');
+  }
+
+  // The card's own contract: a photo that falls back to initials, and the photo before the rows.
+  const card = sources.identityCard;
+  if (!/initialsOf/.test(card)) {
+    bad('IdentityCard has no initials fallback — a PARENT has no photo field in the backend at all, so this is the only case there');
+  }
+
+  // THE ROWS MOVED OUT OF THE COMPONENT. They are a prop now, because the parent dashboard passes
+  // six facts (its own name and email, then the child's name, grade, stream and school) where the
+  // student passes four. So the student's four are asserted where they are now declared — at the
+  // call site — rather than against a component that no longer knows what a "career" is.
+  for (const key of ['name', 'grade', 'stream', 'careers']) {
+    if (!new RegExp(`key: '${key}'`).test(sources.studentHome)) {
+      bad(`the student identity card no longer shows ${key} — the design calls for all four rows`);
+    }
+  }
+
+  // The photo must come before the rows, which is the "image, and below/beside it the name" order.
+  const photoAt = card.indexOf('{avatar}');
+  const rowsAt = card.indexOf('styles.rows');
+  if (photoAt < 0 || rowsAt < 0) bad('IdentityCard is missing its avatar or its rows block');
+  else if (photoAt > rowsAt) bad('IdentityCard renders the facts before the photo');
   // Its three parts in the order asked for: Welcome, then the image, then the name.
   //
   // Measured inside the RENDERED block only. An earlier version of this check read the whole file
@@ -168,8 +206,7 @@ async function assertions(mods, sources, profileService) {
   if (!/initialsOf/.test(header)) {
     bad('WelcomeHeader has no initials fallback — parents and partners have no photo at all');
   }
-  // The old one-line greetings must be gone, or two greetings render.
-  if (/Welcome, \{name\}/.test(sources.studentHome)) bad('the student home still has its old inline greeting');
+  // The old one-line greeting must be gone from the staff home, or two greetings render.
   if (/Hi, \{profile\.name\}/.test(sources.staffMenu)) bad('the staff home still says "Hi," instead of Welcome');
 
   return out;
@@ -213,9 +250,22 @@ const MUTATIONS = [
       k === 'surveyTab' ? s.replace('Submit Reflection', 'Submit Survey') : s,
   },
   {
-    name: 'the student home reverted to its inline greeting',
+    name: 'the student home dropped its identity block',
     sources: (k, s) =>
-      k === 'studentHome' ? s.replace('<WelcomeHeader', '<OldHeader') : s,
+      k === 'studentHome' ? s.replace('<IdentityCard', '<OldHeader') : s,
+  },
+  {
+    name: 'the student identity card stopped showing the stream',
+    sources: (k, s) => (k === 'studentHome' ? s.replace("key: 'stream'", "key: 'dropped'") : s),
+  },
+  {
+    name: 'the identity card lost its initials fallback',
+    sources: (k, s) => (k === 'identityCard' ? s.replaceAll('initialsOf', 'noFallback') : s),
+  },
+  {
+    name: 'the identity card renders the facts above the photo',
+    sources: (k, s) =>
+      k === 'identityCard' ? s.replace('{avatar}', '{/* moved */}').replace('styles.rows}>', 'styles.rows}>{avatar}') : s,
   },
   {
     name: 'the greeting moved below the name (wrong order)',

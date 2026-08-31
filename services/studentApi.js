@@ -38,6 +38,23 @@ import { API_BASE_URL } from './apiService';
 const DEFAULT_TIMEOUT_MS = 15000;
 
 /** Login mirrors one JWT across these; first non-empty wins. */
+/* ── A SECOND SPELLING TRAP, AND IT IS NOT THE ONE ABOVE ────────────────────
+ *
+ * Beyond `/api/student/` vs `/api/students/`, there is a pair one LETTER apart that are different
+ * FEATURES served by different controllers in different packages:
+ *
+ *   /api/students/personali**z**ed-resources  academic/PersonalizedResourcesController
+ *       The student's own AcademicProfile selections, as a subjects→chapters→topics tree.
+ *       No teacher involved. → services/student/academicIqService.js
+ *
+ *   /api/students/personali**s**ed-resources  student/StudentPersonalisedResourceController
+ *       Flat resource RECORDS a teacher assigned to this student, with dates and completion.
+ *       → services/student/personalisedResourceService.js
+ *
+ * Both return 200 with a list, so picking the wrong one gives a plausible empty screen rather than
+ * an error. This cost one bug report against a screen that was working correctly.
+ */
+
 const TOKEN_KEYS = ['studentToken', 'userToken', 'accessToken', 'token'];
 
 /**

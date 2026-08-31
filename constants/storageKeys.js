@@ -41,11 +41,74 @@ export const STAFF_PHOTO_KEY = 'staffProfilePhotoUrl';
  */
 export const STAFF_ATTENDANCE_HISTORY_KEY = 'staffAttendanceHistory';
 
+/**
+ * The student's cached search index.
+ *
+ * MUST be in ALL_AUTH_KEYS below, for the same reason as STAFF_PHOTO_KEY. Every content tree the
+ * index is built from applies a **per-school topic-alias overlay** server-side, so two students at
+ * different schools genuinely see different names for the same topic id. Left behind on a shared
+ * device, one student's index would answer the next one's searches with their school's vocabulary.
+ *
+ * The service also fingerprints the cache to the session, so this is the second of two guards
+ * rather than the only one — but the fingerprint is a defence against a stale read, and this is
+ * the one that makes the data actually go away.
+ */
+export const STUDENT_SEARCH_INDEX_KEY = 'studentSearchIndexV1';
+
+/**
+ * The parent's cached search index.
+ *
+ * Same reasoning as the student's, one step worse: this index is built from the CHILD's academic
+ * tree and their assigned work, so leaving it behind on a shared device would show one parent
+ * another family's syllabus and homework titles. In ALL_AUTH_KEYS below.
+ */
+export const PARENT_SEARCH_INDEX_KEY = 'parentSearchIndexV1';
+
+/**
+ * The partner's cached search index.
+ *
+ * The most sensitive of the three: it carries student names and per-subscription revenue for every
+ * school the partner is linked to. In ALL_AUTH_KEYS below, and fingerprinted to the session on top.
+ */
+export const PARTNER_SEARCH_INDEX_KEY = 'partnerSearchIndexV1';
+
+/**
+ * The teacher's cached search index.
+ *
+ * Carries their class and section names. In ALL_AUTH_KEYS below — a staffroom device is shared more
+ * often than a parent's phone, so this one earns the guard twice over.
+ */
+export const TEACHER_SEARCH_INDEX_KEY = 'teacherSearchIndexV1';
+
+/**
+ * The staff shells' cached search index — vice principal, both counsellors, Shreyartha teacher.
+ *
+ * ONE key for all four roles, and that is safe rather than lazy: a session holds exactly one staff
+ * role, and the index is fingerprinted on the token AND the role key, so a role that somehow reused
+ * a session would miss the cache rather than read another panel's rows.
+ *
+ * IT MUST STAY A SINGLE STATIC STRING. A per-role template — `staffSearchIndexV1:${roleKey}` — is
+ * the obvious refactor and it would be a data leak: ALL_AUTH_KEYS below is a static array handed
+ * straight to `multiRemove`, so a computed key is never cleared on logout, and the next staff member
+ * on a shared staffroom device would inherit the previous one's school and class names. That leak is
+ * the reason this file exists at all.
+ *
+ * Deliberately NOT reusing TEACHER_SEARCH_INDEX_KEY either: both fingerprint off `schoolUserToken`,
+ * so sharing the key would let a teacher's cached index serve a vice principal's search with the
+ * fingerprint check passing.
+ */
+export const STAFF_SEARCH_INDEX_KEY = 'staffSearchIndexV1';
+
 /** Everything a logout must remove, across every role. */
 export const ALL_AUTH_KEYS = [
   ...SCHOOL_SESSION_KEYS,
   STAFF_ATTENDANCE_ACTIVE_KEY,
   STAFF_PHOTO_KEY,
+  STUDENT_SEARCH_INDEX_KEY,
+  PARENT_SEARCH_INDEX_KEY,
+  PARTNER_SEARCH_INDEX_KEY,
+  TEACHER_SEARCH_INDEX_KEY,
+  STAFF_SEARCH_INDEX_KEY,
   // Student — the token is mirrored across four keys by the existing student login.
   'studentToken',
   'userToken',
@@ -64,6 +127,11 @@ export const ALL_AUTH_KEYS = [
   'parentLoggedIn',
   'parentUserVerified',
   'parentUserName',
+  // Written at login from `ParentUserResponse.email` and shown on the dashboard's identity card.
+  // Personal to one parent, so it belongs here for the same reason STAFF_PHOTO_KEY does: on a
+  // shared device the next parent would otherwise see the previous one's address under their own
+  // name. The partner list a few lines down already carries its equivalent.
+  'parentUserEmail',
   'linkedStudentName',
   'linkedStudentEmail',
   // Partner

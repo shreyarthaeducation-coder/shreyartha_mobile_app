@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
+  Image,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -11,6 +12,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import { FEEDBACK, SHADOWS, SLATE, SPACING } from '../../constants/theme';
+import { STAFF_PHOTO_KEY } from '../../constants/storageKeys';
 import { usePalette } from '../../components/ui/PaletteContext';
 import { api } from '../../services/apiService';
 import useStaffLogout from '../../hooks/useStaffLogout';
@@ -68,6 +70,15 @@ export default function StaffProfileScreen({
   // nowhere; teacher/staff shells keep the shorter label they already had.
   detailsLabel = 'Details',
   academicLabel = 'Academic',
+  /**
+   * Extra bottom padding for the scroll.
+   *
+   * The TEACHER panel renders a footer tab bar over its navigator and this screen is one of its
+   * three roots, so its last control would sit under the bar. Every app/staff/[role] shell has no
+   * footer and passes nothing, which is why this is a prop rather than a constant — a fixed 62pt of
+   * dead space at the bottom of five other portals is not a fix.
+   */
+  bottomInset = 0,
 }) {
   const styles = useStyles();
   const PALETTE = usePalette();
@@ -79,6 +90,20 @@ export default function StaffProfileScreen({
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState('');
+
+  /**
+   * The staff photo, from the cache the HOME screen fills.
+   *
+   * This screen showed initials unconditionally, so a staff member saw their face on the dashboard
+   * and their initials on their own profile page — the one screen actually about them.
+   *
+   * Read rather than fetched, deliberately. The photo lives on the HR profile
+   * (`/api/staff/hr/profile` → `profilePictureUrl`), which no profile endpoint in `endpoints`
+   * returns, and the home screen already fetches it on every visit and writes it to
+   * `STAFF_PHOTO_KEY`. Fetching it again here would be a second HR call per profile open to
+   * populate an avatar the cache already has. Absent cache → initials, exactly as before.
+   */
+  const [photoUrl, setPhotoUrl] = useState(null);
 
   const loadFromStorage = useCallback(async (notice) => {
     const entries = await AsyncStorage.multiGet([
@@ -135,6 +160,22 @@ export default function StaffProfileScreen({
     load();
   }, [load]);
 
+  // Its OWN effect, not part of `load`. `loadFromStorage` only runs when every profile endpoint has
+  // failed, so reading the photo there would have shown a face only on the screens that were
+  // already broken — and initials whenever the profile loaded correctly, which is the exact
+  // inversion of what this fixes.
+  useEffect(() => {
+    let alive = true;
+    AsyncStorage.getItem(STAFF_PHOTO_KEY)
+      .then((url) => {
+        if (alive) setPhotoUrl(url || null);
+      })
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, []);
+
   const onRefresh = () => {
     setRefreshing(true);
     load();
@@ -162,14 +203,18 @@ export default function StaffProfileScreen({
         </View>
       ) : (
         <ScrollView
-          contentContainerStyle={styles.scroll}
+          contentContainerStyle={[styles.scroll, bottomInset ? { paddingBottom: bottomInset } : null]}
           refreshControl={
             <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={PALETTE.primary} />
           }
         >
           <View style={styles.identity}>
             <View style={styles.avatar}>
-              <Text style={styles.avatarText}>{initialsOf(profile?.fullName)}</Text>
+              {photoUrl ? (
+                <Image source={{ uri: photoUrl }} style={styles.avatarImg} resizeMode="cover" />
+              ) : (
+                <Text style={styles.avatarText}>{initialsOf(profile?.fullName)}</Text>
+              )}
             </View>
             <Text style={styles.name}>{profile?.fullName || roleLabel}</Text>
             <View style={styles.badgeRow}>
@@ -300,7 +345,10 @@ const useStyles = makeStyles((p) => ({
     backgroundColor: p.tint,
     alignItems: 'center',
     justifyContent: 'center',
+    // Needed only for the photo: without it the square Image spills out of the circle.
+    overflow: 'hidden',
   },
+  avatarImg: { width: '100%', height: '100%' },
   avatarText: { fontSize: 26, fontWeight: '700', color: p.primaryDark },
   name: { fontSize: 19, fontWeight: '700', color: SLATE[800], marginTop: SPACING.sm },
   badgeRow: { flexDirection: 'row', gap: 8, marginTop: 8 },

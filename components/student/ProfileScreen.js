@@ -1,10 +1,14 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Image, Pressable, ScrollView, Text, View } from 'react-native';
+import { useLocalSearchParams } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { FEEDBACK, SLATE, SPACING, TOUCH, TYPE } from '../../constants/theme';
 import { usePalette } from '../ui/PaletteContext';
 import { makeStyles } from '../../utils/makeStyles';
 import { useToast } from '../ui';
+import usePortalLogout from '../../hooks/usePortalLogout';
+import { TAB_BAR_HEIGHT } from '../shared/home/PortalTabBar';
 import StudentScaffold from './StudentScaffold';
 import { StudentCard, StudentCardTitle } from './StudentCard';
 import ProfileFormTab from './ProfileFormTab';
@@ -55,8 +59,22 @@ export default function ProfileScreen() {
   const styles = useStyles();
   const palette = usePalette();
   const { toast, showToast } = useToast();
+  const insets = useSafeAreaInsets();
+  // Bare `logout` only clears storage — it does not navigate, so the user stayed put on a
+  // signed-out screen. See hooks/usePortalLogout.js.
+  const { confirmLogout } = usePortalLogout({ loginRoute: '/auth/student-login' });
 
-  const [tab, setTab] = useState('personal');
+  /**
+   * `?tab=career` opens straight on that tab.
+   *
+   * The dashboard's identity card deep-links here: tapping the Career Preferences row must land on
+   * the tab that edits it, not on Personal with seven chips to scroll past. Read once as the
+   * initial state rather than kept in sync — once the student is here, the chip row owns the tab.
+   */
+  const { tab: initialTab } = useLocalSearchParams();
+  const [tab, setTab] = useState(() =>
+    PROFILE_TABS.some((t) => t.key === initialTab) ? String(initialTab) : 'personal',
+  );
   const [me, setMe] = useState(null);
   const [completion, setCompletion] = useState({});
   const [uploading, setUploading] = useState(false);
@@ -316,11 +334,47 @@ export default function ProfileScreen() {
       ) : (
         <ProfileFormTab key={tab} tabKey={tab} showToast={showToast} />
       )}
+
+      {/* LOG OUT LIVES HERE NOW.
+          It was a header icon on the dashboard, which the redesign replaced with the brand bar —
+          and the design's footer has exactly three tabs, none of them an account menu. Profile is
+          where every other app of this shape keeps it, and it is one of the three tab roots, so it
+          is never more than one tap away.
+
+          `confirmLogout`, not `logout`: the bare call empties AsyncStorage without navigating, and
+          the layout guard reads its token once on mount, so the student would sit on a fully
+          rendered signed-out profile until some unrelated request happened to 401. */}
+      <Pressable
+        onPress={confirmLogout}
+        style={({ pressed }) => [styles.logout, pressed && styles.pressed]}
+        accessibilityRole="button"
+        accessibilityLabel="Log out"
+      >
+        <Ionicons name="log-out-outline" size={18} color={FEEDBACK.errorText} />
+        <Text style={styles.logoutText}>Log Out</Text>
+      </Pressable>
+
+      {/* Clears the footer, which the layout paints over this screen. */}
+      <View style={{ height: TAB_BAR_HEIGHT + (insets.bottom || SPACING.sm) }} />
     </StudentScaffold>
   );
 }
 
 const useStyles = makeStyles((p) => ({
+  logout: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: SPACING.sm,
+    minHeight: TOUCH.min,
+    borderRadius: 14,
+    backgroundColor: FEEDBACK.errorBg,
+    borderWidth: 1,
+    borderColor: FEEDBACK.errorBorder,
+    marginTop: SPACING.sm,
+  },
+  logoutText: { fontSize: TYPE.heading, fontWeight: '700', color: FEEDBACK.errorText },
+
   identity: { flexDirection: 'row', alignItems: 'center', gap: SPACING.md },
   avatar: {
     width: 64,

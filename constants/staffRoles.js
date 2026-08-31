@@ -58,6 +58,14 @@ export const STAFF_ROLE_CONFIG = {
       { key: 'counsellorReport', label: 'Counsellor Report', icon: 'reader-outline', native: '/staff/counselor/counsellor-report' },
       { key: 'liveClasses', label: 'Live Classes', icon: 'videocam-outline', native: '/staff/counselor/live-classes' },
       { key: 'myCalendar', label: 'My Calendar', icon: 'calendar-outline', native: '/staff/counselor/my-calendar' },
+      // BEYOND THE WEB SIDEBAR, deliberately. `StaffHrController` is one class-level guard naming
+      // COUNSELOR explicitly alongside TEACHER, so a counsellor has always been able to read their
+      // own balances, file leave and download payslips — the website simply never mounted a route.
+      // Same call already made for the Principal's Fee/Leave/Payroll. See leave.js.
+      // "My", not "Management" — these are the counsellor's OWN balances and payslips. The Vice
+      // Principal panel carries both halves and the labels are what keep them apart there.
+      { key: 'leave', label: 'My Leave', icon: 'today-outline', native: '/staff/counselor/leave' },
+      { key: 'payroll', label: 'My Payslips', icon: 'cash-outline', native: '/staff/counselor/payroll' },
     ],
     headerActions: [],
   },
@@ -111,6 +119,19 @@ export const STAFF_ROLE_CONFIG = {
       { key: 'fees', label: 'Fee Management', icon: 'cash-outline', native: '/staff/principal/fees' },
       { key: 'leaveManagement', label: 'Leave Management', icon: 'calendar-number-outline', native: '/staff/principal/leave-management' },
       { key: 'payrollManagement', label: 'Payroll Management', icon: 'wallet-outline', native: '/staff/principal/payroll-management' },
+      // ── SELF-SERVICE HR, and the labels are the whole safeguard ───────────────
+      // The two above are the APPROVER queue on `/api/school-admin/hr` — other people's requests,
+      // salary structures, payroll runs. These two are this Principal's OWN, on `/api/staff/hr`.
+      // Two namespaces that share verb names: swap them and a Principal sees their own leave filed
+      // under "Pending Approval", with no error anywhere. "… Management" administers others,
+      // "My …" is yours — asserted in both directions in checkviceprincipal.mjs.
+      //
+      // Beyond the web sidebar, deliberately, and for the same reason as the other three panels:
+      // `StaffHrController` names all eight staff roles explicitly, so a Principal has always been
+      // able to file their own leave and read their own payslips. Only the sidebar entry was
+      // missing — a gap in the WEBSITE, not a permission.
+      { key: 'leave', label: 'My Leave', icon: 'today-outline', native: '/staff/principal/leave' },
+      { key: 'payroll', label: 'My Payslips', icon: 'cash-outline', native: '/staff/principal/payroll' },
     ],
     headerActions: [],
   },
@@ -159,6 +180,18 @@ export const STAFF_ROLE_CONFIG = {
       // screen that renders and then 403s on every call.
       { key: 'leaveManagement', label: 'Leave Management', icon: 'calendar-number-outline', native: '/staff/vice_principal/leave-management' },
       { key: 'payrollManagement', label: 'Payroll Management', icon: 'wallet-outline', native: '/staff/vice_principal/payroll-management' },
+      // ── AND THE VP'S OWN LEAVE AND PAYSLIPS, WHICH ARE A DIFFERENT FEATURE ──
+      // The four tiles above and below are easy to confuse and must not be: `leaveManagement` /
+      // `payrollManagement` are the APPROVER queue on `/api/school-admin/hr` — other people's
+      // requests, salary structures, payroll runs. `leave` / `payroll` are SELF-SERVICE on
+      // `/api/staff/hr` — this VP's own balances and their own payslips. Two namespaces, two
+      // screens, two sets of route files, and they share verb names.
+      //
+      // Hence the labels: anything reading "Management" administers OTHER staff; anything reading
+      // "My" is the holder's own. `StaffHrController` names VICE_PRINCIPAL explicitly, so the
+      // self-service half has always been authorised — the web sidebar just never mounted it.
+      { key: 'leave', label: 'My Leave', icon: 'today-outline', native: '/staff/vice_principal/leave' },
+      { key: 'payroll', label: 'My Payslips', icon: 'cash-outline', native: '/staff/vice_principal/payroll' },
     ],
     headerActions: [
       { key: 'studentAnalytics', label: 'My Students Analytics', icon: 'bar-chart-outline', native: '/staff/vice_principal/student-analytics' },
@@ -202,9 +235,23 @@ export const STAFF_ROLE_CONFIG = {
     userType: 'SHREYARTHA_COUNCELLOR',
     label: 'Shreyartha Counsellor',
     basePath: `${PLATFORM_BASE}/shreyartha_councellor/dashboard`,
-    // No profile DTO on the web for this role (its profile page lists school/class scope);
-    // native profile falls back to the values cached at login.
-    profileEndpoints: [],
+    // CORRECTED Aug 2026. This read `[]`, annotated "no profile DTO on the web for this role".
+    // That was true of the WEBSITE and false of the BACKEND, and the app had simply never asked.
+    //
+    // Both halves verified against the source before this changed, because a guard that passes and
+    // a service that cannot find the user look identical from here:
+    //   · `CounselorController.getProfile` is `hasAnyRole('COUNSELOR','UNVERIFIED_COUNSELOR')`, and
+    //     `SecurityConfig` really does declare `SHREYARTHA_COUNCELLOR implies COUNSELOR` — so the
+    //     hierarchy carries it, even though this codebase writes role lists longhand nearly
+    //     everywhere as though it does not trust that.
+    //   · `CounselorService.getCounselorProfile` looks the user up by `findByEmail` with **no
+    //     userType filter**, so the row comes back for this role like any other.
+    //
+    // Two fields degrade rather than fail, and both are expected: `schoolName` is null because a
+    // Shreyartha counsellor has no single `school`, and `assignedClasses` is always `[]` because
+    // this role is scoped by `CounsellorSchoolLink` and not `CounselorClass`. Hence "Schools I
+    // Cover" as its identity row rather than a class list — see constants/staffHome.js.
+    profileEndpoints: ['/api/counselor/profile'],
     unlocks: [
       'Mark attendance across SHREYA01 schools',
       'Manage wellness groups and counselling notes',
@@ -222,6 +269,12 @@ export const STAFF_ROLE_CONFIG = {
       // hence the shared `live-classes` route. See app/staff/[role]/live-classes.js.
       { key: 'liveCounselling', label: 'Live Counselling', icon: 'videocam-outline', native: '/staff/shreyartha_councellor/live-classes' },
       { key: 'myCalendar', label: 'My Calendar', icon: 'calendar-outline', native: '/staff/shreyartha_councellor/my-calendar' },
+      // Beyond the web sidebar — `StaffHrController` names SHREYARTHA_COUNCELLOR explicitly.
+      // Note the copy caveat: a SHREYA01 leave request reaches nobody by email until
+      // `HrLeaveService.approversFor` is widened, because "SHREYARTHA_ADMIN" matches none of its
+      // three clauses. The request is still filed and still decidable — it just arrives silently.
+      { key: 'leave', label: 'My Leave', icon: 'today-outline', native: '/staff/shreyartha_councellor/leave' },
+      { key: 'payroll', label: 'My Payslips', icon: 'cash-outline', native: '/staff/shreyartha_councellor/payroll' },
     ],
     headerActions: [],
   },
@@ -249,13 +302,23 @@ export const STAFF_ROLE_CONFIG = {
       { key: 'syllabus', label: 'Syllabus Completion', icon: 'list-outline', native: '/staff/shreyartha_teacher/syllabus' },
       { key: 'counselling', label: 'Counselling Needs and Notes', icon: 'chatbubbles-outline', native: '/staff/shreyartha_teacher/counselling' },
       { key: 'counsellorReport', label: 'Counsellor Report', icon: 'reader-outline', native: '/staff/shreyartha_teacher/counsellor-report' },
+      // Beyond the web sidebar, and the only one of the four panels to get it: the adaptive
+      // assessment controller is `hasAnyRole('TEACHER','VICE_PRINCIPAL')`, so this role reaches it
+      // through SHREYARTHA_TEACHER → TEACHER rather than by being named. That inheritance is
+      // relied on all over this shell, but VERIFY IT ON A REAL TOKEN before trusting this tile —
+      // almost every other guard in the backend writes its role list longhand.
+      { key: 'adaptiveAssessment', label: 'My Adaptive Assessment', icon: 'git-branch-outline', native: '/staff/shreyartha_teacher/adaptive-assessment' },
       { key: 'upskill', label: 'Upskill Your Self', icon: 'school-outline', native: '/staff/shreyartha_teacher/upskill' },
       { key: 'myCalendar', label: 'My Calendar', icon: 'calendar-outline', native: '/staff/shreyartha_teacher/my-calendar' },
-      // HR module. Only the two teacher sidebars carry these on the web — the counsellor,
-      // principal and VP panels have no HR route registered, so they are deliberately absent
-      // from those menus above.
-      { key: 'leave', label: 'Leave Management', icon: 'calendar-number-outline', native: '/staff/shreyartha_teacher/leave' },
-      { key: 'payroll', label: 'Payroll Management', icon: 'cash-outline', native: '/staff/shreyartha_teacher/payroll' },
+      // HR module, self-service on /api/staff/hr — this staff member's OWN leave and payslips.
+      //
+      // RELABELLED from "Leave Management" / "Payroll Management". Those names were fine while this
+      // was the only staff panel carrying them, but the Vice Principal panel now carries BOTH these
+      // and the approver-side screens on /api/school-admin/hr, which share their verb names. "My"
+      // versus "Management" is what keeps the two apart, and it has to mean the same thing on every
+      // panel to be worth anything.
+      { key: 'leave', label: 'My Leave', icon: 'today-outline', native: '/staff/shreyartha_teacher/leave' },
+      { key: 'payroll', label: 'My Payslips', icon: 'cash-outline', native: '/staff/shreyartha_teacher/payroll' },
     ],
     headerActions: [
       { key: 'studentAnalytics', label: 'My Students Analytics', icon: 'bar-chart-outline', native: '/staff/shreyartha_teacher/student-analytics' },

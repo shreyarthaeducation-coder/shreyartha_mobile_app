@@ -53,7 +53,14 @@ const STATUS_FILTERS = [
 
 const EMPTY_FORM = { title: '', when: '', durationMinutes: '60' };
 
-export default function StaffMeetingScreen({ homeRoute, apiBase }) {
+/**
+ * @param {object} props
+ * @param {number} [props.bottomInset] extra scroll padding. This screen is a TAB ROOT on the
+ *   Principal panel — the only staff footer with a fourth tab — and `PortalTabBar` is
+ *   `position: absolute`, so without this its last meeting card sits underneath the bar. Zero for
+ *   every other role, which reaches this screen by pushing rather than as a root.
+ */
+export default function StaffMeetingScreen({ homeRoute, apiBase, bottomInset = 0 }) {
   const styles = useStyles();
   const PALETTE = usePalette();
   const { toast, showToast } = useToast();
@@ -181,6 +188,7 @@ export default function StaffMeetingScreen({ homeRoute, apiBase }) {
       refreshing={refreshing}
       onRefresh={refresh}
       toast={toast}
+      contentStyle={bottomInset ? { paddingBottom: bottomInset } : undefined}
     >
       <SegmentedTabs options={TABS} value={tab} onChange={setTab} style={styles.tabs} />
 

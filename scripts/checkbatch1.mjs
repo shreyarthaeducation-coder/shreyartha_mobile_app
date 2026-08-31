@@ -9,9 +9,16 @@
 //     the website never shows, and looks entirely plausible either way.
 //   * An inverted `entranceExamIds` check locks a student out of the exam they DID choose —
 //     the empty-array branch means "all allowed", and reading it as "none allowed" is one `!` away.
-//   * The Sound Studio tutorial must persist "once EVER" (AsyncStorage) while the welcome
-//     interstitial must persist "once per SESSION" (memory). Both are one-line changes, they look
-//     interchangeable, and getting either wrong is invisible until a student complains.
+//   * The Sound Studio tutorial must persist "once EVER" (AsyncStorage), using the WEBSITE's key so
+//     a student who already saw it there is not shown it again. Both halves are one-line changes and
+//     getting either wrong is invisible until a student complains.
+//
+// This item used to have a second half: the welcome interstitial, which had to persist "once per
+// SESSION" (module memory) because its progress bars change. That screen was RETIRED by the
+// dashboard redesign — the dashboard now carries its identity block and its bars permanently, which
+// is strictly better than once a session — so `components/student/welcome/` no longer exists and
+// those assertions were removed rather than left pointing at a deleted file. The contrast they drew
+// is preserved in the comment at the top of SoundStudioTutorial.js.
 //
 // Exit code 0 = pass.
 
@@ -32,7 +39,6 @@ const SRC = {
   psychometric: 'components/student/PsychometricScreen.js',
   tutorial: 'components/student/languagepro/SoundStudioTutorial.js',
   soundStudio: 'components/student/languagepro/SoundStudio.js',
-  sessionFlag: 'components/student/welcome/sessionFlag.js',
 };
 
 let failures = 0;
@@ -193,13 +199,6 @@ async function assertions(pz, src) {
   if (!/soundStudioTutorialSeen/.test(tut)) {
     bad("the tutorial does not use the web's key, so a student who saw it on the site sees it again");
   }
-  // ...and the welcome interstitial must remain the OPPOSITE.
-  const flag = codeOnly(src.sessionFlag);
-  if (/AsyncStorage/.test(flag)) {
-    bad('the welcome interstitial now persists to AsyncStorage — that is "once ever", and its progress bars change');
-  }
-  if (!/^let shownThisSession/m.test(flag)) bad('the welcome session flag is no longer module-scope memory');
-
   if (!/useSoundStudioTutorial/.test(codeOnly(src.soundStudio))) {
     bad('Sound Studio does not mount the tutorial');
   }
@@ -294,13 +293,6 @@ const MUTATIONS = [
     src: (k, s) => (k === 'tutorial' ? s.replace("'soundStudioTutorialSeen'", "'ssTutorialSeen'") : s),
   },
   {
-    name: 'THE SWAP: the welcome interstitial made persistent',
-    src: (k, s) =>
-      k === 'sessionFlag'
-        ? s.replace('let shownThisSession = false;', "import AsyncStorage from '@react-native-async-storage/async-storage';\nlet shownThisSession = false;")
-        : s,
-  },
-  {
     name: 'Sound Studio no longer mounting the tutorial',
     src: (k, s) => (k === 'soundStudio' ? s.replaceAll('useSoundStudioTutorial', 'noTutorial') : s),
   },
@@ -329,7 +321,7 @@ console.log('\nBatch 1:');
     ok('the exam-choice gate locks unselected entrance exams and falls OPEN on an empty list');
     ok('the hardcoded Readiness Index is gone');
     ok('Subject & Career has Jyora + Speak; Psychometric has Speak only');
-    ok('the tutorial persists once EVER; the welcome interstitial stays once per SESSION');
+    ok("the tutorial persists once EVER, on the website's own key");
   } else problems.forEach(fail);
 }
 

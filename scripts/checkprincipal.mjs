@@ -115,19 +115,48 @@ function assertions({ staffRoles, admin, theme }, sources) {
   // than churning a shipped constant. Labels, which ARE shown, must match exactly.
   const norm = (k) => String(k).toLowerCase();
 
-  // THREE TILES DELIBERATELY GO BEYOND THE WEB SIDEBAR, and they are pinned to the END of the menu
-  // so the mirror above them stays exact and reviewable. Fee / Leave / Payroll Management are
-  // mounted on SchoolAdminDashboard, and a Principal token is authorised for all three
+  // FIVE TILES DELIBERATELY GO BEYOND THE WEB SIDEBAR, and they are pinned to the END of the menu
+  // so the mirror above them stays exact and reviewable.
+  //
+  // The first three are the APPROVER side: Fee / Leave / Payroll Management are mounted on
+  // SchoolAdminDashboard, and a Principal token is authorised for all three
   // (`PRINCIPAL implies SCHOOL_ADMIN`; the fee controller is `hasRole('SCHOOL_ADMIN')`, the HR one
   // `hasAnyRole('SCHOOL_ADMIN','VICE_PRINCIPAL')`) — only PrincipalSidebar was ever missing them.
-  // scripts/checkadminhr.mjs owns the detail; this file only guards the mirror.
-  const BEYOND_WEB = ['fees', 'leaveManagement', 'payrollManagement'];
+  //
+  // The last two are SELF-SERVICE, added with the dashboard redesign: `StaffHrController` names all
+  // eight staff roles, so a Principal has always been able to file their own leave and read their
+  // own payslips. Same "website gap, not a permission" call already made for the VP and both
+  // counsellors. scripts/checkadminhr.mjs owns the detail; this file only guards the mirror.
+  const BEYOND_WEB = ['fees', 'leaveManagement', 'payrollManagement', 'leave', 'payroll'];
   const tail = config.menu.slice(-BEYOND_WEB.length).map((i) => i.key);
   if (tail.join(',') !== BEYOND_WEB.join(',')) {
     bad(
-      `the three beyond-the-web tiles must be the LAST three, in order.\n` +
+      `the five beyond-the-web tiles must be the LAST five, in order.\n` +
         `      got:  ${tail.join(',')}\n      want: ${BEYOND_WEB.join(',')}`,
     );
+  }
+
+  // ── THE APPROVER / SELF-SERVICE LABEL SPLIT ─────────────────────────────────
+  //
+  // The Principal is now the second role carrying BOTH halves, so the labels are the only thing
+  // separating them on the panel. Two namespaces that share verb names: "… Management" administers
+  // other staff on `/api/school-admin/hr`, "My …" is the holder's own on `/api/staff/hr`. Swap them
+  // and a Principal sees their own leave request filed under a queue of other people's, with no
+  // error anywhere. Asserted in BOTH directions, because only one direction is a half-check.
+  const labelOf = (key) => config.menu.find((i) => i.key === key)?.label || '';
+  for (const key of ['leaveManagement', 'payrollManagement']) {
+    const label = labelOf(key);
+    if (!/Management$/.test(label)) {
+      bad(`"${key}" is the approver queue but is labelled "${label}" — it must end in "Management"`);
+    }
+    if (/^My /.test(label)) bad(`"${key}" is the approver queue but is labelled "${label}"`);
+  }
+  for (const key of ['leave', 'payroll']) {
+    const label = labelOf(key);
+    if (!/^My /.test(label)) {
+      bad(`"${key}" is self-service but is labelled "${label}" — it must start with "My "`);
+    }
+    if (/Management$/.test(label)) bad(`"${key}" is self-service but is labelled "${label}"`);
   }
   const mirrored = config.menu.slice(0, config.menu.length - BEYOND_WEB.length);
   const gotKeys = mirrored.map((i) => norm(i.key)).join(',');
@@ -143,13 +172,33 @@ function assertions({ staffRoles, admin, theme }, sources) {
   }
 
   // ── 3. absent on purpose ───────────────────────────────────────────────────
-  // `queries` belongs to SHREYARTHA_ADMIN, not the Principal. `leave` and `payroll` are the
-  // SELF-SERVICE screens on /api/staff/hr for the two teacher panels — the Principal's tiles are
-  // the ADMIN ones and are keyed `leaveManagement` / `payrollManagement`, checked above. Using the
-  // short keys here would silently point a Principal at their own leave instead of the queue.
-  for (const forbidden of ['leave', 'payroll', 'queries']) {
+  // `queries` belongs to SHREYARTHA_ADMIN, not the Principal.
+  for (const forbidden of ['queries']) {
     if (config.menu.some((i) => i.key === forbidden)) {
-      bad(`"${forbidden}" is not a Principal tile — see the note above`);
+      bad(`"${forbidden}" is not a Principal tile`);
+    }
+  }
+
+  // ── 3b. THE TWO HR NAMESPACES MUST NOT CROSS ────────────────────────────────
+  //
+  // This assertion USED to be "the Principal has no `leave` or `payroll` tile at all", which was
+  // right while the panel carried only the approver side: the short key would have pointed a
+  // Principal at their own leave where the queue was meant. The redesign gave the panel BOTH
+  // halves, so the ban became wrong — but the danger it was guarding did not go away, it just moved
+  // from the key to the ROUTE. So the check moved with it, and is now stricter than the ban was:
+  // each of the four tiles must point into its own namespace, which the ban never verified at all.
+  const routeOf = (key) => config.menu.find((i) => i.key === key)?.native || '';
+  const NAMESPACES = [
+    ['leave', '/leave', ['/leave-management']],
+    ['payroll', '/payroll', ['/payroll-management']],
+    ['leaveManagement', '/leave-management', []],
+    ['payrollManagement', '/payroll-management', []],
+  ];
+  for (const [key, suffix, notSuffixes] of NAMESPACES) {
+    const route = routeOf(key);
+    if (!route) { bad(`"${key}" has no route`); continue; }
+    if (notSuffixes.some((n) => route.endsWith(n)) || !route.endsWith(suffix)) {
+      bad(`"${key}" routes to ${route} — it must end in ${suffix}`);
     }
   }
   if (config.groups) bad('principal config declares `groups` — the web sidebar is a flat list');
@@ -216,13 +265,22 @@ function assertions({ staffRoles, admin, theme }, sources) {
   }
 
   // ── 7. palettes ────────────────────────────────────────────────────────────
+  //
+  // Every staff panel wears the accent from its OWN web dashboard CSS. Two of these were corrected
+  // during the staff redesign and the old values are worth naming, because both were plausible:
+  //   shreyartha_teacher    was 'school'     — it had no map row at all, so it fell through to the
+  //                                            default and rendered identically to app/teacher.
+  //   shreyartha_councellor was 'counsellor' — inherited from the SCHOOL counsellor's CSS during the
+  //                                            counsellor port, but this panel's own CSS is teal.
+  // `teacher` and `shreyartha_admin` stay on 'school' deliberately: the former has no provider at
+  // all, the latter has not been redesigned yet.
   const expected = {
     principal: 'principal',
     vice_principal: 'vicePrincipal',
     counselor: 'counsellor',
-    shreyartha_councellor: 'counsellor',
+    shreyartha_councellor: 'shreyarthaCounsellor',
     teacher: 'school',
-    shreyartha_teacher: 'school',
+    shreyartha_teacher: 'shreyarthaTeacher',
     shreyartha_admin: 'school',
   };
   for (const [role, key] of Object.entries(expected)) {
@@ -240,6 +298,45 @@ function assertions({ staffRoles, admin, theme }, sources) {
 }
 
 const MUTATIONS = [
+  {
+    // THE SWAP THIS PANEL EXISTS TO PREVENT. The Principal now carries both HR halves, so a
+    // Principal whose "My Leave" tile points at /leave-management sees a queue of other people's
+    // requests where their own record belongs — and nothing errors, because they are authorised
+    // for both. Only the route tells them apart.
+    name: 'My Leave pointed at the approver queue',
+    constants: (n, s) =>
+      n === 'staffRoles.js'
+        ? s.replace("native: '/staff/principal/leave' }", "native: '/staff/principal/leave-management' }")
+        : s,
+  },
+  {
+    // The reverse crossing, asserted separately because one direction is a half-check.
+    name: 'Payroll Management pointed at the payslip screen',
+    constants: (n, s) =>
+      n === 'staffRoles.js'
+        ? s.replace(
+            "{ key: 'payrollManagement', label: 'Payroll Management', icon: 'wallet-outline', native: '/staff/principal/payroll-management' }",
+            "{ key: 'payrollManagement', label: 'Payroll Management', icon: 'wallet-outline', native: '/staff/principal/payroll' }",
+          )
+        : s,
+  },
+  {
+    // Labels are the only thing separating the two halves on the panel itself — the routes are
+    // invisible to the user. A self-service tile labelled like an approver queue is a Principal
+    // tapping "Leave Management" and landing in their own record.
+    name: 'a self-service tile relabelled as if it were the approver queue',
+    constants: (n, s) =>
+      n === 'staffRoles.js'
+        // PINNED TO THE PRINCIPAL'S OWN ROUTE.  appears in
+        // FOUR role configs, so a plain string replace mutates whichever comes first — which was a
+        // counsellor's, leaving the Principal's untouched and this mutation vacuous. Third time
+        // that trap has surfaced in this batch.
+        ? s.replace(
+            "{ key: 'leave', label: 'My Leave', icon: 'today-outline', native: '/staff/principal/leave' }",
+            "{ key: 'leave', label: 'Leave Management', icon: 'today-outline', native: '/staff/principal/leave' }",
+          )
+        : s,
+  },
   {
     name: 'one menu item left on WebView',
     constants: (n, s) =>

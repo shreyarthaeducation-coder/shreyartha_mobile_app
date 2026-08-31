@@ -1,6 +1,6 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
-import { useFocusEffect, useRouter } from 'expo-router';
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { FEEDBACK, SLATE, SPACING } from '../../constants/theme';
 import { usePalette } from '../ui/PaletteContext';
@@ -54,6 +54,21 @@ export default function FeesScreen() {
   const palette = usePalette();
   const router = useRouter();
 
+  /**
+   * `?tab=history` scrolls straight to the payment history.
+   *
+   * The redesigned dashboard has SEPARATE Pay Fees and Payment History tiles, and the design shows
+   * them as two destinations. They are one screen here — the history is already the bottom half of
+   * it, and splitting a 286-line screen in two to satisfy a tile would duplicate the academic-year
+   * selector and both fetches. The parameter scrolls instead, so the tile lands where it promised.
+   */
+  const { tab } = useLocalSearchParams();
+  const scrollRef = useRef(null);
+  const historyY = useRef(0);
+  // Once only: a later re-layout (the year field committing, say) must not yank the parent back
+  // down after they have scrolled away.
+  const jumped = useRef(false);
+
   const [year, setYear] = useState(defaultAcademicYear);
   // Committed separately from the text field. The website refetches on EVERY KEYSTROKE — its
   // loader is a useCallback keyed on the raw input — so typing "2026-27" fires seven requests,
@@ -96,6 +111,7 @@ export default function FeesScreen() {
 
   return (
     <ScreenScaffold
+      scrollRef={scrollRef}
       title="School Fees"
       fallbackRoute="/parent"
       loading={loading}
@@ -196,7 +212,21 @@ export default function FeesScreen() {
         </>
       )}
 
-      <Text style={styles.sectionTitle}>Payment history</Text>
+      {/* Measured so `?tab=history` can jump here. `onLayout` fires after the fee data lands and
+          the installment cards above have taken their real height, which is why the scroll is
+          triggered from here rather than from an effect on mount. */}
+      <Text
+        style={styles.sectionTitle}
+        onLayout={(e) => {
+          historyY.current = e.nativeEvent.layout.y;
+          if (tab === 'history' && !jumped.current) {
+            jumped.current = true;
+            scrollRef.current?.scrollTo({ y: historyY.current, animated: true });
+          }
+        }}
+      >
+        Payment history
+      </Text>
       {history.length === 0 ? (
         // Only CAPTURED rows come back, so a payment appears here once the webhook has landed.
         <Text style={styles.muted}>No payments recorded yet.</Text>

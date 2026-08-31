@@ -15,6 +15,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuth } from '../../context/AuthContext';
+import { ALL_AUTH_KEYS } from '../../constants/storageKeys';
 import { loginPartner, signupPartner } from '../../services/authService';
 import { PORTALS } from '../../constants/theme';
 import { PaletteProvider } from '../../components/ui/PaletteContext';
@@ -70,6 +71,10 @@ export default function PartnerLoginScreen() {
         throw new Error(res.message || 'Login failed. Please try again.');
       }
       const { data } = res;
+
+      // Drop whoever was signed in before writing this session — see app/auth/student-login.js for
+      // the full note. After the token is in hand, never before.
+      await AsyncStorage.multiRemove(ALL_AUTH_KEYS);
 
       await AsyncStorage.multiSet([
         ['partnerUserToken', data.token],

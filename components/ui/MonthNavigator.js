@@ -13,6 +13,10 @@ import { usePalette } from './PaletteContext';
  * full grid for jumping further.
  *
  * `month` is 1-12 throughout, matching the backend's `?month=` param. Never 0-indexed.
+ *
+ * `tone="dark"` re-inks the bar for the student panel's dark-glass cards — the label is SLATE[800]
+ * otherwise, which is invisible on them, and the arrows move from `primaryDark` to `primary` for
+ * the same reason. The SHEET is untouched by it: it is a modal on its own white surface either way.
  */
 
 export const MONTH_NAMES = [
@@ -25,12 +29,15 @@ export default function MonthNavigator({
   month,
   onChange,
   yearOptions,
+  tone = 'light',
   palette: paletteProp,
   disabled = false,
 }) {
   const contextPalette = usePalette();
   // Explicit prop wins; otherwise the surrounding portal palette (teal by default).
   const palette = paletteProp || contextPalette;
+  const dark = tone === 'dark';
+  const arrowColor = dark ? palette.primary : palette.primaryDark;
   const [open, setOpen] = useState(false);
 
   const currentYear = new Date().getFullYear();
@@ -53,7 +60,7 @@ export default function MonthNavigator({
         accessibilityRole="button"
         accessibilityLabel="Previous month"
       >
-        <Ionicons name="chevron-back" size={18} color={palette.primaryDark} />
+        <Ionicons name="chevron-back" size={18} color={arrowColor} />
       </Pressable>
 
       <Pressable
@@ -63,10 +70,10 @@ export default function MonthNavigator({
         accessibilityRole="button"
         accessibilityLabel={`${MONTH_NAMES[month - 1]} ${year}. Tap to change.`}
       >
-        <Text style={styles.labelText}>
+        <Text style={[styles.labelText, dark && styles.labelTextDark]}>
           {MONTH_NAMES[month - 1]} {year}
         </Text>
-        <Ionicons name="chevron-down" size={15} color={SLATE[500]} />
+        <Ionicons name="chevron-down" size={15} color={dark ? palette.onDark : SLATE[500]} />
       </Pressable>
 
       <Pressable
@@ -77,7 +84,7 @@ export default function MonthNavigator({
         accessibilityRole="button"
         accessibilityLabel="Next month"
       >
-        <Ionicons name="chevron-forward" size={18} color={palette.primaryDark} />
+        <Ionicons name="chevron-forward" size={18} color={arrowColor} />
       </Pressable>
 
       <Modal visible={open} transparent animationType="fade" onRequestClose={() => setOpen(false)}>
@@ -172,6 +179,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
   labelText: { fontSize: 15.5, fontWeight: '700', color: SLATE[800] },
+  labelTextDark: { color: '#ffffff' },
   pressed: { backgroundColor: SLATE[100] },
 
   backdrop: {

@@ -1,12 +1,10 @@
-// Student welcome interstitial checker.
+// Student progress-bar checker — the strip on the dashboard's My Analytics card.
 //
 //   node scripts/checkwelcome.mjs
 //
 // WHY THIS EXISTS. This screen's failure modes are all *silently plausible* — it would look
 // finished while being wrong:
 //
-//   * `AsyncStorage` instead of a memory flag turns "once per session" into "once ever", and the
-//     student never sees their progress again. Nothing crashes.
 //   * A section rendered at 0% because its request FAILED tells a student their work has vanished.
 //     "You have completed none of this" and "we could not read your progress" are different claims.
 //   * The analytics spine carries hardcoded placeholders — codingPro (AI 80 / Robotics 60 /
@@ -14,8 +12,14 @@
 //     fed from those looks like real progress and is not.
 //   * Language Lab has no percentage anywhere in the API. Inventing one from the level names
 //     (Beginner→33, Average→66…) would produce a number no server ever computed.
-//   * A Get Started button rendered inside the loading branch re-creates the exact tap-gate the
-//     original port removed.
+//
+// RETARGETED. These bars used to live in a once-per-session welcome interstitial, and this file
+// also policed that screen's session flag and its Get Started button. The dashboard redesign
+// RETIRED the interstitial — the new dashboard carries the identity block it existed for, and the
+// bars now sit on the My Analytics hero card where they are visible every time. Those assertions
+// were removed rather than left pointing at deleted files. Everything else here is unchanged,
+// because the rules it protects were never about that screen: they are about welcomeService.js,
+// which still feeds the bars.
 //
 // Exit code 0 = pass.
 
@@ -29,9 +33,7 @@ const APP = path.resolve(HERE, '..');
 
 const SRC = {
   service: 'services/student/welcomeService.js',
-  flag: 'components/student/welcome/sessionFlag.js',
-  screen: 'components/student/WelcomeScreen.js',
-  list: 'components/student/welcome/SectionProgressList.js',
+  strip: 'components/student/home/ProgressStrip.js',
   home: 'components/student/StudentHome.js',
 };
 
@@ -92,46 +94,44 @@ async function loadService(mutate) {
   return import(`${pathToFileURL(file).href}?t=${Math.random()}`);
 }
 
-async function loadFlag(mutate) {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'flag-'));
-  let src = read(path.join(APP, SRC.flag));
-  if (mutate) src = mutate(src);
-  const file = path.join(dir, 'sessionFlag.mjs');
-  fs.writeFileSync(file, src);
-  return import(`${pathToFileURL(file).href}?t=${Math.random()}`);
-}
-
 /** A `settleAll` result for one key. */
 const okPart = (data) => ({ data, error: null, forbidden: false });
 const failedPart = (forbidden = false) => ({ data: null, error: 'Could not load.', forbidden });
 
-function assertions(svc, flag, src) {
+function assertions(svc, src) {
   const out = [];
   const bad = (m) => out.push(m);
 
-  /* ── 1. THE SESSION FLAG IS MEMORY, NOT STORAGE ──────────────────────────── */
+  /* ── 1. THE BARS ARE ON THE DASHBOARD, AND NEVER GATE IT ─────────────────── */
 
-  const flagSrc = codeOnly(src.flag);
-  if (/AsyncStorage|async-storage/.test(flagSrc)) {
-    bad('the welcome flag uses AsyncStorage — that is "once EVER", and the student never sees their progress again');
-  }
-  if (!/^let shownThisSession/m.test(flagSrc)) {
-    bad('the module-scope session flag is gone');
-  }
-  // Behaviour, not just shape.
-  flag.resetWelcomeForTests();
-  if (flag.hasShownWelcome() !== false) bad('a fresh session reports the welcome as already shown');
-  flag.markWelcomeShown();
-  if (flag.hasShownWelcome() !== true) bad('markWelcomeShown does not stick within a session');
-
-  // StudentHome must mark it when it DECIDES to show, not when it is dismissed — otherwise a
-  // pull-to-refresh while the interstitial is open queues a second one.
   const home = codeOnly(src.home);
-  if (!/markWelcomeShown\(\);\s*\n\s*setShowWelcome\(true\)/.test(home)) {
-    bad('StudentHome does not mark the session BEFORE showing — a refresh can re-trigger the interstitial');
+  if (!/<ProgressStrip/.test(home)) {
+    bad('the dashboard no longer renders ProgressStrip — the progress bars have nowhere to live');
   }
-  if (!/me\s*&&\s*!hasShownWelcome\(\)/.test(home)) {
-    bad('StudentHome shows the welcome without a profile — an interstitial with no name, class or graph is worse than the tiles');
+  // The bars are an ENRICHMENT. They must load in their own wave, so six extra round trips can
+  // never delay or blank the dashboard the way the retired interstitial's load once did.
+  if (!/const loadProgress = useCallback/.test(home)) {
+    bad('the progress load is not its own wave — it must not gate the first paint');
+  }
+  if (/loadWelcomeProgress\(\)[\s\S]{0,200}setLoading\(false\)/.test(home)) {
+    bad('setLoading is waiting on loadWelcomeProgress — the dashboard would hold for six requests it does not need');
+  }
+  // The identity fan-out must stay settled, not all-or-nothing: a free student legitimately 403s.
+  if (/Promise\.all\(/.test(home)) {
+    bad('StudentHome uses Promise.all — one expected 403 would blank the whole dashboard');
+  }
+
+  const strip = codeOnly(src.strip);
+  // The strip RENDERS rows; it must not compute a percentage of its own, or the "every bar is real"
+  // guarantee moves out of welcomeService where it is enforced.
+  if (/analytics|codingPro|readinessIndex|skillLevels/.test(strip)) {
+    bad('ProgressStrip reaches into the analytics payload — it must render only the rows it is given');
+  }
+  if (!/Math\.min\(100/.test(strip)) {
+    bad('ProgressStrip does not clamp its percentage — a server value above 100 overflows the track');
+  }
+  if (!/rows\.length/.test(strip)) {
+    bad('ProgressStrip has no empty state — with no rows it would render an empty card');
   }
 
   /* ── 2. NO FABRICATED NUMBERS ────────────────────────────────────────────── */
@@ -145,8 +145,19 @@ function assertions(svc, flag, src) {
   if (/readinessIndex/.test(svcSrc)) {
     bad('welcomeService reads readinessIndex — it is hardcoded High/Medium/High/High for every student');
   }
-  if (!/languageSkills/.test(codeOnly(src.screen))) {
-    bad('the screen no longer renders Language Lab as levels');
+  // `languageSkills` must keep returning LEVELS. Evaluated, not grepped: the trap is a number, and
+  // only running it proves nothing numeric comes out.
+  const skills = svc.languageSkills({
+    languageLab: { skillLevels: { Listening: 'Beginner', Speaking: 'Not Set', Reading: 'Proficient' } },
+  });
+  if (!Array.isArray(skills)) bad('languageSkills no longer returns a list');
+  else {
+    if (skills.some((s) => Number.isFinite(Number(s.level)))) {
+      bad('languageSkills returned a NUMBER — Language Lab has no percentage in the API, so that is invented');
+    }
+    if (skills.some((s) => s.level === 'Not Set')) {
+      bad('languageSkills is reporting "Not Set" as a level — the web hides those rather than showing four blanks');
+    }
   }
 
   /* ── 3. A FAILED SECTION IS OMITTED, NOT ZEROED ──────────────────────────── */
@@ -249,30 +260,10 @@ function assertions(svc, flag, src) {
     bad('welcomeService calls /api/psychometrics/results — that endpoint does not exist');
   }
 
-  /* ── 5. GET STARTED IS NEVER BEHIND THE LOAD ─────────────────────────────── */
-
-  const screen = codeOnly(src.screen);
-  // The CTA must be a sibling of the ScrollView, not inside a loading branch. Assert on structure:
-  // it must appear after the ScrollView closes, and no `loading ?` may guard it.
-  const scrollEnd = screen.lastIndexOf('</ScrollView>');
-  const ctaAt = screen.indexOf('accessibilityLabel="Get started"');
-  if (scrollEnd < 0 || ctaAt < 0) {
-    bad('could not locate the Get Started button relative to the ScrollView — check this assertion');
-  } else if (ctaAt < scrollEnd) {
-    bad('Get Started moved inside the scrolling body — it must stay pinned and always reachable');
-  }
-  if (/loading\s*\?[\s\S]{0,400}Get Started/.test(screen)) {
-    bad('Get Started is rendered behind the loading state — that is the tap-gate the port removed');
-  }
-  // The screen must not await anything before painting: identity comes from the passed-in profile.
-  if (!/profile\?\.profilePicture/.test(screen)) {
-    bad('the interstitial no longer renders the photo from the profile the dashboard already has');
-  }
-
-  /* ── 6. PALETTE ──────────────────────────────────────────────────────────── */
+  /* ── 5. PALETTE ──────────────────────────────────────────────────────────── */
 
   // These screens live inside PORTALS.student. A hardcoded portal reference would freeze them.
-  for (const key of ['screen', 'list']) {
+  for (const key of ['strip', 'home']) {
     if (/PORTALS\./.test(codeOnly(src[key]))) {
       bad(`${SRC[key]} reaches for PORTALS directly instead of usePalette()/makeStyles`);
     }
@@ -283,24 +274,31 @@ function assertions(svc, flag, src) {
 
 const MUTATIONS = [
   {
-    name: 'THE BUG: the session flag moved to AsyncStorage ("once ever")',
+    name: 'THE SWAP: the progress bars made to gate the dashboard again',
     src: (k, s) =>
-      k === 'flag'
-        ? s.replace('let shownThisSession = false;', "import AsyncStorage from '@react-native-async-storage/async-storage';\nlet shownThisSession = false;")
+      k === 'home' ? s.replace('const loadProgress = useCallback', 'const loadProgressRenamed = useCallback') : s,
+  },
+  {
+    name: 'the identity fan-out made all-or-nothing (one 403 blanks the dashboard)',
+    src: (k, s) => (k === 'home' ? s.replace('Promise.allSettled(', 'Promise.all(') : s),
+  },
+  {
+    name: 'the dashboard dropping the progress strip',
+    src: (k, s) => (k === 'home' ? s.replace('<ProgressStrip', '<OldBars') : s),
+  },
+  {
+    name: 'the strip computing its own numbers from the analytics payload',
+    src: (k, s) =>
+      k === 'strip'
+        ? s.replace('export default function ProgressStrip', 'const readinessIndex = 1;\nexport default function ProgressStrip')
         : s,
   },
   {
-    name: 'the session flag not sticking',
-    flag: (s) => s.replace('shownThisSession = true;', 'shownThisSession = false;'),
-  },
-  {
-    name: 'the session marked on dismiss instead of on show (a refresh re-triggers it)',
+    name: 'the strip no longer clamping a percentage above 100',
     src: (k, s) =>
-      k === 'home' ? s.replace('markWelcomeShown();\n      setShowWelcome(true);', 'setShowWelcome(true);') : s,
-  },
-  {
-    name: 'the interstitial shown without a profile',
-    src: (k, s) => (k === 'home' ? s.replace('if (me && !hasShownWelcome())', 'if (!hasShownWelcome())') : s),
+      k === 'strip'
+        ? s.replace('Math.max(0, Math.min(100, Math.round(Number(row.percent) || 0)))', 'Math.round(Number(row.percent) || 0)')
+        : s,
   },
   {
     name: 'THE BUG: Language Lab levels mapped onto invented percentages',
@@ -363,24 +361,16 @@ const MUTATIONS = [
     service: (s) => s.replace('export async function loadWelcomeProgress() {', 'export async function loadWelcomeProgress() { await loadAnalytics();'),
   },
   {
-    name: 'THE BUG: Get Started moved inside the scrolling body',
+    name: 'THE BUG: Language Lab "Not Set" reported as a real level',
+    service: (s) =>
+      s.replace(".filter(([, level]) => level && level !== 'Not Set')", '.filter(([, level]) => !!level)'),
+  },
+  {
+    name: 'the strip hardcoding a portal palette',
     src: (k, s) =>
-      k === 'screen'
-        ? s.replace('      </ScrollView>\n\n      <Pressable\n        onPress={() => onDismiss?.(null)}', '      <Pressable\n        onPress={() => onDismiss?.(null)}')
+      k === 'strip'
+        ? s.replace('const styles = useStyles();', 'const styles = useStyles(); const p = PORTALS.school;')
         : s,
-  },
-  {
-    name: 'the photo no longer taken from the already-fetched profile',
-    src: (k, s) => (k === 'screen' ? s.replace('photoUrl={profile?.profilePicture}', 'photoUrl={undefined}') : s),
-  },
-  {
-    name: 'Language Lab section dropped from the screen',
-    src: (k, s) => (k === 'screen' ? s.replaceAll('languageSkills', 'noSkills') : s),
-  },
-  {
-    name: 'the list hardcoding a portal palette',
-    src: (k, s) =>
-      k === 'list' ? s.replace('const palette = usePalette();', 'const palette = PORTALS.school;') : s,
   },
 ];
 
@@ -388,8 +378,8 @@ console.log('Self-tests (each mutation must be caught):');
 for (const m of MUTATIONS) {
   let caught;
   try {
-    const [svc, flag] = await Promise.all([loadService(m.service), loadFlag(m.flag)]);
-    caught = assertions(svc, flag, loadSources(m.src, m.service)).length > 0;
+    const svc = await loadService(m.service);
+    caught = assertions(svc, loadSources(m.src, m.service)).length > 0;
   } catch {
     caught = true; // a mutation that will not even load is caught, loudly
   }
@@ -397,16 +387,16 @@ for (const m of MUTATIONS) {
   else fail(`NOT CAUGHT: ${m.name} — the corresponding assertion is vacuous`);
 }
 
-console.log('\nStudent welcome interstitial:');
+console.log('\nStudent progress bars:');
 {
-  const [svc, flag] = await Promise.all([loadService(), loadFlag()]);
-  const problems = assertions(svc, flag, loadSources());
+  const svc = await loadService();
+  const problems = assertions(svc, loadSources());
   if (problems.length === 0) {
-    ok('once per session, in memory — not "once ever" in AsyncStorage');
+    ok('the bars live on the dashboard and load in their own wave — they never gate the paint');
     ok('a failed section is omitted, never drawn as 0%');
-    ok("no placeholder numbers: Coding Pro is live-only, Language Lab stays levels, no readinessIndex");
+    ok('no placeholder numbers: Coding Pro is live-only, Language Lab stays levels, no readinessIndex');
     ok('5 guarded calls, not 10 — and never /api/psychometrics/results');
-    ok('Get Started is pinned and reachable before the graph resolves');
+    ok('the strip renders only the rows it is given, clamped, with an empty state');
   } else problems.forEach(fail);
 }
 

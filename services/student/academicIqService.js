@@ -61,10 +61,21 @@ export function resolveClassSubjects(tree, profile) {
 /**
  * Personalized Resources has its OWN tree — it does not filter the Academic IQ one.
  *
- * `/api/students/personalized-resources` returns the subjects a teacher assigned to this student,
- * already in `subjects → chapters → topics` shape, so it drops straight into the same renderer.
- * The web also fetches the academiciq tree on this screen, but only to look up the board and class
- * *names* for display — not to filter anything.
+ * ⚠️ NO TEACHER IS INVOLVED IN THIS ENDPOINT. An earlier version of this comment said it returns
+ * "the subjects a teacher assigned to this student", and that was wrong in a way that reached the
+ * UI: the screen's empty state told students their teacher had assigned nothing, when the real
+ * cause was their own unsaved profile. `PersonalizedResourcesService` reads AcademicProfile →
+ * profile_subjects → profile_chapters → profile_topics — **the student's own selections** — and
+ * returns an empty list when they have no AcademicProfile at all.
+ *
+ * The teacher-assigned material is the OTHER spelling, one letter apart:
+ * `/api/students/personali**s**ed-resources` (British `s`), a flat list of resource records with
+ * assigned dates and completion flags. See services/student/personalisedResourceService.js.
+ *
+ * The shape here is `subjects → chapters → topics`, so it drops straight into the same renderer.
+ * The ids are the MASTER academic ids, not profile-row ids, so the hidden-node and role-access
+ * gates key correctly against them. The web also fetches the academiciq tree on this screen, but
+ * only to look up the board and class *names* for display — not to filter anything.
  */
 export async function fetchPersonalizedSubjects(signal) {
   const res = await studentApi.get('/api/students/personalized-resources', { signal });
