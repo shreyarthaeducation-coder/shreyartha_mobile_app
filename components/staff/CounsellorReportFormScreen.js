@@ -106,8 +106,11 @@ export default function CounsellorReportFormScreen({ homeRoute = '/teacher', api
       );
       if (report) {
         setReportId(report.id);
-        // `formData` comes back as a JSON STRING even though it goes out as an object.
-        setForm(hydrateForm(parseReportForm(report)));
+        // Two sources, one form. `formData` comes back as a JSON STRING even though it goes out
+        // as an object; `griffin` is the linked activity-report row carrying section 11. Without
+        // the second argument the AI narrative would load blank and the counsellor's next save
+        // would look like a deliberate erasure of it.
+        setForm(hydrateForm(parseReportForm(report), report.griffin));
       }
     } catch (e) {
       setFormError(e?.message || 'Could not load this report. You can still fill it in.');

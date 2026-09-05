@@ -209,6 +209,17 @@ export default function StaffRoleLayout() {
       <Stack.Screen name="payroll-management" />
       <Stack.Screen name="fees" />
       <Stack.Screen name="student-analytics" />
+      {/* Sales. Every one of these is sales-only — no other role's menu references them, so an
+          unregistered name here is an expo-router unmatched route on that panel and nowhere else,
+          which is exactly the silent break scripts/checksales.mjs asserts against. */}
+      <Stack.Screen name="sales-dashboard" />
+      <Stack.Screen name="sales-leads" />
+      <Stack.Screen name="sales-visits" />
+      <Stack.Screen name="sales-schools" />
+      <Stack.Screen name="sales-deals" />
+      <Stack.Screen name="sales-incentive" />
+      <Stack.Screen name="sales-reports" />
+      <Stack.Screen name="sales-tutorial" />
       <Stack.Screen name="pending-verification" />
       <Stack.Screen name="change-password" />
       <Stack.Screen name="feature" />

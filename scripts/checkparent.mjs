@@ -311,12 +311,34 @@ function assertions(menu, calendar, layoutSrc, src, fee, chatbot, routeNames) {
     bad('ReportBody no longer falls back across both DTO spellings of the author name');
   }
 
-  // A read-only body must not backfill 0/''/[] — that turns "not assessed" into "rated zero".
-  // Comments stripped first: ReportBody's own docblock NAMES hydrateForm to explain why it does
-  // not use it, and an earlier version of this check failed on that sentence.
+  // A read-only body must never turn "not assessed" into "rated zero".
+  //
+  // This used to be a blanket ban on `hydrateForm`, on the grounds that it backfills 0/''/[].
+  // That ban is gone, because the report now spans TWO tables — the ten checkpoint sections in
+  // `formData` and the AI narrative on the linked activity row — and hydrateForm's second
+  // argument is the only thing that merges them. Banning it would have meant either duplicating
+  // the merge or dropping section 11 from the read-only view.
+  //
+  // What the ban was actually protecting is asserted directly instead: every renderer must treat
+  // a blank as an em-dash. `Stars` is the only one where a backfilled 0 could have read as a real
+  // value, so its guard is pinned by name.
   if (!/parseReportForm/.test(bodyCode)) bad('ReportBody does not use parseReportForm');
-  if (/hydrateForm/.test(bodyCode)) {
-    bad('ReportBody uses hydrateForm — that is the AUTHORING helper and it backfills empty values');
+  if (!/if \(n <= 0\) return/.test(bodyCode)) {
+    bad('ReportBody\'s Stars no longer renders an em-dash for 0 — a backfilled rating would read as "rated zero"');
+  }
+
+  // Section 11 is the AI narrative, and it is only shown once the counsellor has PUBLISHED it.
+  // An unreviewed draft about a child must not reach a parent because a client forgot to check.
+  if (!/status === 'PUBLISHED'/.test(bodyCode)) {
+    bad('ReportBody no longer gates the Griffin section on PUBLISHED — parents could see an unreviewed AI draft');
+  }
+  // Merely mentioning FORM_DATA_SECTIONS is not enough — `[...FORM_DATA_SECTIONS, GRIFFIN_SECTION]`
+  // contains it too and shows section 11 unconditionally. The invariant is that the list is
+  // CHOSEN by the publish flag.
+  // The SECTION LIST specifically — not merely a mention of griffinVisible, which also appears on
+  // the hydrateForm line and would keep a broken version passing.
+  if (!/sections\s*=\s*griffinVisible\s*\?/.test(bodyCode)) {
+    bad('ReportBody no longer chooses its section list on griffinVisible — section 11 would always render');
   }
 
   // The style split must stay clean: no body key left behind, no picker key dragged along.
@@ -669,8 +691,27 @@ const MUTATIONS = [
         : s,
   },
   {
-    name: 'ReportBody switched to the authoring hydrateForm',
-    src: (k, s) => (k === 'reportBody' ? s.replace(/parseReportForm/g, 'hydrateForm') : s),
+    name: 'ReportBody stops parsing the saved form',
+    src: (k, s) => (k === 'reportBody' ? s.replace(/parseReportForm/g, 'noSuchHelper') : s),
+  },
+  {
+    name: 'a backfilled rating of 0 starts rendering as "rated zero"',
+    src: (k, s) => (k === 'reportBody' ? s.replace('if (n <= 0) return', 'if (n < 0) return') : s),
+  },
+  {
+    name: 'the Griffin publish gate is dropped from the read-only body',
+    src: (k, s) =>
+      k === 'reportBody' ? s.replace("griffin?.status === 'PUBLISHED'", '!!griffin') : s,
+  },
+  {
+    name: 'the read-only body maps every section, published or not',
+    src: (k, s) =>
+      k === 'reportBody'
+        ? s.replace(
+            'const sections = griffinVisible ? [...FORM_DATA_SECTIONS, GRIFFIN_SECTION] : FORM_DATA_SECTIONS;',
+            'const sections = [...FORM_DATA_SECTIONS, GRIFFIN_SECTION];',
+          )
+        : s,
   },
   {
     name: 'the extraction un-shared (staff screen inlines it again)',

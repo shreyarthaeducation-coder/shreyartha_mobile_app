@@ -1,6 +1,7 @@
 import { useLocalSearchParams } from 'expo-router';
 import { StaffMenuScreen } from '../../../components/staff';
 import StaffHomeScreen from '../../../components/staff/home/StaffHomeScreen';
+import SalesTutorialGate from '../../../components/staff/sales/SalesTutorialGate';
 import { resolveStaffMenus } from '../../../constants/staffRoles';
 import { getStaffHome } from '../../../constants/staffHome';
 
@@ -26,7 +27,25 @@ export default function StaffHome() {
   const config = resolveStaffMenus(roleKey);
   if (!config) return null; // the layout guard has already redirected
 
-  if (getStaffHome(roleKey)) return <StaffHomeScreen />;
+  // The walkthrough is mounted HERE rather than inside StaffHomeScreen, which five roles share:
+  // its onboarding check calls a /api/staff/sales endpoint, so every principal and counsellor
+  // would otherwise 403 on every home-screen load. Gated on the role, it only ever runs for
+  // someone authorised to make the call.
+  const salesTutorial = roleKey === 'sales' ? <SalesTutorialGate /> : null;
 
-  return <StaffMenuScreen config={config} />;
+  if (getStaffHome(roleKey)) {
+    return (
+      <>
+        <StaffHomeScreen />
+        {salesTutorial}
+      </>
+    );
+  }
+
+  return (
+    <>
+      <StaffMenuScreen config={config} />
+      {salesTutorial}
+    </>
+  );
 }

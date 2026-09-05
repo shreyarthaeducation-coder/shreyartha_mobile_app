@@ -24,12 +24,14 @@ export { default as Select } from './Select';
 export { default as ScopePicker, EMPTY_SCOPE } from './ScopePicker';
 export { default as SchoolClassPicker, EMPTY_SCHOOL_SCOPE } from './SchoolClassPicker';
 export { default as SegmentedTabs } from './SegmentedTabs';
+export { default as ChipMultiSelect } from './ChipMultiSelect';
 export { default as FormSheet } from './FormSheet';
 export { default as DateTimeField } from './DateTimeField';
 export {
   ProgressBar,
   GroupedBars,
   DonutChart,
+  SegmentedDonut,
   GaugeChart,
   RadarChart,
   LineChart,

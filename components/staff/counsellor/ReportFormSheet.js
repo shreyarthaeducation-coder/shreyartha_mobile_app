@@ -1,7 +1,7 @@
 import { Pressable, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { FEEDBACK, SLATE, SPACING } from '../../../constants/theme';
-import { FormSheet, TextField } from '../../ui';
+import { FormSheet, Select, TextField } from '../../ui';
 import { RATING_SCALE, REPORT_SECTIONS } from '../../../constants/counsellorReportConfig';
 import { makeStyles } from '../../../utils/makeStyles';
 
@@ -144,6 +144,7 @@ export default function ReportFormSheet({
         REPORT_SECTIONS.map((section) => (
           <View key={section.key} style={styles.section}>
             <Text style={styles.sectionTitle}>{section.title}</Text>
+            {section.subtitle ? <Text style={styles.sectionNote}>{section.subtitle}</Text> : null}
 
             {section.fields.map((field) => {
               const value = form?.[field.key];
@@ -155,6 +156,19 @@ export default function ReportFormSheet({
                     <StarRow value={value} onChange={(v) => onPatch(field.key, v)} />
                   ) : field.type === 'boolean' ? (
                     <BooleanPills value={value} onChange={(v) => onPatch(field.key, v)} />
+                  ) : field.type === 'select' ? (
+                    // A fixed list, not free text. Without this branch a `select` fell through to
+                    // the TextField below and a counsellor could type "maybe" into `pronoun` — a
+                    // value the server rejects and quietly replaces with they/them.
+                    <Select
+                      label=""
+                      value={value == null ? '' : String(value)}
+                      options={(field.options || []).map((o) => ({
+                        value: String(o),
+                        label: field.optionLabels?.[o] || String(o),
+                      }))}
+                      onChange={(v) => onPatch(field.key, v)}
+                    />
                   ) : field.type === 'multiselect' ? (
                     <>
                       <Chips
@@ -209,6 +223,15 @@ const useStyles = makeStyles((p) => ({
     color: p.primaryDark,
     textTransform: 'uppercase',
     letterSpacing: 0.4,
+    marginBottom: SPACING.sm,
+  },
+  // Explanatory line under a section heading — currently only Griffin, which has to say who
+  // writes it and that generating it happens on the web.
+  sectionNote: {
+    fontSize: 12,
+    lineHeight: 17,
+    color: SLATE[500],
+    marginTop: -6,
     marginBottom: SPACING.sm,
   },
   field: { marginBottom: SPACING.sm },

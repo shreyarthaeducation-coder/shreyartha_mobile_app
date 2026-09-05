@@ -279,6 +279,52 @@ export const STAFF_ROLE_CONFIG = {
     headerActions: [],
   },
 
+  /**
+   * Field sales employee.
+   *
+   * Unlike every other entry here this role has no counterpart web sidebar to mirror verbatim —
+   * the Sales panel was built on both platforms at once, so the item list below and
+   * frontendmain/src/Sales/platform/SalesLayout.js's NAV are the same nine tiles by design.
+   *
+   * `basePath` is set even though NOTHING here uses `path`: every tile is native. It is left in
+   * because `resolveStaffMenus` unconditionally prefixes it and a future WebView fallback would
+   * otherwise resolve against `undefined`.
+   *
+   * Attendance, leave and payslips reuse the shared staff screens untouched — a sales rep is a
+   * SchoolUser under SHREYA01, so /api/teacher/self-attendance and /api/staff/hr already serve
+   * them now that SHREYARTHA_SALES is in those guards.
+   */
+  sales: {
+    userType: 'SALES',
+    label: 'Sales',
+    basePath: `${PLATFORM_BASE}/sales/dashboard`,
+    // There is no /api/sales/profile — the panel's own endpoint is under /api/staff/ so the
+    // token picker resolves it. See services/salesService.js.
+    profileEndpoints: ['/api/staff/sales/profile'],
+    unlocks: [
+      'Log geo-tagged school visits from the field',
+      'Track your leads, deals and collections',
+      'Watch your incentive build through the year',
+    ],
+    menu: [
+      { key: 'profile', label: 'My Profile', icon: 'person-circle-outline', native: '/staff/sales/profile' },
+      { key: 'tutorial', label: 'How this panel works', icon: 'help-circle-outline', native: '/staff/sales/sales-tutorial' },
+      { key: 'leads', label: 'LEAD', icon: 'flag-outline', native: '/staff/sales/sales-leads' },
+      { key: 'visits', label: 'Visits', icon: 'location-outline', native: '/staff/sales/sales-visits' },
+      { key: 'schools', label: 'My Schools', icon: 'business-outline', native: '/staff/sales/sales-schools' },
+      { key: 'deals', label: 'Sales', icon: 'cash-outline', native: '/staff/sales/sales-deals' },
+      { key: 'dashboard', label: 'My Dashboard', icon: 'pie-chart-outline', native: '/staff/sales/sales-dashboard' },
+      { key: 'incentive', label: 'My Incentive', icon: 'trophy-outline', native: '/staff/sales/sales-incentive' },
+      { key: 'reports', label: 'Reports', icon: 'bar-chart-outline', native: '/staff/sales/sales-reports' },
+      { key: 'selfAttendance', label: 'Self Attendance', icon: 'time-outline', native: '/staff/sales/self-attendance' },
+      { key: 'myCalendar', label: 'My Calendar', icon: 'calendar-outline', native: '/staff/sales/my-calendar' },
+      // "My", not "Management" — a rep only ever sees their own, as on every other panel.
+      { key: 'leave', label: 'My Leave', icon: 'today-outline', native: '/staff/sales/leave' },
+      { key: 'payroll', label: 'My Payslips', icon: 'wallet-outline', native: '/staff/sales/payroll' },
+    ],
+    headerActions: [],
+  },
+
   shreyartha_teacher: {
     userType: 'SHREYARTHA_TEACHER',
     label: 'Shreyartha Teacher',

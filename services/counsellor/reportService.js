@@ -7,7 +7,7 @@
 // why the whole authoring screen is portal-agnostic and takes `apiBase`.
 
 import { staffApi } from '../staffApi';
-import { extractScalars } from '../../constants/counsellorReportConfig';
+import { extractScalars, splitForm } from '../../constants/counsellorReportConfig';
 
 /**
  * School → Class → Year → [Section].
@@ -73,14 +73,28 @@ export async function fetchReport({ apiBase, studentId, yearLabel }, signal) {
  *
  * The payload nests `formData` AND spreads `extractScalars(form)`. Both are correct here — the
  * four scalars are real columns as well as blob members. This is NOT the counselling-session bug.
+ *
+ * ### `splitForm` is load-bearing, not tidiness
+ *
+ * The report spans two tables. Sections 1–10 are JSON in `counsellor_reports.form_data`; section
+ * 11 (the AI narrative) is a row of `counselling_activity_reports`, which has its own
+ * DRAFT/PUBLISHED gate.
+ *
+ * Sending the WHOLE form as `formData` — which is what this did before section 11 existed — would
+ * write the six narrative keys into the wrong table, bypass that gate entirely, and leave the
+ * real narrative row untouched. The result reads differently on web and mobile, and an unreviewed
+ * AI draft about a child becomes parent-visible. Do not "simplify" this back to `formData: form`.
  */
 export async function saveReport({ apiBase, reportId, studentId, leaf, form }) {
+  const { formData, griffin } = splitForm(form);
+
   const payload = {
     studentId,
     classId: leaf.classId,
     yearLabel: leaf.yearLabel,
     sectionName: leaf.sectionName || '',
-    formData: form,
+    formData,
+    griffin,
     ...extractScalars(form),
   };
 

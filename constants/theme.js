@@ -225,6 +225,31 @@ export const PORTALS = {
   //
   // The Principal panel only. Same reasoning as the counsellor note: the school LOGIN stays teal
   // because SchoolAuth.js is one shared form and nothing knows the role until the response lands.
+  // frontendmain/src/Sales/Sales.css — the panel's own tokens: --sales-brand #4338ca with
+  // --sales-brand-deep #312e81, and the amber accent that runs through its progress bars.
+  //
+  // Deliberately NOT a near-copy of `shreyarthaTeacher`, which also sits in the indigo family:
+  // that entry's mid tone is #6366f1 and its accent is a pale #a5b4fc, so the two panels read
+  // apart side by side. A rep may well hold both accounts, and the colour is the fastest signal
+  // of which panel is open — the same reasoning that gave VP and Principal their own rows.
+  //
+  // A FULL palette, every key present. A partial one is what left the language sheet unreadable
+  // on three panels: `undefined` is a legal React Native style value, so a missing token does not
+  // throw, it silently renders as nothing.
+  sales: {
+    key: 'sales',
+    gradient: ['#312e81', '#4338ca', '#d97706'],
+    primary: '#4338ca',
+    primaryDark: '#312e81',
+    accent: '#d97706',
+    onPrimary: '#ffffff',
+    link: '#4338ca',
+    headerBg: '#312e81',
+    tint: 'rgba(67, 56, 202, 0.12)',
+    inputBg: '#ffffff',
+    inputBorder: SLATE[200],
+    inputFocus: '#4338ca',
+  },
   principal: {
     key: 'principal',
     gradient: ['#b91c1c', '#dc2626', '#f87171'],
@@ -388,6 +413,7 @@ export const STAFF_ROLE_PALETTES = {
   principal: PORTALS.principal,
   vice_principal: PORTALS.vicePrincipal,
   shreyartha_teacher: PORTALS.shreyarthaTeacher,
+  sales: PORTALS.sales,
 };
 
 /** Palette for a staff shell, defaulting to the school teal. */

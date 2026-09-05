@@ -368,8 +368,10 @@ const MUTATIONS = [
     constants: (n, s) =>
       n === 'staffRoles.js'
         ? s
-            .replace("      { key: 'fees', label: 'Fee Management', icon: 'cash-outline', native: '/staff/principal/fees' },\\n", '')
-            .replace("      { key: 'myCalendar', label: 'My Calendar', icon: 'calendar-outline', native: '/staff/principal/my-calendar' },", "      { key: 'fees', label: 'Fee Management', icon: 'cash-outline', native: '/staff/principal/fees' },\\n      { key: 'myCalendar', label: 'My Calendar', icon: 'calendar-outline', native: '/staff/principal/my-calendar' },")
+            .replace("      { key: 'fees', label: 'Fee Management', icon: 'cash-outline', native: '/staff/principal/fees' },\
+", '')
+            .replace("      { key: 'myCalendar', label: 'My Calendar', icon: 'calendar-outline', native: '/staff/principal/my-calendar' },", "      { key: 'fees', label: 'Fee Management', icon: 'cash-outline', native: '/staff/principal/fees' },\
+      { key: 'myCalendar', label: 'My Calendar', icon: 'calendar-outline', native: '/staff/principal/my-calendar' },")
         : s,
   },
   {
@@ -448,14 +450,37 @@ const MUTATIONS = [
 
 console.log('Self-tests (each mutation must be caught):');
 for (const m of MUTATIONS) {
+  // ── WHY `planted` EXISTS ──────────────────────────────────────────────────
+  // A mutation whose anchor string no longer matches the file changes nothing. The assertions
+  // then run against the real source, find no problem, and this loop prints ✓ for an assertion it
+  // never exercised — a silently disabled test that looks like a passing one.
+  //
+  // The `catch` below makes that worse rather than better: it treats ANY loader failure as a
+  // catch. One mutation in this file wrote `\\n` inside a double-quoted string, which is a literal
+  // backslash-n rather than a newline. The search anchor matched nothing, and the replacement
+  // spliced a backslash into staffRoles.js, so the mutated module was a SyntaxError — swallowed
+  // here and reported as ✓. The tail-order assertion it claimed to guard had never once run.
+  //
+  // So track whether the transformer actually altered a file, and treat "changed nothing" as a
+  // failure. This is the pattern scripts/checkauth.mjs has always used.
+  let planted = false;
+  const track = (fn) =>
+    fn &&
+    ((n, s) => {
+      const out = fn(n, s);
+      if (out !== s) planted = true;
+      return out;
+    });
+
   let caught;
   try {
-    const mods = await loadConstants(m.constants);
-    caught = assertions(mods, loadSources(m.sources)).length > 0;
+    const mods = await loadConstants(track(m.constants));
+    caught = assertions(mods, loadSources(track(m.sources))).length > 0;
   } catch {
     caught = true; // a mutation that will not even load is caught, loudly
   }
-  if (caught) ok(m.name);
+  if (!planted) fail(`INERT: ${m.name} — the mutation matched nothing, so it proves nothing`);
+  else if (caught) ok(m.name);
   else fail(`NOT CAUGHT: ${m.name} — the corresponding assertion is vacuous`);
 }
 

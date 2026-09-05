@@ -13,7 +13,12 @@ import {
   TabSwitch,
 } from '../../components/auth';
 import { FEEDBACK, PORTALS, SLATE, SPACING } from '../../constants/theme';
-import { SCHOOL_ROLES, isShreyarthaRole } from '../../constants/authPortals';
+import {
+  SCHOOL_ROLES,
+  SHREYARTHA_SCHOOL_CODE,
+  isShreyarthaRole,
+  requiresSignupCode,
+} from '../../constants/authPortals';
 import { useAuth } from '../../context/AuthContext';
 import {
   forgotPassword,
@@ -72,7 +77,11 @@ export default function SchoolLoginScreen() {
   // Guards a second submit slipping through before `submitting` has re-rendered.
   const inFlight = useRef(false);
 
-  const shreyarthaSelected = isShreyarthaRole(signup.userType);
+  // Two questions that used to share one answer, and no longer do:
+  //   needsSignupCode — only the SHREYARTHA_* roles, whose endpoint activates instantly
+  //   pinnedToShreya01 — those three AND sales, none of which type a school code
+  const needsSignupCode = requiresSignupCode(signup.userType);
+  const pinnedToShreya01 = isShreyarthaRole(signup.userType);
 
   // Deep links and the post-session-expiry redirect both arrive with no history to pop.
   const handleBack = useCallback(() => {
@@ -168,7 +177,7 @@ export default function SchoolLoginScreen() {
   // ── School-code lookup (advisory only) ───────────────────────────────────
   const handleSchoolCodeBlur = async () => {
     const code = signup.schoolCode.trim();
-    if (!code || shreyarthaSelected) {
+    if (!code || pinnedToShreya01) {
       setSchoolLookup({ status: 'idle', name: '' });
       return;
     }
@@ -205,13 +214,13 @@ export default function SchoolLoginScreen() {
       setError('You must agree to the terms and conditions.');
       return;
     }
-    if (!shreyarthaSelected && !signup.schoolCode.trim()) {
+    if (!pinnedToShreya01 && !signup.schoolCode.trim()) {
       setError('Please enter your School Code.');
       return;
     }
     // The Shreyartha endpoint activates the account immediately (verified = true, and
     // SHREYARTHA_ADMIN implies SCHOOL_ADMIN), so the server gates it on a shared secret.
-    if (shreyarthaSelected && !signup.signupCode.trim()) {
+    if (needsSignupCode && !signup.signupCode.trim()) {
       setError('Please enter the Shreyartha staff signup code.');
       return;
     }
@@ -227,10 +236,17 @@ export default function SchoolLoginScreen() {
         userType: signup.userType,
         password: signup.password,
       };
-      // Shreyartha roles register through their own endpoint and carry no school code.
-      const res = shreyarthaSelected
+      // Three ways, not two. SALES is pinned to SHREYA01 like the Shreyartha roles, but it
+      // registers through the ORDINARY school endpoint so it lands unverified and waits for an
+      // admin — signupShreyartha would activate it on the spot and has no SALES arm anyway.
+      const res = needsSignupCode
         ? await signupShreyartha({ ...payload, signupCode: signup.signupCode.trim() })
-        : await signupSchool({ ...payload, schoolCode: signup.schoolCode.trim() });
+        : await signupSchool({
+            ...payload,
+            schoolCode: pinnedToShreya01
+              ? SHREYARTHA_SCHOOL_CODE
+              : signup.schoolCode.trim(),
+          });
 
       setSignup(EMPTY_SIGNUP);
       setSchoolLookup({ status: 'idle', name: '' });
@@ -445,7 +461,7 @@ export default function SchoolLoginScreen() {
           />
 
           {/* Hidden for Shreyartha roles, which are always pinned to SHREYA01. */}
-          {!shreyarthaSelected && (
+          {!pinnedToShreya01 && (
             <FormField
               palette={PALETTE}
               label="School Code"
@@ -466,7 +482,7 @@ export default function SchoolLoginScreen() {
 
           {/* Shown only for Shreyartha roles: that endpoint skips admin verification, so the
               server requires a shared secret before it will mint the account. */}
-          {shreyarthaSelected && (
+          {needsSignupCode && (
             <PasswordField
               palette={PALETTE}
               label="Shreyartha Signup Code"

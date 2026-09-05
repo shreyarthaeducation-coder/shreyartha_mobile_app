@@ -592,12 +592,104 @@ const PRINCIPAL = {
   search: true,
 };
 
+/**
+ * Sales.
+ *
+ * The only panel here whose holder is not in a school building, which is what shapes the
+ * arrangement: the hero that matters is the one they tap standing in a corridor between meetings,
+ * so LEAD and Visits front the panel and everything reflective sits behind Workspace.
+ *
+ * ── NO "MY WORKSPACE" HERO ──────────────────────────────────────────────────
+ * The other four panels lead with a Workspace card because their work IS the tile grid. A rep's
+ * work is two tiles — find the school, log the visit — and burying those one tap deeper to keep
+ * the shape uniform would cost them a tap on every visit, every day. The workspace shell is still
+ * there, reached from the third hero, and still carries everything.
+ *
+ * ── SELF-ATTENDANCE MEANS SOMETHING DIFFERENT HERE ──────────────────────────
+ * On every other panel My Attendance is a formality. A field rep's attendance is the thing their
+ * manager actually reads, and it sits beside a visit log that also carries GPS — hence the note,
+ * which spells out that the two are separate records and neither substitutes for the other.
+ */
+const SALES = {
+  role: 'sales',
+
+  heroes: [
+    {
+      key: 'leads',
+      title: 'LEAD',
+      subtitle: 'Your prospect pipeline — who you are working and what stage they are at.',
+      icon: 'flag',
+      colors: GRADIENT.violet,
+      itemKey: 'leads',
+    },
+    {
+      key: 'visits',
+      title: 'Visits',
+      subtitle: 'Check in at a school. Your location and the time are captured with the visit.',
+      icon: 'location',
+      colors: GRADIENT.blue,
+      itemKey: 'visits',
+    },
+    {
+      key: 'attendance',
+      title: 'My Attendance',
+      subtitle: 'Your own attendance record, leave and payslips.',
+      icon: 'calendar',
+      colors: GRADIENT.teal,
+      shell: 'my-attendance',
+    },
+  ],
+
+  workspaceGroups: [
+    {
+      key: 'business',
+      label: 'Business',
+      icon: 'briefcase-outline',
+      itemKeys: ['schools', 'deals'],
+    },
+    {
+      key: 'performance',
+      label: 'Performance',
+      icon: 'stats-chart-outline',
+      // `dashboard` is placed here and NOWHERE else. assertArrangementCovers reports it as
+      // `duplicated` if it also appears as a hero's itemKey.
+      itemKeys: ['dashboard', 'incentive', 'reports'],
+    },
+    {
+      key: 'personal',
+      label: 'Personal',
+      icon: 'person-outline',
+      itemKeys: ['myCalendar', 'tutorial'],
+    },
+  ],
+
+  attendanceItemKeys: ['selfAttendance', 'leave', 'payroll'],
+
+  profileItemKey: 'profile',
+
+  attendanceNote:
+    'This is your own attendance, not your visit log. A day with visits logged is not automatically '
+    + 'a day marked present, and vice versa — the two records are kept apart on purpose.',
+
+  /**
+   * No Shreya. There is no sales-facing Shreya backend at all — the four that exist are STUDENT,
+   * PARENT, TEACHER and PRINCIPAL — and ShreyaChatSheet silently falls back to the TEACHER service
+   * when it is handed no config, which would answer a rep's questions as though they taught a
+   * class. A help page is the honest surface.
+   */
+  support: 'help',
+
+  /** Search over this panel's own menu. There is no roster or class list to index. */
+  search: true,
+};
+
 const STAFF_HOME = {
   principal: PRINCIPAL,
   vice_principal: VICE_PRINCIPAL,
   shreyartha_teacher: SHREYARTHA_TEACHER,
   counselor: COUNSELOR,
   shreyartha_councellor: SHREYARTHA_COUNCELLOR,
+  sales: SALES,
 };
 
 /**

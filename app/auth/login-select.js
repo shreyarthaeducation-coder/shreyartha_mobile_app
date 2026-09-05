@@ -25,7 +25,7 @@ export default function LoginSelectScreen() {
     {
       icon: "🏫",
       label: "School Staff",
-      sublabel: "Teacher, Counselor, Principal portal",
+      sublabel: "Teacher, Counselor, Principal & Sales portal",
       route: "/auth/school-login",
       color: "#E8F5E9",
       iconColor: "#2E7D32",

@@ -367,7 +367,8 @@ const MUTATIONS = [
     name: 'Fee Management added to the VP menu (a guaranteed 403)',
     constants: (n, s) =>
       n === 'staffRoles.js'
-        ? s.replace("      { key: 'leaveManagement', label: 'Leave Management', icon: 'calendar-number-outline', native: '/staff/vice_principal/leave-management' },", "      { key: 'fees', label: 'Fee Management', icon: 'cash-outline', native: '/staff/vice_principal/fees' },\\n      { key: 'leaveManagement', label: 'Leave Management', icon: 'calendar-number-outline', native: '/staff/vice_principal/leave-management' },")
+        ? s.replace("      { key: 'leaveManagement', label: 'Leave Management', icon: 'calendar-number-outline', native: '/staff/vice_principal/leave-management' },", "      { key: 'fees', label: 'Fee Management', icon: 'cash-outline', native: '/staff/vice_principal/fees' },\
+      { key: 'leaveManagement', label: 'Leave Management', icon: 'calendar-number-outline', native: '/staff/vice_principal/leave-management' },")
         : s,
   },
   {
@@ -520,14 +521,31 @@ function loadSources(mutate) {
 
 console.log('Self-tests (each mutation must be caught):');
 for (const m of MUTATIONS) {
+  // See the long note in scripts/checkprincipal.mjs. In short: a mutation whose anchor no longer
+  // matches alters nothing, the assertions pass, and this loop prints ✓ for a test that never
+  // ran. The `catch` turns a mutation that produces unparseable source into a ✓ as well — which
+  // is exactly what happened to the Fee Management mutation below, whose `\\n` was a literal
+  // backslash-n. It spliced a backslash into staffRoles.js and the SyntaxError was read as a
+  // catch, so the check its own comment calls "the single most dangerous mistake in this change"
+  // was never exercised.
+  let planted = false;
+  const track = (fn) =>
+    fn &&
+    ((n, s) => {
+      const out = fn(n, s);
+      if (out !== s) planted = true;
+      return out;
+    });
+
   let caught;
   try {
-    const mods = await loadConstants(m.constants);
-    caught = assertions(mods, loadSources(m.sources)).length > 0;
+    const mods = await loadConstants(track(m.constants));
+    caught = assertions(mods, loadSources(track(m.sources))).length > 0;
   } catch {
     caught = true; // a mutation that fails to even load is caught, loudly
   }
-  if (caught) ok(m.name);
+  if (!planted) fail(`INERT: ${m.name} — the mutation matched nothing, so it proves nothing`);
+  else if (caught) ok(m.name);
   else fail(`NOT CAUGHT: ${m.name} — the corresponding assertion is vacuous`);
 }
 

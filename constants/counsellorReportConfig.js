@@ -1,16 +1,35 @@
 /**
- * The counsellor-report schema, ported verbatim from
+ * The counsellor-report schema, ported from
  * `frontendmain/src/School/shared/counsellorReportConfig.js`.
  *
- * Pure data — the renderer walks it. Keep it byte-identical to the web's so a report reads the
- * same on both platforms; if the web adds a field, mirror it here rather than inventing one.
+ * Pure data — the renderer walks it. Keep it in step with the web's so a report reads the same on
+ * both platforms; if the web adds a field, mirror it here rather than inventing one.
+ * `scripts/checkreportconfig.mjs` compares the two and fails on drift, which is how the three
+ * missing `options` arrays below were finally caught.
  *
  * Field types: `rating` (0–5) · `text` · `textarea` · `boolean` (tri-state, null = unanswered) ·
- * `multiselect` (with optional `allowOther` + `otherKey`). `hideLabel` suppresses the label where
- * the section title already says it.
+ * `multiselect` (with optional `allowOther` + `otherKey`) · `select` (a fixed option list, with
+ * optional `optionLabels`). `hideLabel` suppresses the label where the section title already
+ * says it.
+ *
+ * ── ELEVEN SECTIONS, TWO TABLES ─────────────────────────────────────────────
+ * Section 11 ("Griffin") is the four AI-written narrative columns of the printed counselling
+ * sheet. To the counsellor it is the last section of one form. Underneath it is a row of
+ * `counselling_activity_reports`, NOT part of `counsellor_reports.form_data`, because that table
+ * has a nullable student (walk-ins) and a DRAFT/PUBLISHED gate that keeps an unreviewed AI draft
+ * about a child away from their parent.
+ *
+ * **`splitForm()` is therefore not optional.** Sending the whole form as `formData` would write
+ * the six Griffin keys into the wrong table, bypass the gate entirely, and make an unpublished
+ * draft parent-visible on mobile while leaving the real narrative row untouched.
+ *
+ * Mobile can EDIT the narrative but never GENERATE it — there is no recorder and no AI call here.
  */
 
 export const RATING_SCALE = 5;
+
+/** The section whose fields live on the activity-report row rather than in form_data. */
+export const GRIFFIN_SECTION_KEY = 'griffin';
 
 export const REPORT_SECTIONS = [
   {
@@ -38,7 +57,7 @@ export const REPORT_SECTIONS = [
     title: 'Emotional Wellbeing',
     fields: [
       { key: 'stressLevel', label: 'Stress Level', type: 'rating' },
-      { key: 'selfConfidence', label: 'Self Confidence', type: 'rating' },
+      { key: 'selfConfidence', label: 'Self-Confidence', type: 'rating' },
       { key: 'motivation', label: 'Motivation', type: 'rating' },
       { key: 'emotionalStability', label: 'Emotional Stability', type: 'rating' },
     ],
@@ -50,7 +69,7 @@ export const REPORT_SECTIONS = [
       { key: 'communication', label: 'Communication', type: 'rating' },
       { key: 'classroomBehaviour', label: 'Classroom Behaviour', type: 'rating' },
       { key: 'peerRelationships', label: 'Peer Relationships', type: 'rating' },
-      { key: 'leadershipParticipation', label: 'Leadership & Participation', type: 'rating' },
+      { key: 'leadershipParticipation', label: 'Leadership/Participation', type: 'rating' },
     ],
   },
   {
@@ -76,33 +95,146 @@ export const REPORT_SECTIONS = [
       { key: 'homeLearningEnvironment', label: 'Home Learning Environment', type: 'rating' },
     ],
   },
+  // The `options` on these three were MISSING for months. `Chips` defaults to `options = []`, so
+  // all three sections rendered as a bare heading with nothing under them and a mobile counsellor
+  // could not fill in Strengths, Areas Needing Improvement or Recommendations at all. Copied from
+  // the web, which had them all along — the drift went unnoticed because nothing compared the two
+  // files. scripts/checkreportconfig.mjs does now.
   {
     key: 'strengths',
     title: 'Strengths',
-    fields: [{ key: 'strengths', label: 'Strengths', type: 'multiselect', hideLabel: true }],
+    fields: [
+      {
+        key: 'strengths',
+        label: 'Strengths',
+        type: 'multiselect',
+        hideLabel: true,
+        options: [
+          'Critical Thinking',
+          'Creativity',
+          'Problem Solving',
+          'Communication',
+          'Leadership',
+          'Teamwork',
+          'Adaptability',
+          'Decision Making',
+          'Emotional Intelligence',
+          'Responsibility',
+        ],
+      },
+    ],
   },
   {
     key: 'improvement',
     title: 'Areas Needing Improvement',
     fields: [
-      { key: 'improvementAreas', label: 'Areas Needing Improvement', type: 'multiselect', hideLabel: true },
+      {
+        key: 'improvementAreas',
+        label: 'Areas Needing Improvement',
+        type: 'multiselect',
+        hideLabel: true,
+        options: [
+          'Academic Performance',
+          'Concentration',
+          'Time Management',
+          'Exam Anxiety',
+          'Confidence',
+          'Communication',
+          'Behaviour',
+          'Career Awareness',
+          'Emotional Wellbeing',
+          'Goal Setting',
+        ],
+      },
     ],
   },
   {
     key: 'recommendations',
     title: 'Counsellor Recommendations',
     fields: [
-      { key: 'recommendations', label: 'Recommendations', type: 'multiselect', hideLabel: true },
+      {
+        key: 'recommendations',
+        label: 'Counsellor Recommendations',
+        type: 'multiselect',
+        hideLabel: true,
+        options: [
+          'Academic Support',
+          'Study Plan',
+          'Time Management',
+          'Career Guidance',
+          'Stream Selection',
+          'Parent Counselling',
+          'Emotional Support',
+          'Skill Development',
+          'Competitive Exam Guidance',
+          'Follow-up Session',
+        ],
+      },
     ],
   },
   {
     key: 'remarks',
     title: 'Counsellor Remarks',
     fields: [
-      { key: 'counsellorRemarks', label: 'Counsellor Remarks', type: 'textarea', hideLabel: true },
+      {
+        key: 'counsellorRemarks',
+        label: 'Counsellor Remarks',
+        type: 'textarea',
+        hideLabel: true,
+        placeholder: 'Overall observations, context, and next steps…',
+      },
+    ],
+  },
+  {
+    key: GRIFFIN_SECTION_KEY,
+    title: 'Griffin — AI narrative',
+    subtitle:
+      'Written by the AI on the website, from the session recording or the counsellor’s notes. '
+      + 'You can edit it here, but it can only be generated and published on the web.',
+    // Read and written through the linked activity-report row, NOT counsellor_reports.form_data.
+    storage: 'activity',
+    aiFilled: true,
+    fields: [
+      {
+        key: 'cognitivePotential',
+        label: 'Cognitive: Potential for Improvement',
+        type: 'textarea',
+        aiFilled: true,
+      },
+      { key: 'thinking', label: 'Thinking', type: 'textarea', aiFilled: true },
+      {
+        key: 'counsellorObservation',
+        label: 'Counsellor Observation',
+        type: 'textarea',
+        aiFilled: true,
+      },
+      { key: 'recommendation', label: 'Recommendation', type: 'textarea', aiFilled: true },
+      {
+        key: 'psychometricAssessment',
+        label: 'Psychometric Assesment',
+        type: 'select',
+        options: ['Yes', 'No'],
+      },
+      {
+        key: 'pronoun',
+        label: 'Pronouns to use in the narrative',
+        type: 'select',
+        options: ['they', 'she', 'he'],
+        optionLabels: { they: 'they / them', she: 'she / her', he: 'he / him' },
+      },
     ],
   },
 ];
+
+/** The eleventh section, resolved once so callers do not re-scan the array. */
+export const GRIFFIN_SECTION =
+  REPORT_SECTIONS.find((s) => s.key === GRIFFIN_SECTION_KEY) || null;
+
+/** The ten sections stored in `counsellor_reports.form_data`. */
+export const FORM_DATA_SECTIONS = REPORT_SECTIONS.filter((s) => s.storage !== 'activity');
+
+/** Field keys that belong to the activity-report row rather than to form_data. */
+export const GRIFFIN_KEYS = (GRIFFIN_SECTION?.fields || []).map((f) => f.key);
 
 /**
  * Which sections get a chart, and which shape.
@@ -167,12 +299,24 @@ export const EXTRACTED_KEYS = [
   'counsellorRemarks',
 ];
 
+/**
+ * Defaults for the two Griffin fields that are not free text. Kept out of the generic type-switch
+ * below because `''` is a wrong answer for both: a blank pronoun would make the AI guess, and a
+ * blank psychometric flag would print as an empty cell on the sheet.
+ */
+const GRIFFIN_DEFAULTS = {
+  psychometricAssessment: 'No',
+  pronoun: 'they',
+};
+
 /** A blank form with every field present, so controlled inputs never flip to uncontrolled. */
 export function buildEmptyForm() {
   const form = {};
   REPORT_SECTIONS.forEach((section) => {
     section.fields.forEach((field) => {
-      if (field.type === 'multiselect') {
+      if (GRIFFIN_DEFAULTS[field.key] !== undefined) {
+        form[field.key] = GRIFFIN_DEFAULTS[field.key];
+      } else if (field.type === 'multiselect') {
         form[field.key] = [];
         if (field.allowOther) form[field.otherKey] = '';
       } else if (field.type === 'rating') {
@@ -187,16 +331,74 @@ export function buildEmptyForm() {
   return form;
 }
 
-/** Merges a saved formData blob over a blank form, dropping any keys no longer in the schema. */
-export function hydrateForm(saved) {
+/**
+ * Merges what was saved over a blank form, dropping any keys no longer in the schema.
+ *
+ * @param saved    `counsellor_reports.form_data` — the ten sections
+ * @param activity the linked activity-report row, if any — the Griffin section
+ *
+ * The two arrive from different tables and are merged into one object here, because that is the
+ * point of the merge: from the form's side there is one report.
+ */
+export function hydrateForm(saved, activity) {
   const form = buildEmptyForm();
-  if (!saved) return form;
-  Object.keys(form).forEach((key) => {
-    if (saved[key] !== undefined && saved[key] !== null) {
-      form[key] = saved[key];
+  const merge = (source) => {
+    if (!source) return;
+    Object.keys(form).forEach((key) => {
+      if (source[key] !== undefined && source[key] !== null) {
+        form[key] = source[key];
+      }
+    });
+  };
+  merge(saved);
+  merge(activity);
+  return form;
+}
+
+/**
+ * Splits one edited form back into the two payloads that are actually persisted.
+ *
+ * Returns `{ formData, griffin }` — the ten sections for `counsellor_reports.form_data`, and the
+ * Griffin fields for the activity-report row. Nothing else in the app needs to know which field
+ * lives where, which is what keeps the split from leaking into every screen.
+ */
+export function splitForm(form) {
+  const griffinKeys = new Set(GRIFFIN_KEYS);
+  const formData = {};
+  const griffin = {};
+  Object.keys(form || {}).forEach((key) => {
+    if (griffinKeys.has(key)) {
+      griffin[key] = form[key];
+    } else {
+      formData[key] = form[key];
     }
   });
-  return form;
+  return { formData, griffin };
+}
+
+/** True when the AI has written nothing into the Griffin section yet. */
+export function isGriffinEmpty(form) {
+  return (GRIFFIN_SECTION?.fields || [])
+    .filter((f) => f.aiFilled)
+    .every((f) => !String(form?.[f.key] || '').trim());
+}
+
+/** Human-readable value for the read-only views. Mirrors the web's `formatFieldValue`. */
+export function formatFieldValue(field, value) {
+  if (value === null || value === undefined || value === '') return '—';
+  if (field.type === 'rating') {
+    return value > 0
+      ? `${'★'.repeat(value)}${'☆'.repeat(RATING_SCALE - value)} (${value}/${RATING_SCALE})`
+      : '—';
+  }
+  if (field.type === 'boolean') return value ? 'Yes' : 'No';
+  if (field.type === 'multiselect') {
+    return Array.isArray(value) && value.length ? value.join(', ') : '—';
+  }
+  if (field.type === 'select' && field.optionLabels) {
+    return field.optionLabels[value] || value;
+  }
+  return value;
 }
 
 /** Pulls the four extracted scalars out of the form for the request body. */

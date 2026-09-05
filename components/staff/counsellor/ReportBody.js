@@ -3,9 +3,11 @@ import { Ionicons } from '@expo/vector-icons';
 import { FEEDBACK, SLATE, SPACING } from '../../../constants/theme';
 import { Card, CardTitle, GaugeChart, GroupedBars, RadarChart } from '../../ui';
 import {
+  FORM_DATA_SECTIONS,
+  GRIFFIN_SECTION,
   RATING_SCALE,
-  REPORT_SECTIONS,
   SECTION_CHARTS,
+  hydrateForm,
   parseReportForm,
   sectionRatings,
 } from '../../../constants/counsellorReportConfig';
@@ -96,6 +98,15 @@ function FieldValue({ field, form }) {
     );
   }
 
+  if (field.type === 'select') {
+    // `optionLabels` is what turns the stored `they` into "they / them". Without this branch the
+    // raw value printed, which reads as a typo rather than a pronoun choice.
+    if (value === null || value === undefined || value === '') {
+      return <Text style={styles.value}>—</Text>;
+    }
+    return <Text style={styles.value}>{field.optionLabels?.[value] || String(value)}</Text>;
+  }
+
   // `text` and `textarea` share this fall-through; there is no separate multi-line branch.
   return <Text style={styles.value}>{value ? String(value) : '—'}</Text>;
 }
@@ -145,7 +156,24 @@ function SectionChart({ section, form }) {
  * @param {object} props.report a row from either counsellor-report endpoint
  */
 export default function ReportBody({ report }) {
-  const form = parseReportForm(report);
+  const saved = parseReportForm(report);
+
+  /**
+   * Section 11 shows here ONLY once it has been published.
+   *
+   * That gate is the reason the AI narrative lives on its own row rather than inside `formData`:
+   * a draft the model wrote about a child, mid-session and unreviewed, must not reach that
+   * child's parent. The server already withholds an unpublished `griffin` from both the parent
+   * and teacher DTOs — this is the second lock, not the only one.
+   */
+  const griffin = report.griffin;
+  const griffinVisible = !!GRIFFIN_SECTION && griffin?.status === 'PUBLISHED';
+  const sections = griffinVisible ? [...FORM_DATA_SECTIONS, GRIFFIN_SECTION] : FORM_DATA_SECTIONS;
+
+  // hydrateForm, not the raw parse: it is the only thing that merges the two tables into one
+  // form, and it backfills the blanks the renderer below expects to be present.
+  const form = hydrateForm(saved, griffinVisible ? griffin : null);
+
   // Staff DTO says `createdByName`; parent DTO says `counsellorName`. Same person, same source.
   const author = report.counsellorName || report.createdByName;
 
@@ -163,9 +191,11 @@ export default function ReportBody({ report }) {
         </Text>
       </View>
 
-      {/* All ten sections always render, even when empty — matching the web, so a blank section
-          reads as "not assessed" rather than "not in this report". */}
-      {REPORT_SECTIONS.map((sec, index) => (
+      {/* All ten always render, even when empty — matching the web, so a blank section reads as
+          "not assessed" rather than "not in this report". The eleventh joins them only when
+          published, which is why this maps `sections` and not REPORT_SECTIONS: numbering off the
+          raw array would show a parent a section that is not in their copy. */}
+      {sections.map((sec, index) => (
         <Card key={sec.key}>
           <CardTitle>
             {index + 1}. {sec.title}

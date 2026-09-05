@@ -36,8 +36,15 @@ export const STAFF_ATTENDANCE_ACTIVE_KEY = 'staffAttendanceActiveSession';
 export const STAFF_PHOTO_KEY = 'staffProfilePhotoUrl';
 
 /**
- * Completed attendance records. Deliberately NOT cleared on logout — it is the offline
- * fallback log, and the web keeps it across sessions too.
+ * Completed attendance records — the offline fallback log.
+ *
+ * CLEARED ON LOGOUT, and it must stay that way. It used to be excluded on the grounds that "the
+ * web keeps it across sessions too". The web does not any more: keeping it meant that on a shared
+ * staffroom device, the next person to sign in saw the previous person's attendance rows. It is
+ * one member of staff's record of their own working days, not a device-level cache.
+ *
+ * The cost of clearing it is that a rep who signs out mid-month loses the local copy of a log the
+ * server already holds. That is the right trade.
  */
 export const STAFF_ATTENDANCE_HISTORY_KEY = 'staffAttendanceHistory';
 
@@ -99,11 +106,26 @@ export const TEACHER_SEARCH_INDEX_KEY = 'teacherSearchIndexV1';
  */
 export const STAFF_SEARCH_INDEX_KEY = 'staffSearchIndexV1';
 
+/**
+ * Sales check-ins captured while offline, waiting to sync.
+ *
+ * Cleared on logout like everything else here, and for a sharper reason than most: a queued visit
+ * is attributed to whoever is signed in when it flushes. Left behind on a shared device it would
+ * post one rep's visit under the next rep's account — and visits feed the closure report and,
+ * through it, incentive money. Each queued item also carries the email it was captured under and
+ * the flusher refuses anything that does not match, so neither guard depends on the other.
+ */
+export const SALES_VISIT_QUEUE_KEY = 'salesVisitQueueV1';
+
 /** Everything a logout must remove, across every role. */
 export const ALL_AUTH_KEYS = [
   ...SCHOOL_SESSION_KEYS,
   STAFF_ATTENDANCE_ACTIVE_KEY,
+  // One person's own attendance rows. Added after the web fixed the same leak: on a shared
+  // staffroom device this showed the previous user's log to the next one.
+  STAFF_ATTENDANCE_HISTORY_KEY,
   STAFF_PHOTO_KEY,
+  SALES_VISIT_QUEUE_KEY,
   STUDENT_SEARCH_INDEX_KEY,
   PARENT_SEARCH_INDEX_KEY,
   PARTNER_SEARCH_INDEX_KEY,

@@ -11,6 +11,10 @@
 export { default as ProgressBar } from './ProgressBar';
 export { default as GroupedBars } from './GroupedBars';
 export { default as DonutChart } from './DonutChart';
+// The multi-segment sibling of DonutChart — a real pie, which the kit lacked until the sales
+// funnel needed one. DonutChart stays a single-value progress ring; the two are not merged
+// because their call sites want opposite things (one percentage vs a set of counts).
+export { default as SegmentedDonut } from './SegmentedDonut';
 export { default as GaugeChart, gaugeSeverity, GAUGE_BANDS } from './GaugeChart';
 export { default as RadarChart } from './RadarChart';
 export { default as LineChart } from './LineChart';

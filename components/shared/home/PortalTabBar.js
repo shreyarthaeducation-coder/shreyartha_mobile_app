@@ -142,6 +142,25 @@ export const PRINCIPAL_TABS = [
   { key: 'profile', label: 'Profile', icon: 'person', iconOff: 'person-outline', route: '/staff/principal/profile' },
 ];
 
+/**
+ * The Sales panel's FOUR roots.
+ *
+ * The fourth is Visits rather than Live anything, and it is the one tab here that earns its place:
+ * a rep opens this app to check in and for very little else, so the action they perform several
+ * times a day sits in the footer instead of two taps into the panel. SalesVisitsScreen scrolls
+ * normally through ScreenScaffold, so it pads for the bar without touching a shared screen — the
+ * same test the Principal's Live Meeting tab had to pass.
+ *
+ * Support is a help page, not Shreya: there is no sales Shreya backend at all, and the shared
+ * sheet silently falls back to the TEACHER service when given no config.
+ */
+export const SALES_TABS = [
+  { key: 'home', label: 'Home', icon: 'home', iconOff: 'home-outline', route: '/staff/sales' },
+  { key: 'visits', label: 'Visits', icon: 'location', iconOff: 'location-outline', route: '/staff/sales/sales-visits' },
+  { key: 'support', label: 'Support', icon: 'headset', iconOff: 'headset-outline', route: '/staff/sales/support' },
+  { key: 'profile', label: 'Profile', icon: 'person', iconOff: 'person-outline', route: '/staff/sales/profile' },
+];
+
 /** Every redesigned staff shell's tab list, by role. Absent = no footer, which is the default. */
 export const STAFF_TABS = {
   principal: PRINCIPAL_TABS,
@@ -149,6 +168,7 @@ export const STAFF_TABS = {
   shreyartha_teacher: SHREYARTHA_TEACHER_TABS,
   counselor: COUNSELOR_TABS,
   shreyartha_councellor: SHREYARTHA_COUNCELLOR_TABS,
+  sales: SALES_TABS,
 };
 
 /** The tab list for a staff role, or an empty array — `isTabRoot([])` is false, so no bar renders. */
