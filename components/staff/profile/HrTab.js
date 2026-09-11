@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { SLATE, SPACING } from '../../../constants/theme';
+import { SLATE, SPACING, TYPE, leading } from '../../../constants/theme';
 import { usePalette } from '../../../components/ui/PaletteContext';
 import { Card, CardTitle, SensitiveGate, Select, TextField } from '../../ui';
 import {
@@ -254,7 +254,7 @@ export default function HrTab({ showToast }) {
               style={({ pressed }) => [styles.photoBtn, pressed && styles.pressed]}
               accessibilityRole="button"
             >
-              <Ionicons name="camera-outline" size={15} color={PALETTE.primaryDark} />
+              <Ionicons name="camera-outline" size={17} color={PALETTE.primaryDark} />
               <Text style={styles.photoBtnText}>
                 {profile?.profilePictureUrl ? 'Change picture' : 'Add a picture'}
               </Text>
@@ -421,9 +421,9 @@ export default function HrTab({ showToast }) {
 
 const useStyles = makeStyles((p) => ({
   loader: { marginVertical: SPACING.xl },
-  error: { fontSize: 13, color: SLATE[600], textAlign: 'center' },
+  error: { fontSize: TYPE.body, color: SLATE[600], textAlign: 'center' },
   retry: { alignSelf: 'center', marginTop: SPACING.sm, paddingVertical: 8, paddingHorizontal: 16 },
-  retryText: { fontSize: 13, fontWeight: '700', color: p.primaryDark },
+  retryText: { fontSize: TYPE.body, fontWeight: '700', color: p.primaryDark },
 
   photoRow: {
     flexDirection: 'row',
@@ -451,8 +451,8 @@ const useStyles = makeStyles((p) => ({
     backgroundColor: 'rgba(15,23,42,0.45)',
   },
   photoMeta: { flex: 1, gap: 2 },
-  photoName: { fontSize: 15, fontWeight: '700', color: SLATE[800] },
-  photoSub: { fontSize: 11.5, color: SLATE[500] },
+  photoName: { fontSize: TYPE.heading, fontWeight: '700', color: SLATE[800] },
+  photoSub: { fontSize: TYPE.caption, color: SLATE[500] },
   photoBtn: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -464,18 +464,18 @@ const useStyles = makeStyles((p) => ({
     borderRadius: 999,
     backgroundColor: p.tint,
   },
-  photoBtnText: { fontSize: 12.5, fontWeight: '700', color: p.primaryDark },
+  photoBtnText: { fontSize: TYPE.label, fontWeight: '700', color: p.primaryDark },
 
-  readonlyNote: { fontSize: 11.5, color: SLATE[400], fontStyle: 'italic', marginBottom: 6 },
+  readonlyNote: { fontSize: TYPE.caption, color: SLATE[500], fontStyle: 'italic', marginBottom: 6 },
   readonlyRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 6 },
-  readonlyLabel: { flex: 1, fontSize: 12.5, color: SLATE[500], fontWeight: '600' },
-  readonlyValue: { fontSize: 13.5, color: SLATE[800] },
+  readonlyLabel: { flex: 1, fontSize: TYPE.label, color: SLATE[500], fontWeight: '600' },
+  readonlyValue: { fontSize: TYPE.body, color: SLATE[800] },
 
   multiline: { height: 72, textAlignVertical: 'top' },
-  hint: { fontSize: 11, color: SLATE[400], marginTop: -8, marginBottom: SPACING.sm },
+  hint: { fontSize: TYPE.caption, color: SLATE[500], marginTop: -8, marginBottom: SPACING.sm },
   info: {
-    fontSize: 12.5,
-    lineHeight: 18,
+    fontSize: TYPE.label,
+    lineHeight: leading(TYPE.label),
     color: p.primaryDark,
     backgroundColor: p.tint,
     borderRadius: 10,
@@ -489,7 +489,7 @@ const useStyles = makeStyles((p) => ({
     paddingVertical: SPACING.sm,
     marginBottom: SPACING.xs,
   },
-  checkText: { flex: 1, fontSize: 12.5, lineHeight: 18, color: SLATE[600] },
+  checkText: { flex: 1, fontSize: TYPE.label, lineHeight: leading(TYPE.label), color: SLATE[600] },
 
   saveBtn: {
     marginTop: SPACING.md,
@@ -500,6 +500,6 @@ const useStyles = makeStyles((p) => ({
     backgroundColor: p.primaryDark,
   },
   saveDisabled: { backgroundColor: SLATE[300] },
-  saveText: { fontSize: 15, fontWeight: '700', color: '#ffffff' },
+  saveText: { fontSize: TYPE.heading, fontWeight: '700', color: '#ffffff' },
   pressed: { opacity: 0.75 },
 }));

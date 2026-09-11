@@ -25,6 +25,7 @@ import {
   schoolStats,
 } from '../../services/partner/dashboardService';
 import usePortalLogout from '../../hooks/usePortalLogout';
+import ChangePasswordRow from '../shared/home/ChangePasswordRow';
 
 /**
  * The partner dashboard.
@@ -204,7 +205,8 @@ export default function PartnerMenuScreen() {
 
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'left', 'right']}>
-      <BrandBar strings={t} changePasswordRoute="/partner/change-password" tone="light" />
+      {/* No school logo: a partner is not school-bound, so the lead slot keeps the 3C mark. */}
+      <BrandBar tone="light" />
 
       <ScrollView
         contentContainerStyle={styles.scroll}
@@ -252,7 +254,7 @@ export default function PartnerMenuScreen() {
 
         {partnerType === 'MASTER' ? (
           <View style={styles.tierChip}>
-            <Ionicons name="star" size={13} color={palette.primaryDark} />
+            <Ionicons name="star" size={15} color={palette.primaryDark} />
             <Text style={styles.tierChipText}>{t.masterPartner}</Text>
           </View>
         ) : null}
@@ -321,13 +323,17 @@ export default function PartnerMenuScreen() {
           onSearch={(q) => router.push({ pathname: '/partner/search', params: { q } })}
         />
 
+        {/* Account actions, grouped above Log Out. This is the portal's ONLY route to
+            change-password now that the shared header chip is gone. */}
+        <ChangePasswordRow route="/partner/change-password" />
+
         <Pressable
           onPress={confirmLogout}
           style={({ pressed }) => [styles.logout, pressed && styles.pressed]}
           accessibilityRole="button"
           accessibilityLabel="Log out"
         >
-          <Ionicons name="log-out-outline" size={18} color={FEEDBACK.errorText} />
+          <Ionicons name="log-out-outline" size={20} color={FEEDBACK.errorText} />
           <Text style={styles.logoutText}>{t.logOut}</Text>
         </Pressable>
       </ScrollView>

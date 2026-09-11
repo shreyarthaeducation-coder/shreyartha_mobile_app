@@ -1,6 +1,6 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { SLATE, SPACING } from '../../constants/theme';
+import { SLATE, SPACING, TYPE, leading } from '../../constants/theme';
 import { usePalette } from './PaletteContext';
 
 /**
@@ -57,12 +57,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginBottom: SPACING.md,
   },
-  title: { fontSize: 15.5, fontWeight: '700', color: SLATE[800], textAlign: 'center' },
+  title: { fontSize: TYPE.heading, fontWeight: '700', color: SLATE[800], textAlign: 'center' },
   message: {
-    fontSize: 13.5,
+    fontSize: TYPE.body,
     color: SLATE[500],
     textAlign: 'center',
-    lineHeight: 19,
+    lineHeight: leading(TYPE.body),
     marginTop: 6,
   },
   action: {
@@ -72,5 +72,5 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
   actionPressed: { opacity: 0.8 },
-  actionText: { color: '#ffffff', fontWeight: '700', fontSize: 13.5 },
+  actionText: { color: '#ffffff', fontWeight: '700', fontSize: TYPE.heading },
 });

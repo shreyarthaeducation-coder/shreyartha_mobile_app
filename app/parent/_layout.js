@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
-import { Redirect, Stack, usePathname } from 'expo-router';
+import { Redirect, Stack, usePathname, useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { PORTALS } from '../../constants/theme';
 import { PaletteProvider } from '../../components/ui/PaletteContext';
+import { onParentPushOpened, registerParentPush } from '../../services/parent/pushService';
 
 /**
  * Route guard and theme host for the native parent panel — the parent counterpart of
@@ -56,6 +57,21 @@ const UNVERIFIED_OK = new Set([
 export default function ParentLayout() {
   const [state, setState] = useState({ checking: true, token: null, verified: false });
   const pathname = usePathname();
+  const router = useRouter();
+
+  // Phone push for school events — only for a verified session: an unverified parent's token would
+  // be refused (hasRole('PARENT')) and they cannot see the calendar the events belong to. Never
+  // throws; on Expo Go, an emulator or a refused prompt it simply registers nothing.
+  useEffect(() => {
+    if (!state.token || !state.verified) return;
+    registerParentPush();
+  }, [state.token, state.verified]);
+
+  // A tapped push opens the Notifications list, where the event is one tap from the Schedule.
+  useEffect(() => {
+    if (!state.token) return undefined;
+    return onParentPushOpened(() => router.push('/parent/notifications'));
+  }, [state.token, router]);
 
   useEffect(() => {
     let alive = true;
@@ -112,6 +128,7 @@ export default function ParentLayout() {
         <Stack.Screen name="learning-activities" />
         <Stack.Screen name="feature" />
         <Stack.Screen name="search" />
+        <Stack.Screen name="notifications" />
       </Stack>
     </PaletteProvider>
   );

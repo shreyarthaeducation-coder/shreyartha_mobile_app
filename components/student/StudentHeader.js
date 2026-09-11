@@ -1,8 +1,9 @@
 import { Pressable, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { usePalette } from '../ui/PaletteContext';
 import { makeStyles } from '../../utils/makeStyles';
-import { TYPE } from '../../constants/theme';
+import { SLATE, TYPE } from '../../constants/theme';
 
 /**
  * The translucent dark header every student screen shares.
@@ -16,6 +17,7 @@ import { TYPE } from '../../constants/theme';
  */
 export default function StudentHeader({ title, fallbackRoute = '/student', right }) {
   const styles = useStyles();
+  const palette = usePalette();
   const router = useRouter();
 
   return (
@@ -27,7 +29,7 @@ export default function StudentHeader({ title, fallbackRoute = '/student', right
         accessibilityRole="button"
         accessibilityLabel="Go back"
       >
-        <Ionicons name="chevron-back" size={18} color="#ffffff" />
+        <Ionicons name="chevron-back" size={20} color={palette.primaryDark} />
       </Pressable>
 
       <Text style={styles.title} numberOfLines={1}>
@@ -56,9 +58,9 @@ const useStyles = makeStyles((p) => ({
     borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(255,255,255,0.14)',
+    backgroundColor: p.tint,
   },
-  title: { flex: 1, fontSize: TYPE.heading, fontWeight: '700', color: '#ffffff' },
+  title: { flex: 1, fontSize: TYPE.heading, fontWeight: '700', color: SLATE[800] },
   right: { flexDirection: 'row', alignItems: 'center', gap: 6, minWidth: 34, justifyContent: 'flex-end' },
   pressed: { opacity: 0.7 },
 }));

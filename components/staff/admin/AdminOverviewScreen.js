@@ -2,7 +2,7 @@ import { useCallback, useState } from 'react';
 import { ActivityIndicator, Image, Pressable, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { FEEDBACK, SLATE, SPACING } from '../../../constants/theme';
+import { FEEDBACK, SLATE, SPACING, TYPE } from '../../../constants/theme';
 import { usePalette } from '../../ui/PaletteContext';
 import { Card, CardTitle, ScreenScaffold, useToast } from '../../ui';
 import useStaffResource from '../../../hooks/useStaffResource';
@@ -29,8 +29,8 @@ import { makeStyles } from '../../../utils/makeStyles';
 
 const TONE = {
   total: { bg: SLATE[100], text: SLATE[800], border: SLATE[200] },
-  success: { bg: FEEDBACK.successBg, text: FEEDBACK.successText, border: FEEDBACK.successBorder },
-  warning: { bg: FEEDBACK.warningBg, text: FEEDBACK.warningText, border: FEEDBACK.warningBorder },
+  success: { bg: FEEDBACK.successBg, text: FEEDBACK.successOnBg, border: FEEDBACK.successBorder },
+  warning: { bg: FEEDBACK.warningBg, text: FEEDBACK.warningOnBg, border: FEEDBACK.warningBorder },
 };
 
 function StatCard({ label, value, tone }) {
@@ -179,9 +179,9 @@ export default function AdminOverviewScreen({ homeRoute, apiBase, staffRoute, st
             style={({ pressed }) => [styles.sectionHead, pressed && styles.pressed]}
             accessibilityRole="button"
           >
-            <Ionicons name={section.icon} size={17} color={PALETTE.primaryDark} />
+            <Ionicons name={section.icon} size={19} color={PALETTE.primaryDark} />
             <CardTitle style={styles.sectionTitle}>{section.title}</CardTitle>
-            <Ionicons name="chevron-forward" size={17} color={SLATE[400]} />
+            <Ionicons name="chevron-forward" size={19} color={SLATE[400]} />
           </Pressable>
           <View style={styles.statRow}>
             {section.cards.map((card) => (
@@ -214,10 +214,10 @@ const useStyles = makeStyles((p) => ({
   },
   logo: { width: '100%', height: '100%' },
   identityText: { flex: 1 },
-  schoolName: { fontSize: 16, fontWeight: '800', color: SLATE[800] },
+  schoolName: { fontSize: TYPE.title, fontWeight: '800', color: SLATE[800] },
   badgeRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 5 },
   badge: {
-    fontSize: 11.5,
+    fontSize: TYPE.caption,
     fontWeight: '700',
     color: p.primaryDark,
     backgroundColor: p.tint,
@@ -235,7 +235,7 @@ const useStyles = makeStyles((p) => ({
     justifyContent: 'center',
     minHeight: 40,
   },
-  logoBtnText: { color: '#ffffff', fontWeight: '700', fontSize: 13.5 },
+  logoBtnText: { color: '#ffffff', fontWeight: '700', fontSize: TYPE.heading },
   logoGhost: {
     borderRadius: 9,
     paddingVertical: 10,
@@ -243,7 +243,7 @@ const useStyles = makeStyles((p) => ({
     borderWidth: 1,
     borderColor: SLATE[200],
   },
-  logoGhostText: { color: SLATE[600], fontWeight: '700', fontSize: 13.5 },
+  logoGhostText: { color: SLATE[600], fontWeight: '700', fontSize: TYPE.heading },
   pressed: { opacity: 0.7 },
   section: { marginTop: SPACING.sm },
   sectionHead: { flexDirection: 'row', alignItems: 'center', gap: 8 },
@@ -257,6 +257,6 @@ const useStyles = makeStyles((p) => ({
     paddingHorizontal: 8,
     alignItems: 'center',
   },
-  statValue: { fontSize: 22, fontWeight: '800' },
-  statLabel: { fontSize: 11, color: SLATE[500], textAlign: 'center', marginTop: 3, fontWeight: '600' },
+  statValue: { fontSize: TYPE.headline, fontWeight: '800' },
+  statLabel: { fontSize: TYPE.caption, color: SLATE[500], textAlign: 'center', marginTop: 3, fontWeight: '600' },
 }));

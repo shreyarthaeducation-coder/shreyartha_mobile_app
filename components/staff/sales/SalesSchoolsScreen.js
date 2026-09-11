@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
-import { SLATE, SPACING } from '../../../constants/theme';
+import { SLATE, SPACING, TYPE } from '../../../constants/theme';
 import { Card, CardTitle, EmptyState, InfoRow, ScreenScaffold, StatusChip } from '../../ui';
 import makeStyles from '../../../utils/makeStyles';
 import useStaffResource from '../../../hooks/useStaffResource';
@@ -142,14 +142,14 @@ function Figure({ label, value, strong }) {
 const useStyles = makeStyles((p) => ({
   card: { marginBottom: SPACING.sm },
   head: { flexDirection: 'row', alignItems: 'center', gap: SPACING.sm },
-  name: { fontSize: 15, fontWeight: '700', color: SLATE[800] },
-  meta: { fontSize: 12.5, color: SLATE[500], marginTop: 2 },
+  name: { fontSize: TYPE.heading, fontWeight: '700', color: SLATE[800] },
+  meta: { fontSize: TYPE.label, color: SLATE[500], marginTop: 2 },
   figures: { flexDirection: 'row', gap: SPACING.md, marginTop: SPACING.sm },
   figure: { flex: 1 },
-  figureLabel: { fontSize: 11, color: SLATE[400], textTransform: 'uppercase', letterSpacing: 0.4 },
-  figureValue: { fontSize: 15, fontWeight: '600', color: SLATE[700], marginTop: 2 },
+  figureLabel: { fontSize: TYPE.caption, color: SLATE[500], textTransform: 'uppercase', letterSpacing: 0.4 },
+  figureValue: { fontSize: TYPE.heading, fontWeight: '600', color: SLATE[700], marginTop: 2 },
   figureStrong: { color: p.primaryDark, fontWeight: '800' },
-  toggle: { fontSize: 12.5, color: p.link, fontWeight: '600', marginTop: SPACING.sm },
+  toggle: { fontSize: TYPE.label, color: p.link, fontWeight: '600', marginTop: SPACING.sm },
   deal: {
     borderTopWidth: 1,
     borderTopColor: SLATE[100],
@@ -157,5 +157,5 @@ const useStyles = makeStyles((p) => ({
     marginTop: SPACING.sm,
   },
   dealHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  dealDate: { fontSize: 13, fontWeight: '600', color: SLATE[700] },
+  dealDate: { fontSize: TYPE.body, fontWeight: '600', color: SLATE[700] },
 }));

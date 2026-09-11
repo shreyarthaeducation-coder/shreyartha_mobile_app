@@ -1,7 +1,7 @@
 import { useCallback, useState } from 'react';
 import { ActivityIndicator, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { SLATE, SPACING } from '../../../constants/theme';
+import { SLATE, SPACING, TYPE } from '../../../constants/theme';
 import { usePalette } from '../../../components/ui/PaletteContext';
 import { Card, CardTitle, EMPTY_SCHOOL_SCOPE, EmptyState, SchoolClassPicker } from '../../ui';
 import useStaffResource from '../../../hooks/useStaffResource';
@@ -73,7 +73,7 @@ export default function ScopeBrowserTab({ schoolsEndpoint, studentsEndpoint }) {
 
           {students.map((s) => (
             <View key={s.id ?? s.studentId} style={styles.row}>
-              <Ionicons name="person-outline" size={15} color={PALETTE.primaryDark} />
+              <Ionicons name="person-outline" size={17} color={PALETTE.primaryDark} />
               <View style={styles.rowText}>
                 <Text style={styles.name}>{s.fullName || s.studentName}</Text>
                 {s.email ? <Text style={styles.meta}>{s.email}</Text> : null}
@@ -89,8 +89,8 @@ export default function ScopeBrowserTab({ schoolsEndpoint, studentsEndpoint }) {
 const useStyles = makeStyles((p) => ({
   picker: { paddingHorizontal: 0, paddingVertical: 0 },
   loader: { marginVertical: SPACING.xl },
-  error: { fontSize: 13, color: SLATE[600], textAlign: 'center', paddingVertical: SPACING.lg },
-  note: { fontSize: 11.5, color: SLATE[400], fontStyle: 'italic', marginBottom: 4 },
+  error: { fontSize: TYPE.body, color: SLATE[600], textAlign: 'center', paddingVertical: SPACING.lg },
+  note: { fontSize: TYPE.caption, color: SLATE[500], fontStyle: 'italic', marginBottom: 4 },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -100,6 +100,6 @@ const useStyles = makeStyles((p) => ({
     borderTopColor: SLATE[100],
   },
   rowText: { flex: 1 },
-  name: { fontSize: 14, color: SLATE[800] },
-  meta: { fontSize: 11.5, color: SLATE[500], marginTop: 1 },
+  name: { fontSize: TYPE.body, color: SLATE[800] },
+  meta: { fontSize: TYPE.caption, color: SLATE[500], marginTop: 1 },
 }));

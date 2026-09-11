@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useState } from 'react';
 import { ActivityIndicator, Linking, Pressable, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { SLATE, SPACING } from '../../../constants/theme';
+import { SLATE, SPACING, TYPE, leading } from '../../../constants/theme';
 import { usePalette } from '../../ui/PaletteContext';
 import {
   Card,
@@ -247,7 +247,7 @@ export default function StaffMeetingScreen({ homeRoute, apiBase, bottomInset = 0
                       ]}
                       accessibilityRole="link"
                     >
-                      <Ionicons name="videocam" size={16} color="#ffffff" />
+                      <Ionicons name="videocam" size={18} color="#ffffff" />
                       <Text style={styles.joinText}>Join Google Meet</Text>
                     </Pressable>
                   ) : (
@@ -291,7 +291,7 @@ export default function StaffMeetingScreen({ homeRoute, apiBase, bottomInset = 0
                 style={({ pressed }) => [styles.pagerBtn, (pressed || page === 0) && styles.pressed]}
                 accessibilityRole="button"
               >
-                <Ionicons name="chevron-back" size={18} color={SLATE[600]} />
+                <Ionicons name="chevron-back" size={20} color={SLATE[600]} />
               </Pressable>
               <Text style={styles.pagerText}>
                 Page {page + 1} of {lastPage + 1}
@@ -305,7 +305,7 @@ export default function StaffMeetingScreen({ homeRoute, apiBase, bottomInset = 0
                 ]}
                 accessibilityRole="button"
               >
-                <Ionicons name="chevron-forward" size={18} color={SLATE[600]} />
+                <Ionicons name="chevron-forward" size={20} color={SLATE[600]} />
               </Pressable>
             </View>
           ) : null}
@@ -458,9 +458,9 @@ const useStyles = makeStyles((p) => ({
   filter: { flexDirection: 'row', marginBottom: SPACING.sm },
   item: { marginBottom: SPACING.sm },
   head: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  title: { flex: 1, fontSize: 15, fontWeight: '700', color: SLATE[800] },
-  when: { fontSize: 12.5, color: SLATE[600], fontWeight: '600', marginTop: 5 },
-  attendees: { fontSize: 12, color: SLATE[500], marginTop: 2 },
+  title: { flex: 1, fontSize: TYPE.heading, fontWeight: '700', color: SLATE[800] },
+  when: { fontSize: TYPE.label, color: SLATE[600], fontWeight: '600', marginTop: 5 },
+  attendees: { fontSize: TYPE.label, color: SLATE[500], marginTop: 2 },
   joinBtn: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -470,8 +470,8 @@ const useStyles = makeStyles((p) => ({
     paddingVertical: 9,
     marginTop: SPACING.sm,
   },
-  joinText: { color: '#ffffff', fontWeight: '700', fontSize: 13.5 },
-  noLink: { fontSize: 12, color: SLATE[400], fontStyle: 'italic', marginTop: SPACING.sm },
+  joinText: { color: '#ffffff', fontWeight: '700', fontSize: TYPE.heading },
+  noLink: { fontSize: TYPE.label, color: SLATE[500], fontStyle: 'italic', marginTop: SPACING.sm },
   actionRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 7, marginTop: SPACING.sm },
   ghostBtn: {
     borderRadius: 8,
@@ -480,7 +480,7 @@ const useStyles = makeStyles((p) => ({
     paddingHorizontal: 13,
     paddingVertical: 7,
   },
-  ghostText: { fontSize: 12.5, fontWeight: '700', color: SLATE[600] },
+  ghostText: { fontSize: TYPE.label, fontWeight: '700', color: SLATE[600] },
   pressed: { opacity: 0.7 },
   pager: {
     flexDirection: 'row',
@@ -490,8 +490,8 @@ const useStyles = makeStyles((p) => ({
     marginTop: SPACING.sm,
   },
   pagerBtn: { padding: 6 },
-  pagerText: { fontSize: 12.5, color: SLATE[500], fontWeight: '700' },
-  dayDate: { fontSize: 13.5, fontWeight: '800', color: p.primaryDark },
+  pagerText: { fontSize: TYPE.label, color: SLATE[500], fontWeight: '700' },
+  dayDate: { fontSize: TYPE.heading, fontWeight: '800', color: p.primaryDark },
   dayRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -501,15 +501,15 @@ const useStyles = makeStyles((p) => ({
     borderTopWidth: 1,
     borderTopColor: SLATE[100],
   },
-  dayText: { flex: 1, fontSize: 12.5, color: SLATE[700] },
+  dayText: { flex: 1, fontSize: TYPE.label, color: SLATE[700] },
   attendeeHead: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     marginTop: SPACING.sm,
   },
-  groupLabel: { fontSize: 12.5, fontWeight: '800', color: p.primaryDark },
-  selectAll: { fontSize: 12.5, fontWeight: '700' },
+  groupLabel: { fontSize: TYPE.label, fontWeight: '800', color: p.primaryDark },
+  selectAll: { fontSize: TYPE.label, fontWeight: '700' },
   staffRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -518,7 +518,7 @@ const useStyles = makeStyles((p) => ({
     borderBottomWidth: 1,
     borderBottomColor: SLATE[100],
   },
-  staffName: { flex: 1, fontSize: 13.5, color: SLATE[700], fontWeight: '600' },
+  staffName: { flex: 1, fontSize: TYPE.heading, color: SLATE[700], fontWeight: '600' },
   spinner: { marginTop: SPACING.md },
   fab: {
     position: 'absolute',
@@ -531,5 +531,5 @@ const useStyles = makeStyles((p) => ({
     justifyContent: 'center',
     elevation: 4,
   },
-  hint: { fontSize: 12, color: SLATE[500], lineHeight: 18, marginTop: SPACING.sm },
+  hint: { fontSize: TYPE.label, color: SLATE[500], lineHeight: leading(TYPE.label), marginTop: SPACING.sm },
 }));

@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { FEEDBACK, QUIZ, SLATE, SPACING, TYPE } from '../../../constants/theme';
+import { FEEDBACK, QUIZ, SLATE, SPACING, TYPE, leading } from '../../../constants/theme';
 import { makeStyles } from '../../../utils/makeStyles';
 import DoubtText from './DoubtText';
 import { pickImage, takePhoto } from '../../../utils/filePicker';
@@ -393,7 +393,7 @@ export default function DoubtSheet({
                 value={attemptText}
                 onChangeText={setAttemptText}
                 placeholder="Write what you think, or how far you got…"
-                placeholderTextColor={SLATE[400]}
+                placeholderTextColor={SLATE[500]}
                 multiline
                 style={styles.input}
               />
@@ -474,7 +474,7 @@ export default function DoubtSheet({
                       value={ftAnswers[f.index] || ''}
                       onChangeText={(t) => setFtAnswers((p) => ({ ...p, [f.index]: t }))}
                       placeholder="Answer in 1-3 sentences…"
-                      placeholderTextColor={SLATE[400]}
+                      placeholderTextColor={SLATE[500]}
                       multiline
                       style={styles.input}
                     />
@@ -607,9 +607,9 @@ const useStyles = makeStyles(() => ({
     padding: SPACING.sm,
     marginBottom: SPACING.md,
   },
-  errorText: { fontSize: TYPE.label, color: FEEDBACK.errorOnBg, lineHeight: 18 },
+  errorText: { fontSize: TYPE.label, color: FEEDBACK.errorOnBg, lineHeight: leading(TYPE.label) },
 
-  intro: { fontSize: TYPE.body, color: SLATE[600], lineHeight: 20, marginBottom: SPACING.md },
+  intro: { fontSize: TYPE.body, color: SLATE[600], lineHeight: leading(TYPE.body), marginBottom: SPACING.md },
 
   cards: { flexDirection: 'row', gap: 10, marginBottom: SPACING.lg },
   card: {
@@ -646,8 +646,8 @@ const useStyles = makeStyles(() => ({
   thumb: { width: 42, height: 42, borderRadius: 8, backgroundColor: SLATE[200] },
   thumbLarge: { width: '100%', height: 150, borderRadius: 10, marginBottom: SPACING.sm },
   historyBody: { flex: 1 },
-  historyText: { fontSize: TYPE.label, color: SLATE[700], lineHeight: 18 },
-  historyMeta: { fontSize: TYPE.caption, color: SLATE[400], marginTop: 2 },
+  historyText: { fontSize: TYPE.label, color: SLATE[700], lineHeight: leading(TYPE.label) },
+  historyMeta: { fontSize: TYPE.caption, color: SLATE[500], marginTop: 2 },
   chip: {
     fontSize: TYPE.micro,
     fontWeight: '700',
@@ -672,7 +672,7 @@ const useStyles = makeStyles(() => ({
     padding: SPACING.sm,
     marginBottom: SPACING.md,
   },
-  warnText: { fontSize: TYPE.label, color: NAVY.warnFg, lineHeight: 19 },
+  warnText: { fontSize: TYPE.label, color: NAVY.warnFg, lineHeight: leading(TYPE.label) },
   note: { fontSize: TYPE.caption, fontStyle: 'italic', color: SLATE[500], textAlign: 'center', marginTop: 6 },
 
   questionBox: {
@@ -682,7 +682,7 @@ const useStyles = makeStyles(() => ({
     marginBottom: SPACING.md,
   },
   questionLabel: { fontSize: TYPE.caption, fontWeight: '700', color: SLATE[500], marginBottom: 4 },
-  questionText: { fontSize: TYPE.body, color: SLATE[800], lineHeight: 20 },
+  questionText: { fontSize: TYPE.body, color: SLATE[800], lineHeight: leading(TYPE.body) },
 
   stageCard: {
     borderWidth: 1,
@@ -713,9 +713,9 @@ const useStyles = makeStyles(() => ({
   lockNote: { fontSize: TYPE.micro, color: SLATE[500] },
   stageBody: { padding: SPACING.md },
 
-  hint: { fontSize: TYPE.label, color: SLATE[500], lineHeight: 18, marginBottom: SPACING.sm },
+  hint: { fontSize: TYPE.label, color: SLATE[500], lineHeight: leading(TYPE.label), marginBottom: SPACING.sm },
   subLabel: { fontSize: TYPE.caption, fontWeight: '800', color: SLATE[500] },
-  attempt: { fontSize: TYPE.body, color: SLATE[700], lineHeight: 19, marginBottom: SPACING.sm },
+  attempt: { fontSize: TYPE.body, color: SLATE[700], lineHeight: leading(TYPE.body), marginBottom: SPACING.sm },
   feedback: { marginTop: 4 },
 
   input: {
@@ -739,7 +739,7 @@ const useStyles = makeStyles(() => ({
   },
 
   qBlock: { marginTop: SPACING.md },
-  qText: { fontSize: TYPE.body, fontWeight: '600', color: SLATE[800], lineHeight: 19, marginBottom: 6 },
+  qText: { fontSize: TYPE.body, fontWeight: '600', color: SLATE[800], lineHeight: leading(TYPE.body), marginBottom: 6 },
   opt: {
     paddingVertical: 10,
     paddingHorizontal: 11,
@@ -750,11 +750,11 @@ const useStyles = makeStyles(() => ({
     marginBottom: 6,
   },
   optPicked: { borderColor: NAVY.accent, backgroundColor: NAVY.tint },
-  optText: { fontSize: TYPE.body, color: SLATE[700], lineHeight: 19 },
+  optText: { fontSize: TYPE.body, color: SLATE[700], lineHeight: leading(TYPE.body) },
 
   scoreBox: { marginTop: SPACING.md, backgroundColor: '#f8fafc', borderRadius: 10, padding: SPACING.sm },
   score: { fontSize: TYPE.body, fontWeight: '800', color: NAVY.primary, marginBottom: 6 },
-  resultRow: { fontSize: TYPE.label, color: SLATE[600], lineHeight: 19, marginTop: 3 },
+  resultRow: { fontSize: TYPE.label, color: SLATE[600], lineHeight: leading(TYPE.label), marginTop: 3 },
 
   primary: {
     alignItems: 'center',

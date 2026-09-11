@@ -10,7 +10,7 @@ import {
   View,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { FEEDBACK, PORTALS, SLATE, SPACING } from '../../../constants/theme';
+import { FEEDBACK, PORTALS, SLATE, SPACING, TYPE, leading } from '../../../constants/theme';
 import RichText from '../../RichText';
 import ClassQuiz from './ClassQuiz';
 import MermaidView from './MermaidView';
@@ -208,7 +208,7 @@ export default function TeachAiPanel({
                     </Text>
                     <Text style={styles.historyMeta}>{formatStamp(h.createdAt)}</Text>
                   </View>
-                  <Ionicons name="chevron-forward" size={16} color={SLATE[400]} />
+                  <Ionicons name="chevron-forward" size={18} color={SLATE[400]} />
                 </Pressable>
               ))}
             </View>
@@ -260,7 +260,7 @@ export default function TeachAiPanel({
               <Text style={styles.videoTitle} numberOfLines={2}>
                 {video.title || 'Suggested video'}
               </Text>
-              <Ionicons name="open-outline" size={16} color={SLATE[400]} />
+              <Ionicons name="open-outline" size={18} color={SLATE[400]} />
             </Pressable>
           ) : null}
 
@@ -347,7 +347,7 @@ const styles = StyleSheet.create({
   content: { padding: SPACING.md, paddingBottom: SPACING.xl },
 
   errorBanner: {
-    fontSize: 12.5,
+    fontSize: TYPE.label,
     color: FEEDBACK.errorText,
     backgroundColor: FEEDBACK.errorBg,
     borderRadius: 10,
@@ -355,8 +355,8 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.sm,
   },
   loading: { alignItems: 'center', gap: SPACING.sm, paddingVertical: SPACING.xl },
-  loadingText: { fontSize: 13, color: SLATE[500] },
-  emptyHint: { fontSize: 13, lineHeight: 20, color: SLATE[600] },
+  loadingText: { fontSize: TYPE.body, color: SLATE[500] },
+  emptyHint: { fontSize: TYPE.body, lineHeight: leading(TYPE.body), color: SLATE[600] },
 
   block: {
     marginTop: SPACING.md,
@@ -366,7 +366,7 @@ const styles = StyleSheet.create({
     borderColor: SLATE[200],
     backgroundColor: '#ffffff',
   },
-  blockTitle: { fontSize: 13.5, fontWeight: '700', color: SLATE[800], marginBottom: SPACING.sm },
+  blockTitle: { fontSize: TYPE.heading, fontWeight: '700', color: SLATE[800], marginBottom: SPACING.sm },
 
   modelGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   modelItem: { width: 78, height: 78, borderRadius: 10, overflow: 'hidden', backgroundColor: SLATE[100] },
@@ -376,7 +376,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     right: 4,
     bottom: 4,
-    fontSize: 10,
+    fontSize: TYPE.micro,
     fontWeight: '700',
     color: '#ffffff',
     backgroundColor: 'rgba(15,23,42,0.72)',
@@ -396,8 +396,8 @@ const styles = StyleSheet.create({
   },
   historyThumb: { width: 44, height: 44, borderRadius: 8, backgroundColor: SLATE[100] },
   historyText: { flex: 1 },
-  historyPreview: { fontSize: 13, color: SLATE[700] },
-  historyMeta: { fontSize: 11, color: SLATE[400], marginTop: 2 },
+  historyPreview: { fontSize: TYPE.body, color: SLATE[700] },
+  historyMeta: { fontSize: TYPE.caption, color: SLATE[500], marginTop: 2 },
 
   regionThumb: {
     width: '100%',
@@ -406,10 +406,10 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.sm,
     backgroundColor: SLATE[100],
   },
-  richText: { fontSize: 14, lineHeight: 21, color: SLATE[700] },
+  richText: { fontSize: TYPE.body, lineHeight: leading(TYPE.body), color: SLATE[700] },
   figure: { marginBottom: SPACING.sm },
   figureImg: { width: '100%', height: 190, borderRadius: 10, backgroundColor: SLATE[100] },
-  caption: { fontSize: 11.5, color: SLATE[500], fontStyle: 'italic', marginTop: 4, textAlign: 'center' },
+  caption: { fontSize: TYPE.caption, color: SLATE[500], fontStyle: 'italic', marginTop: 4, textAlign: 'center' },
 
   videoCard: {
     flexDirection: 'row',
@@ -422,7 +422,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#ffffff',
     marginBottom: SPACING.sm,
   },
-  videoTitle: { flex: 1, fontSize: 13, fontWeight: '600', color: SLATE[700] },
+  videoTitle: { flex: 1, fontSize: TYPE.body, fontWeight: '600', color: SLATE[700] },
 
   followUps: { gap: 8, marginTop: SPACING.sm },
   followBtn: {
@@ -432,12 +432,12 @@ const styles = StyleSheet.create({
     backgroundColor: PALETTE.tint,
   },
   followBtnDisabled: { backgroundColor: SLATE[100] },
-  followText: { fontSize: 13.5, fontWeight: '700', color: PALETTE.primaryDark },
-  followTextOff: { color: SLATE[400] },
+  followText: { fontSize: TYPE.heading, fontWeight: '700', color: PALETTE.primaryDark },
+  followTextOff: { color: SLATE[500] },
 
   discussionRow: { flexDirection: 'row', gap: 6, marginBottom: 6 },
-  discussionNum: { fontSize: 13, fontWeight: '700', color: PALETTE.primaryDark },
-  discussionText: { flex: 1, fontSize: 13, lineHeight: 20, color: SLATE[700] },
+  discussionNum: { fontSize: TYPE.body, fontWeight: '700', color: PALETTE.primaryDark },
+  discussionText: { flex: 1, fontSize: TYPE.body, lineHeight: leading(TYPE.body), color: SLATE[700] },
 
   newBtn: {
     marginTop: SPACING.lg,
@@ -448,6 +448,6 @@ const styles = StyleSheet.create({
     borderColor: SLATE[200],
     backgroundColor: '#ffffff',
   },
-  newText: { fontSize: 13, fontWeight: '700', color: SLATE[600] },
+  newText: { fontSize: TYPE.body, fontWeight: '700', color: SLATE[600] },
   pressed: { opacity: 0.75 },
 });

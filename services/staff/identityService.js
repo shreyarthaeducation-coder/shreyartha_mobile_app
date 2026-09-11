@@ -37,7 +37,8 @@
 // for a row that would otherwise read "Not set" on three panels out of four.
 
 import staffApi from '../staffApi';
-import { photoOf, schoolLabel, teacherIdOf } from '../teacher/dashboardService';
+import { formatShortDate } from '../../utils/currency';
+import { photoOf, schoolLabel, schoolLogoOf, teacherIdOf } from '../teacher/dashboardService';
 import { fetchLiveSchools } from '../teacher/liveSessionService';
 
 /**
@@ -92,6 +93,51 @@ export async function loadStaffIdentity(profileEndpoints = []) {
 export function designationOf(profile) {
   const value = profile?.designation;
   return typeof value === 'string' && value.trim() ? value.trim() : null;
+}
+
+/**
+ * Replace this staff member's profile photo. Returns the new URL.
+ *
+ * `@RequestParam("file")`, not `@RequestPart` — which is why this goes through `staffApi.multipart`
+ * with the part named `file`. React Native's FormData produces a part with no content type of its
+ * own, and a `@RequestPart` binding rejects that with a 415 before the handler is ever reached;
+ * every upload in this codebase takes a `@RequestParam MultipartFile` for exactly that reason.
+ *
+ * The caller is responsible for writing the returned URL into `STAFF_PHOTO_KEY`, because
+ * `StaffProfileScreen` READS that cache rather than making its own HR call — a fresh photo that
+ * never reaches the cache shows on the dashboard and nowhere else.
+ *
+ * @param {{uri: string, name?: string, type?: string}} file from utils/filePicker
+ */
+export async function uploadStaffPhoto(file) {
+  const res = await staffApi.multipart('/api/staff/hr/profile/photo', {
+    files: {
+      file: {
+        uri: file.uri,
+        name: file.name || 'photo.jpg',
+        type: file.type || 'image/jpeg',
+      },
+    },
+  });
+  return res?.url || null;
+}
+
+/**
+ * The staff member's joining date as "12 Jan 2024", or null.
+ *
+ * `dateOfJoining` lives on the HR profile beside `employeeCode` and `profilePictureUrl`, and until
+ * the photo-led dashboard header it was fetched on every staff panel and rendered on none.
+ *
+ * NULL rather than a dash when it is absent, because the header OMITS a chip with no value instead
+ * of printing a placeholder. It is genuinely nullable: a staff member who has never been through
+ * payroll setup has no joining date recorded. `formatShortDate` would answer "-" here, which is why
+ * the emptiness check comes first.
+ */
+export function joinedOn(hr) {
+  const value = hr?.dateOfJoining;
+  if (!value) return null;
+  const formatted = formatShortDate(value);
+  return formatted && formatted !== '-' ? formatted : null;
 }
 
 /**
@@ -166,7 +212,7 @@ export function liveVerified(profile) {
 
 // Re-exported so a staff screen imports its identity helpers from one place. The implementations
 // stay in the teacher module because checkteacherdashboard.mjs asserts on that file's source text.
-export { photoOf, schoolLabel, teacherIdOf };
+export { photoOf, schoolLabel, schoolLogoOf, teacherIdOf };
 
 /** `teacherIdOf` under a role-neutral name — it reads `hr.employeeCode` and always did. */
 export const staffIdOf = teacherIdOf;

@@ -10,7 +10,7 @@ import {
   View,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { PORTALS, SLATE, SPACING } from '../../constants/theme';
+import { PORTALS, SLATE, SPACING, TYPE, leading } from '../../constants/theme';
 import { Card, EmptyState, FormSheet, ScreenScaffold, useToast } from '../ui';
 import RichText from '../RichText';
 import useStaffResource from '../../hooks/useStaffResource';
@@ -152,7 +152,7 @@ export default function UpskillScreen({ homeRoute = '/teacher' }) {
             style={({ pressed }) => [styles.mediaBtn, pressed && styles.pressed]}
             accessibilityRole="button"
           >
-            <Ionicons name="document-text-outline" size={18} color="#ffffff" />
+            <Ionicons name="document-text-outline" size={20} color="#ffffff" />
             <Text style={styles.mediaText}>Open PDF</Text>
           </Pressable>
         ) : null}
@@ -164,7 +164,7 @@ export default function UpskillScreen({ homeRoute = '/teacher' }) {
             style={({ pressed }) => [styles.linkBtn, pressed && styles.pressed]}
             accessibilityRole="button"
           >
-            <Ionicons name="open-outline" size={16} color={PALETTE.primaryDark} />
+            <Ionicons name="open-outline" size={18} color={PALETTE.primaryDark} />
             <Text style={styles.linkText} numberOfLines={1}>
               {mod.linkUrl}
             </Text>
@@ -219,7 +219,7 @@ export default function UpskillScreen({ homeRoute = '/teacher' }) {
                       </Text>
                     ) : null}
                   </View>
-                  <Ionicons name="chevron-forward" size={18} color={SLATE[400]} />
+                  <Ionicons name="chevron-forward" size={20} color={SLATE[400]} />
                 </View>
               </Card>
             </Pressable>
@@ -248,7 +248,7 @@ export default function UpskillScreen({ homeRoute = '/teacher' }) {
           style={({ pressed }) => [styles.backRow, pressed && styles.pressed]}
           accessibilityRole="button"
         >
-          <Ionicons name="chevron-back" size={15} color={PALETTE.primaryDark} />
+          <Ionicons name="chevron-back" size={17} color={PALETTE.primaryDark} />
           <Text style={styles.backText}>All chapters</Text>
         </Pressable>
 
@@ -310,7 +310,7 @@ export default function UpskillScreen({ homeRoute = '/teacher' }) {
                   <Text style={styles.loText}>{lo.text}</Text>
                   <Ionicons
                     name={open ? 'chevron-up' : 'chevron-down'}
-                    size={17}
+                    size={19}
                     color={SLATE[500]}
                   />
                 </Pressable>
@@ -332,13 +332,13 @@ export default function UpskillScreen({ homeRoute = '/teacher' }) {
                         >
                           <Ionicons
                             name={KIND_ICON[kind] || 'reader-outline'}
-                            size={17}
+                            size={19}
                             color={PALETTE.primaryDark}
                           />
                           <Text style={styles.moduleTitle} numberOfLines={2}>
                             {mod.title || `Module ${mod.moduleOrder || index + 1}`}
                           </Text>
-                          <Ionicons name="chevron-forward" size={15} color={SLATE[400]} />
+                          <Ionicons name="chevron-forward" size={17} color={SLATE[400]} />
                         </Pressable>
                       );
                     })
@@ -381,7 +381,7 @@ const styles = StyleSheet.create({
     gap: SPACING.sm,
   },
   backRow: { flexDirection: 'row', alignItems: 'center', gap: 2, alignSelf: 'flex-start' },
-  backText: { fontSize: 13, fontWeight: '700', color: PALETTE.primaryDark },
+  backText: { fontSize: TYPE.body, fontWeight: '700', color: PALETTE.primaryDark },
   chipRow: { gap: SPACING.sm, paddingRight: SPACING.md },
   chip: {
     paddingHorizontal: 13,
@@ -391,20 +391,20 @@ const styles = StyleSheet.create({
     borderColor: SLATE[200],
     backgroundColor: '#ffffff',
   },
-  chipText: { fontSize: 13, fontWeight: '600', color: SLATE[600] },
+  chipText: { fontSize: TYPE.body, fontWeight: '600', color: SLATE[600] },
 
   list: { flex: 1 },
   listContent: { padding: SPACING.md, paddingBottom: SPACING.xxl },
   loader: { marginVertical: SPACING.lg },
-  empty: { fontSize: 12.5, color: SLATE[400], fontStyle: 'italic', paddingVertical: 8 },
+  empty: { fontSize: TYPE.label, color: SLATE[500], fontStyle: 'italic', paddingVertical: 8 },
 
   chapterRow: { flexDirection: 'row', alignItems: 'center', gap: SPACING.sm },
   chapterText: { flex: 1 },
-  chapterName: { fontSize: 15.5, fontWeight: '700', color: SLATE[800] },
-  chapterDesc: { fontSize: 12.5, color: SLATE[500], marginTop: 3, lineHeight: 17 },
+  chapterName: { fontSize: TYPE.heading, fontWeight: '700', color: SLATE[800] },
+  chapterDesc: { fontSize: TYPE.label, color: SLATE[500], marginTop: 3, lineHeight: leading(TYPE.label) },
 
   loRow: { flexDirection: 'row', alignItems: 'center', gap: SPACING.sm },
-  loText: { flex: 1, fontSize: 14, fontWeight: '600', color: SLATE[800], lineHeight: 19 },
+  loText: { flex: 1, fontSize: TYPE.heading, fontWeight: '600', color: SLATE[800], lineHeight: leading(TYPE.heading) },
   moduleRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -414,7 +414,7 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: SLATE[100],
   },
-  moduleTitle: { flex: 1, fontSize: 13.5, color: SLATE[700], fontWeight: '600' },
+  moduleTitle: { flex: 1, fontSize: TYPE.heading, color: SLATE[700], fontWeight: '600' },
 
   image: { width: '100%', height: 220, borderRadius: 12, marginTop: SPACING.md },
   mediaBtn: {
@@ -427,7 +427,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     backgroundColor: PALETTE.primaryDark,
   },
-  mediaText: { fontSize: 14, fontWeight: '700', color: '#ffffff' },
+  mediaText: { fontSize: TYPE.heading, fontWeight: '700', color: '#ffffff' },
   linkBtn: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -439,7 +439,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: SLATE[200],
   },
-  linkText: { flex: 1, fontSize: 13, color: PALETTE.primaryDark, fontWeight: '600' },
+  linkText: { flex: 1, fontSize: TYPE.body, color: PALETTE.primaryDark, fontWeight: '600' },
 
   pressed: { opacity: 0.72 },
 });

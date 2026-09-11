@@ -73,3 +73,33 @@ export async function downloadAndShare(
   });
   return { shared: true, uri: result.uri };
 }
+
+/**
+ * Share a file this app BUILT, rather than one the server sent.
+ *
+ * `downloadAndShare` above fetches from an endpoint; this takes a string already in memory. The
+ * counselling sheet's CSV is assembled on the client — there is no export endpoint, the web builds
+ * its CSV the same way — so there is nothing to download.
+ *
+ * ── WHY THERE IS NO "DOWNLOAD" ──────────────────────────────────────────────
+ * A browser can put a file in the user's Downloads folder; a React Native app cannot. The share
+ * sheet IS the export: the counsellor sends it to email, Drive, or Files. When sharing is
+ * unavailable the file still exists in the cache directory and its uri is returned, so the caller
+ * can say where it went rather than reporting a failure.
+ *
+ * @param {string} filename e.g. `counselling-sheet-2026-09.csv`
+ * @param {string} contents the file body
+ * @param {string} [mimeType]
+ */
+export async function shareLocalFile(filename, contents, mimeType = 'text/csv') {
+  const uri = `${FileSystem.cacheDirectory}${filename}`;
+  await FileSystem.writeAsStringAsync(uri, contents, {
+    encoding: FileSystem.EncodingType.UTF8,
+  });
+
+  if (!(await Sharing.isAvailableAsync())) {
+    return { shared: false, uri };
+  }
+  await Sharing.shareAsync(uri, { mimeType, dialogTitle: filename, UTI: 'public.comma-separated-values-text' });
+  return { shared: true, uri };
+}

@@ -12,7 +12,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
-import { SHADOWS, SPACING } from '../../constants/theme';
+import { SHADOWS, SPACING, TYPE, leading } from '../../constants/theme';
 
 // 'bottom' is deliberately excluded: it is the inset that changes when the keyboard opens, and
 // feeding it into SafeAreaView padding re-lays-out the card mid-focus — on Android 15 that
@@ -68,7 +68,7 @@ export default function AuthScreen({
                 accessibilityRole="button"
                 accessibilityLabel="Go back"
               >
-                <Ionicons name="chevron-back" size={18} color="#ffffff" />
+                <Ionicons name="chevron-back" size={20} color="#ffffff" />
                 <Text style={styles.backText}>Back</Text>
               </Pressable>
             ) : (
@@ -77,7 +77,7 @@ export default function AuthScreen({
 
             <View style={styles.brand}>
               <Image
-                source={require('../../assets/images/AppLogo.png')}
+                source={require('../../assets/images/The3CEdge.png')}
                 style={styles.logo}
                 resizeMode="contain"
                 accessibilityLabel="The 3C Edge"
@@ -120,10 +120,10 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.md,
   },
   backBtnPressed: { backgroundColor: 'rgba(255,255,255,0.3)' },
-  backText: { color: '#ffffff', fontSize: 14, fontWeight: '600' },
+  backText: { color: '#ffffff', fontSize: TYPE.body, fontWeight: '600' },
   backSpacer: { height: SPACING.md },
   brand: { alignItems: 'center', marginBottom: SPACING.md },
-  logo: { width: 150, height: 60 },
+  logo: { width: 210, height: 84 },
   card: {
     backgroundColor: '#ffffff',
     borderRadius: 20,
@@ -131,13 +131,13 @@ const styles = StyleSheet.create({
     ...SHADOWS.lg,
   },
   titleBlock: { alignItems: 'center', marginBottom: SPACING.lg },
-  title: { fontSize: 22, fontWeight: '700', textAlign: 'center' },
+  title: { fontSize: TYPE.headline, fontWeight: '700', textAlign: 'center' },
   subtitle: {
-    fontSize: 14,
+    fontSize: TYPE.body,
     color: '#666666',
     textAlign: 'center',
     marginTop: 6,
-    lineHeight: 20,
+    lineHeight: leading(TYPE.body),
   },
   footer: { marginTop: SPACING.md, alignItems: 'center' },
 });

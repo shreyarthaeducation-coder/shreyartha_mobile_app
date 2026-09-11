@@ -1,7 +1,7 @@
 import { Pressable, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
-import { SPACING, TOUCH, TYPE } from '../../../constants/theme';
+import { SPACING, TOUCH, TYPE, leading } from '../../../constants/theme';
 import { makeStyles } from '../../../utils/makeStyles';
 
 /**
@@ -20,13 +20,30 @@ import { makeStyles } from '../../../utils/makeStyles';
  * `expo-linear-gradient` is already a dependency and already shipping in components/auth/AuthScreen.
  */
 
-export default function HeroCard({ title, subtitle, icon, colors, onPress, children }) {
+export default function HeroCard({
+  title,
+  subtitle,
+  icon,
+  colors,
+  onPress,
+  children,
+  // ── THE ONLY PAGE-RELATIVE THING ON THIS CARD ─────────────────────────────
+  // Every other colour here is relative to the gradient the card paints ITSELF on, which the
+  // caller supplies — so a hero is a saturated slab whatever the page behind it is, and needs no
+  // light variant for its text, icon tile or chevron. The shadow is the exception: 30% black was
+  // tuned to separate the card from a dark photograph, and on a light page it reads as a grey
+  // smudge. `tone` exists for that one rule.
+  //
+  // Defaults to 'dark' so the teacher, partner and staff callers are untouched.
+  tone = 'dark',
+}) {
   const styles = useStyles();
+  const light = tone === 'light';
 
   return (
     <Pressable
       onPress={onPress}
-      style={({ pressed }) => [styles.wrap, pressed && styles.pressed]}
+      style={({ pressed }) => [styles.wrap, light && styles.wrapLight, pressed && styles.pressed]}
       accessibilityRole="button"
       accessibilityLabel={`${title}. ${subtitle}`}
     >
@@ -51,7 +68,7 @@ export default function HeroCard({ title, subtitle, icon, colors, onPress, child
           </View>
 
           <View style={styles.chevron}>
-            <Ionicons name="chevron-forward" size={17} color="#1f2937" />
+            <Ionicons name="chevron-forward" size={19} color="#1f2937" />
           </View>
         </View>
 
@@ -73,6 +90,8 @@ const useStyles = makeStyles(() => ({
     shadowRadius: 14,
     elevation: 6,
   },
+  // Softer and tighter on a light page. A 30% black shadow at radius 14 is a grey haze on white.
+  wrapLight: { shadowOpacity: 0.12, shadowRadius: 10, shadowOffset: { width: 0, height: 3 }, elevation: 3 },
   card: { borderRadius: 20, padding: SPACING.md, minHeight: 104, justifyContent: 'center' },
   head: { flexDirection: 'row', alignItems: 'center', gap: SPACING.md },
 
@@ -86,7 +105,10 @@ const useStyles = makeStyles(() => ({
   },
   text: { flex: 1 },
   title: { fontSize: TYPE.headline, fontWeight: '800', color: '#ffffff' },
-  subtitle: { fontSize: TYPE.label, color: '#ffffff', opacity: 0.92, lineHeight: 17, marginTop: 2 },
+  // Full white. It sat at 0.92 opacity, which on the old light gradients took an already failing
+  // subtitle lower still; the gradients were darkened so white passes, and a faded white would
+  // throw that margin away again.
+  subtitle: { fontSize: TYPE.label, color: '#ffffff', lineHeight: leading(TYPE.label), marginTop: 2 },
 
   chevron: {
     width: 34,

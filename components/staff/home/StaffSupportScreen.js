@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Linking, Pressable, Text, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { SLATE, SPACING, TOUCH, TYPE } from '../../../constants/theme';
+import { SLATE, SPACING, TOUCH, TYPE, leading } from '../../../constants/theme';
 import { usePalette } from '../../ui/PaletteContext';
 import { makeStyles } from '../../../utils/makeStyles';
 import { useTranslations } from '../../../hooks/useTranslations';
@@ -53,7 +53,10 @@ const STRINGS = {
   helpEmail: 'Email The 3C Edge',
   helpEmailBody: 'Problems with the app itself — something not loading, or a screen behaving oddly.',
   helpPassword: 'Change your password',
-  helpPasswordBody: 'You can also reach this from the lock icon at the top of your dashboard.',
+  // The header lock icon this used to point at was removed when the school crest took the lead
+  // position in BrandBar. This row is now the only way in, so the copy must not send anyone back
+  // to a control that no longer exists.
+  helpPasswordBody: 'Set a new password for your account.',
 };
 
 const SHREYA_AVATAR = require('../../../assets/images/Chatbot.png');
@@ -130,7 +133,7 @@ export default function StaffSupportScreen() {
               <Text style={styles.label}>{t.helpEmail}</Text>
               <Text style={styles.description}>{SUPPORT_EMAIL}</Text>
             </View>
-            <Ionicons name="chevron-forward" size={15} color={SLATE[400]} />
+            <Ionicons name="chevron-forward" size={17} color={SLATE[400]} />
           </Pressable>
 
           <Pressable
@@ -146,7 +149,7 @@ export default function StaffSupportScreen() {
               <Text style={styles.label}>{t.helpPassword}</Text>
               <Text style={styles.description}>{t.helpPasswordBody}</Text>
             </View>
-            <Ionicons name="chevron-forward" size={15} color={SLATE[400]} />
+            <Ionicons name="chevron-forward" size={17} color={SLATE[400]} />
           </Pressable>
         </Card>
       )}
@@ -165,7 +168,7 @@ export default function StaffSupportScreen() {
 }
 
 const useStyles = makeStyles((p) => ({
-  intro: { fontSize: TYPE.label, color: SLATE[500], lineHeight: 19, marginBottom: SPACING.md },
+  intro: { fontSize: TYPE.label, color: SLATE[500], lineHeight: leading(TYPE.label), marginBottom: SPACING.md },
 
   helpTitle: {
     fontSize: TYPE.caption,
@@ -193,7 +196,7 @@ const useStyles = makeStyles((p) => ({
   },
   text: { flex: 1 },
   label: { fontSize: TYPE.label, fontWeight: '700', color: SLATE[800] },
-  description: { fontSize: TYPE.caption, color: SLATE[500], lineHeight: 17, marginTop: 2 },
+  description: { fontSize: TYPE.caption, color: SLATE[500], lineHeight: leading(TYPE.caption), marginTop: 2 },
 
   pressed: { opacity: 0.8 },
 }));

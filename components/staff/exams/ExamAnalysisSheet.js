@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { FEEDBACK, PORTALS, SLATE, SPACING } from '../../../constants/theme';
+import { FEEDBACK, PORTALS, SLATE, SPACING, TYPE, leading } from '../../../constants/theme';
 import { FormSheet, GaugeChart, GroupedBars } from '../../ui';
 import { fetchExamAnalysis } from '../../../services/teacher/examService';
 import { captureAndShare } from '../../../utils/shareCapture';
@@ -190,8 +190,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   tileHighlight: { backgroundColor: PALETTE.tint, borderColor: PALETTE.primary },
-  tileValue: { fontSize: 18, fontWeight: '800', color: SLATE[800] },
-  tileLabel: { fontSize: 10.5, color: SLATE[500], fontWeight: '600', marginTop: 2, textAlign: 'center' },
+  tileValue: { fontSize: TYPE.headline, fontWeight: '800', color: SLATE[800] },
+  tileLabel: { fontSize: TYPE.micro, color: SLATE[500], fontWeight: '600', marginTop: 2, textAlign: 'center' },
 
   remarks: {
     marginTop: SPACING.md,
@@ -199,11 +199,11 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     backgroundColor: SLATE[50],
   },
-  remarksLabel: { fontSize: 11, fontWeight: '700', color: SLATE[500], textTransform: 'uppercase' },
-  remarksText: { fontSize: 13, color: SLATE[700], marginTop: 3, lineHeight: 18 },
+  remarksLabel: { fontSize: TYPE.caption, fontWeight: '700', color: SLATE[500], textTransform: 'uppercase' },
+  remarksText: { fontSize: TYPE.body, color: SLATE[700], marginTop: 3, lineHeight: leading(TYPE.body) },
 
   heading: {
-    fontSize: 12,
+    fontSize: TYPE.label,
     fontWeight: '800',
     color: SLATE[500],
     textTransform: 'uppercase',
@@ -221,10 +221,10 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.sm,
   },
   qHead: { flexDirection: 'row', alignItems: 'center', marginBottom: 4 },
-  qIndex: { flex: 1, fontSize: 12, fontWeight: '800', color: PALETTE.primaryDark },
-  qScore: { fontSize: 12, fontWeight: '700', color: SLATE[600] },
-  qText: { fontSize: 13, color: SLATE[700], lineHeight: 18 },
+  qIndex: { flex: 1, fontSize: TYPE.label, fontWeight: '800', color: PALETTE.primaryDark },
+  qScore: { fontSize: TYPE.label, fontWeight: '700', color: SLATE[600] },
+  qText: { fontSize: TYPE.body, color: SLATE[700], lineHeight: leading(TYPE.body) },
   qMeta: { flexDirection: 'row', flexWrap: 'wrap', gap: 5, marginTop: 6 },
   qChip: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 999, backgroundColor: SLATE[100] },
-  qChipText: { fontSize: 10.5, fontWeight: '600', color: SLATE[500] },
+  qChipText: { fontSize: TYPE.micro, fontWeight: '600', color: SLATE[500] },
 });

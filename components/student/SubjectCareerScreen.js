@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Linking, Pressable, ScrollView, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { SLATE, SPACING, TYPE } from '../../constants/theme';
+import { SLATE, SPACING, TYPE, leading } from '../../constants/theme';
 import { usePalette } from '../ui/PaletteContext';
 import { makeStyles } from '../../utils/makeStyles';
 import { EmptyState, Select, useToast } from '../ui';
@@ -238,7 +238,7 @@ export default function SubjectCareerScreen() {
           onPress={() => openUrl(content.aboutCoursesVideoUrl)}
           style={({ pressed }) => [styles.mediaBtn, pressed && styles.pressed]}
         >
-          <Ionicons name="videocam-outline" size={15} color={palette.deep} />
+          <Ionicons name="videocam-outline" size={17} color={palette.deep} />
           <Text style={styles.mediaText}>Watch the video</Text>
         </Pressable>
       ) : null}
@@ -247,7 +247,7 @@ export default function SubjectCareerScreen() {
           onPress={() => openUrl(content.aboutCoursesImageUrl)}
           style={({ pressed }) => [styles.mediaBtn, pressed && styles.pressed]}
         >
-          <Ionicons name="image-outline" size={15} color={palette.deep} />
+          <Ionicons name="image-outline" size={17} color={palette.deep} />
           <Text style={styles.mediaText}>View the image</Text>
         </Pressable>
       ) : null}
@@ -257,7 +257,7 @@ export default function SubjectCareerScreen() {
           onPress={() => openUrl(content.aboutCoursesPdfUrl)}
           style={({ pressed }) => [styles.mediaBtn, pressed && styles.pressed]}
         >
-          <Ionicons name="document-text-outline" size={15} color={palette.deep} />
+          <Ionicons name="document-text-outline" size={17} color={palette.deep} />
           <Text style={styles.mediaText}>Open the PDF</Text>
         </Pressable>
       ) : null}
@@ -387,7 +387,7 @@ export default function SubjectCareerScreen() {
               onPress={() => openUrl(c.websiteLink)}
               style={({ pressed }) => [styles.linkBtn, pressed && styles.pressed]}
             >
-              <Ionicons name="globe-outline" size={13} color={palette.deep} />
+              <Ionicons name="globe-outline" size={15} color={palette.deep} />
               <Text style={styles.linkText}>Website</Text>
             </Pressable>
           ) : null}
@@ -396,7 +396,7 @@ export default function SubjectCareerScreen() {
               onPress={() => openUrl(c.videoUrl)}
               style={({ pressed }) => [styles.linkBtn, pressed && styles.pressed]}
             >
-              <Ionicons name="play-circle-outline" size={13} color={palette.deep} />
+              <Ionicons name="play-circle-outline" size={15} color={palette.deep} />
               <Text style={styles.linkText}>Watch</Text>
             </Pressable>
           ) : null}
@@ -486,7 +486,7 @@ export default function SubjectCareerScreen() {
                 onPress={() => openUrl(s.applyLink)}
                 style={({ pressed }) => [styles.linkBtn, styles.applyBtn, pressed && styles.pressed]}
               >
-                <Ionicons name="open-outline" size={13} color={palette.onPrimary} />
+                <Ionicons name="open-outline" size={15} color={palette.onPrimary} />
                 <Text style={[styles.linkText, styles.applyText]}>Apply Now</Text>
               </Pressable>
             ) : null}
@@ -495,7 +495,7 @@ export default function SubjectCareerScreen() {
                 onPress={() => openUrl(s.videoUrl)}
                 style={({ pressed }) => [styles.linkBtn, pressed && styles.pressed]}
               >
-                <Ionicons name="play-circle-outline" size={13} color={palette.deep} />
+                <Ionicons name="play-circle-outline" size={15} color={palette.deep} />
                 <Text style={styles.linkText}>Watch</Text>
               </Pressable>
             ) : null}
@@ -623,13 +623,13 @@ export default function SubjectCareerScreen() {
 
 const useStyles = makeStyles((p) => ({
   loader: { marginVertical: SPACING.xl },
-  empty: { fontSize: TYPE.body, color: SLATE[500], lineHeight: 19, paddingVertical: SPACING.sm },
-  muted: { fontSize: TYPE.label, color: SLATE[400] },
+  empty: { fontSize: TYPE.body, color: SLATE[500], lineHeight: leading(TYPE.body), paddingVertical: SPACING.sm },
+  muted: { fontSize: TYPE.label, color: SLATE[500] },
 
   railLabel: {
     fontSize: TYPE.caption,
     fontWeight: '700',
-    color: p.onDark,
+    color: SLATE[600],
     textTransform: 'uppercase',
     letterSpacing: 0.5,
     marginBottom: 7,
@@ -653,19 +653,19 @@ const useStyles = makeStyles((p) => ({
   prefName: { flex: 1, fontSize: TYPE.body, fontWeight: '700', color: SLATE[800] },
   prefNameOn: { color: p.onPrimary },
   prefSub: { fontSize: TYPE.caption, color: SLATE[500], marginTop: 2 },
-  prefSubOn: { color: p.onPrimary, opacity: 0.85 },
+  prefSubOn: { color: p.onPrimary },
 
   tabRow: { gap: 7, paddingBottom: SPACING.md, paddingRight: SPACING.md },
   tab: {
     paddingVertical: 7,
     paddingHorizontal: 13,
     borderRadius: 999,
-    backgroundColor: 'rgba(255,255,255,0.14)',
+    backgroundColor: SLATE[100],
     borderWidth: 1,
     borderColor: p.headerBorder,
   },
   tabOn: { backgroundColor: p.primary, borderColor: p.primary },
-  tabText: { fontSize: TYPE.label, fontWeight: '600', color: p.onDark },
+  tabText: { fontSize: TYPE.label, fontWeight: '600', color: SLATE[600] },
   tabTextOn: { color: p.onPrimary },
 
   mediaBtn: {
@@ -711,7 +711,7 @@ const useStyles = makeStyles((p) => ({
     textAlign: 'center',
     marginTop: 4,
   },
-  resultMax: { fontSize: TYPE.heading, fontWeight: '600', color: SLATE[400] },
+  resultMax: { fontSize: TYPE.heading, fontWeight: '600', color: SLATE[500] },
   resultPct: {
     fontSize: TYPE.body,
     fontWeight: '700',
@@ -723,7 +723,7 @@ const useStyles = makeStyles((p) => ({
     fontSize: TYPE.label,
     color: SLATE[600],
     textAlign: 'center',
-    lineHeight: 19,
+    lineHeight: leading(TYPE.label),
     marginTop: SPACING.sm,
   },
 

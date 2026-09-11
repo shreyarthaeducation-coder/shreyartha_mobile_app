@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { FEEDBACK, SLATE, SPACING } from '../../constants/theme';
+import { FEEDBACK, SLATE, SPACING, TYPE } from '../../constants/theme';
 import { usePalette } from '../../components/ui/PaletteContext';
 import {
   Card,
@@ -244,7 +244,7 @@ export default function CounsellingNotesScreen({
         style={({ pressed }) => [styles.backRow, pressed && styles.pressed]}
         accessibilityRole="button"
       >
-        <Ionicons name="chevron-back" size={15} color={PALETTE.primaryDark} />
+        <Ionicons name="chevron-back" size={17} color={PALETTE.primaryDark} />
         <Text style={styles.backText}>All students</Text>
       </Pressable>
 
@@ -274,7 +274,7 @@ export default function CounsellingNotesScreen({
               ) : count > 0 ? (
                 <StatusChip label={`${count} session${count === 1 ? '' : 's'}`} tone="info" />
               ) : (
-                <Ionicons name="add-circle-outline" size={18} color={SLATE[400]} />
+                <Ionicons name="add-circle-outline" size={20} color={SLATE[400]} />
               )}
             </Pressable>
           );
@@ -398,7 +398,7 @@ export default function CounsellingNotesScreen({
                   ) : (
                     <Text style={styles.studentNone}>No sessions</Text>
                   )}
-                  <Ionicons name="chevron-forward" size={16} color={SLATE[400]} />
+                  <Ionicons name="chevron-forward" size={18} color={SLATE[400]} />
                 </Pressable>
               );
             })
@@ -441,7 +441,7 @@ export default function CounsellingNotesScreen({
                 accessibilityRole="button"
               >
                 <Text style={styles.typeText}>{type.label}</Text>
-                <Ionicons name="chevron-forward" size={16} color={SLATE[400]} />
+                <Ionicons name="chevron-forward" size={18} color={SLATE[400]} />
               </Pressable>
             ))}
           </>
@@ -452,7 +452,7 @@ export default function CounsellingNotesScreen({
               style={({ pressed }) => [styles.backRow, pressed && styles.pressed]}
               accessibilityRole="button"
             >
-              <Ionicons name="chevron-back" size={15} color={PALETTE.primaryDark} />
+              <Ionicons name="chevron-back" size={17} color={PALETTE.primaryDark} />
               <Text style={styles.backText}>{selectedType.label}</Text>
             </Pressable>
 
@@ -567,8 +567,8 @@ const useStyles = makeStyles((p) => ({
     paddingHorizontal: SPACING.md,
     marginTop: SPACING.sm,
   },
-  studentName: { flex: 1, fontSize: 14.5, fontWeight: '600', color: SLATE[800] },
-  studentNone: { fontSize: 11.5, color: SLATE[400], fontStyle: 'italic' },
+  studentName: { flex: 1, fontSize: TYPE.heading, fontWeight: '600', color: SLATE[800] },
+  studentNone: { fontSize: TYPE.caption, color: SLATE[500], fontStyle: 'italic' },
 
   backRow: {
     flexDirection: 'row',
@@ -578,7 +578,7 @@ const useStyles = makeStyles((p) => ({
     marginTop: SPACING.md,
     marginBottom: SPACING.sm,
   },
-  backText: { fontSize: 13, fontWeight: '700', color: p.primaryDark },
+  backText: { fontSize: TYPE.body, fontWeight: '700', color: p.primaryDark },
 
   dayRow: {
     flexDirection: 'row',
@@ -589,9 +589,9 @@ const useStyles = makeStyles((p) => ({
     borderTopColor: SLATE[100],
   },
   dayRowMuted: { opacity: 0.55 },
-  dayLabel: { flex: 1, fontSize: 13.5, color: SLATE[700], fontWeight: '600' },
-  dayLabelMuted: { color: SLATE[400] },
-  dayNote: { fontSize: 11.5, color: SLATE[400], fontStyle: 'italic' },
+  dayLabel: { flex: 1, fontSize: TYPE.heading, color: SLATE[700], fontWeight: '600' },
+  dayLabelMuted: { color: SLATE[500] },
+  dayNote: { fontSize: TYPE.caption, color: SLATE[500], fontStyle: 'italic' },
 
   existing: {
     padding: SPACING.sm,
@@ -600,17 +600,17 @@ const useStyles = makeStyles((p) => ({
     marginBottom: SPACING.md,
   },
   existingTitle: {
-    fontSize: 11,
+    fontSize: TYPE.caption,
     fontWeight: '800',
     color: SLATE[500],
     textTransform: 'uppercase',
     letterSpacing: 0.4,
   },
   existingRow: { flexDirection: 'row', alignItems: 'center', marginTop: 5 },
-  existingType: { flex: 1, fontSize: 13, fontWeight: '600', color: SLATE[700] },
-  existingStatus: { fontSize: 12, color: SLATE[500] },
+  existingType: { flex: 1, fontSize: TYPE.body, fontWeight: '600', color: SLATE[700] },
+  existingStatus: { fontSize: TYPE.label, color: SLATE[500] },
 
-  pickPrompt: { fontSize: 13.5, color: SLATE[600], marginBottom: SPACING.sm },
+  pickPrompt: { fontSize: TYPE.body, color: SLATE[600], marginBottom: SPACING.sm },
   typeBtn: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -622,10 +622,10 @@ const useStyles = makeStyles((p) => ({
     borderColor: SLATE[200],
     marginBottom: SPACING.sm,
   },
-  typeText: { flex: 1, fontSize: 14.5, fontWeight: '700', color: SLATE[800] },
+  typeText: { flex: 1, fontSize: TYPE.heading, fontWeight: '700', color: SLATE[800] },
 
   multiBlock: { marginBottom: SPACING.md },
-  multiLabel: { fontSize: 13, fontWeight: '600', color: SLATE[700], marginBottom: 6 },
+  multiLabel: { fontSize: TYPE.body, fontWeight: '600', color: SLATE[700], marginBottom: 6 },
   multiWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
   multiChip: {
     paddingHorizontal: 11,
@@ -635,7 +635,7 @@ const useStyles = makeStyles((p) => ({
     borderColor: SLATE[200],
     backgroundColor: '#ffffff',
   },
-  multiChipText: { fontSize: 12.5, fontWeight: '600', color: SLATE[600] },
+  multiChipText: { fontSize: TYPE.label, fontWeight: '600', color: SLATE[600] },
 
   scoreRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: SPACING.md },
   scoreBtn: {
@@ -648,7 +648,7 @@ const useStyles = makeStyles((p) => ({
     borderColor: SLATE[200],
     backgroundColor: SLATE[50],
   },
-  scoreText: { fontSize: 13, fontWeight: '700', color: SLATE[600] },
+  scoreText: { fontSize: TYPE.body, fontWeight: '700', color: SLATE[600] },
   scoreTextActive: { color: '#ffffff' },
 
   multiline: { height: 88, textAlignVertical: 'top' },

@@ -1,6 +1,6 @@
 import { Pressable, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { RADIUS, SLATE, SPACING, TOUCH, TYPE } from '../../../constants/theme';
+import { RADIUS, SLATE, SPACING, TOUCH, TYPE, leading } from '../../../constants/theme';
 import { usePalette } from '../../ui/PaletteContext';
 import { makeStyles } from '../../../utils/makeStyles';
 
@@ -51,7 +51,7 @@ export default function StaffBanner({ title, subtitle, icon = 'sparkles', cta, o
           accessibilityRole="button"
           accessibilityLabel={cta}
         >
-          <Ionicons name="add" size={16} color={palette.onPrimary || '#ffffff'} />
+          <Ionicons name="add" size={18} color={palette.onPrimary || '#ffffff'} />
           <Text style={styles.ctaText}>{cta}</Text>
         </Pressable>
       ) : null}
@@ -80,7 +80,7 @@ const useStyles = makeStyles((p) => ({
   },
   text: { flex: 1, gap: 3 },
   title: { fontSize: TYPE.body, fontWeight: '800', color: p.primaryDark },
-  subtitle: { fontSize: TYPE.label, color: SLATE[500], lineHeight: 18 },
+  subtitle: { fontSize: TYPE.label, color: SLATE[500], lineHeight: leading(TYPE.label) },
   cta: {
     flexDirection: 'row',
     alignItems: 'center',

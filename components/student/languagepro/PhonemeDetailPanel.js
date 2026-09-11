@@ -1,7 +1,7 @@
 import { useCallback, useState } from 'react';
 import { ActivityIndicator, Pressable, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { BAND, FEEDBACK, RECORDING, SLATE, SPACING, TYPE } from '../../../constants/theme';
+import { BAND, FEEDBACK, RECORDING, SLATE, SPACING, TYPE, leading } from '../../../constants/theme';
 import { usePalette } from '../../ui/PaletteContext';
 import { makeStyles } from '../../../utils/makeStyles';
 import { StudentCard, StudentCardTitle } from '../StudentCard';
@@ -125,7 +125,7 @@ export default function PhonemeDetailPanel({ phoneme, onClose, showToast }) {
             {speaking === ex.word ? (
               <ActivityIndicator size="small" color={palette.deep} />
             ) : (
-              <Ionicons name="volume-medium-outline" size={14} color={palette.deep} />
+              <Ionicons name="volume-medium-outline" size={16} color={palette.deep} />
             )}
             <Text style={styles.wordText}>{ex.word}</Text>
             <Text style={styles.wordIpa}>/{ex.ipa}/</Text>
@@ -194,7 +194,7 @@ const useStyles = makeStyles((p) => ({
   symbol: { fontSize: TYPE.display, fontWeight: '800', color: p.primaryDark },
   label: { fontSize: TYPE.body, color: SLATE[600], marginTop: -2 },
 
-  howTo: { fontSize: TYPE.body, color: SLATE[700], lineHeight: 20, marginBottom: SPACING.sm },
+  howTo: { fontSize: TYPE.body, color: SLATE[700], lineHeight: leading(TYPE.body), marginBottom: SPACING.sm },
 
   wordRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 7, marginBottom: SPACING.sm },
   wordChip: {
@@ -225,7 +225,7 @@ const useStyles = makeStyles((p) => ({
   recordBtnOn: { backgroundColor: RECORDING },
   recordBtnOff: { backgroundColor: SLATE[400] },
   recordHint: { flex: 1, fontSize: TYPE.label, color: SLATE[600] },
-  error: { fontSize: TYPE.label, color: FEEDBACK.errorText, lineHeight: 18, marginTop: SPACING.sm },
+  error: { fontSize: TYPE.label, color: FEEDBACK.errorText, lineHeight: leading(TYPE.label), marginTop: SPACING.sm },
 
   scoreRow: { flexDirection: 'row', alignItems: 'center', gap: SPACING.md, marginTop: SPACING.md },
   scoreValue: { fontSize: TYPE.figure, fontWeight: '800' },

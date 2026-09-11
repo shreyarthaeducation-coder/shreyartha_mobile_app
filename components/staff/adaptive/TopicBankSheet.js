@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Alert, Pressable, StyleSheet, Switch, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { FEEDBACK, PORTALS, SLATE, SPACING } from '../../../constants/theme';
+import { FEEDBACK, PORTALS, SLATE, SPACING, TYPE, leading } from '../../../constants/theme';
 import { FormSheet, SegmentedTabs, Select, TextField } from '../../ui';
 import { BLOOM_TAXONOMY, SKILLS_MEASURED } from '../../../services/teacher/examService';
 import {
@@ -320,7 +320,7 @@ export default function TopicBankSheet({ visible, scope, topic, chapter, onClose
               accessibilityRole="button"
               accessibilityLabel="Edit question"
             >
-              <Ionicons name="pencil" size={15} color={SLATE[600]} />
+              <Ionicons name="pencil" size={17} color={SLATE[600]} />
             </Pressable>
             <Pressable
               onPress={() => confirmDelete(q)}
@@ -329,7 +329,7 @@ export default function TopicBankSheet({ visible, scope, topic, chapter, onClose
               accessibilityRole="button"
               accessibilityLabel="Delete question"
             >
-              <Ionicons name="trash-outline" size={15} color={FEEDBACK.errorText} />
+              <Ionicons name="trash-outline" size={17} color={FEEDBACK.errorText} />
             </Pressable>
           </>
         ) : null}
@@ -579,7 +579,7 @@ export default function TopicBankSheet({ visible, scope, topic, chapter, onClose
                     <ActivityIndicator size="small" color={PALETTE.primaryDark} />
                   ) : (
                     <>
-                      <Ionicons name="document-attach-outline" size={16} color={PALETTE.primaryDark} />
+                      <Ionicons name="document-attach-outline" size={18} color={PALETTE.primaryDark} />
                       <Text style={styles.importText}>Import PDF</Text>
                     </>
                   )}
@@ -604,9 +604,9 @@ export default function TopicBankSheet({ visible, scope, topic, chapter, onClose
 
 const styles = StyleSheet.create({
   loader: { marginVertical: SPACING.xl },
-  empty: { fontSize: 13, color: SLATE[500], textAlign: 'center', paddingVertical: SPACING.lg },
-  error: { fontSize: 12.5, color: FEEDBACK.errorText, marginBottom: SPACING.md, fontWeight: '600' },
-  hint: { fontSize: 11.5, color: SLATE[400], marginTop: -SPACING.sm, marginBottom: SPACING.md },
+  empty: { fontSize: TYPE.body, color: SLATE[500], textAlign: 'center', paddingVertical: SPACING.lg },
+  error: { fontSize: TYPE.label, color: FEEDBACK.errorText, marginBottom: SPACING.md, fontWeight: '600' },
+  hint: { fontSize: TYPE.caption, color: SLATE[500], marginTop: -SPACING.sm, marginBottom: SPACING.md },
   multiline: { height: 76, textAlignVertical: 'top' },
 
   switchRow: {
@@ -620,13 +620,13 @@ const styles = StyleSheet.create({
     borderColor: SLATE[200],
   },
   switchText: { flex: 1 },
-  switchLabel: { fontSize: 14, fontWeight: '700', color: SLATE[800] },
-  switchHint: { fontSize: 11.5, color: SLATE[500], marginTop: 3, lineHeight: 16 },
+  switchLabel: { fontSize: TYPE.heading, fontWeight: '700', color: SLATE[800] },
+  switchHint: { fontSize: TYPE.caption, color: SLATE[500], marginTop: 3, lineHeight: leading(TYPE.caption) },
   bankTabs: { marginTop: SPACING.md, marginBottom: SPACING.sm },
 
   selectionBar: { flexDirection: 'row', alignItems: 'center', gap: SPACING.sm, marginBottom: SPACING.sm },
-  selectionCount: { flex: 1, fontSize: 12.5, fontWeight: '700', color: SLATE[600] },
-  selectionLink: { fontSize: 12.5, fontWeight: '700', color: PALETTE.primaryDark },
+  selectionCount: { flex: 1, fontSize: TYPE.label, fontWeight: '700', color: SLATE[600] },
+  selectionLink: { fontSize: TYPE.label, fontWeight: '700', color: PALETTE.primaryDark },
   saveSelection: {
     paddingVertical: 7,
     paddingHorizontal: 14,
@@ -636,7 +636,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   saveSelectionOff: { backgroundColor: SLATE[300] },
-  saveSelectionText: { fontSize: 12.5, fontWeight: '700', color: '#ffffff' },
+  saveSelectionText: { fontSize: TYPE.label, fontWeight: '700', color: '#ffffff' },
 
   importRow: { flexDirection: 'row', alignItems: 'flex-end', gap: SPACING.sm, marginBottom: SPACING.sm },
   importLevel: { flex: 1 },
@@ -651,7 +651,7 @@ const styles = StyleSheet.create({
     borderColor: SLATE[200],
     marginBottom: SPACING.md,
   },
-  importText: { fontSize: 13, fontWeight: '700', color: PALETTE.primaryDark },
+  importText: { fontSize: TYPE.body, fontWeight: '700', color: PALETTE.primaryDark },
 
   qCard: {
     borderWidth: 1,
@@ -663,7 +663,7 @@ const styles = StyleSheet.create({
   qHead: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 6 },
   qSpacer: { flex: 1 },
   levelChip: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 999, backgroundColor: PALETTE.tint },
-  levelText: { fontSize: 10.5, fontWeight: '800', color: PALETTE.primaryDark },
+  levelText: { fontSize: TYPE.micro, fontWeight: '800', color: PALETTE.primaryDark },
   iconBtn: {
     width: 28,
     height: 28,
@@ -672,13 +672,13 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     backgroundColor: SLATE[50],
   },
-  qText: { fontSize: 13.5, color: SLATE[800], lineHeight: 19 },
+  qText: { fontSize: TYPE.body, color: SLATE[800], lineHeight: leading(TYPE.body) },
   qOptions: { marginTop: 6, gap: 2 },
-  qOption: { fontSize: 12.5, color: SLATE[600] },
+  qOption: { fontSize: TYPE.label, color: SLATE[600] },
   qOptionCorrect: { color: FEEDBACK.successText, fontWeight: '700' },
   qMeta: { flexDirection: 'row', flexWrap: 'wrap', gap: 5, marginTop: 7 },
   qChip: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 999, backgroundColor: SLATE[100] },
-  qChipText: { fontSize: 10.5, fontWeight: '600', color: SLATE[500] },
+  qChipText: { fontSize: TYPE.micro, fontWeight: '600', color: SLATE[500] },
 
   pressed: { opacity: 0.72 },
 });

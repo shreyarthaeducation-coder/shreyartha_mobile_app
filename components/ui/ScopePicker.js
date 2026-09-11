@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
-import { SLATE, SPACING } from '../../constants/theme';
+import { SLATE, SPACING, TYPE } from '../../constants/theme';
 import { usePalette } from './PaletteContext';
 import Select from './Select';
 import useStaffResource from '../../hooks/useStaffResource';
@@ -290,5 +290,5 @@ const styles = StyleSheet.create({
   wrap: { gap: 6 },
   row: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: SPACING.sm },
   spinner: { marginLeft: 2 },
-  hint: { fontSize: 12.5, color: SLATE[500], paddingHorizontal: 2 },
+  hint: { fontSize: TYPE.label, color: SLATE[500], paddingHorizontal: 2 },
 });

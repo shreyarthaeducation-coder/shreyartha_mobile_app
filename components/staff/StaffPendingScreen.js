@@ -1,7 +1,7 @@
 import { Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { SHADOWS, SLATE, SPACING } from '../../constants/theme';
+import { SHADOWS, SLATE, SPACING, TYPE, leading } from '../../constants/theme';
 import { usePalette } from '../../components/ui/PaletteContext';
 import { PrimaryButton } from '../auth';
 import useStaffLogout from '../../hooks/useStaffLogout';
@@ -42,7 +42,7 @@ export default function StaffPendingScreen({ roleLabel = 'Staff', unlocks = [] }
               <View style={styles.list}>
                 {unlocks.map((item) => (
                   <View key={item} style={styles.listRow}>
-                    <Ionicons name="checkmark-circle-outline" size={17} color={PALETTE.primary} />
+                    <Ionicons name="checkmark-circle-outline" size={19} color={PALETTE.primary} />
                     <Text style={styles.listText}>{item}</Text>
                   </View>
                 ))}
@@ -89,20 +89,20 @@ const useStyles = makeStyles((p) => ({
     marginBottom: SPACING.md,
   },
   title: {
-    fontSize: 19,
+    fontSize: TYPE.headline,
     fontWeight: '700',
     color: SLATE[800],
     textAlign: 'center',
     marginBottom: SPACING.sm,
   },
   text: {
-    fontSize: 14.5,
-    lineHeight: 21,
+    fontSize: TYPE.heading,
+    lineHeight: leading(TYPE.heading),
     color: SLATE[600],
     textAlign: 'center',
   },
   listIntro: {
-    fontSize: 14,
+    fontSize: TYPE.heading,
     fontWeight: '600',
     color: SLATE[700],
     marginTop: SPACING.lg,
@@ -110,10 +110,10 @@ const useStyles = makeStyles((p) => ({
   },
   list: { gap: 10 },
   listRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 8 },
-  listText: { flex: 1, fontSize: 14, lineHeight: 20, color: SLATE[600] },
+  listText: { flex: 1, fontSize: TYPE.body, lineHeight: leading(TYPE.body), color: SLATE[600] },
   note: {
-    fontSize: 13,
-    lineHeight: 19,
+    fontSize: TYPE.body,
+    lineHeight: leading(TYPE.body),
     color: SLATE[500],
     textAlign: 'center',
     marginTop: SPACING.lg,

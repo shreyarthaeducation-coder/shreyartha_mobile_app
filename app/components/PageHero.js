@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { COLORS, SPACING, FONTS } from '../../constants/theme';
+import { COLORS, FONTS, SPACING, TYPE, leading } from '../../constants/theme';
 
 export default function PageHero({ title, subtitle, icon, backgroundColor }) {
   const bg = backgroundColor || COLORS.primary;
@@ -56,15 +56,15 @@ const styles = StyleSheet.create({
     ...FONTS.title,
     color: COLORS.white,
     textAlign: 'center',
-    fontSize: 26,
+    fontSize: TYPE.display,
     marginBottom: SPACING.sm,
   },
   subtitle: {
     ...FONTS.subtitle,
     color: 'rgba(255,255,255,0.85)',
     textAlign: 'center',
-    fontSize: 15,
-    lineHeight: 22,
+    fontSize: TYPE.heading,
+    lineHeight: leading(TYPE.heading),
     paddingHorizontal: SPACING.md,
   },
 });

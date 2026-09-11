@@ -1,5 +1,5 @@
 import { StyleSheet, Text, View } from 'react-native';
-import { SLATE } from '../../../constants/theme';
+import { SLATE, TYPE } from '../../../constants/theme';
 
 /**
  * Two-series horizontal bar breakdown — "This Student" against "Class Average", 0–100%.
@@ -89,17 +89,17 @@ const styles = StyleSheet.create({
   legend: { flexDirection: 'row', gap: 14, marginBottom: 10 },
   legendItem: { flexDirection: 'row', alignItems: 'center', gap: 5 },
   legendSwatch: { width: 10, height: 10, borderRadius: 3 },
-  legendText: { fontSize: 11.5, fontWeight: '600', color: SLATE[500] },
+  legendText: { fontSize: TYPE.caption, fontWeight: '600', color: SLATE[500] },
 
   group: { marginBottom: 12 },
   tagRow: { flexDirection: 'row', alignItems: 'flex-end', gap: 8, marginBottom: 4 },
-  tag: { flex: 1, fontSize: 12.5, fontWeight: '600', color: SLATE[700] },
-  count: { fontSize: 11, color: SLATE[400], fontWeight: '600' },
+  tag: { flex: 1, fontSize: TYPE.label, fontWeight: '600', color: SLATE[700] },
+  count: { fontSize: TYPE.caption, color: SLATE[500], fontWeight: '600' },
 
   barRow: { flexDirection: 'row', alignItems: 'center', gap: 7, marginTop: 3 },
   track: { flex: 1, height: 12, borderRadius: 6, backgroundColor: SLATE[200], overflow: 'hidden' },
   fill: { height: 12, borderRadius: 6 },
-  barValue: { width: 38, textAlign: 'right', fontSize: 11.5, fontWeight: '800' },
+  barValue: { minWidth: 38, textAlign: 'right', fontSize: TYPE.caption, fontWeight: '800' },
 
-  empty: { fontSize: 12.5, color: SLATE[400], fontStyle: 'italic', paddingVertical: 8 },
+  empty: { fontSize: TYPE.label, color: SLATE[500], fontStyle: 'italic', paddingVertical: 8 },
 });

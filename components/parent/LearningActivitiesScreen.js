@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useState } from 'react';
 import { Linking, Pressable, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { SLATE, SPACING } from '../../constants/theme';
+import { SLATE, SPACING, TYPE, leading } from '../../constants/theme';
 import { usePalette } from '../ui/PaletteContext';
 import { Card, EmptyState, ScreenScaffold, SegmentedTabs, StatusChip } from '../ui';
 import useStaffResource from '../../hooks/useStaffResource';
@@ -71,7 +71,7 @@ function ActivityCard({ resource, personalised }) {
           </Text>
         </View>
 
-        {url ? <Ionicons name="chevron-forward" size={16} color={SLATE[400]} /> : null}
+        {url ? <Ionicons name="chevron-forward" size={18} color={SLATE[400]} /> : null}
       </Pressable>
 
       {resource.description && resource.title ? (
@@ -148,9 +148,9 @@ const useStyles = makeStyles(() => ({
     justifyContent: 'center',
   },
   text: { flex: 1 },
-  title: { fontSize: 14.5, fontWeight: '700', color: SLATE[800] },
-  meta: { fontSize: 12, color: SLATE[500], marginTop: 2 },
-  description: { fontSize: 12.5, color: SLATE[500], lineHeight: 18, marginTop: SPACING.sm },
+  title: { fontSize: TYPE.heading, fontWeight: '700', color: SLATE[800] },
+  meta: { fontSize: TYPE.label, color: SLATE[500], marginTop: 2 },
+  description: { fontSize: TYPE.label, color: SLATE[500], lineHeight: leading(TYPE.label), marginTop: SPACING.sm },
   badgeRow: { flexDirection: 'row', marginTop: SPACING.sm },
   pressed: { opacity: 0.7 },
 }));

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Alert, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { FEEDBACK, PORTALS, SLATE, SPACING } from '../../../constants/theme';
+import { FEEDBACK, PORTALS, SLATE, SPACING, TYPE, leading } from '../../../constants/theme';
 import { FormSheet, Select, TextField } from '../../ui';
 import {
   BLOOM_TAXONOMY,
@@ -311,7 +311,7 @@ export default function QuestionsSheet({
                 accessibilityRole="button"
                 accessibilityLabel={`Edit question ${index + 1}`}
               >
-                <Ionicons name="pencil" size={15} color={SLATE[600]} />
+                <Ionicons name="pencil" size={17} color={SLATE[600]} />
               </Pressable>
               <Pressable
                 onPress={() => confirmDelete(q)}
@@ -320,7 +320,7 @@ export default function QuestionsSheet({
                 accessibilityRole="button"
                 accessibilityLabel={`Delete question ${index + 1}`}
               >
-                <Ionicons name="trash-outline" size={15} color={FEEDBACK.errorText} />
+                <Ionicons name="trash-outline" size={17} color={FEEDBACK.errorText} />
               </Pressable>
             </View>
             <Text style={styles.cardText}>{q.questionStatement}</Text>
@@ -355,8 +355,8 @@ export default function QuestionsSheet({
 
 const styles = StyleSheet.create({
   loader: { marginVertical: SPACING.xl },
-  empty: { fontSize: 13, color: SLATE[500], textAlign: 'center', paddingVertical: SPACING.lg },
-  error: { fontSize: 12.5, color: FEEDBACK.errorText, marginBottom: SPACING.md, fontWeight: '600' },
+  empty: { fontSize: TYPE.body, color: SLATE[500], textAlign: 'center', paddingVertical: SPACING.lg },
+  error: { fontSize: TYPE.label, color: FEEDBACK.errorText, marginBottom: SPACING.md, fontWeight: '600' },
   multiline: { height: 84, textAlignVertical: 'top' },
 
   card: {
@@ -368,8 +368,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#ffffff',
   },
   cardHead: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 5 },
-  cardIndex: { flex: 1, fontSize: 12.5, fontWeight: '800', color: PALETTE.primaryDark },
-  cardMarks: { fontSize: 11.5, fontWeight: '700', color: SLATE[500] },
+  cardIndex: { flex: 1, fontSize: TYPE.label, fontWeight: '800', color: PALETTE.primaryDark },
+  cardMarks: { fontSize: TYPE.caption, fontWeight: '700', color: SLATE[500] },
   iconBtn: {
     width: 28,
     height: 28,
@@ -378,9 +378,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     backgroundColor: SLATE[50],
   },
-  cardText: { fontSize: 13.5, color: SLATE[800], lineHeight: 19 },
+  cardText: { fontSize: TYPE.body, color: SLATE[800], lineHeight: leading(TYPE.body) },
   options: { marginTop: 5, gap: 2 },
-  option: { fontSize: 12.5, color: SLATE[600] },
+  option: { fontSize: TYPE.label, color: SLATE[600] },
   metaRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 5, marginTop: 7 },
   metaChip: {
     paddingHorizontal: 8,
@@ -389,7 +389,7 @@ const styles = StyleSheet.create({
     backgroundColor: SLATE[100],
     maxWidth: '100%',
   },
-  metaText: { fontSize: 11, fontWeight: '600', color: SLATE[500] },
+  metaText: { fontSize: TYPE.caption, fontWeight: '600', color: SLATE[500] },
 
   pressed: { opacity: 0.72 },
 });

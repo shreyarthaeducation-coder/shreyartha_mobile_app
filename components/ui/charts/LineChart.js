@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import Svg, { Circle, G, Line, Polygon, Polyline, Text as SvgText } from 'react-native-svg';
-import { SLATE } from '../../../constants/theme';
+import { SLATE, TYPE } from '../../../constants/theme';
 import { usePalette } from '../PaletteContext';
 
 /**
@@ -128,5 +128,5 @@ export default function LineChart({
 }
 
 const styles = StyleSheet.create({
-  axisLabel: { fontSize: 10.5, color: SLATE[400], textAlign: 'center', marginTop: 2 },
+  axisLabel: { fontSize: TYPE.micro, color: SLATE[500], textAlign: 'center', marginTop: 2 },
 });

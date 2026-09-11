@@ -13,7 +13,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Redirect, useFocusEffect, useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
-import { SHADOWS, SLATE, SPACING } from '../../constants/theme';
+import { SHADOWS, SLATE, SPACING, TYPE, leading } from '../../constants/theme';
 import { usePalette } from '../../components/ui/PaletteContext';
 import WelcomeHeader from '../ui/WelcomeHeader';
 import useStaffLogout from '../../hooks/useStaffLogout';
@@ -215,7 +215,7 @@ export default function StaffMenuScreen({ config }) {
                   style={({ pressed }) => [styles.actionChip, pressed && styles.actionChipPressed]}
                   accessibilityRole="button"
                 >
-                  <Ionicons name={action.icon} size={15} color="#ffffff" />
+                  <Ionicons name={action.icon} size={17} color="#ffffff" />
                   <Text style={styles.actionText} numberOfLines={1}>
                     {action.label}
                   </Text>
@@ -240,7 +240,7 @@ export default function StaffMenuScreen({ config }) {
                   accessibilityState={{ expanded: open }}
                 >
                   <View style={styles.groupIcon}>
-                    <Ionicons name={group.icon} size={17} color={PALETTE.primaryDark} />
+                    <Ionicons name={group.icon} size={19} color={PALETTE.primaryDark} />
                   </View>
                   <Text style={styles.groupLabel} numberOfLines={1}>
                     {group.label}
@@ -248,7 +248,7 @@ export default function StaffMenuScreen({ config }) {
                   <Text style={styles.groupCount}>{group.items.length}</Text>
                   <Ionicons
                     name={open ? 'chevron-up' : 'chevron-down'}
-                    size={17}
+                    size={19}
                     color={SLATE[500]}
                   />
                 </Pressable>
@@ -307,9 +307,9 @@ const useStyles = makeStyles((p) => ({
     backgroundColor: 'rgba(255,255,255,0.14)',
   },
   actionChipPressed: { backgroundColor: 'rgba(255,255,255,0.26)' },
-  actionText: { flex: 1, color: '#ffffff', fontSize: 12, fontWeight: '600' },
+  actionText: { flex: 1, color: '#ffffff', fontSize: TYPE.label, fontWeight: '600' },
   sectionTitle: {
-    fontSize: 13,
+    fontSize: TYPE.body,
     fontWeight: '700',
     color: SLATE[500],
     textTransform: 'uppercase',
@@ -348,11 +348,11 @@ const useStyles = makeStyles((p) => ({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  groupLabel: { flex: 1, fontSize: 14, fontWeight: '700', color: SLATE[800] },
+  groupLabel: { flex: 1, fontSize: TYPE.heading, fontWeight: '700', color: SLATE[800] },
   groupCount: {
-    fontSize: 11.5,
+    fontSize: TYPE.caption,
     fontWeight: '700',
-    color: SLATE[500],
+    color: SLATE[600],
     backgroundColor: SLATE[100],
     borderRadius: 999,
     minWidth: 22,
@@ -387,5 +387,5 @@ const useStyles = makeStyles((p) => ({
     justifyContent: 'center',
     marginBottom: SPACING.sm,
   },
-  cardLabel: { fontSize: 13.5, fontWeight: '600', color: SLATE[800], lineHeight: 18 },
+  cardLabel: { fontSize: TYPE.heading, fontWeight: '600', color: SLATE[800], lineHeight: leading(TYPE.heading) },
 }));

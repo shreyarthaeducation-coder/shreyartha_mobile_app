@@ -196,14 +196,99 @@ function assertions(helpers, src) {
   if (!/<LanguagePicker/.test(codeOnly(src.brandBar))) {
     bad('the brand bar does not mount the language picker — requirement 2 is unmet');
   }
-  // THE ROUTE BECAME A PROP when the brand bar was promoted to `components/shared/` for the parent
-  // dashboard, so the literal now lives at the call site. Both halves are asserted: the bar has a
-  // control wired to whatever it is given, and the student home gives it the student's route.
-  if (!/router\.push\(changePasswordRoute\)/.test(codeOnly(src.brandBar))) {
-    bad('the brand bar has no Change Password control');
+  // CHANGE PASSWORD LEFT THE HEADER when the school crest took the lead position. It is now a row
+  // on each portal's own account screen. Asserting its ABSENCE here is the point: BrandBar is a
+  // shared header, and putting an account action back into it would re-add it to ten surfaces at
+  // once — which is exactly how it came to be the app's only route to change-password.
+  if (/changePasswordRoute/.test(codeOnly(src.brandBar))) {
+    bad('BrandBar has a Change Password control again — it belongs on each portal account screen');
   }
-  if (!/changePasswordRoute="\/student\/change-password"/.test(codeOnly(src.home))) {
-    bad('the student home does not point the brand bar at its own change-password route');
+  // ── THE SCHOOL CREST IS OPT-IN, AND MUST STAY THAT WAY ────────────────────
+  //
+  // BrandBar is the header of NINE screens — student, teacher, parent and partner homes plus all
+  // six app/staff/[role] shells. A partner is not school-bound, and the pre-auth screens have no
+  // school at all, so a crest that rendered by default would reach surfaces where it means nothing.
+  // `= null` in the signature is what makes "pass nothing, get the old header" true by
+  // construction rather than by everyone remembering.
+  const brand = codeOnly(src.brandBar);
+  if (!/schoolLogoUrl = null/.test(brand)) {
+    bad('BrandBar\'s schoolLogoUrl is not opt-in — the partner and pre-auth headers would change too');
+  }
+  // A broken image URL must fall back, not leave an empty chip. The stored value is a raw unsigned
+  // S3 URL, so a 403 is a live possibility rather than a defensive flourish.
+  if (!/onError=\{\(\) => setSchoolLogoFailed\(true\)\}/.test(brand)) {
+    bad('BrandBar does not fall back when the school logo fails to load');
+  }
+  // ...and ours must move rather than disappear: exactly one 3C mark, at the end of the row.
+  // Keyed off `schoolLeads`, NOT `showSchoolLogo` — a school that has uploaded no logo still leads
+  // with its NAME, and keying the trailing mark off the logo alone would drop the 3C brand out of
+  // the header entirely for every such school, which today is most of them.
+  if (!/schoolLeads \? \(/.test(brand) || !/logoChipTrailing/.test(brand)) {
+    bad('BrandBar does not move the 3C Edge logo to the right when the school leads');
+  }
+  if (!/const schoolLeads = showSchoolLogo \|\| showSchoolName/.test(brand)) {
+    bad('BrandBar ties the trailing 3C mark to the logo alone — a name-only school would lose it');
+  }
+  // THE NAME FALLBACK. Without it a school with no logo renders byte-identically to the old header,
+  // so a missing upload is indistinguishable from the feature not working — which is exactly what
+  // happened: every school row shipped with school_logo NULL and the change looked like a no-op.
+  if (!/const showSchoolName = !showSchoolLogo && !!trimmedName/.test(brand)) {
+    bad('BrandBar has no school-name fallback — a school with no logo looks like a broken feature');
+  }
+  // One bad URL must not disable the crest for the life of the mount: a counsellor covering two
+  // schools would then have the second school's good logo suppressed by the first school's bad one.
+  if (!/setSchoolLogoFailed\(false\); \}, \[schoolLogoUrl\]\)/.test(brand)) {
+    bad('BrandBar never resets its logo-failed flag — a single 403 disables the crest permanently');
+  }
+  if (!/schoolLogoUrl=\{schoolLogo\}/.test(codeOnly(src.home))) {
+    bad('the student home does not pass its school crest to the brand bar');
+  }
+
+  // ── THE PANEL IS A LIGHT PAGE NOW ─────────────────────────────────────────
+  //
+  // It used to be white copy over a fixed photograph (`assets/images/Background.png`) with four
+  // different translucent "glass" treatments trying to buy contrast back. Two rules keep it light,
+  // and BOTH fail silently: a returned ImageBackground just looks like a design change, and a
+  // missed `tone` renders one block dark-on-light while everything around it stays correct.
+  const layoutCode = codeOnly(src.layout);
+  if (/ImageBackground/.test(layoutCode)) {
+    bad('the student layout paints an ImageBackground again — the panel is a light page');
+  }
+  if (/backgroundColor: 'transparent' \}/.test(layoutCode) && !/contentStyle: \{ backgroundColor: PALETTE\.pageBg \}/.test(layoutCode)) {
+    bad('the student Stack is transparent with no image behind it — it flashes the window on push');
+  }
+  // Every shared-kit mount on the student home defaults to tone="dark"; the student is the only
+  // caller that ever took that default, so each one has to say light explicitly.
+  const SHARED_MOUNTS = ['<BrandBar', '<IdentityCard', '<HeroCard', '<AssistantCard',
+                         '<SearchEntry', '<SectionDivider'];
+  for (const tag of SHARED_MOUNTS) {
+    // `(?![A-Za-z])` rather than a whitespace class: this is a TEMPLATE LITERAL, so a `\s` written
+    // here is resolved by JS to a bare "s" before RegExp ever sees it, and the class silently
+    // becomes [s/>] — which matches nothing and reports every mount as missing.
+    const opens = (home.match(new RegExp(`${tag}(?![A-Za-z])`, 'g')) || []).length;
+    if (!opens) { bad(`the student home no longer mounts ${tag.slice(1)}`); continue; }
+    // Count the mounts that carry tone="light" within their opening tag.
+    const lit = (home.match(new RegExp(`${tag}[^>]*tone="light"`, 'g')) || []).length;
+    if (lit !== opens) {
+      bad(`${lit} of ${opens} ${tag.slice(1)} mounts pass tone="light" — the rest render dark on a light page`);
+    }
+  }
+  if (!/<PortalTabBar tabs=\{STUDENT_TABS\} tone="light" \/>/.test(layoutCode)) {
+    bad('the student footer does not pass tone="light" — dark bar under a light page');
+  }
+  // No student screen may read the dark-surface tokens any more. They stay DEFINED in the palette
+  // for the shared kit's dark branch, which is exactly why grepping the palette proves nothing.
+  for (const key of ['home', 'workspace', 'jyoraHub', 'profile', 'counselor']) {
+    const text = codeOnly(src[key] || '');
+    const dark = text.match(/\b(?:p|palette)\.(?:onDark|glass|glassBorder|glassDark|glassDarkBorder|glassDarkRaised)\b/g);
+    if (dark) bad(`${SRC[key]} still reads dark-surface tokens: ${[...new Set(dark)].join(', ')}`);
+  }
+
+  // Change password moved off the student header onto the profile screen, which is where that
+  // panel already keeps Log Out. The student's Support tab is a chatbot, so if this row goes the
+  // student has no way to change their password at all.
+  if (!/<ChangePasswordRow route="\/student\/change-password" \/>/.test(codeOnly(src.profile))) {
+    bad('the student profile screen has no Change Password row — the student is stranded');
   }
 
   /* ── 5. EVERY STRINGS MAP IS MODULE SCOPE ────────────────────────────────── */
@@ -340,6 +425,85 @@ const MUTATIONS = [
     name: 'a free-text Jyora box added (undoing the web\'s safety decision)',
     src: (k, s) =>
       k === 'jyoraHub' ? s.replace('<SegmentedTabs', '<TextInput value="" />\n      <SegmentedTabs') : s,
+  },
+  {
+    // The crest made mandatory: the partner header and every pre-auth screen would gain one.
+    name: 'the school crest stops being opt-in',
+    src: (k, s) => (k === 'brandBar' ? s.replace('schoolLogoUrl = null,', 'schoolLogoUrl,') : s),
+  },
+  {
+    // A 403 on the raw S3 URL would leave an empty chip where the school's mark should be.
+    name: 'a broken school logo no longer falls back',
+    src: (k, s) => (k === 'brandBar'
+      ? s.replace('onError={() => setSchoolLogoFailed(true)}', '')
+      : s),
+  },
+  {
+    // Our mark deleted rather than moved — the header would carry no 3C Edge logo at all.
+    name: 'the 3C Edge logo is dropped instead of moved right',
+    src: (k, s) => (k === 'brandBar' ? s.replace(/logoChipTrailing/g, 'unusedStyle') : s),
+  },
+  {
+    name: 'the student home stops passing its school crest',
+    src: (k, s) => (k === 'home'
+      ? s.replace('schoolLogoUrl={schoolLogo}', 'schoolLogoUrl={null}')
+      : s),
+  },
+  {
+    // The trailing mark tied to the logo again, so a school with a name but no crest loses the
+    // 3C Edge mark from its header entirely.
+    name: 'the trailing 3C mark is tied to the logo instead of the school leading',
+    src: (k, s) => (k === 'brandBar'
+      ? s.replace('const schoolLeads = showSchoolLogo || showSchoolName;',
+                  'const schoolLeads = showSchoolLogo;')
+      : s),
+  },
+  {
+    name: 'the school-name fallback is removed (a missing logo looks like a broken feature)',
+    src: (k, s) => (k === 'brandBar'
+      ? s.replace('const showSchoolName = !showSchoolLogo && !!trimmedName;',
+                  'const showSchoolName = false;')
+      : s),
+  },
+  {
+    name: 'the logo-failed flag stops resetting on a new URL',
+    src: (k, s) => (k === 'brandBar'
+      ? s.replace('useEffect(() => { setSchoolLogoFailed(false); }, [schoolLogoUrl]);', '')
+      : s),
+  },
+  {
+    name: 'Change Password is put back into the shared header',
+    src: (k, s) => (k === 'brandBar'
+      ? s.replace('  tone = \'dark\',', '  changePasswordRoute,\n  tone = \'dark\',')
+      : s),
+  },
+  {
+    name: 'the student loses its only Change Password row',
+    src: (k, s) => (k === 'profile'
+      ? s.replace('<ChangePasswordRow route="/student/change-password" />', '')
+      : s),
+  },
+  {
+    name: 'the photographic background returns to the student layout',
+    src: (k, s) => (k === 'layout'
+      ? s.replace('<View style={styles.bg}>', '<ImageBackground style={styles.bg}>')
+      : s),
+  },
+  {
+    name: 'a shared block on the student home loses tone="light"',
+    src: (k, s) => (k === 'home'
+      ? s.replace(/(<IdentityCard[^>]*?)\s*tone="light"/, '$1')
+      : s),
+  },
+  {
+    name: 'the student footer reverts to the dark tab bar',
+    src: (k, s) => (k === 'layout'
+      ? s.replace('<PortalTabBar tabs={STUDENT_TABS} tone="light" />', '<PortalTabBar tabs={STUDENT_TABS} />')
+      : s),
+  },
+  {
+    name: 'a student screen reads a dark-surface token again',
+    src: (k, s) => (k === 'workspace' ? s.replace('SLATE[600]', 'p.onDark') : s),
   },
 ];
 

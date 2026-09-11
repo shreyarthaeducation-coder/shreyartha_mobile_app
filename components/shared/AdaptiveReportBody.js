@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Text, View } from 'react-native';
-import { FEEDBACK, SLATE, SPACING } from '../../constants/theme';
+import { FEEDBACK, SLATE, SPACING, TYPE, leading } from '../../constants/theme';
 import { usePalette } from '../ui/PaletteContext';
 import { makeStyles } from '../../utils/makeStyles';
 import { GroupedBars, ProgressBar, RadarChart, SegmentedTabs } from '../ui';
@@ -267,13 +267,13 @@ const useStyles = makeStyles((p) => ({
     alignItems: 'center',
   },
   tileHighlight: { backgroundColor: p.tint, borderColor: p.primary },
-  tileValue: { fontSize: 17, fontWeight: '800', color: SLATE[800] },
-  tileLabel: { fontSize: 10.5, color: SLATE[500], fontWeight: '600', marginTop: 2, textAlign: 'center' },
-  tileNote: { fontSize: 10, color: SLATE[400], marginTop: 1, textAlign: 'center' },
+  tileValue: { fontSize: TYPE.title, fontWeight: '800', color: SLATE[800] },
+  tileLabel: { fontSize: TYPE.micro, color: SLATE[500], fontWeight: '600', marginTop: 2, textAlign: 'center' },
+  tileNote: { fontSize: TYPE.micro, color: SLATE[500], marginTop: 1, textAlign: 'center' },
 
   note: {
     marginTop: SPACING.sm,
-    fontSize: 12.5,
+    fontSize: TYPE.label,
     color: '#b45309',
     backgroundColor: '#fffbeb',
     padding: SPACING.sm,
@@ -281,7 +281,7 @@ const useStyles = makeStyles((p) => ({
   },
 
   heading: {
-    fontSize: 12,
+    fontSize: TYPE.label,
     fontWeight: '800',
     color: SLATE[500],
     textTransform: 'uppercase',
@@ -297,22 +297,22 @@ const useStyles = makeStyles((p) => ({
     padding: SPACING.sm,
     marginTop: SPACING.sm,
   },
-  remarkLabel: { fontSize: 14, fontWeight: '800' },
-  remarkNote: { fontSize: 12, color: SLATE[600], marginTop: 2 },
+  remarkLabel: { fontSize: TYPE.heading, fontWeight: '800' },
+  remarkNote: { fontSize: TYPE.label, color: SLATE[600], marginTop: 2 },
 
   metric: { marginBottom: SPACING.sm },
-  metricHint: { fontSize: 11, color: SLATE[400], marginTop: 3 },
+  metricHint: { fontSize: TYPE.caption, color: SLATE[500], marginTop: 3 },
   radar: { marginTop: SPACING.sm },
 
   timeBars: { marginTop: SPACING.sm },
   timeRow: { flexDirection: 'row', alignItems: 'center', gap: 7, marginBottom: 5 },
-  timeLabel: { width: 34, fontSize: 11, fontWeight: '700', color: SLATE[500] },
+  timeLabel: { minWidth: 34, fontSize: TYPE.caption, fontWeight: '700', color: SLATE[500] },
   timeTrack: { flex: 1, height: 10, borderRadius: 5, backgroundColor: SLATE[200], overflow: 'hidden' },
   timeFill: { height: 10, borderRadius: 5 },
-  timeValue: { width: 38, textAlign: 'right', fontSize: 11, fontWeight: '700', color: SLATE[600] },
+  timeValue: { minWidth: 38, textAlign: 'right', fontSize: TYPE.caption, fontWeight: '700', color: SLATE[600] },
 
   breakdown: { marginTop: SPACING.md },
-  empty: { fontSize: 12.5, color: SLATE[400], fontStyle: 'italic', marginTop: SPACING.sm },
+  empty: { fontSize: TYPE.label, color: SLATE[500], fontStyle: 'italic', marginTop: SPACING.sm },
 
   qCard: {
     borderWidth: 1,
@@ -322,10 +322,10 @@ const useStyles = makeStyles((p) => ({
     marginBottom: SPACING.sm,
   },
   qHead: { flexDirection: 'row', alignItems: 'center', marginBottom: 4 },
-  qIndex: { flex: 1, fontSize: 12, fontWeight: '800', color: p.primaryDark },
-  qResult: { fontSize: 12, fontWeight: '700' },
-  qText: { fontSize: 13, color: SLATE[700], lineHeight: 18 },
+  qIndex: { flex: 1, fontSize: TYPE.label, fontWeight: '800', color: p.primaryDark },
+  qResult: { fontSize: TYPE.label, fontWeight: '700' },
+  qText: { fontSize: TYPE.body, color: SLATE[700], lineHeight: leading(TYPE.body) },
   qMeta: { flexDirection: 'row', flexWrap: 'wrap', gap: 5, marginTop: 6 },
   qChip: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 999, backgroundColor: SLATE[100] },
-  qChipText: { fontSize: 10.5, fontWeight: '600', color: SLATE[500] },
+  qChipText: { fontSize: TYPE.micro, fontWeight: '600', color: SLATE[500] },
 }));

@@ -3,7 +3,7 @@ import { Text, View } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import { Banner, PrimaryButton } from '../auth';
-import { SLATE, SPACING, TYPE } from '../../constants/theme';
+import { SLATE, SPACING, TYPE, leading } from '../../constants/theme';
 import { usePalette } from '../ui/PaletteContext';
 import { Card, ScreenScaffold } from '../ui';
 import { forgotPassword } from '../../services/authService';
@@ -127,7 +127,7 @@ const useStyles = makeStyles((p) => ({
     backgroundColor: p.tint,
   },
   title: { flex: 1, fontSize: TYPE.title, fontWeight: '700', color: SLATE[800] },
-  body: { fontSize: TYPE.body, color: SLATE[600], lineHeight: 19, marginBottom: SPACING.md },
+  body: { fontSize: TYPE.body, color: SLATE[600], lineHeight: leading(TYPE.body), marginBottom: SPACING.md },
   address: {
     padding: SPACING.sm,
     borderRadius: 12,
@@ -138,5 +138,5 @@ const useStyles = makeStyles((p) => ({
   },
   addressLabel: { fontSize: TYPE.caption, color: SLATE[500] },
   addressValue: { fontSize: TYPE.heading, fontWeight: '700', color: SLATE[800], marginTop: 2 },
-  note: { fontSize: TYPE.body, color: SLATE[500], lineHeight: 19, marginBottom: SPACING.md },
+  note: { fontSize: TYPE.body, color: SLATE[500], lineHeight: leading(TYPE.body), marginBottom: SPACING.md },
 }));

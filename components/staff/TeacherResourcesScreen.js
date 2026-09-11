@@ -14,15 +14,7 @@ import {
   View,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import {
-  FEEDBACK,
-  GROUP_LEVELS,
-  PORTALS,
-  SHADOWS,
-  SLATE,
-  SPACING,
-  groupLevelMeta,
-} from '../../constants/theme';
+import { FEEDBACK, GROUP_LEVELS, PORTALS, SHADOWS, SLATE, SPACING, TYPE, groupLevelMeta, leading } from '../../constants/theme';
 import {
   CalendarGrid,
   DateTimeField,
@@ -174,7 +166,7 @@ function ResourceCard({ item, subtitle, onEdit, onDelete, onTeachWithAi, childre
               accessibilityRole="button"
               accessibilityLabel={`Open ${item.title} in Shreyartha AI`}
             >
-              <Ionicons name="sparkles" size={16} color="#ffffff" />
+              <Ionicons name="sparkles" size={18} color="#ffffff" />
             </Pressable>
           ) : null}
           {item.fileUrl ? (
@@ -185,7 +177,7 @@ function ResourceCard({ item, subtitle, onEdit, onDelete, onTeachWithAi, childre
               accessibilityRole="button"
               accessibilityLabel={`Open ${item.fileName || 'attachment'}`}
             >
-              <Ionicons name="open-outline" size={17} color={PALETTE.primaryDark} />
+              <Ionicons name="open-outline" size={19} color={PALETTE.primaryDark} />
             </Pressable>
           ) : null}
           {onEdit ? (
@@ -196,7 +188,7 @@ function ResourceCard({ item, subtitle, onEdit, onDelete, onTeachWithAi, childre
               accessibilityRole="button"
               accessibilityLabel={`Edit ${item.title}`}
             >
-              <Ionicons name="pencil" size={16} color={SLATE[600]} />
+              <Ionicons name="pencil" size={18} color={SLATE[600]} />
             </Pressable>
           ) : null}
           {onDelete ? (
@@ -207,7 +199,7 @@ function ResourceCard({ item, subtitle, onEdit, onDelete, onTeachWithAi, childre
               accessibilityRole="button"
               accessibilityLabel={`Delete ${item.title}`}
             >
-              <Ionicons name="trash-outline" size={16} color={FEEDBACK.errorText} />
+              <Ionicons name="trash-outline" size={18} color={FEEDBACK.errorText} />
             </Pressable>
           ) : null}
         </View>
@@ -246,7 +238,7 @@ function AccordionRow({ open, title, meta, depth = 0, onPress, children }) {
       >
         <Ionicons
           name={open ? 'chevron-down' : 'chevron-forward'}
-          size={16}
+          size={18}
           color={depth === 0 ? PALETTE.primaryDark : SLATE[500]}
         />
         <Text
@@ -816,7 +808,7 @@ export default function TeacherResourcesScreen({
               >
                 <Ionicons
                   name={open ? 'chevron-up' : 'chevron-down'}
-                  size={15}
+                  size={17}
                   color={PALETTE.primaryDark}
                 />
                 <Text style={styles.subToggleText}>
@@ -863,7 +855,7 @@ export default function TeacherResourcesScreen({
                               accessibilityRole="button"
                               accessibilityLabel={`Open ${sub.studentName}'s file`}
                             >
-                              <Ionicons name="open-outline" size={16} color={PALETTE.primaryDark} />
+                              <Ionicons name="open-outline" size={18} color={PALETTE.primaryDark} />
                             </Pressable>
                           ) : null}
                         </View>
@@ -992,7 +984,7 @@ export default function TeacherResourcesScreen({
                 accessibilityRole="button"
                 accessibilityLabel="Clear date filter"
               >
-                <Ionicons name="close" size={16} color={SLATE[600]} />
+                <Ionicons name="close" size={18} color={SLATE[600]} />
               </Pressable>
             ) : null}
             <Pressable
@@ -1002,7 +994,7 @@ export default function TeacherResourcesScreen({
               accessibilityRole="button"
               accessibilityLabel="Browse by month"
             >
-              <Ionicons name="calendar-outline" size={17} color={SLATE[600]} />
+              <Ionicons name="calendar-outline" size={19} color={SLATE[600]} />
             </Pressable>
           </View>
         ) : null}
@@ -1144,7 +1136,7 @@ export default function TeacherResourcesScreen({
               style={({ pressed }) => [styles.fileBtn, pressed && styles.pressed]}
               accessibilityRole="button"
             >
-              <Ionicons name="attach-outline" size={18} color={PALETTE.primaryDark} />
+              <Ionicons name="attach-outline" size={20} color={PALETTE.primaryDark} />
               <Text style={styles.fileText} numberOfLines={1}>
                 {form.file
                   ? `${form.file.name}${form.file.size ? ` · ${formatFileSize(form.file.size)}` : ''}`
@@ -1159,7 +1151,7 @@ export default function TeacherResourcesScreen({
                   accessibilityRole="button"
                   accessibilityLabel="Remove attachment"
                 >
-                  <Ionicons name="close" size={17} color={SLATE[500]} />
+                  <Ionicons name="close" size={19} color={SLATE[500]} />
                 </Pressable>
               ) : null}
             </Pressable>
@@ -1204,7 +1196,7 @@ const styles = StyleSheet.create({
     gap: SPACING.sm,
   },
   toolbar: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  toolbarText: { flex: 1, fontSize: 12.5, fontWeight: '600', color: SLATE[500] },
+  toolbarText: { flex: 1, fontSize: TYPE.label, fontWeight: '600', color: SLATE[500] },
   toolbarBtn: {
     width: 32,
     height: 32,
@@ -1221,7 +1213,7 @@ const styles = StyleSheet.create({
   listContentEmpty: { flexGrow: 1, justifyContent: 'center' },
   accordionContent: { padding: SPACING.md, paddingBottom: 96 },
   sectionHeader: {
-    fontSize: 12,
+    fontSize: TYPE.label,
     fontWeight: '800',
     color: SLATE[500],
     textTransform: 'uppercase',
@@ -1241,9 +1233,9 @@ const styles = StyleSheet.create({
   },
   cardTop: { flexDirection: 'row', gap: SPACING.sm },
   cardText: { flex: 1 },
-  cardTitle: { fontSize: 15, fontWeight: '700', color: SLATE[800] },
-  cardSubtitle: { fontSize: 12.5, color: PALETTE.primaryDark, fontWeight: '600', marginTop: 2 },
-  cardDesc: { fontSize: 13, color: SLATE[600], lineHeight: 18, marginTop: 5 },
+  cardTitle: { fontSize: TYPE.heading, fontWeight: '700', color: SLATE[800] },
+  cardSubtitle: { fontSize: TYPE.label, color: PALETTE.primaryDark, fontWeight: '600', marginTop: 2 },
+  cardDesc: { fontSize: TYPE.body, color: SLATE[600], lineHeight: leading(TYPE.body), marginTop: 5 },
   cardActions: { flexDirection: 'row', gap: 4 },
   iconBtn: {
     width: 32,
@@ -1266,7 +1258,7 @@ const styles = StyleSheet.create({
     backgroundColor: SLATE[100],
     maxWidth: '100%',
   },
-  chipText: { fontSize: 11.5, fontWeight: '600', color: SLATE[500], flexShrink: 1 },
+  chipText: { fontSize: TYPE.caption, fontWeight: '600', color: SLATE[500], flexShrink: 1 },
 
   subToggle: {
     flexDirection: 'row',
@@ -1277,8 +1269,8 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: SLATE[100],
   },
-  subToggleText: { flex: 1, fontSize: 13, fontWeight: '700', color: PALETTE.primaryDark },
-  subCount: { fontSize: 12, fontWeight: '700', color: SLATE[500] },
+  subToggleText: { flex: 1, fontSize: TYPE.body, fontWeight: '700', color: PALETTE.primaryDark },
+  subCount: { fontSize: TYPE.label, fontWeight: '700', color: SLATE[500] },
   subList: { marginTop: SPACING.sm, gap: 2 },
   subRow: {
     flexDirection: 'row',
@@ -1289,10 +1281,10 @@ const styles = StyleSheet.create({
     borderTopColor: SLATE[100],
   },
   subText: { flex: 1 },
-  subName: { fontSize: 13.5, fontWeight: '600', color: SLATE[800] },
-  subStatus: { fontSize: 11.5, fontWeight: '600', marginTop: 1 },
-  subEmpty: { fontSize: 12.5, color: SLATE[400], fontStyle: 'italic' },
-  subError: { fontSize: 12.5, color: FEEDBACK.errorText },
+  subName: { fontSize: TYPE.heading, fontWeight: '600', color: SLATE[800] },
+  subStatus: { fontSize: TYPE.caption, fontWeight: '600', marginTop: 1 },
+  subEmpty: { fontSize: TYPE.label, color: SLATE[500], fontStyle: 'italic' },
+  subError: { fontSize: TYPE.label, color: FEEDBACK.errorText },
 
   chapterBlock: {
     backgroundColor: '#ffffff',
@@ -1319,12 +1311,12 @@ const styles = StyleSheet.create({
     paddingLeft: SPACING.lg,
     paddingRight: SPACING.md,
   },
-  accordionTitle: { flex: 1, fontSize: 14.5, fontWeight: '700', color: SLATE[800] },
-  accordionTitleTopic: { fontSize: 13.5, fontWeight: '600', color: SLATE[700] },
-  accordionMeta: { fontSize: 12, fontWeight: '700', color: SLATE[400] },
+  accordionTitle: { flex: 1, fontSize: TYPE.heading, fontWeight: '700', color: SLATE[800] },
+  accordionTitleTopic: { fontSize: TYPE.heading, fontWeight: '600', color: SLATE[700] },
+  accordionMeta: { fontSize: TYPE.label, fontWeight: '700', color: SLATE[500] },
   topicEmpty: {
-    fontSize: 12.5,
-    color: SLATE[400],
+    fontSize: TYPE.label,
+    color: SLATE[500],
     fontStyle: 'italic',
     paddingHorizontal: SPACING.lg,
     paddingBottom: SPACING.md,
@@ -1339,8 +1331,8 @@ const styles = StyleSheet.create({
     paddingBottom: SPACING.md,
   },
   completionText: { flex: 1 },
-  completionLabel: { fontSize: 13, fontWeight: '600', color: SLATE[700] },
-  completionDate: { fontSize: 11.5, color: SLATE[500], marginTop: 1 },
+  completionLabel: { fontSize: TYPE.body, fontWeight: '600', color: SLATE[700] },
+  completionDate: { fontSize: TYPE.caption, color: SLATE[500], marginTop: 1 },
 
   fab: {
     position: 'absolute',
@@ -1357,7 +1349,7 @@ const styles = StyleSheet.create({
   pressed: { opacity: 0.72 },
 
   multiline: { height: 88, textAlignVertical: 'top' },
-  fileLabel: { fontSize: 13, fontWeight: '600', color: SLATE[700], marginBottom: 6 },
+  fileLabel: { fontSize: TYPE.body, fontWeight: '600', color: SLATE[700], marginBottom: 6 },
   fileBtn: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1369,8 +1361,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 13,
   },
-  fileText: { flex: 1, fontSize: 14, color: SLATE[700] },
-  fileHint: { marginTop: 5, fontSize: 12, color: SLATE[500] },
+  fileText: { flex: 1, fontSize: TYPE.body, color: SLATE[700] },
+  fileHint: { marginTop: 5, fontSize: TYPE.label, color: SLATE[500] },
 
   backdrop: { flex: 1, backgroundColor: 'rgba(15,23,42,0.45)', justifyContent: 'flex-end' },
   sheet: {
@@ -1390,5 +1382,5 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.md,
   },
   sheetGrid: { marginTop: SPACING.md },
-  sheetHint: { fontSize: 12, color: SLATE[500], textAlign: 'center', marginTop: SPACING.sm },
+  sheetHint: { fontSize: TYPE.label, color: SLATE[500], textAlign: 'center', marginTop: SPACING.sm },
 });

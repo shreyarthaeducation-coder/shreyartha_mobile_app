@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { FEEDBACK, SLATE, SPACING, TYPE } from '../../../constants/theme';
+import { FEEDBACK, SLATE, SPACING, TYPE, leading } from '../../../constants/theme';
 import { usePalette } from '../../ui/PaletteContext';
 import { makeStyles } from '../../../utils/makeStyles';
 import { StudentCard, StudentCardTitle } from '../StudentCard';
@@ -142,7 +142,7 @@ export default function SurveyTab({ showToast }) {
                       >
                         <Ionicons
                           name={on ? 'radio-button-on' : 'radio-button-off'}
-                          size={16}
+                          size={18}
                           color={on ? palette.primaryDark : SLATE[300]}
                         />
                         <Text style={[styles.optionText, on && styles.optionTextOn]}>
@@ -195,7 +195,7 @@ const useStyles = makeStyles((p) => ({
     marginBottom: SPACING.sm,
   },
   lockText: { fontSize: TYPE.micro, fontWeight: '700', color: FEEDBACK.successOnBg },
-  note: { fontSize: TYPE.label, lineHeight: 18, color: SLATE[600] },
+  note: { fontSize: TYPE.label, lineHeight: leading(TYPE.label), color: SLATE[600] },
 
   question: { marginBottom: SPACING.md },
   questionText: { fontSize: TYPE.body, fontWeight: '600', color: SLATE[800], marginBottom: 6 },
@@ -215,7 +215,7 @@ const useStyles = makeStyles((p) => ({
   optionText: { flex: 1, fontSize: TYPE.body, color: SLATE[700] },
   optionTextOn: { color: p.deep, fontWeight: '600' },
 
-  done: { fontSize: TYPE.label, color: p.onDark, textAlign: 'center', marginBottom: SPACING.lg },
+  done: { fontSize: TYPE.label, color: SLATE[600], textAlign: 'center', marginBottom: SPACING.lg },
   save: {
     alignItems: 'center',
     justifyContent: 'center',

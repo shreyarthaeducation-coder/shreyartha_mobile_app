@@ -1,6 +1,6 @@
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { SLATE, SPACING } from '../../constants/theme';
+import { SLATE, SPACING, TYPE } from '../../constants/theme';
 
 /**
  * Segmented Login / Signup switch.
@@ -44,6 +44,6 @@ const styles = StyleSheet.create({
     borderRadius: 9,
     alignItems: 'center',
   },
-  label: { fontSize: 14.5, fontWeight: '600', color: SLATE[500] },
+  label: { fontSize: TYPE.heading, fontWeight: '600', color: SLATE[600] },
   labelActive: { color: '#ffffff' },
 });

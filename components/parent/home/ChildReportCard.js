@@ -102,7 +102,7 @@ export default function ChildReportCard({
           accessibilityLabel={`${row.label}. ${row.description}`}
         >
           <View style={styles.rowIcon}>
-            <Ionicons name={row.icon} size={17} color={palette.primary} />
+            <Ionicons name={row.icon} size={19} color={palette.primary} />
           </View>
           <View style={styles.rowText}>
             <Text style={styles.rowLabel}>{row.label}</Text>
@@ -110,7 +110,7 @@ export default function ChildReportCard({
               {row.description}
             </Text>
           </View>
-          <Ionicons name="chevron-forward" size={15} color={SLATE[400]} />
+          <Ionicons name="chevron-forward" size={17} color={SLATE[400]} />
         </Pressable>
       ))}
 
@@ -119,9 +119,9 @@ export default function ChildReportCard({
         style={({ pressed }) => [styles.cta, pressed && styles.pressed]}
         accessibilityRole="button"
       >
-        <Ionicons name="stats-chart" size={16} color={palette.primaryDark} />
+        <Ionicons name="stats-chart" size={18} color={palette.primaryDark} />
         <Text style={styles.ctaText}>{strings.viewAnalytics || 'View Detailed Analytics'}</Text>
-        <Ionicons name="chevron-forward" size={15} color={palette.primaryDark} />
+        <Ionicons name="chevron-forward" size={17} color={palette.primaryDark} />
       </Pressable>
     </View>
   );

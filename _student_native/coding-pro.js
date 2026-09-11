@@ -75,7 +75,7 @@ export default function CodingProLandingScreen() {
         <TouchableOpacity onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))}>
           <Text style={styles.backText}>← Back</Text>
         </TouchableOpacity>
-        <Image source={require('../../assets/images/AppLogo.png')} style={styles.logo} resizeMode="contain" />
+        <Image source={require('../../assets/images/The3CEdge.png')} style={styles.logo} resizeMode="contain" />
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
@@ -167,7 +167,7 @@ const styles = StyleSheet.create({
     paddingBottom: 10,
   },
   backText: { color: '#fff', fontSize: 16, fontWeight: '700' },
-  logo: { width: 92, height: 26 },
+  logo: { width: 118, height: 34 },
   scrollContent: { paddingHorizontal: 14, paddingBottom: 24 },
   headerCard: {
     backgroundColor: '#0f1f45',

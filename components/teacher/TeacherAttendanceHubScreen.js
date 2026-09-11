@@ -1,7 +1,7 @@
 import { Pressable, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { SLATE, SPACING, TOUCH, TYPE } from '../../constants/theme';
+import { SLATE, SPACING, TOUCH, TYPE, leading } from '../../constants/theme';
 import { usePalette } from '../ui/PaletteContext';
 import { makeStyles } from '../../utils/makeStyles';
 import { useTranslations } from '../../hooks/useTranslations';
@@ -71,7 +71,7 @@ export default function TeacherAttendanceHubScreen() {
                 {DESCRIPTIONS[item.key]}
               </Text>
             </View>
-            <Ionicons name="chevron-forward" size={15} color={SLATE[400]} />
+            <Ionicons name="chevron-forward" size={17} color={SLATE[400]} />
           </Pressable>
         ))}
       </Card>
@@ -84,7 +84,7 @@ export default function TeacherAttendanceHubScreen() {
 }
 
 const useStyles = makeStyles((p) => ({
-  intro: { fontSize: TYPE.label, color: SLATE[500], lineHeight: 19, marginBottom: SPACING.sm },
+  intro: { fontSize: TYPE.label, color: SLATE[500], lineHeight: leading(TYPE.label), marginBottom: SPACING.sm },
 
   row: {
     flexDirection: 'row',
@@ -104,12 +104,12 @@ const useStyles = makeStyles((p) => ({
   },
   text: { flex: 1 },
   label: { fontSize: TYPE.heading, fontWeight: '700', color: SLATE[800] },
-  description: { fontSize: TYPE.caption, color: SLATE[500], lineHeight: 16, marginTop: 1 },
+  description: { fontSize: TYPE.caption, color: SLATE[500], lineHeight: leading(TYPE.caption), marginTop: 1 },
 
   note: {
     fontSize: TYPE.caption,
     color: SLATE[500],
-    lineHeight: 17,
+    lineHeight: leading(TYPE.caption),
     marginTop: SPACING.md,
     paddingHorizontal: SPACING.xs,
   },

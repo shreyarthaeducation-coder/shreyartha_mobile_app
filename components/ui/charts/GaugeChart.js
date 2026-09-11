@@ -1,6 +1,6 @@
 import { StyleSheet, Text, View } from 'react-native';
 import Svg, { Circle, Line, Path } from 'react-native-svg';
-import { SLATE } from '../../../constants/theme';
+import { SLATE, TYPE } from '../../../constants/theme';
 
 /**
  * Semi-circular gauge with a needle — the native rebuild of `School/shared/SkillGauge.js`.
@@ -91,7 +91,7 @@ export default function GaugeChart({ tag, percentage = 0, width = 150, style }) 
 
 const styles = StyleSheet.create({
   wrap: { alignItems: 'center' },
-  tag: { fontSize: 12, fontWeight: '700', color: SLATE[700], textAlign: 'center', marginTop: 4 },
-  pct: { fontSize: 17, fontWeight: '800', marginTop: 2 },
-  label: { fontSize: 11, color: SLATE[500], fontWeight: '600' },
+  tag: { fontSize: TYPE.label, fontWeight: '700', color: SLATE[700], textAlign: 'center', marginTop: 4 },
+  pct: { fontSize: TYPE.title, fontWeight: '800', marginTop: 2 },
+  label: { fontSize: TYPE.caption, color: SLATE[500], fontWeight: '600' },
 });

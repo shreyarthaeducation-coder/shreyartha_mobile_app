@@ -1,7 +1,7 @@
 import { useCallback, useState } from 'react';
 import { Alert, Pressable, Text, View } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
-import { SLATE, SPACING } from '../../../constants/theme';
+import { SLATE, SPACING, TYPE } from '../../../constants/theme';
 import { usePalette } from '../../ui/PaletteContext';
 import { Card, EmptyState, ScreenScaffold, Select, StatusChip, useToast } from '../../ui';
 import useStaffResource from '../../../hooks/useStaffResource';
@@ -195,12 +195,12 @@ const useStyles = makeStyles(() => ({
   avatar: { width: 42, height: 42, borderRadius: 21, alignItems: 'center', justifyContent: 'center' },
   avatarText: { fontSize: 15, fontWeight: '800' },
   headText: { flex: 1 },
-  name: { fontSize: 15, fontWeight: '700', color: SLATE[800] },
-  contact: { fontSize: 12, color: SLATE[500], marginTop: 1 },
+  name: { fontSize: TYPE.heading, fontWeight: '700', color: SLATE[800] },
+  contact: { fontSize: TYPE.label, color: SLATE[500], marginTop: 1 },
   badges: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: SPACING.sm },
   typeBadge: { paddingHorizontal: 9, paddingVertical: 3, borderRadius: 6 },
-  typeBadgeText: { color: '#ffffff', fontSize: 11, fontWeight: '800', letterSpacing: 0.2 },
-  noAction: { fontSize: 12, color: SLATE[400], fontStyle: 'italic', marginTop: SPACING.sm },
+  typeBadgeText: { color: '#ffffff', fontSize: TYPE.caption, fontWeight: '800', letterSpacing: 0.2 },
+  noAction: { fontSize: TYPE.label, color: SLATE[500], fontStyle: 'italic', marginTop: SPACING.sm },
   actionBtn: {
     marginTop: SPACING.sm,
     borderRadius: 9,
@@ -208,8 +208,8 @@ const useStyles = makeStyles(() => ({
     paddingVertical: 9,
     alignItems: 'center',
   },
-  actionText: { color: '#ffffff', fontWeight: '700', fontSize: 13.5 },
+  actionText: { color: '#ffffff', fontWeight: '700', fontSize: TYPE.heading },
   actionGhost: { backgroundColor: '#ffffff', borderColor: SLATE[200] },
-  actionGhostText: { color: SLATE[600], fontWeight: '700', fontSize: 13.5 },
+  actionGhostText: { color: SLATE[600], fontWeight: '700', fontSize: TYPE.heading },
   pressed: { opacity: 0.7 },
 }));

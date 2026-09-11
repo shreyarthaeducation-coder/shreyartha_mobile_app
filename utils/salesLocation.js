@@ -56,50 +56,69 @@ export async function captureVisitLocation() {
  * Coordinates → { pincode, address, city, state }.
  *
  * Tries the OS geocoder first. It needs no API key, costs no request and often works with a weak
- * connection, which is exactly the situation a rep is in. Only when it yields no postal code does
+ * connection, which is exactly the situation a rep is in. Only when it yields nothing usable does
  * this fall back to the server's Google Geocoding proxy — where the key lives, so it never ships
  * in this bundle.
  *
  * Returns an empty object rather than throwing: the pincode field is editable, and typing it is a
  * perfectly good fallback.
+ *
+ * ── THE ADDRESS AND THE PINCODE ARE SEPARATE ANSWERS ────────────────────────
+ * This used to return the whole result ONLY `if (first?.postalCode)`. A reverse-geocode that gave a
+ * perfectly good street address but no postal code was therefore discarded in full — and outside a
+ * town that is the common shape of the answer, not an edge case. They are now independent: either
+ * can come back on its own, and the caller decides what to do with each.
+ *
+ * The device result is still preferred WHOLE where it has both. The server is consulted when the
+ * device produced neither — and, separately, when it produced an address but no pincode, since the
+ * pincode is what the visit is filed under.
  */
 export async function resolvePincode(latitude, longitude) {
   if (latitude == null || longitude == null) return {};
 
+  const out = {};
+
   try {
     const results = await Location.reverseGeocodeAsync({ latitude, longitude });
     const first = results?.[0];
-    if (first?.postalCode) {
-      return {
-        pincode: String(first.postalCode).replace(/\D/g, '').slice(0, 6),
-        address: [first.name, first.street, first.district, first.city, first.region]
-          .filter(Boolean)
-          .join(', '),
-        city: first.city || undefined,
-        state: first.region || undefined,
-        source: 'device',
-      };
+    if (first) {
+      if (first.postalCode) {
+        out.pincode = String(first.postalCode).replace(/\D/g, '').slice(0, 6);
+      }
+      const address = [first.name, first.street, first.district, first.city, first.region]
+        .filter(Boolean)
+        .join(', ');
+      if (address) out.address = address;
+      if (first.city) out.city = first.city;
+      if (first.region) out.state = first.region;
+      if (out.pincode || out.address) out.source = 'device';
     }
   } catch {
     // Fall through to the server.
   }
 
-  try {
-    const geo = await reverseGeocode(latitude, longitude);
-    if (geo?.pincode) {
-      return {
-        pincode: String(geo.pincode).replace(/\D/g, '').slice(0, 6),
-        address: geo.formattedAddress,
-        city: geo.city,
-        state: geo.state,
-        source: 'server',
-      };
+  // Only what the device could not supply. Note this reaches the server whenever the PINCODE is
+  // missing even if an address was found, because the pincode is what the visit is filed under —
+  // and the server call is a no-op returning `{available:false}` when GOOGLE_MAPS_API_KEY is unset.
+  if (!out.pincode) {
+    try {
+      const geo = await reverseGeocode(latitude, longitude);
+      if (geo?.pincode) {
+        out.pincode = String(geo.pincode).replace(/\D/g, '').slice(0, 6);
+        out.source = out.source || 'server';
+      }
+      if (!out.address && geo?.formattedAddress) {
+        out.address = geo.formattedAddress;
+        out.source = out.source || 'server';
+      }
+      if (!out.city && geo?.city) out.city = geo.city;
+      if (!out.state && geo?.state) out.state = geo.state;
+    } catch {
+      // Both geocoders are optional.
     }
-  } catch {
-    // Both geocoders are optional.
   }
 
-  return {};
+  return out;
 }
 
 /**

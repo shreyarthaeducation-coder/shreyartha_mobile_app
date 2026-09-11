@@ -4,7 +4,7 @@ import {
   ScrollView, Pressable, Dimensions,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { COLORS, SPACING } from '../../constants/theme';
+import { COLORS, SLATE, SPACING, TYPE } from '../../constants/theme';
 
 const { width } = Dimensions.get('window');
 
@@ -96,7 +96,7 @@ export default function SearchBar() {
         <TextInput
           style={styles.searchInput}
           placeholder="Explore Yourself"
-          placeholderTextColor="#aaa"
+          placeholderTextColor={SLATE[500]}
           value={searchTerm}
           onChangeText={(text) => {
             setSearchTerm(text);
@@ -193,7 +193,7 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   categoryBtnText: {
-    fontSize: 13,
+    fontSize: TYPE.body,
     fontWeight: '600',
     color: COLORS.secondary,
     maxWidth: 90,
@@ -214,7 +214,7 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 14,
     paddingVertical: 12,
-    fontSize: 15,
+    fontSize: TYPE.heading,
     color: COLORS.text,
   },
   searchBtn: {
@@ -222,7 +222,7 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
   },
   searchBtnText: {
-    fontSize: 18,
+    fontSize: TYPE.headline,
   },
   dropdown: {
     position: 'absolute',
@@ -259,7 +259,7 @@ const styles = StyleSheet.create({
     fontSize: 18,
   },
   dropdownItemText: {
-    fontSize: 15,
+    fontSize: TYPE.heading,
     color: '#333',
     fontWeight: '500',
   },
@@ -274,7 +274,7 @@ const styles = StyleSheet.create({
   noResultsText: {
     color: '#999',
     fontStyle: 'italic',
-    fontSize: 14,
+    fontSize: TYPE.body,
   },
   backdrop: {
     position: 'absolute',

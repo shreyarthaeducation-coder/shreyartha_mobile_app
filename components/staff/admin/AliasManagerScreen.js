@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { SLATE, SPACING } from '../../../constants/theme';
+import { SLATE, SPACING, TYPE, leading } from '../../../constants/theme';
 import { usePalette } from '../../ui/PaletteContext';
 import { Card, EmptyState, ScreenScaffold, StatusChip, TextField, useToast } from '../../ui';
 import useStaffResource from '../../../hooks/useStaffResource';
@@ -155,7 +155,7 @@ function TreeLevel({ nodes, levels, depth, apiBase, onSaved, path }) {
             >
               <Ionicons
                 name={expanded ? 'chevron-down' : 'chevron-forward'}
-                size={16}
+                size={18}
                 color={PALETTE.primaryDark}
               />
               <Text style={styles.nodeName} numberOfLines={2}>
@@ -244,9 +244,9 @@ export default function AliasManagerScreen({ homeRoute, apiBase, title, levels }
 }
 
 const useStyles = makeStyles((p) => ({
-  intro: { fontSize: 13, color: SLATE[500], lineHeight: 19 },
+  intro: { fontSize: TYPE.body, color: SLATE[500], lineHeight: leading(TYPE.body) },
   summary: { marginTop: SPACING.sm, marginBottom: SPACING.sm },
-  summaryText: { fontSize: 13, color: SLATE[600] },
+  summaryText: { fontSize: TYPE.body, color: SLATE[600] },
   summaryStrong: { fontWeight: '800', color: p.primaryDark },
   node: {
     borderWidth: 1,
@@ -258,9 +258,9 @@ const useStyles = makeStyles((p) => ({
   },
   nodeNested: { borderColor: SLATE[100], marginBottom: 6 },
   nodeHead: { flexDirection: 'row', alignItems: 'center', gap: 8, padding: SPACING.sm },
-  nodeName: { flex: 1, fontSize: 14, fontWeight: '700', color: SLATE[800] },
+  nodeName: { flex: 1, fontSize: TYPE.heading, fontWeight: '700', color: SLATE[800] },
   nodeCount: {
-    fontSize: 11.5,
+    fontSize: TYPE.caption,
     fontWeight: '700',
     color: p.primaryDark,
     backgroundColor: p.tint,
@@ -278,7 +278,7 @@ const useStyles = makeStyles((p) => ({
     marginTop: SPACING.sm,
   },
   rowHead: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 6 },
-  topicName: { flex: 1, fontSize: 13.5, fontWeight: '700', color: SLATE[700] },
+  topicName: { flex: 1, fontSize: TYPE.heading, fontWeight: '700', color: SLATE[700] },
   rowActions: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 4 },
   saveBtn: {
     borderRadius: 8,
@@ -288,7 +288,7 @@ const useStyles = makeStyles((p) => ({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  saveText: { color: '#ffffff', fontWeight: '700', fontSize: 13 },
+  saveText: { color: '#ffffff', fontWeight: '700', fontSize: TYPE.body },
   clearBtn: {
     borderRadius: 8,
     paddingVertical: 8,
@@ -296,6 +296,6 @@ const useStyles = makeStyles((p) => ({
     borderWidth: 1,
     borderColor: SLATE[200],
   },
-  clearText: { color: SLATE[600], fontWeight: '700', fontSize: 13 },
-  rowMessage: { fontSize: 12, color: SLATE[500], flex: 1 },
+  clearText: { color: SLATE[600], fontWeight: '700', fontSize: TYPE.body },
+  rowMessage: { fontSize: TYPE.label, color: SLATE[500], flex: 1 },
 }));

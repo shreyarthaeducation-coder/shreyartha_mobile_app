@@ -1,6 +1,6 @@
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { SLATE } from '../../constants/theme';
+import { SLATE, TYPE } from '../../constants/theme';
 import { usePalette } from './PaletteContext';
 
 /**
@@ -57,7 +57,7 @@ export default function SegmentedTabs({
             {option.icon ? (
               <Ionicons
                 name={option.icon}
-                size={15}
+                size={17}
                 color={tabInk(active, dark, palette)}
               />
             ) : null}
@@ -106,7 +106,7 @@ export default function SegmentedTabs({
  */
 function tabInk(active, dark, palette) {
   if (active) return dark ? palette.onPrimary : palette.primaryDark;
-  return dark ? '#ffffff' : SLATE[500];
+  return dark ? '#ffffff' : SLATE[600];
 }
 
 const styles = StyleSheet.create({
@@ -145,5 +145,5 @@ const styles = StyleSheet.create({
     elevation: 1,
   },
   tabPressed: { backgroundColor: SLATE[200] },
-  label: { fontSize: 13.5, fontWeight: '700', color: SLATE[500] },
+  label: { fontSize: TYPE.heading, fontWeight: '700', color: SLATE[600] },
 });

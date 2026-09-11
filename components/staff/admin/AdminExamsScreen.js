@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, Switch, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { SLATE, SPACING } from '../../../constants/theme';
+import { SLATE, SPACING, TYPE } from '../../../constants/theme';
 import { usePalette } from '../../ui/PaletteContext';
 import {
   Card,
@@ -307,7 +307,7 @@ export default function AdminExamsScreen({ homeRoute, apiBase, classesBase }) {
                 accessibilityRole="button"
                 accessibilityLabel={`Edit ${exam.examCode}`}
               >
-                <Ionicons name="pencil-outline" size={17} color={SLATE[400]} />
+                <Ionicons name="pencil-outline" size={19} color={SLATE[400]} />
               </Pressable>
             </View>
 
@@ -463,13 +463,13 @@ const useStyles = makeStyles(() => ({
   item: { marginBottom: SPACING.sm },
   head: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   headText: { flex: 1 },
-  examName: { fontSize: 15, fontWeight: '700', color: SLATE[800] },
-  examMeta: { fontSize: 12, color: SLATE[500], marginTop: 2 },
+  examName: { fontSize: TYPE.heading, fontWeight: '700', color: SLATE[800] },
+  examMeta: { fontSize: TYPE.label, color: SLATE[500], marginTop: 2 },
   iconBtn: { padding: 5 },
   visibilityRow: { flexDirection: 'row', alignItems: 'center', marginTop: SPACING.sm },
   spacer: { flex: 1 },
   marksBtn: { marginTop: SPACING.sm, borderRadius: 9, paddingVertical: 9, alignItems: 'center' },
-  marksBtnText: { color: '#ffffff', fontWeight: '700', fontSize: 13.5 },
+  marksBtnText: { color: '#ffffff', fontWeight: '700', fontSize: TYPE.heading },
   pressed: { opacity: 0.7 },
   fab: {
     position: 'absolute',
@@ -483,9 +483,9 @@ const useStyles = makeStyles(() => ({
     elevation: 4,
   },
   student: { borderTopWidth: 1, borderTopColor: SLATE[100], paddingTop: SPACING.sm, marginTop: 6 },
-  studentName: { fontSize: 13.5, fontWeight: '700', color: SLATE[700] },
+  studentName: { fontSize: TYPE.heading, fontWeight: '700', color: SLATE[700] },
   studentRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 10, marginTop: 4 },
   markField: { flex: 1 },
   spinner: { marginTop: SPACING.lg },
-  hint: { fontSize: 12.5, color: SLATE[500], marginTop: SPACING.sm },
+  hint: { fontSize: TYPE.label, color: SLATE[500], marginTop: SPACING.sm },
 }));

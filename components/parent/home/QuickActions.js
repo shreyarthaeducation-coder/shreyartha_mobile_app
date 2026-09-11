@@ -1,6 +1,6 @@
 import { Pressable, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { SLATE, SPACING, TOUCH, TYPE } from '../../../constants/theme';
+import { SLATE, SPACING, TOUCH, TYPE, leading } from '../../../constants/theme';
 import { makeStyles } from '../../../utils/makeStyles';
 import ComingSoon from '../../shared/ComingSoon';
 
@@ -8,11 +8,12 @@ import ComingSoon from '../../shared/ComingSoon';
  * The parent dashboard's row of quick actions: Pay Fees, Payment History, Notifications,
  * Download Reports.
  *
- * ── TWO OF THE FOUR ARE INERT, AND THAT IS DELIBERATE ───────────────────────
- * Notifications and Download Reports have no backing endpoint for a parent — see the header of
- * `components/shared/ComingSoon.js` for what was actually checked. They render as plain `View`s
- * carrying the badge, never as `Pressable`s, so a tap does nothing at all rather than navigating
- * somewhere that then has nothing to show.
+ * ── A TILE WITH NO ENDPOINT IS INERT, AND THAT IS DELIBERATE ───────────────
+ * Download Reports has no backing endpoint for a parent — see the header of
+ * `components/shared/ComingSoon.js` for what was actually checked. A `soon` tile renders as a plain
+ * `View` carrying the badge, never as a `Pressable`, so a tap does nothing at all rather than
+ * navigating somewhere that then has nothing to show. (Notifications was inert too, until the parent
+ * inbox existed; it is a normal tile now.)
  *
  * ── EACH TILE OWNS ITS TINT ─────────────────────────────────────────────────
  * The design gives the four tiles four pastel washes. They are decoration and carry no state, so
@@ -64,7 +65,7 @@ export default function QuickActions({ actions = [], onPress }) {
             accessibilityLabel={`${action.label}. ${action.description}`}
           >
             {body}
-            <Ionicons name="chevron-forward" size={14} color={SLATE[400]} style={styles.chevron} />
+            <Ionicons name="chevron-forward" size={16} color={SLATE[400]} style={styles.chevron} />
           </Pressable>
         );
       })}
@@ -113,7 +114,7 @@ const useStyles = makeStyles(() => ({
   violet: { backgroundColor: 'rgba(147, 51, 234, 0.14)' },
 
   label: { fontSize: TYPE.heading, fontWeight: '700', color: SLATE[800] },
-  description: { fontSize: TYPE.caption, color: SLATE[500], lineHeight: 15, marginTop: 2 },
+  description: { fontSize: TYPE.caption, color: SLATE[500], lineHeight: leading(TYPE.caption), marginTop: 2 },
   soon: { marginTop: SPACING.sm },
   chevron: { position: 'absolute', right: 10, bottom: 10 },
 

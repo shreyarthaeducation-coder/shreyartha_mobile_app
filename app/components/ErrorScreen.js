@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { COLORS, SPACING, FONTS, SHADOWS } from '../../constants/theme';
+import { COLORS, FONTS, SHADOWS, SPACING, TYPE } from '../../constants/theme';
 
 export default function ErrorScreen({ message, onRetry }) {
   return (
@@ -31,7 +31,7 @@ const styles = StyleSheet.create({
   },
   title: {
     ...FONTS.bold,
-    fontSize: 18,
+    fontSize: TYPE.headline,
     color: COLORS.secondary,
     marginBottom: SPACING.sm,
     textAlign: 'center',
@@ -52,6 +52,6 @@ const styles = StyleSheet.create({
   btnText: {
     color: COLORS.white,
     fontWeight: '700',
-    fontSize: 15,
+    fontSize: TYPE.heading,
   },
 });

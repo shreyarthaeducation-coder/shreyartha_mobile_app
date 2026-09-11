@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Alert, Pressable, Switch, Text, TextInput, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { FEEDBACK, SLATE, SPACING } from '../../../constants/theme';
+import { FEEDBACK, SLATE, SPACING, TYPE, leading } from '../../../constants/theme';
 import { usePalette } from '../../ui/PaletteContext';
 import {
   Card,
@@ -366,7 +366,7 @@ export default function AdminPayrollScreen({ homeRoute = '/staff/principal' }) {
               accessibilityRole="button"
               accessibilityLabel={`Edit salary for ${e.fullName}`}
             >
-              <Ionicons name="create-outline" size={17} color={SLATE[600]} />
+              <Ionicons name="create-outline" size={19} color={SLATE[600]} />
             </Pressable>
           </View>
           <View style={styles.grossRow}>
@@ -515,7 +515,7 @@ export default function AdminPayrollScreen({ homeRoute = '/staff/principal' }) {
               value={salary.monthlyGross}
               onChangeText={(monthlyGross) => setSalary((p) => ({ ...p, monthlyGross }))}
               placeholder="e.g. 45000"
-              placeholderTextColor={SLATE[400]}
+              placeholderTextColor={SLATE[500]}
               keyboardType="number-pad"
               editable={!saving}
             />
@@ -548,7 +548,7 @@ export default function AdminPayrollScreen({ homeRoute = '/staff/principal' }) {
               value={salary.effectiveFrom}
               onChangeText={(effectiveFrom) => setSalary((p) => ({ ...p, effectiveFrom }))}
               placeholder="YYYY-MM-DD"
-              placeholderTextColor={SLATE[400]}
+              placeholderTextColor={SLATE[500]}
               editable={!saving}
             />
 
@@ -616,7 +616,7 @@ export default function AdminPayrollScreen({ homeRoute = '/staff/principal' }) {
               value={salary.notes}
               onChangeText={(notes) => setSalary((p) => ({ ...p, notes }))}
               placeholder="Internal notes (optional)"
-              placeholderTextColor={SLATE[400]}
+              placeholderTextColor={SLATE[500]}
               multiline
               numberOfLines={3}
               textAlignVertical="top"
@@ -691,7 +691,7 @@ export default function AdminPayrollScreen({ homeRoute = '/staff/principal' }) {
                     <ActivityIndicator size="small" color="#ffffff" />
                   ) : (
                     <>
-                      <Ionicons name="download-outline" size={14} color="#ffffff" />
+                      <Ionicons name="download-outline" size={16} color="#ffffff" />
                       <Text style={styles.pdfText}>PDF</Text>
                     </>
                   )}
@@ -713,14 +713,14 @@ export default function AdminPayrollScreen({ homeRoute = '/staff/principal' }) {
 }
 
 const useStyles = makeStyles((p) => ({
-  intro: { fontSize: 13, color: SLATE[500], lineHeight: 19, marginBottom: SPACING.md },
+  intro: { fontSize: TYPE.body, color: SLATE[500], lineHeight: leading(TYPE.body), marginBottom: SPACING.md },
   body: { marginTop: SPACING.md },
   card: { marginBottom: SPACING.sm },
   cardHead: { flexDirection: 'row', alignItems: 'flex-start', gap: SPACING.sm },
   cardHeadText: { flex: 1 },
-  name: { fontSize: 15, fontWeight: '800', color: SLATE[800] },
-  sub: { fontSize: 12.5, color: SLATE[500], marginTop: 2 },
-  sectionTitle: { fontSize: 14, fontWeight: '800', color: SLATE[800], marginBottom: SPACING.sm },
+  name: { fontSize: TYPE.heading, fontWeight: '800', color: SLATE[800] },
+  sub: { fontSize: TYPE.label, color: SLATE[500], marginTop: 2 },
+  sectionTitle: { fontSize: TYPE.heading, fontWeight: '800', color: SLATE[800], marginBottom: SPACING.sm },
   grossRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -730,12 +730,12 @@ const useStyles = makeStyles((p) => ({
     borderTopWidth: 1,
     borderTopColor: SLATE[100],
   },
-  grossLabel: { fontSize: 13, color: SLATE[500] },
-  gross: { fontSize: 15, fontWeight: '800' },
+  grossLabel: { fontSize: TYPE.body, color: SLATE[500] },
+  gross: { fontSize: TYPE.heading, fontWeight: '800' },
   figures: { flexDirection: 'row', gap: SPACING.sm, marginTop: SPACING.sm },
   figure: { flex: 1 },
-  figureLabel: { fontSize: 11.5, color: SLATE[500] },
-  figureValue: { fontSize: 13.5, fontWeight: '700', color: SLATE[800], marginTop: 2 },
+  figureLabel: { fontSize: TYPE.caption, color: SLATE[500] },
+  figureValue: { fontSize: TYPE.heading, fontWeight: '700', color: SLATE[800], marginTop: 2 },
   iconBtn: {
     width: 34,
     height: 34,
@@ -750,8 +750,8 @@ const useStyles = makeStyles((p) => ({
     alignItems: 'center',
     marginTop: SPACING.md,
   },
-  primaryText: { color: '#ffffff', fontSize: 14.5, fontWeight: '700' },
-  hint: { fontSize: 12, color: SLATE[500], lineHeight: 18, marginTop: SPACING.sm },
+  primaryText: { color: '#ffffff', fontSize: TYPE.heading, fontWeight: '700' },
+  hint: { fontSize: TYPE.label, color: SLATE[500], lineHeight: leading(TYPE.label), marginTop: SPACING.sm },
   pressed: { opacity: 0.75 },
 
   runActions: { marginBottom: SPACING.md },
@@ -764,7 +764,7 @@ const useStyles = makeStyles((p) => ({
     borderBottomColor: SLATE[100],
   },
   slipText: { flex: 1 },
-  slipName: { fontSize: 14, fontWeight: '700', color: SLATE[800] },
+  slipName: { fontSize: TYPE.heading, fontWeight: '700', color: SLATE[800] },
   pdfBtn: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -775,7 +775,7 @@ const useStyles = makeStyles((p) => ({
     minWidth: 68,
     justifyContent: 'center',
   },
-  pdfText: { color: '#ffffff', fontSize: 12.5, fontWeight: '700' },
+  pdfText: { color: '#ffffff', fontSize: TYPE.label, fontWeight: '700' },
 
   preview: {
     marginTop: SPACING.md,
@@ -783,10 +783,10 @@ const useStyles = makeStyles((p) => ({
     borderRadius: 12,
     padding: SPACING.sm,
   },
-  previewTitle: { fontSize: 12.5, fontWeight: '800', color: SLATE[700], marginBottom: 6 },
+  previewTitle: { fontSize: TYPE.label, fontWeight: '800', color: SLATE[700], marginBottom: 6 },
   previewRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 3 },
-  previewLabel: { fontSize: 12.5, color: SLATE[600] },
-  previewValue: { fontSize: 12.5, fontWeight: '700', color: SLATE[800] },
+  previewLabel: { fontSize: TYPE.label, color: SLATE[600] },
+  previewValue: { fontSize: TYPE.label, fontWeight: '700', color: SLATE[800] },
 
   toggleRow: {
     flexDirection: 'row',
@@ -795,11 +795,11 @@ const useStyles = makeStyles((p) => ({
     marginTop: SPACING.md,
   },
   toggleText: { flex: 1 },
-  toggleLabel: { fontSize: 13.5, fontWeight: '700', color: SLATE[700] },
-  toggleHint: { fontSize: 11.5, color: SLATE[500], marginTop: 2, lineHeight: 16 },
+  toggleLabel: { fontSize: TYPE.heading, fontWeight: '700', color: SLATE[700] },
+  toggleHint: { fontSize: TYPE.caption, color: SLATE[500], marginTop: 2, lineHeight: leading(TYPE.caption) },
 
   label: {
-    fontSize: 13,
+    fontSize: TYPE.body,
     fontWeight: '700',
     color: SLATE[700],
     marginTop: SPACING.md,
@@ -811,7 +811,7 @@ const useStyles = makeStyles((p) => ({
     borderRadius: 10,
     paddingHorizontal: 13,
     paddingVertical: 11,
-    fontSize: 14.5,
+    fontSize: TYPE.heading,
     color: SLATE[800],
     backgroundColor: '#ffffff',
   },
@@ -822,10 +822,10 @@ const useStyles = makeStyles((p) => ({
     borderRadius: 10,
     paddingHorizontal: 13,
     paddingVertical: 11,
-    fontSize: 14.5,
+    fontSize: TYPE.heading,
     color: SLATE[800],
     backgroundColor: '#ffffff',
   },
   sheetLoader: { marginVertical: SPACING.xl },
-  sheetError: { color: FEEDBACK.errorText, fontSize: 12.5, marginTop: SPACING.sm },
+  sheetError: { color: FEEDBACK.errorText, fontSize: TYPE.label, marginTop: SPACING.sm },
 }));

@@ -100,7 +100,7 @@ export default function AiActionBar({
           accessibilityRole="button"
           accessibilityLabel="Doubt Resolution"
         >
-          <Ionicons name="camera-outline" size={17} color="#ffffff" />
+          <Ionicons name="camera-outline" size={19} color="#ffffff" />
           <Text style={styles.doubtLabel}>Doubt Resolution</Text>
         </Pressable>
       ) : null}

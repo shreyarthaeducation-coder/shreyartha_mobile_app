@@ -2,12 +2,13 @@ import { useState } from 'react';
 import { Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { SLATE, SPACING, TYPE } from '../../constants/theme';
+import { SLATE, SPACING, TYPE, leading } from '../../constants/theme';
 import { usePalette } from '../ui/PaletteContext';
 import { makeStyles } from '../../utils/makeStyles';
 import { useTranslations } from '../../hooks/useTranslations';
 import { ScreenScaffold } from '../ui';
 import AssistantCard from '../shared/home/AssistantCard';
+import ChangePasswordRow from '../shared/home/ChangePasswordRow';
 import ShreyaChatSheet from '../staff/ShreyaChatSheet';
 import { TAB_BAR_HEIGHT } from '../shared/home/PortalTabBar';
 
@@ -83,6 +84,12 @@ export default function TeacherSupportScreen() {
         />
       </View>
 
+      {/* The teacher's only route to change-password now that the header chip is gone — this screen
+          previously had no password row at all. */}
+      <View style={styles.account}>
+        <ChangePasswordRow route="/teacher/change-password" />
+      </View>
+
       {chatOpen ? (
         <ShreyaChatSheet visible onClose={() => setChatOpen(false)} basePath="/teacher" />
       ) : null}
@@ -91,6 +98,7 @@ export default function TeacherSupportScreen() {
 }
 
 const useStyles = makeStyles(() => ({
-  intro: { fontSize: TYPE.label, color: SLATE[500], lineHeight: 19, marginBottom: SPACING.md },
+  intro: { fontSize: TYPE.label, color: SLATE[500], lineHeight: leading(TYPE.label), marginBottom: SPACING.md },
   supportPair: { flexDirection: 'row', alignItems: 'stretch', gap: SPACING.sm },
+  account: { marginTop: SPACING.md },
 }));

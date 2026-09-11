@@ -1,6 +1,6 @@
 import { Pressable, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { SPACING, TYPE } from '../../constants/theme';
+import { SLATE, SPACING, TYPE, leading } from '../../constants/theme';
 import makeStyles from '../../utils/makeStyles';
 import { usePalette } from './PaletteContext';
 
@@ -50,7 +50,7 @@ export default function SensitiveGate({
             accessibilityRole="button"
             accessibilityLabel="Hide personal information"
           >
-            <Ionicons name="eye-off-outline" size={15} color={palette.primaryDark} />
+            <Ionicons name="eye-off-outline" size={17} color={palette.primaryDark} />
             <Text style={styles.hideText}>Hide details</Text>
           </Pressable>
         ) : null}
@@ -72,7 +72,7 @@ export default function SensitiveGate({
         accessibilityRole="button"
         accessibilityLabel={actionLabel}
       >
-        <Ionicons name="eye-outline" size={16} color={palette.onPrimary} />
+        <Ionicons name="eye-outline" size={18} color={palette.onPrimary} />
         <Text style={styles.btnText}>{actionLabel}</Text>
       </Pressable>
     </View>
@@ -101,12 +101,11 @@ const useStyles = makeStyles((p) => ({
   title: { fontSize: TYPE.title, fontWeight: '700', color: p.primaryDark, textAlign: 'center' },
   message: {
     fontSize: TYPE.label,
-    color: p.primaryDark,
-    opacity: 0.8,
+    color: SLATE[600],
     textAlign: 'center',
     marginTop: 6,
     marginBottom: SPACING.md,
-    lineHeight: 18,
+    lineHeight: leading(TYPE.label),
   },
   btn: {
     flexDirection: 'row',

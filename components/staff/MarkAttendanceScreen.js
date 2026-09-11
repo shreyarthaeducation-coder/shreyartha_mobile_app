@@ -10,7 +10,7 @@ import {
   View,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { FEEDBACK, SHADOWS, SLATE, SPACING } from '../../constants/theme';
+import { FEEDBACK, SHADOWS, SLATE, SPACING, TYPE } from '../../constants/theme';
 import { usePalette } from '../../components/ui/PaletteContext';
 import {
   CalendarGrid,
@@ -69,8 +69,8 @@ function ScopeSummary({ scope }) {
 function StatusToggle({ status, disabled, onPick }) {
   const styles = useStyles();
   const options = [
-    { value: ATTENDANCE_STATUS.PRESENT, short: 'P', tone: FEEDBACK.successText, bg: FEEDBACK.successBg },
-    { value: ATTENDANCE_STATUS.ABSENT, short: 'A', tone: FEEDBACK.errorText, bg: FEEDBACK.errorBg },
+    { value: ATTENDANCE_STATUS.PRESENT, short: 'P', tone: FEEDBACK.successOnBg, bg: FEEDBACK.successBg },
+    { value: ATTENDANCE_STATUS.ABSENT, short: 'A', tone: FEEDBACK.errorOnBg, bg: FEEDBACK.errorBg },
   ];
 
   return (
@@ -357,7 +357,7 @@ export default function MarkAttendanceScreen({
                 accessibilityRole="button"
                 accessibilityLabel="Previous day"
               >
-                <Ionicons name="chevron-back" size={18} color={PALETTE.primaryDark} />
+                <Ionicons name="chevron-back" size={20} color={PALETTE.primaryDark} />
               </Pressable>
 
               <Text style={styles.dateLabel} numberOfLines={1}>
@@ -372,7 +372,7 @@ export default function MarkAttendanceScreen({
                 accessibilityRole="button"
                 accessibilityLabel="Next day"
               >
-                <Ionicons name="chevron-forward" size={18} color={PALETTE.primaryDark} />
+                <Ionicons name="chevron-forward" size={20} color={PALETTE.primaryDark} />
               </Pressable>
 
               <Pressable
@@ -382,7 +382,7 @@ export default function MarkAttendanceScreen({
                 accessibilityRole="button"
                 accessibilityLabel="Pick a date from the month"
               >
-                <Ionicons name="calendar-outline" size={17} color="#ffffff" />
+                <Ionicons name="calendar-outline" size={19} color="#ffffff" />
               </Pressable>
             </View>
 
@@ -581,7 +581,7 @@ const useStyles = makeStyles((p) => ({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  dateLabel: { flex: 1, textAlign: 'center', fontSize: 14.5, fontWeight: '700', color: SLATE[800] },
+  dateLabel: { flex: 1, textAlign: 'center', fontSize: TYPE.heading, fontWeight: '700', color: SLATE[800] },
   calendarBtn: {
     width: 34,
     height: 34,
@@ -591,15 +591,15 @@ const useStyles = makeStyles((p) => ({
     backgroundColor: p.primaryDark,
   },
   statusLine: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: SPACING.sm },
-  scopeSummary: { flexShrink: 1, fontSize: 12.5, fontWeight: '600', color: SLATE[500] },
-  tally: { fontSize: 12.5, fontWeight: '700', color: SLATE[600] },
+  scopeSummary: { flexShrink: 1, fontSize: TYPE.label, fontWeight: '600', color: SLATE[500] },
+  tally: { fontSize: TYPE.label, fontWeight: '700', color: SLATE[600] },
 
   list: { flex: 1 },
   listContent: { paddingBottom: SPACING.sm },
   listContentEmpty: { flexGrow: 1, justifyContent: 'center' },
   centered: { paddingVertical: SPACING.xxl, alignItems: 'center', justifyContent: 'center' },
   notice: {
-    fontSize: 12.5,
+    fontSize: TYPE.label,
     color: FEEDBACK.errorText,
     textAlign: 'center',
     paddingVertical: 6,
@@ -617,10 +617,10 @@ const useStyles = makeStyles((p) => ({
     borderBottomWidth: 1,
     borderBottomColor: SLATE[100],
   },
-  rowIndex: { width: 22, fontSize: 12.5, fontWeight: '700', color: SLATE[400] },
+  rowIndex: { minWidth: 22, fontSize: TYPE.label, fontWeight: '700', color: SLATE[500] },
   rowText: { flex: 1 },
-  rowName: { fontSize: 15, fontWeight: '600', color: SLATE[800] },
-  rowMeta: { fontSize: 11.5, color: SLATE[500], marginTop: 2 },
+  rowName: { fontSize: TYPE.heading, fontWeight: '600', color: SLATE[800] },
+  rowMeta: { fontSize: TYPE.caption, color: SLATE[500], marginTop: 2 },
 
   toggle: { flexDirection: 'row', gap: 6 },
   toggleBtn: {
@@ -633,7 +633,7 @@ const useStyles = makeStyles((p) => ({
     borderColor: SLATE[200],
     backgroundColor: SLATE[50],
   },
-  toggleText: { fontSize: 14, fontWeight: '800', color: SLATE[400] },
+  toggleText: { fontSize: TYPE.heading, fontWeight: '800', color: SLATE[500] },
 
   footer: {
     flexDirection: 'row',
@@ -656,7 +656,7 @@ const useStyles = makeStyles((p) => ({
     borderWidth: 1,
     borderColor: SLATE[200],
   },
-  bulkText: { fontSize: 13, fontWeight: '700' },
+  bulkText: { fontSize: TYPE.body, fontWeight: '700' },
   saveBtn: {
     flex: 1.1,
     alignItems: 'center',
@@ -666,7 +666,7 @@ const useStyles = makeStyles((p) => ({
     backgroundColor: p.primaryDark,
   },
   saveBtnDisabled: { backgroundColor: SLATE[300] },
-  saveText: { fontSize: 14, fontWeight: '700', color: '#ffffff' },
+  saveText: { fontSize: TYPE.heading, fontWeight: '700', color: '#ffffff' },
   pressed: { opacity: 0.72 },
 
   backdrop: { flex: 1, backgroundColor: 'rgba(15,23,42,0.45)', justifyContent: 'flex-end' },
@@ -699,5 +699,5 @@ const useStyles = makeStyles((p) => ({
   legendItem: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   legendDot: { width: 8, height: 8, borderRadius: 4 },
   legendDotEmpty: { backgroundColor: '#ffffff', borderWidth: 1, borderColor: SLATE[300] },
-  legendText: { fontSize: 12, color: SLATE[500], fontWeight: '600' },
+  legendText: { fontSize: TYPE.label, color: SLATE[500], fontWeight: '600' },
 }));

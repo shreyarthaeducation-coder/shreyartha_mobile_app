@@ -16,10 +16,12 @@ import SectionDivider from '../shared/home/SectionDivider';
 import SearchEntry from '../shared/home/SearchEntry';
 import {
   fetchEntitlements,
+  fetchSchoolInfo,
   fetchStudentProfile,
   planBadge,
   planName,
 } from '../../services/student/dashboardService';
+import useSchoolLogo from '../../hooks/useSchoolLogo';
 import { fetchCareerPreferences } from '../../services/student/careerService';
 import { loadWelcomeProgress, sectionRows } from '../../services/student/welcomeService';
 
@@ -33,11 +35,11 @@ import { loadWelcomeProgress, sectionRows } from '../../services/student/welcome
  * (`WorkspaceScreen`), which is what the first hero card opens, and Student Profile became the
  * footer's Profile tab.
  *
- * ── DARK GLASS OVER THE PHOTOGRAPH ──────────────────────────────────────────
- * Every block here sits on `palette.glassDark`. `Background.png` still shows through and around
- * them — the layout paints it once behind the whole navigator — but no line of copy is ever printed
- * straight onto the image. That was the readability complaint: the old `glass` token is 10% WHITE,
- * so over a bright region of the photo it lightened the backing and the white text on it vanished.
+ * ── A LIGHT PAGE, AND EVERY SHARED BLOCK IS TOLD SO ─────────────────────────
+ * This screen used to sit on `Background.png` with every block on `palette.glassDark`. The page is
+ * plain SLATE[50] now, so all six shared-kit mounts below pass `tone="light"` explicitly — they
+ * each default to `dark`, and the student was the only caller taking that default. Miss one and it
+ * renders dark-on-light, which is the one failure this arrangement can still produce.
  *
  * ── THE FAN-OUT IS TWO WAVES, NOT ONE ───────────────────────────────────────
  * Wave 1 is the four calls this screen cannot draw without, all through `Promise.allSettled` —
@@ -129,6 +131,8 @@ export default function StudentHome() {
   const t = useTranslations(STRINGS);
 
   const [profile, setProfile] = useState(null);
+  const [schoolInfo, setSchoolInfo] = useState(null);
+  const schoolLogo = useSchoolLogo(schoolInfo?.schoolLogo);
   const [careers, setCareers] = useState([]);
   const [entitlements, setEntitlements] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -144,12 +148,28 @@ export default function StudentHome() {
       fetchEntitlements(),
     ]);
 
-    setProfile(profileRes.status === 'fulfilled' ? profileRes.value : null);
+    const me = profileRes.status === 'fulfilled' ? profileRes.value : null;
+    setProfile(me);
     setCareers(careerRes.status === 'fulfilled' ? careerRes.value : []);
     setEntitlements(entRes.status === 'fulfilled' ? entRes.value : null);
 
     setLoading(false);
     setRefreshing(false);
+
+    // THE SCHOOL CREST, and it is a second hop by necessity: the student profile carries a numeric
+    // `schoolId` and no logo, so the crest lives behind /api/students/school-info/{id}. The same
+    // two-step already runs in WorkspaceScreen for its school badge.
+    //
+    // Fired AFTER the paint above and never awaited by it — the header falls back to the 3C Edge
+    // mark on its own, so a slow or refused school lookup must not hold up the dashboard.
+    if (me?.schoolId) {
+      try {
+        const school = await fetchSchoolInfo(me.schoolId);
+        setSchoolInfo(school || null);
+      } catch {
+        // A student whose school row is missing still gets a working dashboard.
+      }
+    }
   }, []);
 
   /** Wave 2 — the progress bars. Runs alongside, never gates the paint. */
@@ -177,7 +197,11 @@ export default function StudentHome() {
 
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'left', 'right']}>
-      <BrandBar strings={t} changePasswordRoute="/student/change-password" />
+      <BrandBar
+        tone="light"
+        schoolLogoUrl={schoolLogo}
+        schoolName={schoolInfo?.name || schoolInfo?.schoolName || ''}
+      />
 
       {loading ? (
         <View style={styles.centre}>
@@ -207,6 +231,7 @@ export default function StudentHome() {
           }
         >
           <IdentityCard
+            tone="light"
             strings={t}
             name={name}
             photoUrl={profile?.profilePicture}
@@ -247,6 +272,7 @@ export default function StudentHome() {
           />
 
           <HeroCard
+            tone="light"
             title={t.workspaceTitle}
             subtitle={t.workspaceBody}
             icon="briefcase"
@@ -255,6 +281,7 @@ export default function StudentHome() {
           />
 
           <HeroCard
+            tone="light"
             title={t.analyticsTitle}
             subtitle={t.analyticsBody}
             icon="stats-chart"
@@ -268,10 +295,11 @@ export default function StudentHome() {
             />
           </HeroCard>
 
-          <SectionDivider label={t.haveDoubt} />
+          <SectionDivider label={t.haveDoubt} tone="light" />
 
           <View style={styles.assistants}>
             <AssistantCard
+              tone="light"
               name="Jyora"
               role={t.jyoraRole}
               blurb={t.jyoraBlurb}
@@ -281,6 +309,7 @@ export default function StudentHome() {
               onPress={() => router.push('/student/jyora')}
             />
             <AssistantCard
+              tone="light"
               name="Shreya"
               role={t.shreyaRole}
               blurb={t.shreyaBlurb}
@@ -294,6 +323,7 @@ export default function StudentHome() {
           </View>
 
           <SearchEntry
+            tone="light"
             placeholder={t.searchPlaceholder}
             buttonLabel={t.searchButton}
             onSearch={(q) => router.push({ pathname: '/student/search', params: { q } })}

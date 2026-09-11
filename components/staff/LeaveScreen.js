@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useState } from 'react';
 import { ActivityIndicator, Alert, Pressable, StyleSheet, Switch, Text, View } from 'react-native';
-import { FEEDBACK, PORTALS, SLATE, SPACING } from '../../constants/theme';
+import { FEEDBACK, PORTALS, SLATE, SPACING, TYPE, leading } from '../../constants/theme';
 import {
   Card,
   CardTitle,
@@ -408,25 +408,25 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     backgroundColor: PALETTE.primaryDark,
   },
-  applyText: { fontSize: 13, fontWeight: '700', color: '#ffffff' },
-  yearNote: { fontSize: 11.5, color: SLATE[500], marginTop: 6 },
+  applyText: { fontSize: TYPE.body, fontWeight: '700', color: '#ffffff' },
+  yearNote: { fontSize: TYPE.caption, color: SLATE[500], marginTop: 6 },
   tabs: { marginTop: SPACING.md },
   loader: { marginVertical: SPACING.xl },
 
   balanceHead: { flexDirection: 'row', alignItems: 'baseline', gap: SPACING.sm },
-  balanceName: { flex: 1, fontSize: 15, fontWeight: '700', color: SLATE[800] },
-  balanceLeft: { fontSize: 14, fontWeight: '800', color: PALETTE.primaryDark },
+  balanceName: { flex: 1, fontSize: TYPE.heading, fontWeight: '700', color: SLATE[800] },
+  balanceLeft: { fontSize: TYPE.heading, fontWeight: '800', color: PALETTE.primaryDark },
   balanceBar: { marginTop: SPACING.sm },
   balanceStats: { flexDirection: 'row', flexWrap: 'wrap', gap: SPACING.md, marginTop: SPACING.sm },
-  balanceStat: { fontSize: 12, color: SLATE[500], fontWeight: '600' },
-  note: { fontSize: 11.5, color: SLATE[500], fontStyle: 'italic', marginTop: 6 },
+  balanceStat: { fontSize: TYPE.label, color: SLATE[500], fontWeight: '600' },
+  note: { fontSize: TYPE.caption, color: SLATE[500], fontStyle: 'italic', marginTop: 6 },
 
   requestHead: { flexDirection: 'row', alignItems: 'flex-start', gap: SPACING.sm },
   requestText: { flex: 1 },
-  requestType: { fontSize: 14.5, fontWeight: '700', color: SLATE[800] },
-  requestDates: { fontSize: 12, color: SLATE[500], marginTop: 2 },
-  requestReason: { fontSize: 12.5, color: SLATE[600], marginTop: 6 },
-  requestDecision: { fontSize: 11.5, color: SLATE[500], marginTop: 4, fontStyle: 'italic' },
+  requestType: { fontSize: TYPE.heading, fontWeight: '700', color: SLATE[800] },
+  requestDates: { fontSize: TYPE.label, color: SLATE[500], marginTop: 2 },
+  requestReason: { fontSize: TYPE.label, color: SLATE[600], marginTop: 6 },
+  requestDecision: { fontSize: TYPE.caption, color: SLATE[500], marginTop: 4, fontStyle: 'italic' },
   rowBusy: { marginTop: SPACING.sm, alignSelf: 'flex-start' },
   withdrawBtn: {
     alignSelf: 'flex-start',
@@ -438,7 +438,7 @@ const styles = StyleSheet.create({
     borderColor: FEEDBACK.errorBorder,
     backgroundColor: FEEDBACK.errorBg,
   },
-  withdrawText: { fontSize: 12.5, fontWeight: '700', color: FEEDBACK.errorText },
+  withdrawText: { fontSize: TYPE.label, fontWeight: '700', color: FEEDBACK.errorText },
 
   switchRow: {
     flexDirection: 'row',
@@ -447,7 +447,7 @@ const styles = StyleSheet.create({
     gap: SPACING.sm,
     marginBottom: SPACING.md,
   },
-  switchLabel: { flex: 1, fontSize: 13.5, color: SLATE[700], fontWeight: '600' },
+  switchLabel: { flex: 1, fontSize: TYPE.heading, color: SLATE[700], fontWeight: '600' },
 
   estimate: {
     padding: SPACING.sm,
@@ -456,7 +456,7 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.md,
   },
   estimateBad: { backgroundColor: FEEDBACK.errorBg },
-  estimateText: { fontSize: 12.5, color: SLATE[700], lineHeight: 17 },
+  estimateText: { fontSize: TYPE.label, color: SLATE[700], lineHeight: leading(TYPE.label) },
   estimateTextBad: { color: FEEDBACK.errorText },
   multiline: { height: 76, textAlignVertical: 'top' },
 

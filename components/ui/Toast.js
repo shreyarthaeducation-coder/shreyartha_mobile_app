@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Animated, Easing, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { FEEDBACK, SHADOWS, SPACING } from '../../constants/theme';
+import { FEEDBACK, SHADOWS, SPACING, TYPE } from '../../constants/theme';
 
 /**
  * Transient confirmation strip, the native counterpart of the web's `.action-message` block
@@ -96,7 +96,7 @@ export default function Toast({ message, tone = 'success' }) {
       accessibilityLiveRegion="polite"
     >
       <View style={[styles.toast, { backgroundColor: colors.bg, borderColor: colors.border }]}>
-        <Ionicons name={colors.icon} size={17} color={colors.text} />
+        <Ionicons name={colors.icon} size={19} color={colors.text} />
         <Text style={[styles.text, { color: colors.text }]}>{message}</Text>
       </View>
     </Animated.View>
@@ -121,5 +121,5 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     ...SHADOWS.md,
   },
-  text: { flexShrink: 1, fontSize: 13.5, fontWeight: '600' },
+  text: { flexShrink: 1, fontSize: TYPE.body, fontWeight: '600' },
 });

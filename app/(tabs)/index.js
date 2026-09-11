@@ -13,18 +13,19 @@ import {
 } from "react-native";
 import { useEffect, useState } from "react";
 import { useRouter } from "expo-router";
-import { COLORS, SPACING, SHADOWS } from "../../constants/theme";
+import { COLORS, SHADOWS, SLATE, SPACING, TYPE, leading } from "../../constants/theme";
+import { loginGroup } from "../../constants/authPortals";
 import SearchBar from "../components/SearchBar";
 import { api } from "../../services/apiService";
 
 const { width } = Dimensions.get("window");
 const CARD_WIDTH = (width - SPACING.lg * 2 - SPACING.sm) / 2;
-const HEADER_LOGO_HEIGHT = 56;
-const HEADER_LOGO_WIDTH = 200;
+const HEADER_LOGO_HEIGHT = 72;
+const HEADER_LOGO_WIDTH = 250;
 // Negative offset trims transparent left whitespace in the Shreyartha logo asset.
 const LOGO_ALIGNMENT_OFFSET = -10;
 
-const APP_LOGO = require("../../assets/images/AppLogo.png");
+const APP_LOGO = require("../../assets/images/The3CEdge.png");
 
 // Per-card icon background tints
 const ICON_BG = [
@@ -58,7 +59,15 @@ const ICON_COLOR = [
 
 export default function LandingScreen() {
   const router = useRouter();
-  const [loginDropdownVisible, setLoginDropdownVisible] = useState(false);
+  // WHICH DOOR is open, not merely whether one is — 'employee' | 'general' | null.
+  //
+  // The two controls now open different lists, matching the website: the top-right button is the
+  // Shreyartha employee door alone, and "Get Started" / "Sign Up Now" open the customer-facing
+  // group. Previously one modal listed BOTH groups and "Get Started" opened no picker at all — it
+  // hard-navigated to the student login, so a parent or a partner tapping the app's single biggest
+  // button landed on the wrong form.
+  const [loginGroupKey, setLoginGroupKey] = useState(null);
+  const openGroup = loginGroupKey ? loginGroup(loginGroupKey) : null;
   const [pendingLoginRoute, setPendingLoginRoute] = useState(null);
 
   // The dropdown is a real <Modal> — a separate Android Dialog window. Pushing a route in the
@@ -66,13 +75,13 @@ export default function LandingScreen() {
   // first focus (the login TextInput) can be stolen mid-transition. Navigate only after the
   // modal has actually left the screen.
   useEffect(() => {
-    if (loginDropdownVisible || !pendingLoginRoute) return;
+    if (loginGroupKey || !pendingLoginRoute) return;
     const t = setTimeout(() => {
       setPendingLoginRoute(null);
       router.push(pendingLoginRoute);
     }, 150); // fade-out duration of the dialog
     return () => clearTimeout(t);
-  }, [loginDropdownVisible, pendingLoginRoute, router]);
+  }, [loginGroupKey, pendingLoginRoute, router]);
 
   // Contact form state
   const [contactForm, setContactForm] = useState({
@@ -204,13 +213,6 @@ export default function LandingScreen() {
     },
   ];
 
-  const loginOptions = [
-    { label: "🎓 Student Login", route: "/auth/student-login" },
-    { label: "🏫 School Staff Login", route: "/auth/school-login" },
-    { label: "👨‍👩‍👧 Parent Login", route: "/auth/parent-login" },
-    { label: "🤝 Partner Login", route: "/auth/partner-login" },
-  ];
-
   const contactSubjects = [
     "General Inquiry",
     "Career Guidance",
@@ -259,43 +261,50 @@ export default function LandingScreen() {
               accessibilityLabel="Shreyartha Logo"
             />
           </View>
+          {/* EMPLOYEE ONLY. Web parity: LandingPage.js mounts `variant="employee"` here, with the
+              note "Shreyartha-bound staff only. Everyone else enters via the hero Get Started". */}
           <TouchableOpacity
             style={styles.loginBtn}
-            onPress={() => setLoginDropdownVisible(true)}
+            onPress={() => setLoginGroupKey("employee")}
+            accessibilityRole="button"
+            accessibilityLabel="Employee login"
           >
-            <Text style={styles.loginBtnText}>🔒 Login ▼</Text>
+            <Text style={styles.loginBtnText}>🔒 Employee ▼</Text>
           </TouchableOpacity>
         </View>
 
-        {/* Login Dropdown Modal */}
+        {/* ONE modal, whichever door was tapped. `openGroup` carries its own label, so a group can
+            never be rendered under the other group's heading. */}
         <Modal
-          visible={loginDropdownVisible}
+          visible={!!openGroup}
           transparent
           animationType="fade"
-          onRequestClose={() => setLoginDropdownVisible(false)}
+          onRequestClose={() => setLoginGroupKey(null)}
         >
           <TouchableOpacity
             style={styles.loginModalOverlay}
             activeOpacity={1}
-            onPress={() => setLoginDropdownVisible(false)}
+            onPress={() => setLoginGroupKey(null)}
           >
             <View style={styles.loginDropdown} accessibilityRole="menu">
-              <Text style={styles.loginDropdownTitle}>Select Login Type</Text>
-              {loginOptions.map((opt, idx) => (
+              <Text style={styles.loginDropdownTitle}>{openGroup?.label}</Text>
+              {(openGroup?.options || []).map((opt, idx) => (
                 <TouchableOpacity
-                  key={idx}
+                  key={opt.key}
                   style={[
                     styles.loginDropdownItem,
-                    idx === loginOptions.length - 1 && { borderBottomWidth: 0 },
+                    idx === (openGroup?.options.length || 0) - 1 && { borderBottomWidth: 0 },
                   ]}
                   accessibilityRole="menuitem"
                   onPress={() => {
                     setPendingLoginRoute(opt.route);
-                    setLoginDropdownVisible(false);
+                    setLoginGroupKey(null);
                   }}
                 >
-                  <Text style={styles.loginDropdownItemText}>{opt.label}</Text>
-                  <Text style={{ color: COLORS.primary, fontSize: 16 }}>›</Text>
+                  <Text style={styles.loginDropdownItemText}>
+                    {opt.icon} {opt.label} Login
+                  </Text>
+                  <Text style={{ color: COLORS.primary, fontSize: TYPE.title }}>›</Text>
                 </TouchableOpacity>
               ))}
             </View>
@@ -333,9 +342,13 @@ export default function LandingScreen() {
             WEF, and IIT & IIM Alumni.
           </Text>
           <View style={styles.heroButtons}>
+            {/* The general door, as a popup — NOT a jump to the student login. This button is the
+                app's largest, and a parent or partner tapping it used to land on a student form. */}
             <TouchableOpacity
               style={styles.ctaButton}
-              onPress={() => router.push("/auth/student-login")}
+              onPress={() => setLoginGroupKey("general")}
+              accessibilityRole="button"
+              accessibilityLabel="Get started, choose a login"
             >
               <Text style={styles.ctaButtonText}>Get Started</Text>
             </TouchableOpacity>
@@ -477,9 +490,12 @@ export default function LandingScreen() {
             potential with Shreyartha.
           </Text>
           <View style={styles.ctaBannerButtons}>
+            {/* Same door as the hero — the web mounts the identical variant="general" modal here. */}
             <TouchableOpacity
               style={styles.ctaSectionButton}
-              onPress={() => router.push("/auth/student-login")}
+              onPress={() => setLoginGroupKey("general")}
+              accessibilityRole="button"
+              accessibilityLabel="Sign up, choose a login"
             >
               <Text style={styles.ctaSectionButtonText}>Sign Up Now</Text>
             </TouchableOpacity>
@@ -543,7 +559,7 @@ export default function LandingScreen() {
               <TextInput
                 style={styles.contactInput}
                 placeholder="Your name"
-                placeholderTextColor="#bbb"
+                placeholderTextColor={SLATE[500]}
                 value={contactForm.name}
                 onChangeText={(v) => {
                   setContactError("");
@@ -555,7 +571,7 @@ export default function LandingScreen() {
               <TextInput
                 style={styles.contactInput}
                 placeholder="your@email.com"
-                placeholderTextColor="#bbb"
+                placeholderTextColor={SLATE[500]}
                 keyboardType="email-address"
                 autoCapitalize="none"
                 value={contactForm.email}
@@ -569,7 +585,7 @@ export default function LandingScreen() {
               <TextInput
                 style={styles.contactInput}
                 placeholder="+91 XXXXX XXXXX"
-                placeholderTextColor="#bbb"
+                placeholderTextColor={SLATE[500]}
                 keyboardType="phone-pad"
                 value={contactForm.phone}
                 onChangeText={(v) =>
@@ -604,7 +620,7 @@ export default function LandingScreen() {
               <TextInput
                 style={[styles.contactInput, styles.contactTextarea]}
                 placeholder="How can we help you?"
-                placeholderTextColor="#bbb"
+                placeholderTextColor={SLATE[500]}
                 multiline
                 numberOfLines={4}
                 textAlignVertical="top"
@@ -768,7 +784,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 18,
     borderRadius: 32,
   },
-  loginBtnText: { color: COLORS.white, fontWeight: "700", fontSize: 13 },
+  loginBtnText: { color: COLORS.white, fontWeight: "700", fontSize: TYPE.body },
 
   // Login Modal
   loginModalOverlay: {
@@ -787,7 +803,7 @@ const styles = StyleSheet.create({
     ...SHADOWS.lg,
   },
   loginDropdownTitle: {
-    fontSize: 11,
+    fontSize: TYPE.caption,
     fontWeight: "800",
     color: COLORS.textLight,
     paddingHorizontal: 16,
@@ -795,6 +811,19 @@ const styles = StyleSheet.create({
     paddingBottom: 8,
     borderBottomWidth: 1,
     borderBottomColor: "#eee",
+    textTransform: "uppercase",
+    letterSpacing: 1,
+  },
+  // A group heading inside the menu ("Get Started" / "Employee"). Quieter than
+  // loginDropdownTitle, which names the whole sheet, and with no bottom rule of its own — the
+  // first item's own divider is what separates it from the list.
+  loginDropdownGroup: {
+    fontSize: TYPE.micro,
+    fontWeight: "800",
+    color: COLORS.textLight,
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 6,
     textTransform: "uppercase",
     letterSpacing: 1,
   },
@@ -808,7 +837,7 @@ const styles = StyleSheet.create({
     borderBottomColor: "#f0f0f0",
   },
   loginDropdownItemText: {
-    fontSize: 14,
+    fontSize: TYPE.heading,
     color: COLORS.secondary,
     fontWeight: "600",
   },
@@ -823,20 +852,20 @@ const styles = StyleSheet.create({
     borderBottomColor: COLORS.border,
   },
   taglineText: {
-    fontSize: 14,
+    fontSize: TYPE.heading,
     fontWeight: "800",
     color: COLORS.secondary,
     textAlign: "center",
     letterSpacing: 2.5,
   },
-  taglineSpecial: { color: COLORS.primary, fontSize: 16 },
+  taglineSpecial: { color: COLORS.primary, fontSize: TYPE.title },
   taglineAI: {
     color: COLORS.white,
     backgroundColor: COLORS.primary,
     paddingHorizontal: 4,
     borderRadius: 4,
     overflow: "hidden",
-    fontSize: 14,
+    fontSize: TYPE.body,
   },
 
   // ── Hero ──
@@ -867,19 +896,19 @@ const styles = StyleSheet.create({
   },
   heroTitle: {
     color: COLORS.white,
-    fontSize: 34,
+    fontSize: TYPE.figure,
     fontWeight: "800",
     textAlign: "center",
     marginBottom: 16,
-    lineHeight: 42,
+    lineHeight: leading(TYPE.figure),
   },
   heroHighlight: { color: COLORS.primaryLight },
   heroSubtitle: {
     color: "rgba(255,255,255,0.72)",
-    fontSize: 14,
+    fontSize: TYPE.body,
     textAlign: "center",
     marginBottom: 28,
-    lineHeight: 22,
+    lineHeight: leading(TYPE.body),
     maxWidth: 320,
   },
   heroButtons: { flexDirection: "row", gap: 12 },
@@ -889,7 +918,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 28,
     borderRadius: 32,
   },
-  ctaButtonText: { color: COLORS.white, fontSize: 15, fontWeight: "700" },
+  ctaButtonText: { color: COLORS.white, fontSize: TYPE.heading, fontWeight: "700" },
   ctaSecondary: {
     borderWidth: 2,
     borderColor: "rgba(255,255,255,0.6)",
@@ -897,7 +926,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     borderRadius: 32,
   },
-  ctaSecondaryText: { color: COLORS.white, fontSize: 15, fontWeight: "600" },
+  ctaSecondaryText: { color: COLORS.white, fontSize: TYPE.heading, fontWeight: "600" },
 
   // ── Stats ──
   statsSection: {
@@ -915,9 +944,9 @@ const styles = StyleSheet.create({
     paddingVertical: SPACING.md,
   },
   statIcon: { fontSize: 24, marginBottom: 4 },
-  statValue: { fontSize: 26, fontWeight: "800", color: COLORS.primary },
+  statValue: { fontSize: TYPE.display, fontWeight: "800", color: COLORS.primary },
   statLabel: {
-    fontSize: 12,
+    fontSize: TYPE.label,
     color: COLORS.textSecondary,
     marginTop: 2,
     textAlign: "center",
@@ -926,7 +955,7 @@ const styles = StyleSheet.create({
   // ── Shared Section ──
   section: { paddingHorizontal: SPACING.lg, paddingVertical: SPACING.xl },
   sectionEyebrow: {
-    fontSize: 11,
+    fontSize: TYPE.caption,
     fontWeight: "800",
     color: COLORS.primary,
     textAlign: "center",
@@ -935,19 +964,19 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   sectionTitle: {
-    fontSize: 24,
+    fontSize: TYPE.display,
     fontWeight: "800",
     color: COLORS.secondary,
     textAlign: "center",
     marginBottom: 8,
-    lineHeight: 30,
+    lineHeight: leading(TYPE.display),
   },
   sectionSubtitle: {
-    fontSize: 14,
+    fontSize: TYPE.body,
     color: COLORS.textSecondary,
     textAlign: "center",
     marginBottom: SPACING.xl,
-    lineHeight: 21,
+    lineHeight: leading(TYPE.body),
   },
 
   // ── Feature Grid ──
@@ -975,12 +1004,12 @@ const styles = StyleSheet.create({
   },
   featureIcon: { fontSize: 24 },
   featureTitle: {
-    fontSize: 13,
+    fontSize: TYPE.body,
     fontWeight: "700",
     marginBottom: 4,
-    lineHeight: 18,
+    lineHeight: leading(TYPE.body),
   },
-  featureDesc: { fontSize: 11, color: COLORS.textSecondary, lineHeight: 16 },
+  featureDesc: { fontSize: TYPE.caption, color: COLORS.textSecondary, lineHeight: leading(TYPE.caption) },
 
   // ── How It Works ──
   stepCard: {
@@ -998,15 +1027,15 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     flexShrink: 0,
   },
-  stepNum: { color: COLORS.white, fontWeight: "800", fontSize: 14 },
+  stepNum: { color: COLORS.white, fontWeight: "800", fontSize: TYPE.heading },
   stepContent: { flex: 1 },
   stepTitle: {
     color: COLORS.white,
     fontWeight: "700",
-    fontSize: 16,
+    fontSize: TYPE.title,
     marginBottom: 4,
   },
-  stepDesc: { color: "rgba(255,255,255,0.65)", fontSize: 13, lineHeight: 20 },
+  stepDesc: { color: "rgba(255,255,255,0.65)", fontSize: TYPE.body, lineHeight: leading(TYPE.body) },
 
   // ── Testimonials ──
   testimonialCard: {
@@ -1034,23 +1063,23 @@ const styles = StyleSheet.create({
     marginRight: 12,
   },
   avatarText: { color: COLORS.white, fontWeight: "800", fontSize: 15 },
-  testimonialName: { fontWeight: "700", fontSize: 15, color: COLORS.secondary },
-  testimonialRole: { fontSize: 12, color: COLORS.textSecondary },
+  testimonialName: { fontWeight: "700", fontSize: TYPE.heading, color: COLORS.secondary },
+  testimonialRole: { fontSize: TYPE.label, color: COLORS.textSecondary },
   stars: { fontSize: 14, color: "#f5a623", letterSpacing: 1 },
   testimonialText: {
-    fontSize: 14,
+    fontSize: TYPE.body,
     color: COLORS.textSecondary,
     fontStyle: "italic",
-    lineHeight: 22,
+    lineHeight: leading(TYPE.body),
     paddingHorizontal: SPACING.md,
     paddingBottom: SPACING.md,
   },
 
   // ── About ──
   aboutText: {
-    fontSize: 14,
+    fontSize: TYPE.body,
     color: COLORS.textSecondary,
-    lineHeight: 24,
+    lineHeight: leading(TYPE.body),
     marginBottom: 16,
   },
   highlightsList: { marginTop: 8 },
@@ -1069,8 +1098,8 @@ const styles = StyleSheet.create({
     marginRight: 12,
     flexShrink: 0,
   },
-  highlightCheck: { color: COLORS.primary, fontWeight: "800", fontSize: 13 },
-  highlightText: { fontSize: 14, color: COLORS.text, fontWeight: "500" },
+  highlightCheck: { color: COLORS.primary, fontWeight: "800", fontSize: TYPE.body },
+  highlightText: { fontSize: TYPE.body, color: COLORS.text, fontWeight: "500" },
 
   // ── CTA Banner ──
   ctaSection: {
@@ -1080,19 +1109,19 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   ctaSectionTitle: {
-    fontSize: 24,
+    fontSize: TYPE.display,
     fontWeight: "800",
     color: COLORS.white,
     textAlign: "center",
     marginBottom: 10,
-    lineHeight: 30,
+    lineHeight: leading(TYPE.display),
   },
   ctaSectionSubtitle: {
-    fontSize: 14,
+    fontSize: TYPE.body,
     color: "rgba(255,255,255,0.8)",
     textAlign: "center",
     marginBottom: 24,
-    lineHeight: 22,
+    lineHeight: leading(TYPE.body),
   },
   ctaBannerButtons: { flexDirection: "row", gap: 12 },
   ctaSectionButton: {
@@ -1103,7 +1132,7 @@ const styles = StyleSheet.create({
   },
   ctaSectionButtonText: {
     color: COLORS.primary,
-    fontSize: 15,
+    fontSize: TYPE.heading,
     fontWeight: "700",
   },
   ctaSectionSecondary: {
@@ -1115,7 +1144,7 @@ const styles = StyleSheet.create({
   },
   ctaSectionSecondaryText: {
     color: COLORS.white,
-    fontSize: 15,
+    fontSize: TYPE.heading,
     fontWeight: "600",
   },
 
@@ -1130,7 +1159,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   contactInfoIcon: { fontSize: 20, marginRight: 12 },
-  contactInfoText: { fontSize: 14, color: COLORS.text, fontWeight: "500" },
+  contactInfoText: { fontSize: TYPE.body, color: COLORS.text, fontWeight: "500" },
 
   // ── Contact Form ──
   contactForm: {
@@ -1141,7 +1170,7 @@ const styles = StyleSheet.create({
     borderColor: COLORS.border,
   },
   contactFormTitle: {
-    fontSize: 18,
+    fontSize: TYPE.headline,
     fontWeight: "700",
     color: COLORS.secondary,
     marginBottom: SPACING.md,
@@ -1149,13 +1178,13 @@ const styles = StyleSheet.create({
   contactFormError: {
     backgroundColor: "#fce4ec",
     color: COLORS.error,
-    fontSize: 13,
+    fontSize: TYPE.body,
     padding: 10,
     borderRadius: 8,
     marginBottom: SPACING.sm,
   },
   contactLabel: {
-    fontSize: 13,
+    fontSize: TYPE.body,
     fontWeight: "700",
     color: COLORS.secondary,
     marginBottom: 6,
@@ -1167,7 +1196,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     paddingHorizontal: 14,
     paddingVertical: 11,
-    fontSize: 14,
+    fontSize: TYPE.body,
     backgroundColor: COLORS.surface,
     color: COLORS.text,
   },
@@ -1191,7 +1220,7 @@ const styles = StyleSheet.create({
     borderColor: COLORS.primary,
   },
   subjectChipText: {
-    fontSize: 12,
+    fontSize: TYPE.label,
     fontWeight: "600",
     color: COLORS.textSecondary,
   },
@@ -1203,7 +1232,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginTop: SPACING.lg,
   },
-  contactSubmitText: { color: COLORS.white, fontSize: 15, fontWeight: "700" },
+  contactSubmitText: { color: COLORS.white, fontSize: TYPE.heading, fontWeight: "700" },
 
   // Contact Success
   contactSuccessBox: {
@@ -1216,41 +1245,41 @@ const styles = StyleSheet.create({
   },
   contactSuccessIcon: { fontSize: 40, marginBottom: 12 },
   contactSuccessTitle: {
-    fontSize: 20,
+    fontSize: TYPE.headline,
     fontWeight: "800",
     color: "#2e7d32",
     marginBottom: 8,
   },
   contactSuccessText: {
-    fontSize: 14,
+    fontSize: TYPE.body,
     color: "#388e3c",
     textAlign: "center",
-    lineHeight: 21,
+    lineHeight: leading(TYPE.body),
     marginBottom: 16,
   },
   contactSuccessReset: {
     color: COLORS.primary,
     fontWeight: "700",
-    fontSize: 14,
+    fontSize: TYPE.heading,
   },
 
   // ── Footer ──
   footer: { backgroundColor: COLORS.secondary, padding: SPACING.xl },
   footerBrand: { alignItems: "center", marginBottom: SPACING.lg },
   footerLogoText: {
-    fontSize: 20,
+    fontSize: TYPE.headline,
     fontWeight: "800",
     color: COLORS.white,
     marginBottom: 12,
   },
   footerLogoHighlight: { color: COLORS.primaryLight },
-  footerLogo: { width: 110, height: 38, marginBottom: 12 },
+  footerLogo: { width: 145, height: 50, marginBottom: 12 },
   footerDesc: {
     color: "rgba(255,255,255,0.55)",
-    fontSize: 13,
+    fontSize: TYPE.body,
     textAlign: "center",
     marginBottom: 16,
-    lineHeight: 20,
+    lineHeight: leading(TYPE.body),
     maxWidth: 300,
   },
   socialRow: { flexDirection: "row", gap: 10 },
@@ -1273,26 +1302,26 @@ const styles = StyleSheet.create({
   footerColTitle: {
     color: COLORS.white,
     fontWeight: "700",
-    fontSize: 13,
+    fontSize: TYPE.body,
     marginBottom: 10,
     letterSpacing: 0.5,
   },
   footerLink: {
     color: "rgba(255,255,255,0.55)",
-    fontSize: 12,
+    fontSize: TYPE.label,
     marginBottom: 8,
-    lineHeight: 18,
+    lineHeight: leading(TYPE.label),
   },
   footerContactText: {
     color: "rgba(255,255,255,0.55)",
-    fontSize: 12,
+    fontSize: TYPE.label,
     marginBottom: 6,
-    lineHeight: 18,
+    lineHeight: leading(TYPE.label),
   },
   footerCopy: {
     color: "rgba(255,255,255,0.35)",
-    fontSize: 11,
+    fontSize: TYPE.caption,
     textAlign: "center",
-    lineHeight: 18,
+    lineHeight: leading(TYPE.caption),
   },
 });

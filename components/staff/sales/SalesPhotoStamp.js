@@ -1,5 +1,6 @@
 import { forwardRef } from 'react';
 import { Image, StyleSheet, Text, View } from 'react-native';
+import { TYPE, leading } from '../../../constants/theme';
 
 /**
  * The geo-stamped check-in photo, rendered so it can be screenshotted into a real file.
@@ -109,8 +110,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#1e293b',
   },
   text: { flex: 1 },
-  address: { color: '#ffffff', fontSize: 12.5, fontWeight: '700', lineHeight: 16 },
-  detail: { color: 'rgba(255,255,255,0.88)', fontSize: 11, lineHeight: 15, marginTop: 1 },
+  address: { color: '#ffffff', fontSize: TYPE.label, fontWeight: '700', lineHeight: leading(TYPE.label) },
+  detail: { color: 'rgba(255,255,255,0.88)', fontSize: TYPE.caption, lineHeight: leading(TYPE.caption), marginTop: 1 },
 });
 
 export default SalesPhotoStamp;

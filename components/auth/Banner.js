@@ -1,7 +1,7 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { FEEDBACK, SPACING } from '../../constants/theme';
+import { FEEDBACK, SPACING, TYPE, leading } from '../../constants/theme';
 
 /**
  * Inline error / success banner, matching the web's .school-auth-error and
@@ -31,7 +31,7 @@ export default function Banner({ variant = 'error', message }) {
     >
       <Ionicons
         name={success ? 'checkmark-circle' : 'alert-circle'}
-        size={17}
+        size={19}
         color={success ? FEEDBACK.successText : FEEDBACK.errorText}
         style={styles.icon}
       />
@@ -58,5 +58,5 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.md,
   },
   icon: { marginTop: 1, marginRight: 8 },
-  text: { flex: 1, fontSize: 13.5, lineHeight: 19, fontWeight: '500' },
+  text: { flex: 1, fontSize: TYPE.body, lineHeight: leading(TYPE.body), fontWeight: '500' },
 });

@@ -1,7 +1,7 @@
 import { useCallback, useState } from 'react';
 import { ActivityIndicator, Image, Pressable, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { FEEDBACK, SPACING, TOUCH, TYPE } from '../../../constants/theme';
+import { FEEDBACK, SPACING, TOUCH, TYPE, leading } from '../../../constants/theme';
 import { usePalette } from '../../ui/PaletteContext';
 import { makeStyles } from '../../../utils/makeStyles';
 import useShreyaVoice from '../../../hooks/useShreyaVoice';
@@ -70,8 +70,8 @@ export default function ShreyaSpeakButton({ text, label = 'Shreya Speak', compac
 
   const icon = () => {
     if (loading) return <ActivityIndicator size="small" color={palette.deep} />;
-    if (speaking && !paused) return <Ionicons name="pause" size={17} color={palette.deep} />;
-    if (paused) return <Ionicons name="play" size={17} color={palette.deep} />;
+    if (speaking && !paused) return <Ionicons name="pause" size={19} color={palette.deep} />;
+    if (paused) return <Ionicons name="play" size={19} color={palette.deep} />;
     return (
       <Image
         source={require('../../../assets/images/Chatbot.png')}
@@ -106,7 +106,7 @@ export default function ShreyaSpeakButton({ text, label = 'Shreya Speak', compac
             accessibilityRole="button"
             accessibilityLabel="Stop reading aloud"
           >
-            <Ionicons name="stop" size={14} color={palette.deep} />
+            <Ionicons name="stop" size={16} color={palette.deep} />
           </Pressable>
         ) : null}
       </View>
@@ -144,6 +144,6 @@ const useStyles = makeStyles((p) => ({
     borderWidth: 1,
     borderColor: p.primary,
   },
-  notice: { fontSize: TYPE.caption, color: FEEDBACK.errorText, lineHeight: 17, marginTop: 5 },
+  notice: { fontSize: TYPE.caption, color: FEEDBACK.errorText, lineHeight: leading(TYPE.caption), marginTop: 5 },
   pressed: { opacity: 0.75 },
 }));

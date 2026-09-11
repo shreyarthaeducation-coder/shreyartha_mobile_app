@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { COLORS, SPACING, FONTS } from '../../constants/theme';
+import { COLORS, FONTS, SPACING, TYPE } from '../../constants/theme';
 
 export default function EmptyState({ icon, title, message }) {
   return (
@@ -25,7 +25,7 @@ const styles = StyleSheet.create({
   },
   title: {
     ...FONTS.bold,
-    fontSize: 18,
+    fontSize: TYPE.headline,
     color: COLORS.secondary,
     marginBottom: SPACING.sm,
     textAlign: 'center',

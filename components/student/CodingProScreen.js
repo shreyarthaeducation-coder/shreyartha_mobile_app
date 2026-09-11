@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { DONE, SLATE, SPACING, TYPE } from '../../constants/theme';
+import { DONE, SLATE, SPACING, TYPE, leading } from '../../constants/theme';
 import { usePalette } from '../ui/PaletteContext';
 import { makeStyles } from '../../utils/makeStyles';
 import { EmptyState, useToast } from '../ui';
@@ -241,7 +241,7 @@ export default function CodingProScreen() {
           >
             <Ionicons
               name={isDone ? 'checkmark-circle' : 'ellipse-outline'}
-              size={17}
+              size={19}
               color={isDone ? '#ffffff' : palette.onPrimary}
             />
             <Text style={[styles.completeText, isDone && styles.completeTextOn]}>
@@ -282,7 +282,7 @@ export default function CodingProScreen() {
               accessibilityState={{ expanded: open }}
             >
               <Text style={styles.chapterName}>{chapter.name}</Text>
-              <Ionicons name={open ? 'chevron-up' : 'chevron-down'} size={16} color={palette.deep} />
+              <Ionicons name={open ? 'chevron-up' : 'chevron-down'} size={18} color={palette.deep} />
             </Pressable>
 
             {open
@@ -304,7 +304,7 @@ export default function CodingProScreen() {
                         name={
                           locked ? 'lock-closed' : done ? 'checkmark-circle' : 'code-slash-outline'
                         }
-                        size={14}
+                        size={16}
                         color={locked ? SLATE[400] : done ? DONE : palette.deep}
                       />
                       <Text style={styles.topicName}>{t.name}</Text>
@@ -344,7 +344,7 @@ export default function CodingProScreen() {
                 Solve problems in Python, Java or C with the full editor.
               </Text>
             </View>
-            <Ionicons name="open-outline" size={16} color={palette.deep} />
+            <Ionicons name="open-outline" size={18} color={palette.deep} />
           </View>
         </StudentCard>
       </Pressable>
@@ -371,7 +371,7 @@ export default function CodingProScreen() {
                 Everything you have built — add a title, a write-up and your files.
               </Text>
             </View>
-            <Ionicons name="chevron-forward" size={16} color={palette.deep} />
+            <Ionicons name="chevron-forward" size={18} color={palette.deep} />
           </View>
         </StudentCard>
       </Pressable>
@@ -397,7 +397,7 @@ export default function CodingProScreen() {
                   <Text style={styles.curriculumName}>{c.name}</Text>
                   <Ionicons
                     name={locked ? 'lock-closed' : 'chevron-forward'}
-                    size={16}
+                    size={18}
                     color={locked ? SLATE[400] : palette.deep}
                   />
                 </View>
@@ -445,7 +445,7 @@ export default function CodingProScreen() {
           accessibilityRole="button"
           accessibilityLabel="Back"
         >
-          <Ionicons name="arrow-back" size={14} color={palette.onDark} />
+          <Ionicons name="arrow-back" size={16} color={SLATE[600]} />
           <Text style={styles.crumbText} numberOfLines={1}>
             {projectPanel
               ? 'My Projects'
@@ -470,9 +470,10 @@ export default function CodingProScreen() {
 }
 
 const useStyles = makeStyles((p) => ({
-  loader: { marginVertical: SPACING.xl },
-  emptyHint: { fontSize: TYPE.label, color: SLATE[400], lineHeight: 18, marginTop: 6 },
-  emptyInline: { fontSize: TYPE.label, color: SLATE[400], paddingVertical: 6 },
+  loader: { marginVertical: SPACING.xl },
+
+  emptyHint: { fontSize: TYPE.label, color: SLATE[500], lineHeight: leading(TYPE.label), marginTop: 6 },
+  emptyInline: { fontSize: TYPE.label, color: SLATE[500], paddingVertical: 6 },
 
   crumb: {
     flexDirection: 'row',
@@ -481,12 +482,12 @@ const useStyles = makeStyles((p) => ({
     paddingVertical: 8,
     paddingHorizontal: 12,
     borderRadius: 999,
-    backgroundColor: p.glass,
+    backgroundColor: '#ffffff',
     borderWidth: 1,
-    borderColor: p.glassBorder,
+    borderColor: SLATE[200],
     marginBottom: SPACING.md,
   },
-  crumbText: { flex: 1, fontSize: TYPE.label, fontWeight: '600', color: p.onDark },
+  crumbText: { flex: 1, fontSize: TYPE.label, fontWeight: '600', color: SLATE[600] },
 
   rowHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10 },
   curriculumName: { flex: 1, fontSize: TYPE.heading, fontWeight: '700', color: SLATE[800] },
@@ -506,7 +507,7 @@ const useStyles = makeStyles((p) => ({
   },
   arenaText: { flex: 1 },
   arenaTitle: { fontSize: TYPE.heading, fontWeight: '700', color: SLATE[800] },
-  arenaSub: { fontSize: TYPE.caption, color: SLATE[500], lineHeight: 17, marginTop: 2 },
+  arenaSub: { fontSize: TYPE.caption, color: SLATE[500], lineHeight: leading(TYPE.caption), marginTop: 2 },
 
   modeRow: { flexDirection: 'row', gap: 7, marginBottom: SPACING.md },
   mode: {
@@ -514,12 +515,12 @@ const useStyles = makeStyles((p) => ({
     alignItems: 'center',
     paddingVertical: 9,
     borderRadius: 999,
-    backgroundColor: 'rgba(255,255,255,0.14)',
+    backgroundColor: SLATE[100],
     borderWidth: 1,
     borderColor: p.headerBorder,
   },
   modeOn: { backgroundColor: p.primary, borderColor: p.primary },
-  modeText: { fontSize: TYPE.label, fontWeight: '600', color: p.onDark },
+  modeText: { fontSize: TYPE.label, fontWeight: '600', color: SLATE[600] },
   modeTextOn: { color: p.onPrimary },
 
   tabRow: { gap: 7, paddingBottom: SPACING.md, paddingRight: SPACING.md },
@@ -527,12 +528,12 @@ const useStyles = makeStyles((p) => ({
     paddingVertical: 7,
     paddingHorizontal: 13,
     borderRadius: 999,
-    backgroundColor: 'rgba(255,255,255,0.14)',
+    backgroundColor: SLATE[100],
     borderWidth: 1,
     borderColor: p.headerBorder,
   },
   tabOn: { backgroundColor: p.primary, borderColor: p.primary },
-  tabText: { fontSize: TYPE.label, fontWeight: '600', color: p.onDark },
+  tabText: { fontSize: TYPE.label, fontWeight: '600', color: SLATE[600] },
   tabTextOn: { color: p.onPrimary },
 
   completeBtn: {

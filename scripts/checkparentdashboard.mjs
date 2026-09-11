@@ -180,7 +180,10 @@ function assertions(svc, src) {
   }
 
   const home = codeOnly(src.home);
-  for (const key of ['notifications', 'reports']) {
+  // Reports still has no parent endpoint, so it stays inert. Notifications LEFT this list when the
+  // parent inbox (/api/parent/notifications) was built — it is asserted live just below instead,
+  // never simply dropped, so neither state can drift back unnoticed.
+  for (const key of ['reports']) {
     const entry = home.match(new RegExp(`key: '${key}',[\\s\\S]*?\\n    \\}`));
     if (!entry) bad(`the ${key} quick action is gone`);
     else if (!/soon: true/.test(entry[0])) {
@@ -189,6 +192,13 @@ function assertions(svc, src) {
     else if (/route:/.test(entry[0])) {
       bad(`the ${key} tile carries a route despite having no backing endpoint`);
     }
+  }
+  const notifTile = home.match(/key: 'notifications',[\s\S]*?\n    \}/);
+  if (!notifTile) bad('the notifications quick action is gone');
+  else if (/soon: true/.test(notifTile[0])) {
+    bad('the Notifications tile is marked coming soon — the parent inbox exists now');
+  } else if (!/route: '\/parent\/notifications'/.test(notifTile[0])) {
+    bad('the Notifications tile does not route to /parent/notifications');
   }
   // The term chip must not be a control — nothing filters by term.
   const report = codeOnly(src.report);
@@ -269,6 +279,20 @@ function assertions(svc, src) {
     bad('the search destinations are retyped rather than built from PARENT_MENU — they would drift from the web labels');
   }
 
+
+  // ── THE SCHOOL CREST, AND THE PARENT'S ONLY PASSWORD ROUTE ────────────────
+  // The parent portal has NO footer, so its menu screen is the only chrome it has. When the header
+  // chip went, this row became the parent's single route to change-password.
+  const menuSrc = codeOnly(src.home);
+  if (!/schoolLogoUrl=\{schoolLogo\}/.test(menuSrc)) {
+    bad('ParentMenuScreen does not pass the school crest of the linked child to the brand bar');
+  }
+  if (/changePasswordRoute/.test(menuSrc)) {
+    bad('ParentMenuScreen still passes changePasswordRoute — BrandBar no longer accepts it');
+  }
+  if (!/<ChangePasswordRow route="\/parent\/change-password" \/>/.test(menuSrc)) {
+    bad('ParentMenuScreen has no Change Password row — the parent has no footer and no other route');
+  }
   return out;
 }
 
@@ -318,9 +342,16 @@ const MUTATIONS = [
         : s,
   },
   {
-    name: 'the Notifications tile given a route it cannot serve',
+    // Retargeted from Notifications, which is live now: Reports is the tile that still has nothing
+    // behind it, so it is the one a planted route must be caught on.
+    name: 'the Reports tile given a route it cannot serve',
     src: (k, s) =>
-      k === 'home' ? s.replace("      icon: 'notifications-outline',", "      route: '/parent/nowhere',\n      icon: 'notifications-outline',") : s,
+      k === 'home' ? s.replace("      icon: 'download-outline',", "      route: '/parent/nowhere',\n      icon: 'download-outline',") : s,
+  },
+  {
+    name: 'the Notifications tile put back to coming soon',
+    src: (k, s) =>
+      k === 'home' ? s.replace("      route: '/parent/notifications',", '      soon: true,') : s,
   },
   {
     name: 'the term chip made a control (it can filter nothing)',
@@ -375,6 +406,16 @@ const MUTATIONS = [
   {
     name: 'the search destinations retyped instead of read from PARENT_MENU',
     src: (k, s) => (k === 'searchService' ? s.replaceAll('PARENT_MENU', 'HARDCODED') : s),
+  },
+  {
+    name: 'the parent menu stops passing the school crest',
+    src: (k, s) => (k === 'home'
+      ? s.replace('schoolLogoUrl={schoolLogo}', 'schoolLogoUrl={null}') : s),
+  },
+  {
+    name: 'the parent loses its only Change Password row',
+    src: (k, s) => (k === 'home'
+      ? s.replace('<ChangePasswordRow route="/parent/change-password" />', '') : s),
   },
 ];
 

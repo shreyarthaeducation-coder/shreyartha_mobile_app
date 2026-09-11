@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Modal, Pressable, ScrollView, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { SLATE, SPACING } from '../../../constants/theme';
+import { SLATE, SPACING, TYPE, leading } from '../../../constants/theme';
 import { usePalette } from '../../ui/PaletteContext';
 import makeStyles from '../../../utils/makeStyles';
 import { TUTORIAL_STEPS } from './salesTutorialSteps';
@@ -109,13 +109,13 @@ const useStyles = makeStyles(() => ({
     paddingVertical: SPACING.sm,
   },
   count: {
-    fontSize: 11.5,
+    fontSize: TYPE.caption,
     fontWeight: '700',
     letterSpacing: 0.6,
     textTransform: 'uppercase',
-    color: SLATE[400],
+    color: SLATE[500],
   },
-  skip: { fontSize: 14, fontWeight: '600' },
+  skip: { fontSize: TYPE.heading, fontWeight: '600' },
 
   body: { alignItems: 'center', paddingHorizontal: SPACING.lg, paddingTop: SPACING.lg },
   iconWrap: {
@@ -126,8 +126,8 @@ const useStyles = makeStyles(() => ({
     justifyContent: 'center',
     marginBottom: SPACING.md,
   },
-  title: { fontSize: 20, fontWeight: '800', textAlign: 'center', marginBottom: SPACING.sm },
-  copy: { fontSize: 14.5, lineHeight: 23, color: SLATE[600], textAlign: 'center' },
+  title: { fontSize: TYPE.headline, fontWeight: '800', textAlign: 'center', marginBottom: SPACING.sm },
+  copy: { fontSize: TYPE.heading, lineHeight: leading(TYPE.heading), color: SLATE[600], textAlign: 'center' },
 
   dots: { flexDirection: 'row', justifyContent: 'center', gap: 7, paddingVertical: SPACING.md },
   dot: { width: 8, height: 8, borderRadius: 999, backgroundColor: SLATE[200] },
@@ -143,6 +143,6 @@ const useStyles = makeStyles(() => ({
   btnGhost: { backgroundColor: '#ffffff', borderWidth: 1, borderColor: SLATE[200] },
   btnDisabled: { opacity: 0.45 },
   pressed: { opacity: 0.85 },
-  btnText: { color: '#ffffff', fontWeight: '700', fontSize: 15 },
-  btnGhostText: { fontWeight: '600', fontSize: 15 },
+  btnText: { color: '#ffffff', fontWeight: '700', fontSize: TYPE.heading },
+  btnGhostText: { fontWeight: '600', fontSize: TYPE.heading },
 }));

@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { FEEDBACK, PORTALS, SLATE, SPACING } from '../../constants/theme';
+import { FEEDBACK, PORTALS, SLATE, SPACING, TYPE } from '../../constants/theme';
 import {
   Card,
   EMPTY_SCOPE,
@@ -213,7 +213,7 @@ export default function AdaptiveAssessmentScreen({ homeRoute = '/teacher' }) {
               >
                 <Ionicons
                   name={open ? 'chevron-down' : 'chevron-forward'}
-                  size={16}
+                  size={18}
                   color={PALETTE.primaryDark}
                 />
                 <Text style={styles.chapterName} numberOfLines={2}>
@@ -247,7 +247,7 @@ export default function AdaptiveAssessmentScreen({ homeRoute = '/teacher' }) {
                             <Text style={styles.onBadgeText}>ON</Text>
                           </View>
                         ) : null}
-                        <Ionicons name="chevron-forward" size={15} color={SLATE[400]} />
+                        <Ionicons name="chevron-forward" size={17} color={SLATE[400]} />
                       </Pressable>
                     );
                   })
@@ -339,7 +339,7 @@ export default function AdaptiveAssessmentScreen({ homeRoute = '/teacher' }) {
               </View>
               <Ionicons
                 name={active ? 'chevron-up' : 'chevron-down'}
-                size={16}
+                size={18}
                 color={SLATE[400]}
               />
             </Pressable>
@@ -407,7 +407,7 @@ export default function AdaptiveAssessmentScreen({ homeRoute = '/teacher' }) {
                   ]}
                   accessibilityRole="button"
                 >
-                  <Ionicons name="stats-chart-outline" size={15} color={PALETTE.primaryDark} />
+                  <Ionicons name="stats-chart-outline" size={17} color={PALETTE.primaryDark} />
                   <Text style={styles.analysisText}>Detailed analysis</Text>
                 </Pressable>
               </Card>
@@ -496,8 +496,8 @@ const styles = StyleSheet.create({
     paddingVertical: 13,
     paddingHorizontal: SPACING.md,
   },
-  chapterName: { flex: 1, fontSize: 14.5, fontWeight: '700', color: SLATE[800] },
-  chapterMeta: { fontSize: 12, fontWeight: '700', color: SLATE[400] },
+  chapterName: { flex: 1, fontSize: TYPE.heading, fontWeight: '700', color: SLATE[800] },
+  chapterMeta: { fontSize: TYPE.label, fontWeight: '700', color: SLATE[500] },
   topicRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -509,14 +509,14 @@ const styles = StyleSheet.create({
     borderTopColor: SLATE[100],
     backgroundColor: SLATE[50],
   },
-  topicName: { flex: 1, fontSize: 13.5, fontWeight: '600', color: SLATE[700] },
+  topicName: { flex: 1, fontSize: TYPE.heading, fontWeight: '600', color: SLATE[700] },
   onBadge: {
     paddingHorizontal: 7,
     paddingVertical: 2,
     borderRadius: 999,
     backgroundColor: FEEDBACK.successBg,
   },
-  onBadgeText: { fontSize: 10, fontWeight: '800', color: FEEDBACK.successText },
+  onBadgeText: { fontSize: TYPE.micro, fontWeight: '800', color: FEEDBACK.successText },
 
   studentRow: {
     flexDirection: 'row',
@@ -532,21 +532,21 @@ const styles = StyleSheet.create({
   },
   studentRowActive: { borderColor: PALETTE.primary, backgroundColor: PALETTE.tint },
   studentText: { flex: 1 },
-  studentName: { fontSize: 14, fontWeight: '700', color: SLATE[800] },
-  studentStanding: { fontSize: 11.5, fontWeight: '600', marginTop: 2 },
+  studentName: { fontSize: TYPE.heading, fontWeight: '700', color: SLATE[800] },
+  studentStanding: { fontSize: TYPE.caption, fontWeight: '600', marginTop: 2 },
 
-  hint: { fontSize: 13, color: SLATE[500], textAlign: 'center', paddingVertical: SPACING.lg },
+  hint: { fontSize: TYPE.body, color: SLATE[500], textAlign: 'center', paddingVertical: SPACING.lg },
   inlineLoader: { marginVertical: SPACING.lg },
 
   attemptHead: { flexDirection: 'row', alignItems: 'flex-start', gap: SPACING.sm },
-  attemptTopic: { fontSize: 14.5, fontWeight: '700', color: SLATE[800] },
-  attemptMeta: { fontSize: 12, color: SLATE[500], marginTop: 2 },
+  attemptTopic: { fontSize: TYPE.heading, fontWeight: '700', color: SLATE[800] },
+  attemptMeta: { fontSize: TYPE.label, color: SLATE[500], marginTop: 2 },
   attemptChip: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 999 },
   attemptDone: { backgroundColor: FEEDBACK.successBg },
   attemptPartial: { backgroundColor: '#fffbeb' },
-  attemptChipText: { fontSize: 10.5, fontWeight: '700' },
+  attemptChipText: { fontSize: TYPE.micro, fontWeight: '700' },
   attemptStats: { flexDirection: 'row', flexWrap: 'wrap', gap: SPACING.md, marginTop: SPACING.sm },
-  attemptStat: { fontSize: 12, color: SLATE[500], fontWeight: '600' },
+  attemptStat: { fontSize: TYPE.label, color: SLATE[500], fontWeight: '600' },
 
   analysisBtn: {
     flexDirection: 'row',
@@ -559,7 +559,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: SLATE[200],
   },
-  analysisText: { fontSize: 13, fontWeight: '700', color: PALETTE.primaryDark },
+  analysisText: { fontSize: TYPE.body, fontWeight: '700', color: PALETTE.primaryDark },
   disabled: { opacity: 0.45 },
 
   pressed: { opacity: 0.72 },

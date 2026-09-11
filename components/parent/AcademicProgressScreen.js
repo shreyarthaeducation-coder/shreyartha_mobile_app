@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { SLATE, SPACING } from '../../constants/theme';
+import { SLATE, SPACING, TYPE } from '../../constants/theme';
 import { usePalette } from '../ui/PaletteContext';
 import { Card, CardTitle, ScreenScaffold } from '../ui';
 import AnalyticsBody from '../student/analytics/AnalyticsBody';
@@ -126,7 +126,7 @@ export default function AcademicProgressScreen() {
                 >
                   <Ionicons
                     name={subjectOpen ? 'chevron-down' : 'chevron-forward'}
-                    size={16}
+                    size={18}
                     color={palette.primaryDark}
                   />
                   <Text style={styles.subject} numberOfLines={2}>
@@ -155,7 +155,7 @@ export default function AcademicProgressScreen() {
                           >
                             <Ionicons
                               name={chapterOpen ? 'remove' : 'add'}
-                              size={15}
+                              size={17}
                               color={SLATE[500]}
                             />
                             <Text style={styles.chapterName} numberOfLines={2}>
@@ -211,7 +211,7 @@ export default function AcademicProgressScreen() {
 }
 
 const useStyles = makeStyles((p) => ({
-  empty: { fontSize: 13, color: SLATE[400], fontStyle: 'italic', paddingVertical: 6 },
+  empty: { fontSize: TYPE.body, color: SLATE[500], fontStyle: 'italic', paddingVertical: 6 },
   node: {
     borderTopWidth: 1,
     borderTopColor: SLATE[100],
@@ -219,11 +219,11 @@ const useStyles = makeStyles((p) => ({
     marginTop: 4,
   },
   nodeHead: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 9 },
-  subject: { flex: 1, fontSize: 14, fontWeight: '700', color: SLATE[800] },
+  subject: { flex: 1, fontSize: TYPE.heading, fontWeight: '700', color: SLATE[800] },
   chapter: { paddingLeft: SPACING.md },
-  chapterName: { flex: 1, fontSize: 13, fontWeight: '600', color: SLATE[700] },
+  chapterName: { flex: 1, fontSize: TYPE.body, fontWeight: '600', color: SLATE[700] },
   count: {
-    fontSize: 11.5,
+    fontSize: TYPE.caption,
     fontWeight: '700',
     color: p.primaryDark,
     backgroundColor: p.tint,
@@ -239,6 +239,6 @@ const useStyles = makeStyles((p) => ({
     paddingHorizontal: 10,
     paddingVertical: 7,
   },
-  topicText: { fontSize: 12.5, color: SLATE[600] },
+  topicText: { fontSize: TYPE.label, color: SLATE[600] },
   pressed: { opacity: 0.7 },
 }));

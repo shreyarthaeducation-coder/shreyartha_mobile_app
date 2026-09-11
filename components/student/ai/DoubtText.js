@@ -1,5 +1,5 @@
 import { Text } from 'react-native';
-import { SLATE, TYPE } from '../../../constants/theme';
+import { SLATE, TYPE, leading } from '../../../constants/theme';
 import { doubtSegments } from '../../../utils/doubtText';
 
 /**
@@ -14,7 +14,7 @@ export default function DoubtText({ value, style }) {
   if (segments.length === 0) return null;
 
   return (
-    <Text style={[{ fontSize: TYPE.body, lineHeight: 21, color: SLATE[700] }, style]}>
+    <Text style={[{ fontSize: TYPE.body, lineHeight: leading(TYPE.body), color: SLATE[700] }, style]}>
       {segments.map((seg, i) =>
         seg.bold ? (
           // eslint-disable-next-line react/no-array-index-key

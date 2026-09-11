@@ -301,7 +301,7 @@ export default function PsychometricScreen() {
               <ActivityIndicator size="small" color={palette.onPrimary} />
             ) : (
               <>
-                <Ionicons name="download-outline" size={17} color={palette.onPrimary} />
+                <Ionicons name="download-outline" size={19} color={palette.onPrimary} />
                 <Text style={styles.primaryText}>Download report</Text>
               </>
             )}
@@ -338,12 +338,12 @@ export default function PsychometricScreen() {
               <StudentCard style={open ? undefined : styles.lockedCard}>
                 <View style={styles.rowHead}>
                   {done ? (
-                    <Ionicons name="checkmark-circle" size={17} color={DONE} />
+                    <Ionicons name="checkmark-circle" size={19} color={DONE} />
                   ) : null}
                   <Text style={styles.rowTitle}>{t.name}</Text>
                   <Ionicons
                     name={open ? 'chevron-forward' : 'lock-closed'}
-                    size={16}
+                    size={18}
                     color={open ? palette.deep : SLATE[400]}
                   />
                 </View>
@@ -470,7 +470,7 @@ export default function PsychometricScreen() {
           accessibilityRole="button"
           accessibilityLabel="Back"
         >
-          <Ionicons name="arrow-back" size={14} color={palette.onDark} />
+          <Ionicons name="arrow-back" size={16} color={SLATE[600]} />
           <Text style={styles.crumbText} numberOfLines={1}>
             {chapter?.name ? `${chapter.name} › ` : ''}
             {topic.name}
@@ -525,12 +525,12 @@ const useStyles = makeStyles((p) => ({
     paddingVertical: 8,
     paddingHorizontal: 12,
     borderRadius: 999,
-    backgroundColor: p.glass,
+    backgroundColor: '#ffffff',
     borderWidth: 1,
-    borderColor: p.glassBorder,
+    borderColor: SLATE[200],
     marginBottom: SPACING.md,
   },
-  crumbText: { flex: 1, fontSize: TYPE.label, fontWeight: '600', color: p.onDark },
+  crumbText: { flex: 1, fontSize: TYPE.label, fontWeight: '600', color: SLATE[600] },
 
   chapterRow: { gap: 7, paddingBottom: SPACING.md, paddingRight: SPACING.md },
   chapter: {
@@ -540,13 +540,13 @@ const useStyles = makeStyles((p) => ({
     paddingVertical: 8,
     paddingHorizontal: 14,
     borderRadius: 999,
-    backgroundColor: 'rgba(255,255,255,0.14)',
+    backgroundColor: SLATE[100],
     borderWidth: 1,
     borderColor: p.headerBorder,
   },
   chapterOn: { backgroundColor: p.primary, borderColor: p.primary },
   chapterLocked: { opacity: 0.6 },
-  chapterText: { fontSize: TYPE.label, fontWeight: '600', color: p.onDark },
+  chapterText: { fontSize: TYPE.label, fontWeight: '600', color: SLATE[600] },
   chapterTextOn: { color: p.onPrimary },
 
   rowHead: { flexDirection: 'row', alignItems: 'center', gap: SPACING.sm },

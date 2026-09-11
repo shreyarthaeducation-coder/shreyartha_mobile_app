@@ -2,7 +2,7 @@ import { Pressable, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { SLATE, SPACING } from '../../constants/theme';
+import { SLATE, SPACING, TYPE, leading } from '../../constants/theme';
 import { usePalette } from '../ui/PaletteContext';
 import usePortalLogout from '../../hooks/usePortalLogout';
 import { makeStyles } from '../../utils/makeStyles';
@@ -48,7 +48,7 @@ export default function ParentPendingScreen() {
         <Text style={styles.listTitle}>Once verified, you will be able to:</Text>
         {UNLOCKS.map((line) => (
           <View key={line} style={styles.listRow}>
-            <Ionicons name="checkmark-circle" size={16} color={palette.primary} />
+            <Ionicons name="checkmark-circle" size={18} color={palette.primary} />
             <Text style={styles.listText}>{line}</Text>
           </View>
         ))}
@@ -90,31 +90,31 @@ const useStyles = makeStyles((p) => ({
     alignSelf: 'center',
     marginBottom: SPACING.md,
   },
-  title: { fontSize: 19, fontWeight: '800', color: SLATE[800], textAlign: 'center' },
+  title: { fontSize: TYPE.headline, fontWeight: '800', color: SLATE[800], textAlign: 'center' },
   text: {
-    fontSize: 14,
+    fontSize: TYPE.body,
     color: SLATE[500],
     textAlign: 'center',
-    lineHeight: 21,
+    lineHeight: leading(TYPE.body),
     marginTop: SPACING.sm,
   },
   listTitle: {
-    fontSize: 13,
+    fontSize: TYPE.body,
     fontWeight: '700',
     color: SLATE[600],
     marginTop: SPACING.lg,
     marginBottom: 8,
   },
   listRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 8, marginBottom: 6 },
-  listText: { flex: 1, fontSize: 13.5, color: SLATE[600], lineHeight: 20 },
+  listText: { flex: 1, fontSize: TYPE.body, color: SLATE[600], lineHeight: leading(TYPE.body) },
   primaryBtn: {
     marginTop: SPACING.lg,
     borderRadius: 10,
     paddingVertical: 13,
     alignItems: 'center',
   },
-  primaryText: { color: '#ffffff', fontWeight: '700', fontSize: 14.5 },
+  primaryText: { color: '#ffffff', fontWeight: '700', fontSize: TYPE.heading },
   ghostBtn: { marginTop: SPACING.sm, paddingVertical: 12, alignItems: 'center' },
-  ghostText: { color: SLATE[500], fontWeight: '700', fontSize: 14 },
+  ghostText: { color: SLATE[500], fontWeight: '700', fontSize: TYPE.heading },
   pressed: { opacity: 0.75 },
 }));

@@ -11,7 +11,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
-import { FEEDBACK, SHADOWS, SLATE, SPACING } from '../../constants/theme';
+import { FEEDBACK, SHADOWS, SLATE, SPACING, TYPE } from '../../constants/theme';
 import { STAFF_PHOTO_KEY } from '../../constants/storageKeys';
 import { usePalette } from '../../components/ui/PaletteContext';
 import { api } from '../../services/apiService';
@@ -43,7 +43,7 @@ function InfoRow({ icon, label, value }) {
   return (
     <View style={styles.row}>
       <View style={styles.rowIcon}>
-        <Ionicons name={icon} size={17} color={PALETTE.primaryDark} />
+        <Ionicons name={icon} size={19} color={PALETTE.primaryDark} />
       </View>
       <View style={styles.rowText}>
         <Text style={styles.rowLabel}>{label}</Text>
@@ -223,12 +223,12 @@ export default function StaffProfileScreen({
               </View>
               {profile?.verified === true ? (
                 <View style={[styles.statusChip, styles.statusVerified]}>
-                  <Ionicons name="checkmark-circle" size={13} color={FEEDBACK.successText} />
+                  <Ionicons name="checkmark-circle" size={15} color={FEEDBACK.successText} />
                   <Text style={[styles.statusText, { color: FEEDBACK.successText }]}>Verified</Text>
                 </View>
               ) : profile?.verified === false ? (
                 <View style={[styles.statusChip, styles.statusPending]}>
-                  <Ionicons name="time-outline" size={13} color="#b45309" />
+                  <Ionicons name="time-outline" size={15} color="#b45309" />
                   <Text style={[styles.statusText, { color: '#b45309' }]}>Pending</Text>
                 </View>
               ) : null}
@@ -305,7 +305,7 @@ function DetailsTab({ profile, assignedClasses, confirmLogout, loggingOut }) {
               <Text style={styles.cardTitle}>My Classes</Text>
               {assignedClasses.map((cls) => (
                 <View key={cls.id ?? `${cls.classId}-${cls.sectionId}-${cls.subjectId}`} style={styles.classRow}>
-                  <Ionicons name="easel-outline" size={16} color={PALETTE.primaryDark} />
+                  <Ionicons name="easel-outline" size={18} color={PALETTE.primaryDark} />
                   <Text style={styles.classText}>
                     Class {cls.className}
                     {cls.sectionName ? `-${cls.sectionName}` : ''}
@@ -350,7 +350,7 @@ const useStyles = makeStyles((p) => ({
   },
   avatarImg: { width: '100%', height: '100%' },
   avatarText: { fontSize: 26, fontWeight: '700', color: p.primaryDark },
-  name: { fontSize: 19, fontWeight: '700', color: SLATE[800], marginTop: SPACING.sm },
+  name: { fontSize: TYPE.headline, fontWeight: '700', color: SLATE[800], marginTop: SPACING.sm },
   badgeRow: { flexDirection: 'row', gap: 8, marginTop: 8 },
   roleChip: {
     paddingHorizontal: 11,
@@ -358,7 +358,7 @@ const useStyles = makeStyles((p) => ({
     borderRadius: 999,
     backgroundColor: p.tint,
   },
-  roleChipText: { fontSize: 12, fontWeight: '700', color: p.primaryDark },
+  roleChipText: { fontSize: TYPE.label, fontWeight: '700', color: p.primaryDark },
   statusChip: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -369,10 +369,10 @@ const useStyles = makeStyles((p) => ({
   },
   statusVerified: { backgroundColor: FEEDBACK.successBg },
   statusPending: { backgroundColor: '#fffbeb' },
-  statusText: { fontSize: 12, fontWeight: '700' },
+  statusText: { fontSize: TYPE.label, fontWeight: '700' },
   tabs: { marginBottom: SPACING.xs },
   notice: {
-    fontSize: 13,
+    fontSize: TYPE.body,
     color: SLATE[500],
     textAlign: 'center',
     marginBottom: SPACING.sm,
@@ -387,7 +387,7 @@ const useStyles = makeStyles((p) => ({
     ...SHADOWS.sm,
   },
   cardTitle: {
-    fontSize: 12,
+    fontSize: TYPE.label,
     fontWeight: '700',
     color: SLATE[500],
     textTransform: 'uppercase',
@@ -405,10 +405,10 @@ const useStyles = makeStyles((p) => ({
     marginRight: SPACING.sm,
   },
   rowText: { flex: 1 },
-  rowLabel: { fontSize: 11.5, color: SLATE[500], fontWeight: '600' },
-  rowValue: { fontSize: 14.5, color: SLATE[800], marginTop: 1 },
+  rowLabel: { fontSize: TYPE.caption, color: SLATE[500], fontWeight: '600' },
+  rowValue: { fontSize: TYPE.heading, color: SLATE[800], marginTop: 1 },
   classRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 7 },
-  classText: { flex: 1, fontSize: 14, color: SLATE[700] },
+  classText: { flex: 1, fontSize: TYPE.body, color: SLATE[700] },
   logoutRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -422,5 +422,5 @@ const useStyles = makeStyles((p) => ({
     backgroundColor: FEEDBACK.errorBg,
   },
   logoutRowPressed: { opacity: 0.75 },
-  logoutText: { fontSize: 15, fontWeight: '700', color: FEEDBACK.errorText },
+  logoutText: { fontSize: TYPE.heading, fontWeight: '700', color: FEEDBACK.errorText },
 }));

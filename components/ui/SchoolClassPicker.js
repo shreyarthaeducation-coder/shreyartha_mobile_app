@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef } from 'react';
 import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
-import { SLATE, SPACING } from '../../constants/theme';
+import { SLATE, SPACING, TYPE } from '../../constants/theme';
 import { usePalette } from './PaletteContext';
 import useStaffResource from '../../hooks/useStaffResource';
 import { fetchLiveSchools } from '../../services/teacher/liveSessionService';
@@ -213,5 +213,5 @@ const styles = StyleSheet.create({
     paddingHorizontal: SPACING.md,
     paddingVertical: SPACING.sm,
   },
-  error: { fontSize: 12.5, color: SLATE[500] },
+  error: { fontSize: TYPE.label, color: SLATE[500] },
 });

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { BackHandler, Platform, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { Alert, BackHandler, Platform, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Redirect, useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -11,6 +11,10 @@ import { useTranslations } from '../../../hooks/useTranslations';
 import { STAFF_PHOTO_KEY } from '../../../constants/storageKeys';
 import BrandBar from '../../shared/home/BrandBar';
 import IdentityCard from '../../shared/home/IdentityCard';
+import ProfileHeaderCard from '../../shared/home/ProfileHeaderCard';
+import QuickActionGrid from '../../shared/home/QuickActionGrid';
+import MetricRow from '../../shared/home/MetricRow';
+import TodayList from '../../shared/home/TodayList';
 import HeroCard from '../../shared/home/HeroCard';
 import SearchEntry from '../../shared/home/SearchEntry';
 import SectionDivider from '../../shared/home/SectionDivider';
@@ -25,13 +29,27 @@ import { getStaffHome, heroRoute, itemsFor } from '../../../constants/staffHome'
 import {
   classesSupported,
   designationOf,
+  joinedOn,
   loadSchoolsCovered,
   liveVerified,
   loadStaffIdentity,
   photoOf,
   schoolLabel,
+  schoolLogoOf,
   staffIdOf,
+  uploadStaffPhoto,
 } from '../../../services/staff/identityService';
+import useSchoolLogo from '../../../hooks/useSchoolLogo';
+import { fetchUnreadCount } from '../../../services/staff/notificationService';
+import {
+  fetchTodaySessions,
+  fetchTodaySummary,
+  sessionRow,
+} from '../../../services/staff/counsellorSummaryService';
+import { loadSalesMetrics } from '../../../services/sales/salesMetrics';
+import { fetchDashboardStats } from '../../../services/admin/overviewService';
+import { formatRupees } from '../../../utils/currency';
+import { pickPhoto } from '../../../utils/filePicker';
 
 /**
  * The redesigned staff dashboard — ONE screen for every role with a `constants/staffHome.js` entry.
@@ -120,12 +138,44 @@ export default function StaffHomeScreen() {
   // Only ever non-empty for a role whose identityRow3 declares `source: 'schools'` — one role.
   const [schools, setSchools] = useState('');
 
+  // ── THE THREE BLOCKS THE REDESIGNED PANELS ADD ────────────────────────────
+  // All three are decoration on top of a dashboard that already works, so each loads independently
+  // and each renders NOTHING when it has no data. None of them may delay or fail the verification
+  // gate, which is why they are fired after it and never awaited alongside it.
+  const [unread, setUnread] = useState(0);
+  const [metrics, setMetrics] = useState(null);
+  const [today, setToday] = useState([]);
+  const [uploading, setUploading] = useState(false);
+
+  // The principal's school identity, which does NOT come from a profile DTO — see below.
+  const [adminSchool, setAdminSchool] = useState(null);
+
+  // Called HERE, above the verification early-returns below, because it is a hook — reading it off
+  // the destructured `profile` further down would put a hook after a conditional return.
+  //
+  // Two sources, declared per role in constants/staffRoles.js. The principal has
+  // `profileEndpoints: []`, so `schoolLogoOf(identity.profile)` is structurally always null for it
+  // — that role was rendering the prop while the value could never be anything but null. Its crest
+  // comes from the school-admin dashboard stats instead, fetched in `load()`.
+  const schoolLogo = useSchoolLogo(
+    config?.schoolLogoSource === 'dashboardStats'
+      ? adminSchool?.schoolLogo || null
+      : schoolLogoOf(identity.profile),
+  );
+
   const endpointsKey = (config?.profileEndpoints || []).join('|');
 
   // Read as primitives, not as the object: `home.identityRow3` is a fresh literal on every render
   // for no descriptor here, but depending on an object in a useCallback is how a load loop starts.
   const row3Source = home?.identityRow3?.source || 'designation';
   const row3Endpoint = home?.identityRow3?.endpoint || '';
+  // Primitives again, for the same reason: depending on the descriptor object in a useCallback is
+  // how a load loop starts.
+  const metricsKind = home?.metrics || '';
+  const wantsToday = !!home?.todayList;
+  const wantsBell = !!home?.profileHeader;
+  // Primitive, same reason as above.
+  const wantsAdminSchool = config?.schoolLogoSource === 'dashboardStats';
 
   const load = useCallback(async () => {
     let session = {};
@@ -184,7 +234,44 @@ export default function StaffHomeScreen() {
     }
 
     setRefreshing(false);
-  }, [endpointsKey, row3Source, row3Endpoint]);
+
+    // (4) THE REDESIGN'S OWN BLOCKS. Fired last and never awaited by anything above, for the same
+    // reason the schools row is: they are decoration, and one of them failing must not be able to
+    // hold up — or fail — the verification decision.
+    //
+    // Each swallows its own error inside its service and answers with an empty value, so a role
+    // whose backend refuses it renders one block fewer rather than an error on a screen the user
+    // opened to do something else.
+    if (wantsBell) setUnread(await fetchUnreadCount());
+
+    if (metricsKind === 'sales') {
+      try {
+        setMetrics(await loadSalesMetrics());
+      } catch {
+        setMetrics(null);
+      }
+    } else if (metricsKind === 'counsellor') {
+      setMetrics(await fetchTodaySummary(roleKey));
+    }
+
+    // The principal's school crest and name. Swallowed like the calls above: a role whose backend
+    // refuses this renders the 3C mark rather than an error on a screen opened to do something
+    // else. The school-admin endpoints are authorised for PRINCIPAL through the role hierarchy.
+    // (No glob written out here: a slash-star inside a line comment is read as the start of a block
+    // comment by every comment-stripping tool in scripts/, which silently eats the rest of the file
+    // and makes unrelated assertions fail.)
+    if (wantsAdminSchool) {
+      try {
+        const stats = await fetchDashboardStats();
+        setAdminSchool(stats || null);
+      } catch {
+        setAdminSchool(null);
+      }
+    }
+
+    if (wantsToday) setToday(await fetchTodaySessions(roleKey));
+  }, [endpointsKey, row3Source, row3Endpoint, metricsKind, wantsToday, wantsBell,
+      wantsAdminSchool, roleKey]);
 
   useEffect(() => {
     load();
@@ -287,13 +374,81 @@ export default function StaffHomeScreen() {
     .map((rowKey) => IDENTITY_ROWS[rowKey])
     .filter(Boolean);
 
+  // ── THE PHOTO-LED HEADER'S CHIPS ───────────────────────────────────────────
+  // Both come off the HR profile, not the role profile: `/api/counselor/profile` and
+  // `/api/teacher/profile` carry neither an employee code nor a joining date, and the latter's
+  // `schoolLogo` is the SCHOOL's crest rather than a person's photo. `loadStaffIdentity` already
+  // fetches both DTOs in parallel, so this costs no extra request.
+  //
+  // Either can be null — a staff member who has never been through payroll setup has neither — and
+  // ProfileHeaderCard omits an empty chip rather than printing "Not set" twice in a header.
+  const headerChips = [
+    { key: 'staffId', icon: 'card-outline', label: 'Employee ID', value: staffIdOf(hr), tint: 'violet' },
+    { key: 'joined', icon: 'calendar-outline', label: 'Date of Joining', value: joinedOn(hr), tint: 'amber' },
+  ];
+
+  // Quick actions resolve through `heroRoute`, the SAME resolver the heroes and both checkers use,
+  // so a card cannot render one destination and be verified against another. One naming a tile
+  // this role does not carry resolves to null and is dropped rather than rendering a dead card.
+  const quickActions = (home.quickActions || [])
+    .map((action) => {
+      const route = heroRoute(action, roleKey, config.menu);
+      return route ? { ...action, onPress: () => router.push(route) } : null;
+    })
+    .filter(Boolean);
+
+  const handlePickPhoto = async () => {
+    const file = await pickPhoto();
+    if (!file) return;
+    if (file.denied) {
+      Alert.alert('Permission needed', 'Allow photo access to change your profile picture.');
+      return;
+    }
+    setUploading(true);
+    try {
+      const url = await uploadStaffPhoto(file);
+      if (url) {
+        // Optimistic, and cached: StaffProfileScreen READS `STAFF_PHOTO_KEY` rather than making its
+        // own HR call, so a new photo that never reaches the cache would show here and nowhere else.
+        setStored((p) => ({ ...p, photo: url }));
+        setIdentity((p) => ({ ...p, hr: { ...(p.hr || {}), profilePictureUrl: url } }));
+        AsyncStorage.setItem(STAFF_PHOTO_KEY, url).catch(() => {});
+      }
+    } catch (e) {
+      Alert.alert('Upload failed', e?.message || 'Could not update your photo. Please try again.');
+    } finally {
+      setUploading(false);
+    }
+  };
+
 
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'left', 'right']}>
       {/* Change Password reaches these roles ONLY through here now. It used to be a chip in
           StaffMenuScreen's header-action row, injected by resolveStaffMenus — dropping that row
           without this bar would remove its single entry point. */}
-      <BrandBar strings={t} changePasswordRoute={config.routes.changePassword} tone="light" />
+      <BrandBar
+        tone="light"
+        // The school's own crest takes the lead position — but ONLY for a role that belongs to one
+        // school. This shell also serves sales and the three Shreyartha HQ roles, which work across
+        // schools or none, and `schoolBound` in constants/staffRoles.js is what tells them apart.
+        // Gating on the descriptor rather than on whether a URL happened to arrive: sales was
+        // previously safe only because its DTO omits `schoolLogo`, which is an accident, not a rule.
+        schoolLogoUrl={config.schoolBound ? schoolLogo : null}
+        // The NAME follows the same source as the logo. For the principal `profile` is null, so
+        // `schoolLabel` would fall back to the school CODE ("SHREYA01") — correct as a last resort,
+        // but the real name is right there in the stats this role already fetches, and the name is
+        // what the header shows when no crest has been uploaded.
+        schoolName={
+          config.schoolBound
+            ? (wantsAdminSchool ? adminSchool?.schoolName || '' : '')
+              || schoolLabel(profile, stored.code)
+            : ''
+        }
+        // Only the panels with a photo-led header carry a bell. Passing null leaves the other four
+        // headers byte-for-byte as they were — this component is the header of six dashboards.
+        bell={wantsBell ? { count: unread, route: `/staff/${roleKey}/notifications` } : null}
+      />
 
       <ScrollView
         contentContainerStyle={[
@@ -314,15 +469,74 @@ export default function StaffHomeScreen() {
           />
         }
       >
-        <IdentityCard
-          tone="light"
-          strings={t}
-          title={t.personalDetails}
-          name={name}
-          photoUrl={photoOf(hr) || stored.photo}
-          badge={home.badge}
-          rows={identityRows}
-        />
+        {/* TWO HEADERS, ONE PER DESIGN.
+
+            `profileHeader` is the photo-led block from the approved sales and counsellor mockups:
+            a big avatar with an upload badge, a greeting, and the two facts as chips. Everything
+            else keeps `IdentityCard`'s labelled-rows layout, which is what those four panels' own
+            designs show. Not a variant of one component: the two put every element in a different
+            place, so a layout switch would be larger than a second component. */}
+        {home.profileHeader ? (
+          <ProfileHeaderCard
+            name={name}
+            role={designationOf(profile) || config.label}
+            photoUrl={photoOf(hr) || stored.photo}
+            chips={headerChips}
+            onPressPhoto={handlePickPhoto}
+            uploading={uploading}
+          />
+        ) : (
+          <IdentityCard
+            tone="light"
+            strings={t}
+            title={t.personalDetails}
+            name={name}
+            photoUrl={photoOf(hr) || stored.photo}
+            badge={home.badge}
+            rows={identityRows}
+          />
+        )}
+
+        {/* The Quick Actions rail. Shortcuts to tiles the panel already reaches — which is why
+            `assertArrangementCovers` validates them without counting them as placements. */}
+        <QuickActionGrid actions={quickActions} />
+
+        {/* THE METRIC BLOCK. Two shapes, chosen by the descriptor, and each renders nothing at all
+            when its load failed — a dashboard that could not fetch must not be indistinguishable
+            from a genuinely quiet month. */}
+        {metricsKind === 'sales' && metrics ? (
+          <MetricRow
+            title="Sales Performance"
+            subtitle="(This Month)"
+            actionLabel="View Details"
+            onPressAction={() => {
+              const route = itemsFor(config.menu, ['dashboard'])[0]?.native;
+              if (route) router.push(route);
+            }}
+            deltaNote="vs Last Month"
+            stats={salesStats(metrics)}
+          />
+        ) : null}
+
+        {metricsKind === 'counsellor' && metrics ? (
+          <MetricRow title="Today's Summary" stats={counsellorStats(metrics)} />
+        ) : null}
+
+        {/* "Today's Sessions", not the design's "Today's Visits" — there is no counsellor visit
+            backend anywhere. Kept mounted on an empty day, because a block that vanishes when
+            nothing is scheduled reads as a screen that failed to load. */}
+        {wantsToday ? (
+          <TodayList
+            title="Today's Sessions"
+            items={today.map(sessionRow)}
+            actionLabel="View All"
+            onPressAction={() => {
+              const route = itemsFor(config.menu, ['counselling'])[0]?.native;
+              if (route) router.push(route);
+            }}
+            emptyLabel="No sessions scheduled for today."
+          />
+        ) : null}
 
         {/* THE HEROES, in descriptor order.
 
@@ -432,7 +646,7 @@ export default function StaffHomeScreen() {
           accessibilityRole="button"
           accessibilityLabel={t.logOut}
         >
-          <Ionicons name="log-out-outline" size={18} color={FEEDBACK.errorText} />
+          <Ionicons name="log-out-outline" size={20} color={FEEDBACK.errorText} />
           <Text style={styles.logoutText}>{t.logOut}</Text>
         </Pressable>
       </ScrollView>
@@ -450,6 +664,101 @@ export default function StaffHomeScreen() {
       ) : null}
     </SafeAreaView>
   );
+}
+
+/**
+ * The sales performance card's four figures.
+ *
+ * ══ TWO OF THE FOUR CARRY NO DELTA, AND THAT IS THE POINT ══════════════════
+ * The design shows "vs Last Month" under all four. The backend supports two:
+ *
+ *   Total Sales      `monthlyRevenue` has twelve buckets, so last month is real.
+ *   Schools Visited  real, via a second `/reports/visits` call for the prior month.
+ *   Proposals Sent   `dealsSubmitted` is a CURRENT count. No history exists anywhere.
+ *   Conversion       `pipeline` is a snapshot of open stages. Same.
+ *
+ * So the last two pass `delta: null` and `MetricRow` renders no change line for them. A
+ * fabricated 0% would read as "flat this month" — a claim about a rep's performance that nothing
+ * in the data supports.
+ *
+ * Conversion also renders "—" rather than "0%" on an empty pipeline: a rep with no leads has no
+ * conversion rate, and 0% would say they are failing to convert leads they do not have.
+ */
+function salesStats(m) {
+  return [
+    {
+      key: 'sales',
+      label: 'Total Sales',
+      icon: 'trending-up',
+      tint: 'green',
+      value: formatRupees(m.totalSalesInr, { decimals: 0 }),
+      delta: m.totalSalesDelta,
+    },
+    {
+      key: 'schools',
+      label: 'Schools Visited',
+      icon: 'business',
+      tint: 'blue',
+      value: String(m.schoolsVisited),
+      delta: m.schoolsVisitedDelta,
+    },
+    {
+      key: 'proposals',
+      label: 'Proposals Sent',
+      icon: 'document-text',
+      tint: 'amber',
+      value: String(m.proposalsSent),
+      delta: null,
+    },
+    {
+      key: 'conversion',
+      label: 'Conversion',
+      icon: 'flag',
+      tint: 'violet',
+      value: m.conversion == null ? '—' : `${m.conversion}%`,
+      delta: null,
+    },
+  ];
+}
+
+/**
+ * The counsellor's Today's Summary.
+ *
+ * No deltas at all: every figure is scoped to today, and "yesterday" is not a comparison anyone
+ * asked for. Schools Visited from the design is absent — there is no counsellor visit backend, so
+ * it could only be a fabricated zero.
+ */
+function counsellorStats(s) {
+  return [
+    {
+      key: 'students',
+      label: 'Students Counselled',
+      icon: 'people',
+      tint: 'violet',
+      value: String(s.studentsCounselledToday ?? 0),
+    },
+    {
+      key: 'sessions',
+      label: 'Sessions Today',
+      icon: 'chatbubbles',
+      tint: 'blue',
+      value: String(s.sessionsToday ?? 0),
+    },
+    {
+      key: 'meetings',
+      label: 'Meetings Done',
+      icon: 'videocam',
+      tint: 'green',
+      value: String(s.meetingsDoneToday ?? 0),
+    },
+    {
+      key: 'followUps',
+      label: 'Follow-ups',
+      icon: 'alarm',
+      tint: 'amber',
+      value: String(s.followUpsDueToday ?? 0),
+    },
+  ];
 }
 
 const useStyles = makeStyles(() => ({

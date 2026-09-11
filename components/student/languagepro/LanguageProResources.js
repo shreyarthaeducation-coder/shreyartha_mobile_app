@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { BAND, FEEDBACK, SLATE, SPACING, TYPE } from '../../../constants/theme';
+import { BAND, FEEDBACK, SLATE, SPACING, TYPE, leading } from '../../../constants/theme';
 import { usePalette } from '../../ui/PaletteContext';
 import { makeStyles } from '../../../utils/makeStyles';
 import { EmptyState, useToast } from '../../ui';
@@ -318,7 +318,7 @@ export default function LanguageProResources({ source = 'school' }) {
             accessibilityState={{ expanded: open }}
           >
             <Text style={styles.chapterName}>{chapter.name}</Text>
-            <Ionicons name={open ? 'chevron-up' : 'chevron-down'} size={16} color={palette.deep} />
+            <Ionicons name={open ? 'chevron-up' : 'chevron-down'} size={18} color={palette.deep} />
           </Pressable>
           {open
             ? topics.map((t) => (
@@ -328,7 +328,7 @@ export default function LanguageProResources({ source = 'school' }) {
                   style={({ pressed }) => [styles.topic, pressed && styles.pressed]}
                   accessibilityRole="button"
                 >
-                  <Ionicons name="chatbubble-ellipses-outline" size={13} color={palette.deep} />
+                  <Ionicons name="chatbubble-ellipses-outline" size={15} color={palette.deep} />
                   <Text style={styles.topicName}>{t.name}</Text>
                 </Pressable>
               ))
@@ -392,7 +392,7 @@ export default function LanguageProResources({ source = 'school' }) {
               <View style={styles.linkText}>
                 <Text style={styles.linkTitle}>{label}</Text>
               </View>
-              <Ionicons name="chevron-forward" size={16} color={palette.deep} />
+              <Ionicons name="chevron-forward" size={18} color={palette.deep} />
             </View>
           </StudentCard>
         </Pressable>
@@ -453,7 +453,7 @@ export default function LanguageProResources({ source = 'school' }) {
               accessibilityRole="button"
               accessibilityLabel="Back"
             >
-              <Ionicons name="arrow-back" size={14} color={palette.onDark} />
+              <Ionicons name="arrow-back" size={16} color={SLATE[600]} />
               <Text style={styles.crumbText} numberOfLines={1}>
                 {trail}
               </Text>
@@ -471,7 +471,7 @@ export default function LanguageProResources({ source = 'school' }) {
 
 const useStyles = makeStyles((p) => ({
   loader: { marginVertical: SPACING.xl },
-  emptyHint: { fontSize: TYPE.label, color: SLATE[400], lineHeight: 18, marginTop: 6 },
+  emptyHint: { fontSize: TYPE.label, color: SLATE[500], lineHeight: leading(TYPE.label), marginTop: 6 },
 
   crumb: {
     flexDirection: 'row',
@@ -480,12 +480,12 @@ const useStyles = makeStyles((p) => ({
     paddingVertical: 8,
     paddingHorizontal: 12,
     borderRadius: 999,
-    backgroundColor: p.glass,
+    backgroundColor: '#ffffff',
     borderWidth: 1,
-    borderColor: p.glassBorder,
+    borderColor: SLATE[200],
     marginBottom: SPACING.md,
   },
-  crumbText: { flex: 1, fontSize: TYPE.label, fontWeight: '600', color: p.onDark },
+  crumbText: { flex: 1, fontSize: TYPE.label, fontWeight: '600', color: SLATE[600] },
 
   rowHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10 },
   iconWrap: {
@@ -509,12 +509,12 @@ const useStyles = makeStyles((p) => ({
     alignItems: 'center',
     paddingVertical: 9,
     borderRadius: 999,
-    backgroundColor: 'rgba(255,255,255,0.14)',
+    backgroundColor: SLATE[100],
     borderWidth: 1,
     borderColor: p.headerBorder,
   },
   modeOn: { backgroundColor: p.primary, borderColor: p.primary },
-  modeText: { fontSize: TYPE.label, fontWeight: '600', color: p.onDark },
+  modeText: { fontSize: TYPE.label, fontWeight: '600', color: SLATE[600] },
   modeTextOn: { color: p.onPrimary },
 
   skillRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: SPACING.sm },
@@ -530,10 +530,10 @@ const useStyles = makeStyles((p) => ({
   skillName: { fontSize: TYPE.caption, fontWeight: '700', color: SLATE[600] },
   skillLevel: { fontSize: TYPE.body, fontWeight: '800', marginTop: 3, color: SLATE[500] },
   levelBeginner: { color: FEEDBACK.errorText },
-  levelAverage: { color: BAND.fair },
+  levelAverage: { color: FEEDBACK.warningOnBg },
   levelProficient: { color: FEEDBACK.successText },
-  levelNotSet: { color: SLATE[400] },
-  skillNote: { fontSize: TYPE.caption, color: SLATE[500], lineHeight: 17, marginTop: SPACING.sm },
+  levelNotSet: { color: SLATE[500] },
+  skillNote: { fontSize: TYPE.caption, color: SLATE[500], lineHeight: leading(TYPE.caption), marginTop: SPACING.sm },
 
   pressed: { opacity: 0.78 },
 }));

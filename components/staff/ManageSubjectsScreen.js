@@ -1,7 +1,7 @@
 import { useCallback, useState } from 'react';
 import { ActivityIndicator, Alert, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { FEEDBACK, PORTALS, SHADOWS, SLATE, SPACING } from '../../constants/theme';
+import { FEEDBACK, PORTALS, SHADOWS, SLATE, SPACING, TYPE } from '../../constants/theme';
 import {
   Card,
   EMPTY_SCHOOL_SCOPE,
@@ -166,7 +166,7 @@ export default function ManageSubjectsScreen({ homeRoute = '/teacher', schoolsEn
             <View style={styles.list}>
               {list.map((subject) => (
                 <View key={subject.subjectId} style={styles.row}>
-                  <Ionicons name="book-outline" size={17} color={PALETTE.primaryDark} />
+                  <Ionicons name="book-outline" size={19} color={PALETTE.primaryDark} />
                   <Text style={styles.rowName} numberOfLines={2}>
                     {subject.subjectName}
                   </Text>
@@ -180,7 +180,7 @@ export default function ManageSubjectsScreen({ homeRoute = '/teacher', schoolsEn
                       accessibilityRole="button"
                       accessibilityLabel={`Remove ${subject.subjectName}`}
                     >
-                      <Ionicons name="trash-outline" size={17} color={FEEDBACK.errorText} />
+                      <Ionicons name="trash-outline" size={19} color={FEEDBACK.errorText} />
                     </Pressable>
                   )}
                 </View>
@@ -196,7 +196,7 @@ export default function ManageSubjectsScreen({ homeRoute = '/teacher', schoolsEn
 const styles = StyleSheet.create({
   picker: { paddingHorizontal: 0, paddingVertical: 0 },
   label: {
-    fontSize: 11.5,
+    fontSize: TYPE.caption,
     fontWeight: '700',
     color: SLATE[500],
     textTransform: 'uppercase',
@@ -227,7 +227,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: SPACING.md,
     ...SHADOWS.sm,
   },
-  rowName: { flex: 1, fontSize: 14, fontWeight: '600', color: SLATE[800] },
+  rowName: { flex: 1, fontSize: TYPE.heading, fontWeight: '600', color: SLATE[800] },
   iconBtn: { padding: 4, borderRadius: 8 },
   pressed: { opacity: 0.7 },
 });

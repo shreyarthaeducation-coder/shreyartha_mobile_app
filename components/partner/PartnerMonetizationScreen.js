@@ -93,19 +93,19 @@ export default function PartnerMonetizationScreen({ homeRoute = '/partner' }) {
           </View>
 
           <View style={styles.searchWrap}>
-            <Ionicons name="search" size={16} color={SLATE[400]} />
+            <Ionicons name="search" size={18} color={SLATE[400]} />
             <TextInput
               style={styles.search}
               value={search}
               onChangeText={setSearch}
               placeholder="Search student, code or plan"
-              placeholderTextColor={SLATE[400]}
+              placeholderTextColor={SLATE[500]}
               autoCapitalize="none"
               autoCorrect={false}
             />
             {search ? (
               <Pressable onPress={() => setSearch('')} hitSlop={8} accessibilityLabel="Clear search">
-                <Ionicons name="close-circle" size={16} color={SLATE[400]} />
+                <Ionicons name="close-circle" size={18} color={SLATE[400]} />
               </Pressable>
             ) : null}
           </View>
@@ -225,7 +225,7 @@ const useStyles = makeStyles((p) => ({
   },
   statValue: { fontSize: TYPE.title, fontWeight: '800', color: p.primaryDark },
   statSmall: { fontSize: TYPE.body, fontWeight: '800', color: p.primaryDark },
-  statLabel: { fontSize: TYPE.micro, color: p.primaryDark, opacity: 0.7, marginTop: 2 },
+  statLabel: { fontSize: TYPE.micro, color: SLATE[600], marginTop: 2 },
 
   searchWrap: {
     flexDirection: 'row',
@@ -262,10 +262,10 @@ const useStyles = makeStyles((p) => ({
   revenue: { fontSize: TYPE.title, fontWeight: '800', color: p.primary },
   struck: { textDecorationLine: 'line-through', opacity: 0.6 },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 6 },
-  meta: { fontSize: TYPE.caption, color: p.primaryDark, opacity: 0.75, marginTop: 6 },
+  meta: { fontSize: TYPE.caption, color: SLATE[600], marginTop: 6 },
   grid: { flexDirection: 'row', flexWrap: 'wrap', marginTop: SPACING.sm },
   cell: { width: '50%', paddingVertical: 4 },
-  cellLabel: { fontSize: TYPE.micro, color: p.primaryDark, opacity: 0.6 },
+  cellLabel: { fontSize: TYPE.micro, color: SLATE[600] },
   cellValue: { fontSize: TYPE.label, fontWeight: '600', color: p.primaryDark },
   pressed: { opacity: 0.75 },
 }));

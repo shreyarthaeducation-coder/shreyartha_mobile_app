@@ -3,7 +3,7 @@ import { ActivityIndicator, Pressable, Text, TextInput, View } from 'react-nativ
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
-import { SLATE, SPACING, TOUCH, TYPE } from '../../constants/theme';
+import { SLATE, SPACING, TOUCH, TYPE, leading } from '../../constants/theme';
 import { usePalette } from '../ui/PaletteContext';
 import { makeStyles } from '../../utils/makeStyles';
 import { Card, EmptyState, ScreenScaffold } from '../ui';
@@ -96,14 +96,14 @@ export default function PartnerSearchScreen() {
       }}
     >
       <View style={styles.bar}>
-        <Ionicons name="search" size={18} color={SLATE[400]} />
+        <Ionicons name="search" size={20} color={SLATE[400]} />
         <TextInput
           ref={inputRef}
           style={styles.input}
           value={query}
           onChangeText={setQuery}
           placeholder={t.placeholder}
-          placeholderTextColor={SLATE[400]}
+          placeholderTextColor={SLATE[500]}
           autoCorrect={false}
           returnKeyType="search"
         />
@@ -157,7 +157,7 @@ export default function PartnerSearchScreen() {
                       >
                         <Ionicons
                           name={row.kind === 'screen' ? 'apps-outline' : 'document-text-outline'}
-                          size={16}
+                          size={18}
                           color={palette.primary}
                         />
                         <View style={styles.rowText}>
@@ -170,7 +170,7 @@ export default function PartnerSearchScreen() {
                             </Text>
                           ) : null}
                         </View>
-                        <Ionicons name="chevron-forward" size={15} color={SLATE[400]} />
+                        <Ionicons name="chevron-forward" size={17} color={SLATE[400]} />
                       </Pressable>
                     ))}
                   </Card>
@@ -202,7 +202,7 @@ const useStyles = makeStyles(() => ({
 
   centre: { alignItems: 'center', paddingVertical: SPACING.xl, gap: SPACING.md },
   building: { fontSize: TYPE.label, color: SLATE[500] },
-  note: { fontSize: TYPE.body, color: SLATE[600], lineHeight: 19 },
+  note: { fontSize: TYPE.body, color: SLATE[600], lineHeight: leading(TYPE.body) },
 
   count: { fontSize: TYPE.caption, color: SLATE[500], marginTop: SPACING.sm },
   group: {

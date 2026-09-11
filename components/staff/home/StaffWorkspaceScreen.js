@@ -1,7 +1,7 @@
 import { Pressable, Text, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { SLATE, SPACING, TOUCH, TYPE } from '../../../constants/theme';
+import { SLATE, SPACING, TOUCH, TYPE, leading } from '../../../constants/theme';
 import { usePalette } from '../../ui/PaletteContext';
 import { makeStyles } from '../../../utils/makeStyles';
 import { useTranslations } from '../../../hooks/useTranslations';
@@ -55,7 +55,7 @@ export default function StaffWorkspaceScreen() {
         return (
           <View key={group.key}>
             <View style={styles.groupHead}>
-              <Ionicons name={group.icon} size={14} color={palette.primaryDark} />
+              <Ionicons name={group.icon} size={16} color={palette.primaryDark} />
               <Text style={styles.groupLabel}>{group.label}</Text>
             </View>
 
@@ -85,7 +85,7 @@ export default function StaffWorkspaceScreen() {
 }
 
 const useStyles = makeStyles((p) => ({
-  intro: { fontSize: TYPE.label, color: SLATE[500], lineHeight: 19, marginBottom: SPACING.md },
+  intro: { fontSize: TYPE.label, color: SLATE[500], lineHeight: leading(TYPE.label), marginBottom: SPACING.md },
 
   groupHead: {
     flexDirection: 'row',

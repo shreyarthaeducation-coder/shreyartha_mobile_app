@@ -15,6 +15,22 @@
  * Labels and paths mirror the web sidebars verbatim (frontendmain/src/School/<Role>/components/
  * *Sidebar.js) so staff see the same vocabulary on both platforms. Flipping an item from `path`
  * to `native` is all it takes to port a page.
+ *
+ * ── SCHOOL-BOUND: `schoolBound` AND `schoolLogoSource` ──────────────────────
+ * `StaffHomeScreen` puts the school's own crest in the lead position of the header. Only a role
+ * that BELONGS to one school may show one, so it is declared here rather than inferred.
+ *
+ *   schoolBound      — this role belongs to exactly one school. Only then does StaffHomeScreen
+ *                      pass `schoolLogoUrl`/`schoolName` to BrandBar.
+ *   schoolLogoSource — where that identity comes from:
+ *                        'profile'        → the role's own profileEndpoints DTO (`schoolLogo`)
+ *                        'dashboardStats' → GET /api/school-admin/classes/dashboard-stats
+ *
+ * Set on `counselor`, `principal` and `vice_principal` only. The three `shreyartha_*` roles are HQ
+ * roles that work ACROSS schools, and `sales` is not school staff at all — none of them should wear
+ * a single school's crest. `sales` was previously safe only because `SalesController` happens not to
+ * emit a `schoolLogo` field; that is an accident of a DTO, not a decision, which is why the rule is
+ * now written down. Adding the field to that DTO must not silently change a header.
  */
 
 const PLATFORM_BASE = '/school/platform';
@@ -39,6 +55,9 @@ export const STAFF_ROLE_CONFIG = {
   counselor: {
     userType: 'COUNSELOR',
     label: 'Counselor',
+    // See the SCHOOL-BOUND note in the file header.
+    schoolBound: true,
+    schoolLogoSource: 'profile',
     basePath: `${PLATFORM_BASE}/counselor/dashboard`,
     // Same DTO family as the teacher profile; validated by the web shell's own fetch.
     profileEndpoints: ['/api/counselor/profile'],
@@ -56,6 +75,9 @@ export const STAFF_ROLE_CONFIG = {
       { key: 'groups', label: 'Wellness Groups', icon: 'people-outline', native: '/staff/counselor/groups' },
       { key: 'counselling', label: 'Counselling Needs and Notes', icon: 'chatbubbles-outline', native: '/staff/counselor/counselling' },
       { key: 'counsellorReport', label: 'Counsellor Report', icon: 'reader-outline', native: '/staff/counselor/counsellor-report' },
+      // The face-to-face room. Also the centre FAB's destination — a tile as well, because the
+      // FAB is only on the home screen and the workspace grid is where the panel is enumerated.
+      { key: 'faceToFace', label: 'Face-to-Face Counselling', icon: 'mic-outline', native: '/staff/counselor/face-to-face' },
       { key: 'liveClasses', label: 'Live Classes', icon: 'videocam-outline', native: '/staff/counselor/live-classes' },
       { key: 'myCalendar', label: 'My Calendar', icon: 'calendar-outline', native: '/staff/counselor/my-calendar' },
       // BEYOND THE WEB SIDEBAR, deliberately. `StaffHrController` is one class-level guard naming
@@ -73,6 +95,11 @@ export const STAFF_ROLE_CONFIG = {
   principal: {
     userType: 'PRINCIPAL',
     label: 'Principal',
+    schoolBound: true,
+    // NOT 'profile' — `profileEndpoints` below is empty, so there is no profile DTO to read a logo
+    // off. The principal's school identity comes from the school-admin dashboard stats instead,
+    // which is the same call AdminOverviewScreen already makes.
+    schoolLogoSource: 'dashboardStats',
     basePath: `${PLATFORM_BASE}/principal/dashboard`,
     // The web principal shell has no profile endpoint (it loads dashboard stats);
     // the native profile screen falls back to the values cached at login.
@@ -139,6 +166,8 @@ export const STAFF_ROLE_CONFIG = {
   vice_principal: {
     userType: 'VICE_PRINCIPAL',
     label: 'Vice Principal',
+    schoolBound: true,
+    schoolLogoSource: 'profile',
     basePath: `${PLATFORM_BASE}/vice_principal/dashboard`,
     // The web VP shell is teacher-flavoured and fetches exactly this endpoint.
     profileEndpoints: ['/api/teacher/profile'],
@@ -264,11 +293,14 @@ export const STAFF_ROLE_CONFIG = {
       { key: 'groups', label: 'Wellness Groups', icon: 'people-outline', native: '/staff/shreyartha_councellor/groups' },
       { key: 'counselling', label: 'Counselling Needs and Notes', icon: 'chatbubbles-outline', native: '/staff/shreyartha_councellor/counselling' },
       { key: 'counsellorReport', label: 'Counsellor Report', icon: 'reader-outline', native: '/staff/shreyartha_councellor/counsellor-report' },
+      { key: 'faceToFace', label: 'Face-to-Face Counselling', icon: 'mic-outline', native: '/staff/shreyartha_councellor/face-to-face' },
       { key: 'queries', label: 'Queries', icon: 'help-circle-outline', native: '/staff/shreyartha_councellor/queries' },
       // Live Counselling is the Live Classes screen with a different scope source and wording —
       // hence the shared `live-classes` route. See app/staff/[role]/live-classes.js.
       { key: 'liveCounselling', label: 'Live Counselling', icon: 'videocam-outline', native: '/staff/shreyartha_councellor/live-classes' },
       { key: 'myCalendar', label: 'My Calendar', icon: 'calendar-outline', native: '/staff/shreyartha_councellor/my-calendar' },
+      // Travel claims — Shreyartha's own employees only; /api/staff/travel-expenses names this role.
+      { key: 'expenses', label: 'My Expenses', icon: 'car-outline', native: '/staff/shreyartha_councellor/travel-expenses' },
       // Beyond the web sidebar — `StaffHrController` names SHREYARTHA_COUNCELLOR explicitly.
       // Note the copy caveat: a SHREYA01 leave request reaches nobody by email until
       // `HrLeaveService.approversFor` is widened, because "SHREYARTHA_ADMIN" matches none of its
@@ -318,6 +350,8 @@ export const STAFF_ROLE_CONFIG = {
       { key: 'reports', label: 'Reports', icon: 'bar-chart-outline', native: '/staff/sales/sales-reports' },
       { key: 'selfAttendance', label: 'Self Attendance', icon: 'time-outline', native: '/staff/sales/self-attendance' },
       { key: 'myCalendar', label: 'My Calendar', icon: 'calendar-outline', native: '/staff/sales/my-calendar' },
+      // Travel claims. A rep's check-ins are its stops automatically — see TravelExpensesScreen.
+      { key: 'expenses', label: 'My Expenses', icon: 'car-outline', native: '/staff/sales/travel-expenses' },
       // "My", not "Management" — a rep only ever sees their own, as on every other panel.
       { key: 'leave', label: 'My Leave', icon: 'today-outline', native: '/staff/sales/leave' },
       { key: 'payroll', label: 'My Payslips', icon: 'wallet-outline', native: '/staff/sales/payroll' },
@@ -356,6 +390,8 @@ export const STAFF_ROLE_CONFIG = {
       { key: 'adaptiveAssessment', label: 'My Adaptive Assessment', icon: 'git-branch-outline', native: '/staff/shreyartha_teacher/adaptive-assessment' },
       { key: 'upskill', label: 'Upskill Your Self', icon: 'school-outline', native: '/staff/shreyartha_teacher/upskill' },
       { key: 'myCalendar', label: 'My Calendar', icon: 'calendar-outline', native: '/staff/shreyartha_teacher/my-calendar' },
+      // Travel claims — Shreyartha's own employees only; /api/staff/travel-expenses names this role.
+      { key: 'expenses', label: 'My Expenses', icon: 'car-outline', native: '/staff/shreyartha_teacher/travel-expenses' },
       // HR module, self-service on /api/staff/hr — this staff member's OWN leave and payslips.
       //
       // RELABELLED from "Leave Management" / "Payroll Management". Those names were fine while this

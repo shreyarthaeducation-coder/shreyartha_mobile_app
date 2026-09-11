@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { SLATE, SPACING, TYPE } from '../../../constants/theme';
+import { SLATE, SPACING, TYPE, leading } from '../../../constants/theme';
 import { usePalette } from '../../ui/PaletteContext';
 import { makeStyles } from '../../../utils/makeStyles';
 import { useToast } from '../../ui';
@@ -277,33 +277,33 @@ export default function SoundStudio() {
 }
 
 const useStyles = makeStyles((p) => ({
-  intro: { fontSize: TYPE.label, color: p.onDark, lineHeight: 19, marginBottom: SPACING.md },
-  hint: { fontSize: TYPE.caption, color: SLATE[500], lineHeight: 17, marginBottom: SPACING.sm },
+  intro: { fontSize: TYPE.label, color: SLATE[600], lineHeight: leading(TYPE.label), marginBottom: SPACING.md },
+  hint: { fontSize: TYPE.caption, color: SLATE[500], lineHeight: leading(TYPE.caption), marginBottom: SPACING.sm },
 
   tabRow: { gap: 7, paddingBottom: SPACING.sm, paddingRight: SPACING.md },
   tab: {
     paddingVertical: 8,
     paddingHorizontal: 14,
     borderRadius: 999,
-    backgroundColor: 'rgba(255,255,255,0.14)',
+    backgroundColor: SLATE[100],
     borderWidth: 1,
     borderColor: p.headerBorder,
   },
   tabOn: { backgroundColor: p.primary, borderColor: p.primary },
-  tabText: { fontSize: TYPE.label, fontWeight: '600', color: p.onDark },
+  tabText: { fontSize: TYPE.label, fontWeight: '600', color: SLATE[600] },
   tabTextOn: { color: p.onPrimary },
 
   legend: { flexDirection: 'row', gap: SPACING.md, marginBottom: SPACING.md },
   legendItem: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   legendDot: { width: 10, height: 10, borderRadius: 5 },
   legendDotQuiet: { backgroundColor: 'rgba(255,255,255,0.35)' },
-  legendText: { fontSize: TYPE.caption, color: p.onDark },
+  legendText: { fontSize: TYPE.caption, color: SLATE[600] },
 
   placeRow: { marginBottom: SPACING.sm },
   placeLabel: {
     fontSize: TYPE.micro,
     fontWeight: '700',
-    color: SLATE[400],
+    color: SLATE[500],
     textTransform: 'uppercase',
     letterSpacing: 0.4,
     marginBottom: 5,

@@ -1,6 +1,6 @@
 import { StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { FEEDBACK } from '../../constants/theme';
+import { FEEDBACK, TYPE } from '../../constants/theme';
 import { usePalette } from './PaletteContext';
 
 /**
@@ -11,10 +11,14 @@ import { usePalette } from './PaletteContext';
  * portal accent, so a teal panel gets a teal chip without the caller naming a colour.
  */
 
+// THE `*OnBg` VARIANTS, NOT THE PLAIN ONES. Every chip here paints text on its OWN tint, which is
+// precisely the case those tokens exist for — `theme.js` says so in as many words. Using the plain
+// variants put `successText` on `successBg` at 3.15:1 and `errorText` on `errorBg` at 4.41:1, both
+// below AA, on the shared pill that every staff panel renders. Neutral already used its on-tint ink.
 const TONES = {
-  success: { bg: FEEDBACK.successBg, border: FEEDBACK.successBorder, text: FEEDBACK.successText },
-  warning: { bg: FEEDBACK.warningBg, border: FEEDBACK.warningBorder, text: FEEDBACK.warningText },
-  error: { bg: FEEDBACK.errorBg, border: FEEDBACK.errorBorder, text: FEEDBACK.errorText },
+  success: { bg: FEEDBACK.successBg, border: FEEDBACK.successBorder, text: FEEDBACK.successOnBg },
+  warning: { bg: FEEDBACK.warningBg, border: FEEDBACK.warningBorder, text: FEEDBACK.warningOnBg },
+  error: { bg: FEEDBACK.errorBg, border: FEEDBACK.errorBorder, text: FEEDBACK.errorOnBg },
   neutral: { bg: FEEDBACK.neutralBg, border: FEEDBACK.neutralBorder, text: FEEDBACK.neutralText },
 };
 
@@ -37,7 +41,7 @@ export default function StatusChip({
     <View
       style={[styles.chip, { backgroundColor: colors.bg, borderColor: colors.border }, style]}
     >
-      {icon ? <Ionicons name={icon} size={13} color={colors.text} /> : null}
+      {icon ? <Ionicons name={icon} size={15} color={colors.text} /> : null}
       <Text style={[styles.text, { color: colors.text }]} numberOfLines={1}>
         {label}
       </Text>
@@ -55,5 +59,5 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     borderWidth: 1,
   },
-  text: { fontSize: 12, fontWeight: '700' },
+  text: { fontSize: TYPE.label, fontWeight: '700' },
 });

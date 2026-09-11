@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useState } from 'react';
 import { Text, View } from 'react-native';
-import { SLATE, SPACING } from '../../../constants/theme';
+import { SLATE, SPACING, TYPE, leading } from '../../../constants/theme';
 import {
   Card,
   CardTitle,
@@ -242,12 +242,12 @@ const useStyles = makeStyles(() => ({
     justifyContent: 'space-between',
     gap: SPACING.sm,
   },
-  school: { flex: 1, fontSize: 14.5, fontWeight: '700', color: SLATE[800] },
-  meta: { fontSize: 12.5, color: SLATE[500], marginTop: 2 },
+  school: { flex: 1, fontSize: TYPE.heading, fontWeight: '700', color: SLATE[800] },
+  meta: { fontSize: TYPE.label, color: SLATE[500], marginTop: 2 },
   // A card's secondary line. CardTitle takes only children, so a subtitle is a sibling Text —
   // the idiom every correct caller in the app already uses.
-  cardNote: { fontSize: 12.5, color: SLATE[500], marginTop: -4, marginBottom: SPACING.sm },
-  remarks: { fontSize: 12.5, color: SLATE[600], marginTop: 6, lineHeight: 18 },
+  cardNote: { fontSize: TYPE.label, color: SLATE[500], marginTop: -4, marginBottom: SPACING.sm },
+  remarks: { fontSize: TYPE.label, color: SLATE[600], marginTop: 6, lineHeight: leading(TYPE.label) },
   flagRow: { flexDirection: 'row', marginTop: 6 },
   distRow: {
     flexDirection: 'row',
@@ -256,7 +256,7 @@ const useStyles = makeStyles(() => ({
     paddingVertical: 5,
   },
   // Widened from 96: "Closure / Sales win" is the longest reading label and was being clipped.
-  distLabel: { width: 132, fontSize: 12.5, color: SLATE[600] },
+  distLabel: { minWidth: 132, fontSize: TYPE.label, color: SLATE[600] },
   distBar: { flex: 1 },
-  distCount: { width: 26, textAlign: 'right', fontSize: 12.5, color: SLATE[500] },
+  distCount: { minWidth: 26, textAlign: 'right', fontSize: TYPE.label, color: SLATE[500] },
 }));

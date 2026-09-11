@@ -1,5 +1,5 @@
 import { Text, View } from 'react-native';
-import { BAND, FEEDBACK, QUIZ, SLATE, SPACING, TYPE } from '../../../constants/theme';
+import { BAND, FEEDBACK, QUIZ, SLATE, SPACING, TYPE, leading } from '../../../constants/theme';
 import { makeStyles } from '../../../utils/makeStyles';
 import { GroupedBars, RadarChart } from '../../ui/charts';
 import { StudentCard, StudentCardTitle, StudentNote } from '../StudentCard';
@@ -264,7 +264,8 @@ const useStyles = makeStyles((p) => ({
   badgeTextStrength: { color: FEEDBACK.successOnBg },
   badgeTextFocus: { color: FEEDBACK.warningOnBg },
 
-  remark: { fontSize: TYPE.label, color: SLATE[600], lineHeight: 19, marginTop: 8 },
+  remark: { fontSize: TYPE.label, color: SLATE[600], lineHeight: leading(TYPE.label), marginTop: 8 },
+
 
   tips: { marginTop: SPACING.sm, padding: SPACING.sm, borderRadius: 10, backgroundColor: SLATE[100] },
   tipsTitle: {
@@ -275,7 +276,7 @@ const useStyles = makeStyles((p) => ({
     letterSpacing: 0.4,
     marginBottom: 4,
   },
-  tip: { fontSize: TYPE.label, color: SLATE[600], lineHeight: 18 },
+  tip: { fontSize: TYPE.label, color: SLATE[600], lineHeight: leading(TYPE.label) },
 
   streamHeadline: { fontSize: TYPE.headline, fontWeight: '800', color: SLATE[800], marginTop: 2 },
   streamFit: { fontSize: TYPE.label, fontWeight: '700', color: p.deep, marginTop: 1 },

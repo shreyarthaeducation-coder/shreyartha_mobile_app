@@ -23,7 +23,19 @@
  * the six Griffin keys into the wrong table, bypass the gate entirely, and make an unpublished
  * draft parent-visible on mobile while leaving the real narrative row untouched.
  *
- * Mobile can EDIT the narrative but never GENERATE it — there is no recorder and no AI call here.
+ * ── WHERE THIS IS USED, AND BY WHICH SCREEN ─────────────────────────────────
+ * Two callers, and they are not equivalent:
+ *
+ *   · `components/staff/counsellor/CounsellorReportScreen` — the report tab. EDITS an existing
+ *     narrative and never drafts one; there is no recorder on that screen.
+ *   · `components/staff/f2f/LiveSessionTab` — the Face-to-Face room, added with the mobile F2F
+ *     port. It records a turn, uploads it, reads back the labelled transcript and asks the model to
+ *     draft all four Griffin fields, exactly as the web room does.
+ *
+ * This header used to say mobile could never generate the narrative. That was true only until the
+ * room existed; `splitForm` is now on the write path of a screen that produces AI text about a
+ * named child, which is what makes the DRAFT/PUBLISHED gate above load-bearing rather than
+ * theoretical.
  */
 
 export const RATING_SCALE = 5;
@@ -292,6 +304,29 @@ export function parseReportForm(report) {
  * That duplication is intentional on the web and correct — unlike the counselling-session bug —
  * so the save sends both. Do not "clean it up".
  */
+/**
+ * The ten columns of the PRINTED counselling sheet, verbatim from the web's
+ * `F2F/activityReportConfig.js`.
+ *
+ * These are the columns of `Griffins.pdf` — the physical document this whole feature produces —
+ * and they are NOT the same thing as `REPORT_SECTIONS`. The sections are what a counsellor fills
+ * in; these ten are what gets printed and exported, four of them being the AI-written narratives.
+ * Labels are the sheet's own, misspelling included ("Psychometric Assesment"): it is a column
+ * heading on a real document, not prose.
+ */
+export const SHEET_COLUMNS = [
+  { key: 'serial', label: 'S.L' },
+  { key: 'studentName', label: 'Students Name' },
+  { key: 'schoolName', label: 'Name of the school' },
+  { key: 'grade', label: 'Grade' },
+  { key: 'counsellingDate', label: 'Date of counselling' },
+  { key: 'cognitivePotential', label: 'Cognitive: Potential for Improvement' },
+  { key: 'thinking', label: 'Thinking' },
+  { key: 'counsellorObservation', label: 'Counsellor Observation' },
+  { key: 'recommendation', label: 'Recommendation' },
+  { key: 'psychometricAssessment', label: 'Psychometric Assesment' },
+];
+
 export const EXTRACTED_KEYS = [
   'overallPerformance',
   'learningGaps',

@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { PORTALS, SLATE, SPACING } from '../../constants/theme';
+import { PORTALS, SLATE, SPACING, TYPE } from '../../constants/theme';
 import {
   Card,
   CardTitle,
@@ -105,7 +105,7 @@ function PayslipDetail({ slip, onDownload, downloading }) {
               <ActivityIndicator size="small" color="#ffffff" />
             ) : (
               <>
-                <Ionicons name="download-outline" size={15} color="#ffffff" />
+                <Ionicons name="download-outline" size={17} color="#ffffff" />
                 <Text style={styles.pdfText}>PDF</Text>
               </>
             )}
@@ -315,7 +315,7 @@ export default function PayrollScreen({ homeRoute = '/teacher' }) {
                     <ActivityIndicator size="small" color="#ffffff" />
                   ) : (
                     <>
-                      <Ionicons name="download-outline" size={15} color="#ffffff" />
+                      <Ionicons name="download-outline" size={17} color="#ffffff" />
                       <Text style={styles.pdfText}>PDF</Text>
                     </>
                   )}
@@ -355,14 +355,14 @@ export default function PayrollScreen({ homeRoute = '/teacher' }) {
 const styles = StyleSheet.create({
   toolbar: { flexDirection: 'row' },
   tabs: { marginTop: SPACING.md },
-  empty: { fontSize: 12.5, color: SLATE[400], fontStyle: 'italic' },
-  note: { fontSize: 11.5, color: SLATE[500], fontStyle: 'italic', marginBottom: 6 },
+  empty: { fontSize: TYPE.label, color: SLATE[500], fontStyle: 'italic' },
+  note: { fontSize: TYPE.caption, color: SLATE[500], fontStyle: 'italic', marginBottom: 6 },
   divider: { height: 1, backgroundColor: SLATE[200], marginVertical: 7 },
 
   slipHead: { flexDirection: 'row', alignItems: 'flex-start', gap: SPACING.sm },
   slipText: { flex: 1 },
-  slipPeriod: { fontSize: 17, fontWeight: '800', color: SLATE[800] },
-  slipMeta: { fontSize: 11.5, color: SLATE[500], marginTop: 2 },
+  slipPeriod: { fontSize: TYPE.title, fontWeight: '800', color: SLATE[800] },
+  slipMeta: { fontSize: TYPE.caption, color: SLATE[500], marginTop: 2 },
   pdfBtn: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -374,12 +374,12 @@ const styles = StyleSheet.create({
     minWidth: 68,
     justifyContent: 'center',
   },
-  pdfText: { fontSize: 12.5, fontWeight: '700', color: '#ffffff' },
+  pdfText: { fontSize: TYPE.label, fontWeight: '700', color: '#ffffff' },
 
   facts: { flexDirection: 'row', flexWrap: 'wrap', marginTop: SPACING.md },
   fact: { width: '50%', paddingVertical: 5 },
-  factLabel: { fontSize: 10.5, color: SLATE[500], fontWeight: '600', textTransform: 'uppercase' },
-  factValue: { fontSize: 13, color: SLATE[800], marginTop: 1 },
+  factLabel: { fontSize: TYPE.micro, color: SLATE[500], fontWeight: '600', textTransform: 'uppercase' },
+  factValue: { fontSize: TYPE.body, color: SLATE[800], marginTop: 1 },
 
   daysStrip: {
     flexDirection: 'row',
@@ -390,24 +390,24 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: SLATE[100],
   },
-  dayStat: { fontSize: 12, color: SLATE[600], fontWeight: '600' },
+  dayStat: { fontSize: TYPE.label, color: SLATE[600], fontWeight: '600' },
   lop: { color: '#b45309' },
 
   row: { flexDirection: 'row', alignItems: 'center', paddingVertical: 5 },
-  rowLabel: { flex: 1, fontSize: 13, color: SLATE[600] },
-  rowValue: { fontSize: 13, color: SLATE[800], fontWeight: '600' },
+  rowLabel: { flex: 1, fontSize: TYPE.body, color: SLATE[600] },
+  rowValue: { fontSize: TYPE.body, color: SLATE[800], fontWeight: '600' },
   rowStrong: { fontWeight: '800', color: SLATE[900] },
 
   netRow: { flexDirection: 'row', alignItems: 'center' },
-  netLabel: { flex: 1, fontSize: 15, fontWeight: '700', color: SLATE[700] },
-  netValue: { fontSize: 20, fontWeight: '800', color: PALETTE.primaryDark },
-  netWords: { fontSize: 11.5, color: SLATE[500], fontStyle: 'italic', marginTop: 4 },
+  netLabel: { flex: 1, fontSize: TYPE.heading, fontWeight: '700', color: SLATE[700] },
+  netValue: { fontSize: TYPE.headline, fontWeight: '800', color: PALETTE.primaryDark },
+  netWords: { fontSize: TYPE.caption, color: SLATE[500], fontStyle: 'italic', marginTop: 4 },
 
   yearHead: { flexDirection: 'row', alignItems: 'baseline', gap: SPACING.sm },
-  yearMonth: { flex: 1, fontSize: 15, fontWeight: '700', color: SLATE[800] },
-  yearNet: { fontSize: 15, fontWeight: '800', color: PALETTE.primaryDark },
+  yearMonth: { flex: 1, fontSize: TYPE.heading, fontWeight: '700', color: SLATE[800] },
+  yearNet: { fontSize: TYPE.heading, fontWeight: '800', color: PALETTE.primaryDark },
   yearStats: { flexDirection: 'row', flexWrap: 'wrap', gap: SPACING.md, marginTop: 6 },
-  yearStat: { fontSize: 11.5, color: SLATE[500], fontWeight: '600' },
+  yearStat: { fontSize: TYPE.caption, color: SLATE[500], fontWeight: '600' },
   yearActions: { flexDirection: 'row', gap: SPACING.sm, marginTop: SPACING.sm },
   viewBtn: {
     flex: 1,
@@ -418,7 +418,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: SLATE[200],
   },
-  viewText: { fontSize: 12.5, fontWeight: '700', color: PALETTE.primaryDark },
+  viewText: { fontSize: TYPE.label, fontWeight: '700', color: PALETTE.primaryDark },
 
   pressed: { opacity: 0.72 },
 });

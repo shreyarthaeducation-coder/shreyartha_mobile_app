@@ -1,7 +1,7 @@
 import { Pressable, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { SPACING, TYPE } from '../../constants/theme';
+import { SLATE, SPACING, TYPE, leading } from '../../constants/theme';
 import { usePalette } from '../ui/PaletteContext';
 import { makeStyles } from '../../utils/makeStyles';
 
@@ -26,7 +26,7 @@ export default function LimitedAccessNote({ monthlyPlan = false, currentMonth = 
   return (
     <View style={styles.wrap}>
       <View style={styles.row}>
-        <Ionicons name="lock-closed" size={16} color={palette.primary} />
+        <Ionicons name="lock-closed" size={18} color={palette.primary} />
         <View style={styles.text}>
           <Text style={styles.title}>
             {monthlyPlan ? `Month ${currentMonth} Access` : 'Limited Access'}
@@ -55,11 +55,12 @@ export default function LimitedAccessNote({ monthlyPlan = false, currentMonth = 
 }
 
 const useStyles = makeStyles((p) => ({
-  // The glass treatment, not a card: this sits on the background photo, above the content.
+  // A card. It was the glass treatment, floating on the background photograph; with the photo
+  // gone there is nothing to see through, so it is a plain bordered surface like every other.
   wrap: {
-    backgroundColor: p.glass,
+    backgroundColor: '#ffffff',
     borderWidth: 1,
-    borderColor: p.glassBorder,
+    borderColor: SLATE[200],
     borderRadius: 14,
     padding: SPACING.md,
     marginBottom: SPACING.md,
@@ -67,8 +68,8 @@ const useStyles = makeStyles((p) => ({
   },
   row: { flexDirection: 'row', alignItems: 'flex-start', gap: SPACING.sm },
   text: { flex: 1 },
-  title: { fontSize: TYPE.body, fontWeight: '700', color: '#ffffff' },
-  sub: { fontSize: TYPE.caption, color: p.onDark, lineHeight: 17, marginTop: 2 },
+  title: { fontSize: TYPE.body, fontWeight: '700', color: SLATE[800] },
+  sub: { fontSize: TYPE.caption, color: SLATE[600], lineHeight: leading(TYPE.caption), marginTop: 2 },
   btn: {
     alignSelf: 'flex-start',
     paddingVertical: 8,

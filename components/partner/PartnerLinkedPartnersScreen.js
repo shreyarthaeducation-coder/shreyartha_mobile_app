@@ -1,6 +1,6 @@
 import { Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { SPACING, TYPE } from '../../constants/theme';
+import { SLATE, SPACING, TYPE } from '../../constants/theme';
 import { Card, EmptyState, ScreenScaffold, StatusChip } from '../ui';
 import { usePalette } from '../ui/PaletteContext';
 import { makeStyles } from '../../utils/makeStyles';
@@ -87,7 +87,7 @@ export default function PartnerLinkedPartnersScreen({ homeRoute = '/partner' }) 
               <Text style={styles.code}>{r.partnerCode || '—'}</Text>
               {r.email ? (
                 <View style={styles.metaRow}>
-                  <Ionicons name="mail-outline" size={14} color={palette.primaryDark} />
+                  <Ionicons name="mail-outline" size={16} color={palette.primaryDark} />
                   <Text style={styles.meta} numberOfLines={1}>
                     {r.email}
                   </Text>
@@ -95,7 +95,7 @@ export default function PartnerLinkedPartnersScreen({ homeRoute = '/partner' }) 
               ) : null}
               {r.mobile ? (
                 <View style={styles.metaRow}>
-                  <Ionicons name="call-outline" size={14} color={palette.primaryDark} />
+                  <Ionicons name="call-outline" size={16} color={palette.primaryDark} />
                   <Text style={styles.meta}>{r.mobile}</Text>
                 </View>
               ) : null}
@@ -121,13 +121,12 @@ const useStyles = makeStyles((p) => ({
   statValue: { fontSize: TYPE.headline, fontWeight: '800', color: p.primaryDark },
   statLabel: {
     fontSize: TYPE.caption,
-    color: p.primaryDark,
-    opacity: 0.7,
+    color: SLATE[600],
     marginTop: 2,
   },
   head: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
   name: { flex: 1, fontSize: TYPE.title, fontWeight: '700', color: p.primaryDark },
   code: { fontSize: TYPE.label, fontWeight: '600', color: p.primary, marginTop: 2 },
   metaRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 6 },
-  meta: { flex: 1, fontSize: TYPE.label, color: p.primaryDark, opacity: 0.85 },
+  meta: { flex: 1, fontSize: TYPE.label, color: SLATE[600] },
 }));

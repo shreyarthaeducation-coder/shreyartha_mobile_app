@@ -1,5 +1,5 @@
 import { Text, View } from 'react-native';
-import { FEEDBACK, QUIZ, SLATE, SPACING, TYPE } from '../../../constants/theme';
+import { FEEDBACK, QUIZ, SLATE, SPACING, TYPE, leading } from '../../../constants/theme';
 import { makeStyles } from '../../../utils/makeStyles';
 
 /**
@@ -138,7 +138,7 @@ const useStyles = makeStyles((p) => ({
   readiness: { fontSize: TYPE.figure, fontWeight: '800', color: p.primaryDark },
   headlineText: { flex: 1 },
   streamTitle: { fontSize: TYPE.body, fontWeight: '700', color: SLATE[800] },
-  streamRemark: { fontSize: TYPE.label, color: SLATE[500], lineHeight: 17, marginTop: 2 },
+  streamRemark: { fontSize: TYPE.label, color: SLATE[500], lineHeight: leading(TYPE.label), marginTop: 2 },
 
   group: { marginBottom: SPACING.sm },
   groupLabel: {
@@ -161,5 +161,5 @@ const useStyles = makeStyles((p) => ({
   chipStrength: { backgroundColor: QUIZ.correctBg, color: FEEDBACK.successOnBg },
   chipFocus: { backgroundColor: FEEDBACK.warningBg, color: FEEDBACK.warningOnBg },
   none: { fontSize: TYPE.label, color: SLATE[500] },
-  date: { fontSize: TYPE.caption, color: SLATE[400], marginTop: 4 },
+  date: { fontSize: TYPE.caption, color: SLATE[500], marginTop: 4 },
 }));

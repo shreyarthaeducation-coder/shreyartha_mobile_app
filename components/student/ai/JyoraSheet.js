@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { FEEDBACK, SLATE, SPACING, TYPE } from '../../../constants/theme';
+import { FEEDBACK, SLATE, SPACING, TYPE, leading } from '../../../constants/theme';
 import { makeStyles } from '../../../utils/makeStyles';
 import RichText from '../../RichText';
 import ShreyaSpeakButton from './ShreyaSpeakButton';
@@ -317,8 +317,8 @@ const useStyles = makeStyles(() => ({
   centre: { alignItems: 'center', paddingVertical: SPACING.xl, gap: 6 },
   loadingText: { fontSize: TYPE.body, fontWeight: '700', color: PURPLE.deep, marginTop: SPACING.sm },
   loadingHint: { fontSize: TYPE.caption, color: SLATE[500] },
-  error: { fontSize: TYPE.body, color: FEEDBACK.errorText, textAlign: 'center', lineHeight: 19 },
-  muted: { fontSize: TYPE.body, color: SLATE[500], fontStyle: 'italic', lineHeight: 19 },
+  error: { fontSize: TYPE.body, color: FEEDBACK.errorText, textAlign: 'center', lineHeight: leading(TYPE.body) },
+  muted: { fontSize: TYPE.body, color: SLATE[500], fontStyle: 'italic', lineHeight: leading(TYPE.body) },
   retry: {
     marginTop: SPACING.md,
     paddingVertical: 10,

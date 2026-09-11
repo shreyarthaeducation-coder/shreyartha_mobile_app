@@ -12,7 +12,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { loadPdf } from './lazyPdf';
-import { PORTALS, SHADOWS, SLATE, SPACING } from '../../../constants/theme';
+import { PORTALS, SHADOWS, SLATE, SPACING, TYPE, leading } from '../../../constants/theme';
 import { SegmentedTabs } from '../../ui';
 import TeachAiPanel from './TeachAiPanel';
 import SnipOverlay from './SnipOverlay';
@@ -315,7 +315,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     backgroundColor: PALETTE.headerBg,
   },
-  headerTitle: { flex: 1, fontSize: 15, fontWeight: '700', color: '#ffffff' },
+  headerTitle: { flex: 1, fontSize: TYPE.heading, fontWeight: '700', color: '#ffffff' },
   close: { padding: 4 },
 
   tabBar: { padding: SPACING.sm, backgroundColor: SLATE[50] },
@@ -335,7 +335,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: SPACING.sm,
   },
-  docOverlayText: { fontSize: 13, color: SLATE[600] },
+  docOverlayText: { fontSize: TYPE.body, color: SLATE[600] },
 
   unavailable: {
     flex: 1,
@@ -345,8 +345,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: SPACING.lg,
     backgroundColor: SLATE[50],
   },
-  unavailableTitle: { fontSize: 15, fontWeight: '700', color: SLATE[700], textAlign: 'center' },
-  unavailableText: { fontSize: 13, lineHeight: 19, color: SLATE[500], textAlign: 'center' },
+  unavailableTitle: { fontSize: TYPE.heading, fontWeight: '700', color: SLATE[700], textAlign: 'center' },
+  unavailableText: { fontSize: TYPE.body, lineHeight: leading(TYPE.body), color: SLATE[500], textAlign: 'center' },
   unavailableBtn: {
     marginTop: SPACING.sm,
     paddingVertical: 11,
@@ -354,9 +354,9 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     backgroundColor: PALETTE.primaryDark,
   },
-  unavailableBtnText: { fontSize: 13.5, fontWeight: '700', color: '#ffffff' },
+  unavailableBtnText: { fontSize: TYPE.heading, fontWeight: '700', color: '#ffffff' },
 
-  docError: { fontSize: 13, color: SLATE[700], textAlign: 'center', paddingHorizontal: SPACING.lg },
+  docError: { fontSize: TYPE.body, color: SLATE[700], textAlign: 'center', paddingHorizontal: SPACING.lg },
 
   fab: {
     position: 'absolute',
@@ -380,7 +380,7 @@ const styles = StyleSheet.create({
     gap: 6,
     backgroundColor: 'rgba(15,23,42,0.72)',
   },
-  blockingText: { fontSize: 15, fontWeight: '700', color: '#ffffff' },
-  blockingSub: { fontSize: 12.5, color: 'rgba(255,255,255,0.75)' },
+  blockingText: { fontSize: TYPE.heading, fontWeight: '700', color: '#ffffff' },
+  blockingSub: { fontSize: TYPE.label, color: 'rgba(255,255,255,0.75)' },
   pressed: { opacity: 0.78 },
 });

@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import { WebView } from 'react-native-webview';
 import { Ionicons } from '@expo/vector-icons';
-import { PORTALS, SLATE, SPACING } from '../../../constants/theme';
+import { PORTALS, SLATE, SPACING, TYPE } from '../../../constants/theme';
 
 /**
  * Full-screen viewer for a generated .glb.
@@ -88,13 +88,13 @@ const styles = StyleSheet.create({
     paddingBottom: 12,
     backgroundColor: PALETTE.headerBg,
   },
-  title: { flex: 1, fontSize: 15, fontWeight: '700', color: '#ffffff' },
+  title: { flex: 1, fontSize: TYPE.heading, fontWeight: '700', color: '#ffffff' },
   close: { padding: 4 },
   web: { flex: 1, backgroundColor: '#0f172a' },
   hint: {
     textAlign: 'center',
-    fontSize: 11.5,
-    color: SLATE[400],
+    fontSize: TYPE.caption,
+    color: SLATE[500],
     paddingVertical: 10,
     backgroundColor: '#0f172a',
   },

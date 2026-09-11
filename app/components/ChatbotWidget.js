@@ -5,7 +5,7 @@ import {
   Platform,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { COLORS, SPACING } from '../../constants/theme';
+import { COLORS, SLATE, SPACING, TYPE, leading } from '../../constants/theme';
 import { api } from '../../services/apiService';
 
 // Mirrors src/components/Chatbot/chatbotData.js from frontendmain
@@ -453,7 +453,7 @@ export default function ChatbotWidget() {
                   <TextInput
                     style={styles.chatInput}
                     placeholder={inputPlaceholders[step] || 'Type here…'}
-                    placeholderTextColor="#aaa"
+                    placeholderTextColor={SLATE[500]}
                     value={inputValue}
                     onChangeText={setInputValue}
                     onSubmitEditing={handleTextSubmit}
@@ -498,7 +498,7 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   fabIcon: { fontSize: 18 },
-  fabLabel: { color: '#fff', fontWeight: '700', fontSize: 13 },
+  fabLabel: { color: '#fff', fontWeight: '700', fontSize: TYPE.body },
   overlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.45)',
@@ -526,8 +526,8 @@ const styles = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center',
   },
   avatarText: { fontSize: 20 },
-  chatHeaderTitle: { color: '#fff', fontWeight: '700', fontSize: 16 },
-  chatHeaderSubtitle: { color: 'rgba(255,255,255,0.75)', fontSize: 11 },
+  chatHeaderTitle: { color: '#fff', fontWeight: '700', fontSize: TYPE.title },
+  chatHeaderSubtitle: { color: 'rgba(255,255,255,0.75)', fontSize: TYPE.caption },
   closeBtn: { padding: 4 },
   closeBtnText: { color: '#fff', fontSize: 18, fontWeight: '600' },
   messageList: { flex: 1 },
@@ -548,7 +548,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.primary,
     borderBottomRightRadius: 4,
   },
-  messageText: { fontSize: 14, color: COLORS.text, lineHeight: 21 },
+  messageText: { fontSize: TYPE.body, color: COLORS.text, lineHeight: leading(TYPE.body) },
   userText: { color: '#fff' },
 
   // Category chips
@@ -568,7 +568,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     marginTop: 4,
   },
-  chipText: { color: COLORS.primary, fontSize: 12, fontWeight: '600' },
+  chipText: { color: COLORS.primary, fontSize: TYPE.label, fontWeight: '600' },
 
   // Sub-option cards
   subOptionsContainer: { marginTop: 8, gap: 8, paddingLeft: 4 },
@@ -584,8 +584,8 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 1,
   },
-  subOptionTitle: { fontSize: 13, fontWeight: '700', color: COLORS.secondary },
-  subOptionDesc: { fontSize: 11, color: COLORS.textSecondary, marginTop: 2 },
+  subOptionTitle: { fontSize: TYPE.body, fontWeight: '700', color: COLORS.secondary },
+  subOptionDesc: { fontSize: TYPE.caption, color: COLORS.textSecondary, marginTop: 2 },
 
   // Done buttons
   doneButtons: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 10, paddingLeft: 4 },
@@ -597,7 +597,7 @@ const styles = StyleSheet.create({
   },
   doneBtnSecondary: { backgroundColor: COLORS.secondary },
   doneBtnOutline: { backgroundColor: 'transparent', borderWidth: 1.5, borderColor: COLORS.primary },
-  doneBtnText: { color: '#fff', fontSize: 13, fontWeight: '700' },
+  doneBtnText: { color: '#fff', fontSize: TYPE.body, fontWeight: '700' },
   doneBtnTextSecondary: { color: '#fff' },
   doneBtnTextOutline: { color: COLORS.primary },
 
@@ -618,7 +618,7 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     paddingHorizontal: 14,
     paddingVertical: 10,
-    fontSize: 14,
+    fontSize: TYPE.body,
     backgroundColor: '#f8f8f8',
     color: COLORS.text,
     marginRight: 8,
@@ -630,5 +630,5 @@ const styles = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center',
   },
   sendBtnDisabled: { backgroundColor: '#ccc' },
-  sendBtnText: { color: '#fff', fontSize: 16 },
+  sendBtnText: { color: '#fff', fontSize: TYPE.heading },
 });

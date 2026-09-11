@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { PORTALS, SLATE, SPACING } from '../../constants/theme';
+import { PORTALS, SLATE, SPACING, TYPE } from '../../constants/theme';
 import { EmptyState, EMPTY_SCHOOL_SCOPE, SchoolClassPicker, ScreenScaffold, Select } from '../ui';
 import useStaffResource from '../../hooks/useStaffResource';
 import {
@@ -235,8 +235,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#ffffff',
     maxWidth: 200,
   },
-  studentChipText: { fontSize: 13, fontWeight: '600', color: SLATE[600] },
-  hint: { fontSize: 13, color: SLATE[500], textAlign: 'center', paddingVertical: SPACING.lg },
+  studentChipText: { fontSize: TYPE.body, fontWeight: '600', color: SLATE[600] },
+  hint: { fontSize: TYPE.body, color: SLATE[500], textAlign: 'center', paddingVertical: SPACING.lg },
 
   pressed: { opacity: 0.72 },
 });

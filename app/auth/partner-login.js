@@ -17,7 +17,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuth } from '../../context/AuthContext';
 import { ALL_AUTH_KEYS } from '../../constants/storageKeys';
 import { loginPartner, signupPartner } from '../../services/authService';
-import { PORTALS } from '../../constants/theme';
+import { PORTALS, SLATE, TYPE, leading } from '../../constants/theme';
 import { PaletteProvider } from '../../components/ui/PaletteContext';
 import PartnerTermsSheet from '../../components/partner/PartnerTermsSheet';
 
@@ -172,7 +172,7 @@ export default function PartnerLoginScreen() {
 
           <View style={styles.logoContainer}>
             <Image
-              source={require('../../assets/images/AppLogo.png')}
+              source={require('../../assets/images/The3CEdge.png')}
               style={styles.logo}
               resizeMode="contain"
             />
@@ -229,7 +229,7 @@ export default function PartnerLoginScreen() {
                   value={signup.fullName}
                   onChangeText={(fullName) => patchSignup({ fullName })}
                   placeholder="Your full name"
-                  placeholderTextColor="#aaa"
+                  placeholderTextColor={SLATE[500]}
                   editable={!signupBusy}
                 />
 
@@ -239,7 +239,7 @@ export default function PartnerLoginScreen() {
                   value={signup.email}
                   onChangeText={(email) => patchSignup({ email })}
                   placeholder="you@example.com"
-                  placeholderTextColor="#aaa"
+                  placeholderTextColor={SLATE[500]}
                   keyboardType="email-address"
                   autoCapitalize="none"
                   autoCorrect={false}
@@ -252,7 +252,7 @@ export default function PartnerLoginScreen() {
                   value={signup.mobile}
                   onChangeText={(mobile) => patchSignup({ mobile })}
                   placeholder="10-digit mobile number"
-                  placeholderTextColor="#aaa"
+                  placeholderTextColor={SLATE[500]}
                   keyboardType="phone-pad"
                   editable={!signupBusy}
                 />
@@ -263,7 +263,7 @@ export default function PartnerLoginScreen() {
                   value={signup.password}
                   onChangeText={(password) => patchSignup({ password })}
                   placeholder="At least 8 characters"
-                  placeholderTextColor="#aaa"
+                  placeholderTextColor={SLATE[500]}
                   secureTextEntry
                   editable={!signupBusy}
                 />
@@ -315,7 +315,7 @@ export default function PartnerLoginScreen() {
                   value={emailOrMobile}
                   onChangeText={setEmailOrMobile}
                   placeholder="Enter email or mobile"
-                  placeholderTextColor="#aaa"
+                  placeholderTextColor={SLATE[500]}
                   keyboardType="email-address"
                   autoCapitalize="none"
                   autoCorrect={false}
@@ -330,7 +330,7 @@ export default function PartnerLoginScreen() {
                     value={password}
                     onChangeText={setPassword}
                     placeholder="Enter your password"
-                    placeholderTextColor="#aaa"
+                    placeholderTextColor={SLATE[500]}
                     secureTextEntry={!showPassword}
                     returnKeyType="done"
                     onSubmitEditing={handleLogin}
@@ -389,11 +389,11 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.12)',
     marginBottom: 8,
   },
-  backText: { color: '#fff', fontWeight: '700', fontSize: 14 },
+  backText: { color: '#fff', fontWeight: '700', fontSize: TYPE.heading },
   logoContainer: { alignItems: 'center', marginVertical: 28 },
-  logo: { width: 90, height: 90, borderRadius: 18 },
-  appName: { color: '#fff', fontSize: 22, fontWeight: '800', marginTop: 12 },
-  tagline: { color: 'rgba(255,255,255,0.6)', fontSize: 13, marginTop: 2 },
+  logo: { width: 190, height: 122, borderRadius: 18 },
+  appName: { color: '#fff', fontSize: TYPE.headline, fontWeight: '800', marginTop: 12 },
+  tagline: { color: 'rgba(255,255,255,0.6)', fontSize: TYPE.body, marginTop: 2 },
   card: {
     backgroundColor: '#fff',
     borderRadius: 20,
@@ -404,8 +404,8 @@ const styles = StyleSheet.create({
     shadowRadius: 16,
     elevation: 10,
   },
-  cardTitle: { fontSize: 22, fontWeight: '800', color: '#1a1a2e', marginBottom: 4 },
-  cardSubtitle: { fontSize: 13, color: '#64748b', marginBottom: 20 },
+  cardTitle: { fontSize: TYPE.headline, fontWeight: '800', color: '#1a1a2e', marginBottom: 4 },
+  cardSubtitle: { fontSize: TYPE.body, color: '#64748b', marginBottom: 20 },
 
   // ── Sign-up tab ──────────────────────────────────────────────────────────
   // The accent matches this screen's existing `loginBtn` (#b0003a) rather than the portal purple:
@@ -428,7 +428,7 @@ const styles = StyleSheet.create({
     shadowRadius: 2,
     elevation: 1,
   },
-  tabText: { fontSize: 14, fontWeight: '700', color: '#64748b' },
+  tabText: { fontSize: TYPE.heading, fontWeight: '700', color: '#64748b' },
   tabTextActive: { color: '#b0003a' },
 
   noticeBox: {
@@ -439,7 +439,7 @@ const styles = StyleSheet.create({
     borderLeftWidth: 3,
     borderLeftColor: '#22c55e',
   },
-  noticeText: { color: '#15803d', fontSize: 13, lineHeight: 18 },
+  noticeText: { color: '#15803d', fontSize: TYPE.body, lineHeight: leading(TYPE.body) },
 
   termsRow: { flexDirection: 'row', alignItems: 'center', gap: 9, marginTop: 18 },
   checkbox: {
@@ -453,10 +453,10 @@ const styles = StyleSheet.create({
   },
   checkboxOn: { backgroundColor: '#b0003a', borderColor: '#b0003a' },
   checkboxTick: { color: '#ffffff', fontSize: 12, fontWeight: '800' },
-  termsText: { flex: 1, fontSize: 12.5, color: '#475569', lineHeight: 18 },
+  termsText: { flex: 1, fontSize: TYPE.label, color: '#475569', lineHeight: leading(TYPE.label) },
   termsLink: { alignSelf: 'flex-start', paddingVertical: 8, marginBottom: 10 },
   termsLinkText: {
-    fontSize: 12.5,
+    fontSize: TYPE.label,
     fontWeight: '700',
     color: '#b0003a',
     textDecorationLine: 'underline',
@@ -470,8 +470,8 @@ const styles = StyleSheet.create({
     borderLeftWidth: 3,
     borderLeftColor: '#ef4444',
   },
-  errorText: { color: '#dc2626', fontSize: 13, lineHeight: 18 },
-  label: { fontSize: 13, fontWeight: '600', color: '#374151', marginBottom: 6, marginTop: 14 },
+  errorText: { color: '#dc2626', fontSize: TYPE.body, lineHeight: leading(TYPE.body) },
+  label: { fontSize: TYPE.body, fontWeight: '600', color: '#374151', marginBottom: 6, marginTop: 14 },
   input: {
     backgroundColor: '#f9fafb',
     borderWidth: 1,
@@ -479,7 +479,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     paddingHorizontal: 14,
     paddingVertical: 13,
-    fontSize: 15,
+    fontSize: TYPE.heading,
     color: '#111827',
   },
   passwordRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
@@ -496,7 +496,7 @@ const styles = StyleSheet.create({
   },
   eyeText: { fontSize: 18 },
   forgotLink: { alignSelf: 'flex-end', marginTop: 10, marginBottom: 22 },
-  forgotText: { fontSize: 13, color: '#b0003a', fontWeight: '600' },
+  forgotText: { fontSize: TYPE.body, color: '#b0003a', fontWeight: '600' },
   loginBtn: {
     backgroundColor: '#b0003a',
     borderRadius: 14,
@@ -509,5 +509,5 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   loginBtnDisabled: { opacity: 0.7 },
-  loginBtnText: { color: '#fff', fontSize: 16, fontWeight: '700', letterSpacing: 0.3 },
+  loginBtnText: { color: '#fff', fontSize: TYPE.heading, fontWeight: '700', letterSpacing: 0.3 },
 });

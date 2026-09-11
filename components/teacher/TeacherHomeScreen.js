@@ -22,9 +22,11 @@ import {
   loadTeacherIdentity,
   photoOf,
   schoolLabel,
+  schoolLogoOf,
   subjectsTaught,
   teacherIdOf,
 } from '../../services/teacher/dashboardService';
+import useSchoolLogo from '../../hooks/useSchoolLogo';
 import { defaultAcademicYear, fetchAcademicYears } from '../../services/teacher/scopeService';
 
 /**
@@ -107,6 +109,9 @@ export default function TeacherHomeScreen() {
   const { confirmLogout } = useStaffLogout();
 
   const [identity, setIdentity] = useState({ profile: null, hr: null });
+  // Above the verification early-return further down, because it is a hook. `schoolLogo` has always
+  // been on TeacherProfileResponse and was fetched and thrown away on every load.
+  const schoolLogo = useSchoolLogo(schoolLogoOf(identity.profile));
   const [stored, setStored] = useState({ name: 'Teacher', email: '', code: '' });
   const [yearId, setYearId] = useState(null);
   // null = unknown, so the dashboard never flashes before the gate resolves.
@@ -204,7 +209,11 @@ export default function TeacherHomeScreen() {
 
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'left', 'right']}>
-      <BrandBar strings={t} changePasswordRoute="/teacher/change-password" tone="light" />
+      <BrandBar
+        tone="light"
+        schoolLogoUrl={schoolLogo}
+        schoolName={schoolLabel(profile, stored.code)}
+      />
 
       <ScrollView
         contentContainerStyle={[
@@ -342,7 +351,7 @@ export default function TeacherHomeScreen() {
           accessibilityRole="button"
           accessibilityLabel="Log out"
         >
-          <Ionicons name="log-out-outline" size={18} color={FEEDBACK.errorText} />
+          <Ionicons name="log-out-outline" size={20} color={FEEDBACK.errorText} />
           <Text style={styles.logoutText}>{t.logOut}</Text>
         </Pressable>
       </ScrollView>

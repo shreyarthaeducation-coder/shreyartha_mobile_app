@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react';
 import { ActivityIndicator, Pressable, Text, View } from 'react-native';
-import { FEEDBACK, SLATE, SPACING, TYPE } from '../../../constants/theme';
+import { FEEDBACK, SLATE, SPACING, TYPE, leading } from '../../../constants/theme';
 import { usePalette } from '../../ui/PaletteContext';
 import { makeStyles } from '../../../utils/makeStyles';
 import { StudentCard, StudentCardTitle } from '../StudentCard';
@@ -185,7 +185,7 @@ export default function MyReflection({ topicId, topicName, showToast }) {
 
 const useStyles = makeStyles((p) => ({
   loader: { marginVertical: SPACING.md },
-  intro: { fontSize: TYPE.label, color: SLATE[600], lineHeight: 19, marginBottom: SPACING.sm },
+  intro: { fontSize: TYPE.label, color: SLATE[600], lineHeight: leading(TYPE.label), marginBottom: SPACING.sm },
 
   option: {
     flexDirection: 'row',
@@ -201,11 +201,11 @@ const useStyles = makeStyles((p) => ({
   dot: { width: 10, height: 10, borderRadius: 5, marginTop: 4 },
   optionBody: { flex: 1 },
   optionLevel: { fontSize: TYPE.label, fontWeight: '800', color: SLATE[800] },
-  optionText: { fontSize: TYPE.label, color: SLATE[600], lineHeight: 18, marginTop: 2 },
+  optionText: { fontSize: TYPE.label, color: SLATE[600], lineHeight: leading(TYPE.label), marginTop: 2 },
 
   levelName: { fontSize: TYPE.headline, fontWeight: '800' },
-  levelText: { fontSize: TYPE.body, color: SLATE[700], lineHeight: 19, marginTop: 3 },
-  levelDesc: { fontSize: TYPE.label, color: SLATE[500], lineHeight: 18, marginTop: 4 },
+  levelText: { fontSize: TYPE.body, color: SLATE[700], lineHeight: leading(TYPE.body), marginTop: 3 },
+  levelDesc: { fontSize: TYPE.label, color: SLATE[500], lineHeight: leading(TYPE.label), marginTop: 4 },
   saved: { fontSize: TYPE.caption, color: FEEDBACK.successText, fontWeight: '700', marginTop: 6 },
 
   primary: {

@@ -96,10 +96,20 @@ function loadSources(mutate) {
       BACKEND, 'src', 'main', 'java', 'com', 'shreyartha', 'backend', 'sales', 'controller',
       'SalesController.java',
     ),
+    visitService: path.join(
+      BACKEND, 'src', 'main', 'java', 'com', 'shreyartha', 'backend', 'sales', 'service',
+      'SalesVisitService.java',
+    ),
     webApi: path.join(WEB, 'src', 'services', 'ApiServices.js'),
     loginDropdown: path.join(
       WEB, 'src', 'components', 'LoginDropdown', 'LoginDropdown.js',
     ),
+    // The two mobile login pickers. Both must render LOGIN_GROUPS rather than a local literal —
+    // they carried separate copies until the door split, and had already drifted: one advertised
+    // Sales under "School Staff" and the other did not.
+    loginSelect: path.join(APP, 'app', 'auth', 'login-select.js'),
+    landing: path.join(APP, 'app', '(tabs)', 'index.js'),
+    staffAuth: path.join(APP, 'components', 'auth', 'StaffAuthScreen.js'),
   };
   const out = {};
   for (const [key, file] of Object.entries(files)) {
@@ -218,8 +228,165 @@ function assertions({ staffRoles, home, theme, authPortals }, sources) {
   if (!authPortals.requiresSignupCode('SHREYARTHA_ADMIN')) {
     bad('requiresSignupCode("SHREYARTHA_ADMIN") is false — that signup would lose its shared-secret gate');
   }
-  if (!authPortals.SCHOOL_ROLES.some((r) => r.value === 'SALES')) {
-    bad('SALES is missing from SCHOOL_ROLES — it would not appear in the mobile signup picker');
+  // RETARGETED when the nine-role list split into two doors. SALES moved from SCHOOL_ROLES to
+  // EMPLOYEE_ROLES (/auth/employee-login) — it is Shreyartha staff, not a partner school's.
+  // Asserting the old array would now be worse than useless: it would pass only if somebody put
+  // SALES back on the wrong door.
+  if (!authPortals.EMPLOYEE_ROLES.some((r) => r.value === 'SALES')) {
+    bad('SALES is missing from EMPLOYEE_ROLES — it would not appear in the mobile signup picker');
+  }
+  // And it must NOT also sit on the school door, which is the regression the split prevents.
+  if (authPortals.SCHOOL_ROLES.some((r) => r.value === 'SALES')) {
+    bad('SALES is back in SCHOOL_ROLES — a rep could sign up through the partner-school door');
+  }
+  // The wrong-door guard is the other half of the split: restricting the signup dropdown alone is
+  // cosmetic, because one login endpoint authenticates every staff role regardless of door.
+  if (authPortals.variantAdmits('school', 'SALES')) {
+    bad('the school door admits SALES — a rep could sign in at the partner-school login');
+  }
+  if (!authPortals.variantAdmits('employee', 'SALES')) {
+    bad('the employee door refuses SALES — no rep could sign in at all');
+  }
+  if (!authPortals.variantAdmits('school', 'TEACHER')
+      || authPortals.variantAdmits('employee', 'TEACHER')) {
+    bad('TEACHER is on the wrong door — school teachers belong to /auth/school-login only');
+  }
+  // Every role must reach exactly one door, or somebody is locked out of the app entirely.
+  for (const role of authPortals.ALL_STAFF_ROLES) {
+    const doors = ['school', 'employee'].filter((v) => authPortals.variantAdmits(v, role.value));
+    if (doors.length !== 1) {
+      bad(`${role.value} is admitted by ${doors.length} doors, expected exactly 1`);
+    }
+  }
+
+  // ── 7b. The landing-page login groups ─────────────────────────────────────
+  //
+  // Every door must be reachable, and every route must exist. A picker entry pointing at a route
+  // with no file renders expo-router's "Unmatched" page, which reads as a broken login rather than
+  // a missing wrapper.
+  const groups = authPortals.LOGIN_GROUPS || [];
+  if (groups.length !== 2) bad(`LOGIN_GROUPS has ${groups.length} groups, expected 2 (Get Started, Employee)`);
+  const groupRoutes = groups.flatMap((g) => (g.options || []).map((o) => o.route));
+  if (!groupRoutes.includes('/auth/employee-login')) {
+    bad('the Employee door is missing from LOGIN_GROUPS — the four Shreyartha roles would be unreachable');
+  }
+  if (!groupRoutes.includes('/auth/school-login')) {
+    bad('the school door is missing from LOGIN_GROUPS');
+  }
+  for (const route of groupRoutes) {
+    const rel = String(route).replace(/^\//, '');
+    if (!exists(path.join(APP, 'app', `${rel}.js`))) {
+      bad(`LOGIN_GROUPS route ${route} has no route file`);
+    }
+  }
+  // BOTH pickers must read the shared list. Two literals is the state the split replaced, and
+  // they had already drifted about whether School Staff covers Sales.
+  //
+  // They read it DIFFERENTLY, on purpose. The landing shows ONE group per control, matching the
+  // website: the top-right button is the employee door alone and Get Started opens the general one.
+  // So the landing selects with `loginGroup(...)` rather than mapping LOGIN_GROUPS, and asserting
+  // the literal `LOGIN_GROUPS` on it would force the old both-groups rendering back. What matters
+  // for both is that neither builds its own list.
+  const pickerReads = { loginSelect: /LOGIN_GROUPS/, landing: /loginGroup\(/ };
+  for (const [key, pattern] of Object.entries(pickerReads)) {
+    const text = stripComments(sources[key] || '');
+    if (!pattern.test(text)) {
+      bad(`${key} does not read the shared doors — it carries its own copy`);
+    }
+  }
+  // The full-screen picker used to render BOTH groups, as the "I don't know which door I need"
+  // surface. It no longer does: the employee door is reached from the landing's top-right control
+  // alone, which is the website's arrangement too (only the landing mounts `variant="employee"`).
+  // The picker is linked from the landing's "Login" buttons and the chatbot, all customer paths.
+  const loginSelectText = stripComments(sources.loginSelect || '');
+  if (!/LOGIN_GROUPS\s*\.filter\([\s\S]{0,80}?!==\s*["']employee["']/.test(loginSelectText)) {
+    bad('the full-screen picker no longer filters out the employee door — it is customer-facing');
+  }
+  // The landing must show ONE door per control, never both at once.
+  const landingText = stripComments(sources.landing || '');
+  if (/LOGIN_GROUPS\.map/.test(landingText)) {
+    bad('the landing renders BOTH login groups in one menu — the top-right door is employee-only');
+  }
+  if (!/setLoginGroupKey\("employee"\)/.test(landingText)) {
+    bad('the landing top-right button does not open the employee door');
+  }
+  // BOTH customer CTAs — the hero "Get Started" and the footer banner's "Sign Up Now". Counting
+  // rather than matching once: they are separate JSX blocks, and the bug being guarded against is
+  // exactly one of them reverting to a hard jump at the student login while the other still works.
+  const generalDoors = (landingText.match(/setLoginGroupKey\("general"\)/g) || []).length;
+  if (generalDoors !== 2) {
+    bad(`${generalDoors} of the 2 customer CTAs open the general door — the other jumps somewhere`);
+  }
+  // Scoped to the CTA form `onPress={() => router.push(...)}`. The footer Quick Links use
+  // `action: () => router.push(...)` and DO legitimately deep-link to one portal each — the website
+  // footer does the same. Banning every mention would fail on those and force them out too.
+  if (/onPress=\{\(\) => router\.push\("\/auth\/student-login"\)\}/.test(landingText)) {
+    bad('a landing CTA hard-navigates to the student login — Get Started must open the door picker');
+  }
+
+  // ── 7c. The wrong-door guard ──────────────────────────────────────────────
+  //
+  // Restricting the signup dropdown alone is COSMETIC: one endpoint authenticates every staff role
+  // regardless of which door was used, so without this the split changes nothing about who can
+  // sign in where. It must also run BEFORE the session is written, or a refused login still leaves
+  // a usable session behind.
+  const auth = stripComments(sources.staffAuth || '');
+  if (!/variantAdmits\(config\.key, data\.userType\)/.test(auth)) {
+    bad('StaffAuthScreen has no wrong-door guard — a school teacher could sign in at the employee door');
+  }
+  const guardAt = auth.indexOf('variantAdmits(config.key');
+  const storeAt = auth.indexOf('storeSchoolSession(data)');
+  if (guardAt >= 0 && storeAt >= 0 && guardAt > storeAt) {
+    bad('the wrong-door guard runs AFTER storeSchoolSession — a refused login would still leave a session');
+  }
+
+  // ── 7d. THE ADDRESS THE REP IS ALLOWED TO SEE ─────────────────────────────
+  //
+  // `resolvedAddress` was resolved on the device, POSTed, stored, and returned by
+  // SalesVisitService.toMap on every visit — and read by NOTHING. Its only appearance anywhere was
+  // burned into the check-in photograph, so a rep could discover where the app thought they were
+  // only by opening the picture afterwards. Two independent regressions are guarded here.
+  const visitsSrc = stripComments(sources.visitsScreen || '');
+  const locSrc = stripComments(sources.location || '');
+
+  // (a) The geocoder must not throw the address away when there is no postal code. Outside a town
+  //     that is the ordinary shape of the answer, not an edge case.
+  if (/if \(first\?\.postalCode\) \{\s*return \{/.test(locSrc)) {
+    bad('resolvePincode returns nothing without a postalCode — a valid street address is discarded');
+  }
+  if (/if \(alive && resolved\.pincode\) \{/.test(visitsSrc)) {
+    bad('the check-in sheet stores the address only when a pincode came back');
+  }
+
+  // (b) Both surfaces must actually render it. Checked as "the field is read", not "a string
+  //     appears", because the copy around it is free to change.
+  // Pinned to the PROP BEING PASSED and to the GUARD, not to the field name appearing somewhere.
+  // Both looser forms were vacuous on the first run: `form.resolvedAddress` also appears in the
+  // setForm above and in the photo stamp below, and `visit.resolvedAddress` appears inside the very
+  // block the mutation disables — so each mutation applied cleanly and was not caught.
+  if (!/<LocationBanner[^>]*address=\{form\.resolvedAddress\}/.test(visitsSrc)) {
+    bad('the check-in LocationBanner does not show the resolved address');
+  }
+  if (!/visit\.resolvedAddress \? \(/.test(visitsSrc)) {
+    bad('the visit detail sheet does not show the resolved address');
+  }
+  // The coordinates and accuracy were likewise reachable only through the map embed.
+  if (!/visit\.latitude\)\.toFixed\(6\)/.test(visitsSrc)) {
+    bad('the visit detail sheet does not show the coordinates as text');
+  }
+  if (!/visit\.accuracyMetres/.test(visitsSrc)) {
+    bad('the visit detail sheet does not show the fix accuracy');
+  }
+
+  // (c) The server must let a wrong or missing address be corrected. GPS stays write-once at
+  //     check-in — that is the evidence — but a geocoded LABEL is not evidence.
+  const visitService = stripComments(sources.visitService || '');
+  if (visitService && !/body\.containsKey\("resolvedAddress"\)/.test(visitService)) {
+    bad('SalesVisitService.update cannot repair resolvedAddress — a wrong address is permanent');
+  }
+  // ...and must still refuse coordinates on update.
+  if (visitService && /applyLocation\(visit, body\);[\s\S]{0,200}?public Map<String, Object> update/.test(visitService)) {
+    bad('update() applies location — GPS must be written once at check-in and never re-accepted');
   }
 
   // ── 8. Tab bar ────────────────────────────────────────────────────────────
@@ -524,9 +691,135 @@ const MUTATIONS = [
     name: 'SALES drops out of the mobile signup picker',
     constants: (n, s) =>
       n === 'authPortals.js'
-        ? s.replace("{ value: 'SALES', label: 'Sales Employee' },", '')
+        ? s.replace("  { value: 'SALES', label: 'Sales Employee' },\n", '')
         : s,
-    expect: /SALES is missing from SCHOOL_ROLES/,
+    expect: /SALES is missing from EMPLOYEE_ROLES/,
+  },
+  {
+    // The pre-split regression: SALES back on the partner-school door, which is what had school
+    // staff and Shreyartha staff sharing one dropdown in the first place.
+    name: 'SALES is moved back onto the school door',
+    constants: (n, s) =>
+      n === 'authPortals.js'
+        ? s.replace(
+            "  { value: 'ADMIN', label: 'School Admin' },\n",
+            "  { value: 'ADMIN', label: 'School Admin' },\n  { value: 'SALES', label: 'Sales Employee' },\n",
+          )
+        : s,
+    expect: /SALES is back in SCHOOL_ROLES/,
+  },
+  {
+    // The pincode gate back on the geocoder: a street address with no postal code is thrown away.
+    name: 'the geocoder discards an address that has no pincode',
+    sources: (k, s) => (k === 'location'
+      ? s.replace(
+          '    if (first) {\n      if (first.postalCode) {',
+          '    if (first?.postalCode) {\n      return {\n      if (first.postalCode) {',
+        )
+      : s),
+    expect: /resolvePincode returns nothing without a postalCode/,
+  },
+  {
+    name: 'the check-in sheet stops showing the resolved address',
+    sources: (k, s) => (k === 'visitsScreen'
+      ? s.replace('<LocationBanner location={location} address={form.resolvedAddress} />',
+                  '<LocationBanner location={location} />')
+      : s),
+    expect: /LocationBanner does not show the resolved address/,
+  },
+  {
+    name: 'the visit detail sheet stops showing the address',
+    sources: (k, s) => (k === 'visitsScreen'
+      ? s.replace('{!remote && visit.resolvedAddress ? (', '{false ? (')
+      : s),
+    expect: /detail sheet does not show the resolved address/,
+  },
+  {
+    name: 'the visit detail sheet stops showing the coordinates',
+    sources: (k, s) => (k === 'visitsScreen'
+      ? s.replace('{`${Number(visit.latitude).toFixed(6)}, ${Number(visit.longitude).toFixed(6)}`}', '{null}')
+      : s),
+    expect: /does not show the coordinates as text/,
+  },
+  {
+    name: 'a wrong address becomes permanent again',
+    sources: (k, s) => (k === 'visitService'
+      ? s.replace('if (body.containsKey("resolvedAddress")) {', 'if (false) {')
+      : s),
+    expect: /cannot repair resolvedAddress/,
+  },
+  {
+    // The Employee door removed from the pickers. The four Shreyartha roles — Sales included —
+    // would have no entry point in the app at all, while the login screen behind it kept working.
+    name: 'the Employee door drops off the landing page',
+    constants: (n, s) =>
+      n === 'authPortals.js' ? s.replace("route: '/auth/employee-login',", "route: '/auth/school-login',") : s,
+    expect: /Employee door is missing from LOGIN_GROUPS/,
+  },
+  {
+    // A picker reverting to its own literal list. That is the state the split replaced, and the
+    // two copies had already drifted about whether School Staff covers Sales.
+    name: 'the full-screen picker carries its own copy of the doors',
+    sources: (k, s) => (k === 'loginSelect' ? s.replace(/LOGIN_GROUPS/g, 'LOCAL_GROUPS') : s),
+    expect: /loginSelect does not read the shared doors/,
+  },
+  {
+    // The landing building its own door list again.
+    name: 'the landing carries its own copy of the doors',
+    sources: (k, s) => (k === 'landing' ? s.replace(/loginGroup\(/g, 'localGroup(') : s),
+    expect: /landing does not read the shared doors/,
+  },
+  {
+    // Both groups back in one menu — the top-right button would offer the customer doors again,
+    // which is the exact web-parity break this change fixed.
+    name: 'the landing shows both login groups in one menu',
+    sources: (k, s) => (k === 'landing'
+      ? s.replace('{(openGroup?.options || []).map(', '{LOGIN_GROUPS.map(')
+      : s),
+    expect: /renders BOTH login groups/,
+  },
+  {
+    // The top-right door pointed at the customer group.
+    name: 'the top-right button opens the general door instead of employee',
+    sources: (k, s) => (k === 'landing'
+      ? s.replace('setLoginGroupKey("employee")', 'setLoginGroupKey("general")')
+      : s),
+    expect: /top-right button does not open the employee door/,
+  },
+  {
+    // Get Started reverting to a hard jump at the student login — a parent tapping the app's
+    // biggest button lands on the wrong form, silently.
+    name: 'Get Started jumps straight to the student login again',
+    sources: (k, s) => (k === 'landing'
+      ? s.replace('onPress={() => setLoginGroupKey("general")}',
+                  'onPress={() => router.push("/auth/student-login")}')
+      : s),
+    expect: /customer CTAs open the general door|hard-navigates to the student login/,
+  },
+  {
+    // The guard moved after the session write: the login is refused, the error shows, and the
+    // session is already on the device.
+    name: 'the wrong-door guard runs after the session is stored',
+    sources: (k, s) => (k === 'staffAuth'
+      ? s.replace('if (!variantAdmits(config.key, data.userType)) {', 'if (false) {')
+         .replace('const { role, verified, schoolCode } = await storeSchoolSession(data);',
+                  'const { role, verified, schoolCode } = await storeSchoolSession(data);\n      if (!variantAdmits(config.key, data.userType)) { return; }')
+      : s),
+    expect: /wrong-door guard runs AFTER storeSchoolSession/,
+  },
+  {
+    // The wrong-door guard reduced to a rubber stamp. This is the mutation that matters most:
+    // without `variantAdmits` doing real work, the split is cosmetic and a school teacher can
+    // sign in at the employee door with a working session.
+    name: 'variantAdmits stops discriminating',
+    constants: (n, s) =>
+      n === 'authPortals.js'
+        ? s.replace(
+            '  return authVariant(variantKey).roles.some((role) => role.value === value);',
+            '  return value.length > 0;',
+          )
+        : s,
+    expect: /the school door admits SALES/,
   },
   {
     name: 'the stamp view loses collapsable={false}',
@@ -642,6 +935,17 @@ const MUTATIONS = [
     sources: (k, s) =>
       k === 'loginDropdown' ? s.replace(/route: "\/employeelogin"/, 'route: "/nowhere"') : s,
     expect: /no \/employeelogin entry/,
+  },
+  {
+    // The employee door belongs to the landing's top-right control alone. Putting it back in the
+    // general picker is the exact arrangement that had partner-school teachers registering as
+    // Shreyartha teachers.
+    name: 'the full-screen picker offers the employee door again',
+    sources: (k, s) =>
+      k === 'loginSelect'
+        ? s.replace(/LOGIN_GROUPS\.filter\(\(group\) => group\.key !== "employee"\)/, 'LOGIN_GROUPS')
+        : s,
+    expect: /no longer filters out the employee door/,
   },
   {
     name: 'the website re-opens /saleslogin as a second staff door',

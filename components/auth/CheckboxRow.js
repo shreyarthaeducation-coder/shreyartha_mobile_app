@@ -1,7 +1,7 @@
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { FEEDBACK, SLATE, SPACING } from '../../constants/theme';
+import { FEEDBACK, SLATE, SPACING, TYPE, leading } from '../../constants/theme';
 
 /** Checkbox + wrapping label, used for the signup terms acknowledgement. */
 export default function CheckboxRow({ checked, onToggle, label, error, palette }) {
@@ -24,7 +24,7 @@ export default function CheckboxRow({ checked, onToggle, label, error, palette }
             checked && { backgroundColor: palette.primaryDark, borderColor: palette.primaryDark },
           ]}
         >
-          {checked ? <Ionicons name="checkmark" size={14} color="#ffffff" /> : null}
+          {checked ? <Ionicons name="checkmark" size={16} color="#ffffff" /> : null}
         </View>
         <Text style={styles.label}>{label}</Text>
       </Pressable>
@@ -46,6 +46,6 @@ const styles = StyleSheet.create({
     marginRight: 10,
     marginTop: 1,
   },
-  label: { flex: 1, fontSize: 13, lineHeight: 19, color: SLATE[600] },
-  error: { marginTop: 5, fontSize: 12.5, color: FEEDBACK.errorText, fontWeight: '500' },
+  label: { flex: 1, fontSize: TYPE.body, lineHeight: leading(TYPE.body), color: SLATE[600] },
+  error: { marginTop: 5, fontSize: TYPE.label, color: FEEDBACK.errorText, fontWeight: '500' },
 });

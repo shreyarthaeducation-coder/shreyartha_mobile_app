@@ -1,5 +1,5 @@
 import { Image, Pressable, Text, View } from 'react-native';
-import { SPACING } from '../../constants/theme';
+import { SPACING, TYPE } from '../../constants/theme';
 import { usePalette } from './PaletteContext';
 import { initialsOf } from '../staff/helpers';
 import { makeStyles } from '../../utils/makeStyles';
@@ -104,7 +104,7 @@ const useStyles = makeStyles(() => ({
   identity: { alignItems: 'center', marginTop: 2 },
   greeting: {
     color: 'rgba(255,255,255,0.82)',
-    fontSize: 13,
+    fontSize: TYPE.body,
     fontWeight: '700',
     letterSpacing: 0.6,
     textTransform: 'uppercase',
@@ -122,17 +122,17 @@ const useStyles = makeStyles(() => ({
     overflow: 'hidden',
   },
   avatarImg: { width: '100%', height: '100%' },
-  initials: { color: '#ffffff', fontSize: 24, fontWeight: '800' },
+  initials: { color: '#ffffff', fontSize: TYPE.headline, fontWeight: '800' },
   name: {
     color: '#ffffff',
-    fontSize: 18,
+    fontSize: TYPE.headline,
     fontWeight: '800',
     marginTop: SPACING.sm,
     textAlign: 'center',
   },
   subtitle: {
     color: 'rgba(255,255,255,0.75)',
-    fontSize: 12.5,
+    fontSize: TYPE.label,
     marginTop: 2,
     textAlign: 'center',
   },
@@ -146,9 +146,9 @@ const useStyles = makeStyles(() => ({
   // its own SPACING.sm gap: roughly 150pt of vertical space before the action chips even start.
   // These values take it to about 95pt while keeping every element and its order.
   identityCompact: { marginTop: 0 },
-  greetingCompact: { fontSize: 11, letterSpacing: 0.5 },
+  greetingCompact: { fontSize: TYPE.caption, letterSpacing: 0.5 },
   avatarCompact: { width: 46, height: 46, borderRadius: 23, marginTop: 4, borderWidth: 1.5 },
-  initialsCompact: { fontSize: 16 },
-  nameCompact: { fontSize: 15, marginTop: 4 },
-  subtitleCompact: { fontSize: 11, marginTop: 1 },
+  initialsCompact: { fontSize: TYPE.heading },
+  nameCompact: { fontSize: TYPE.heading, marginTop: 4 },
+  subtitleCompact: { fontSize: TYPE.caption, marginTop: 1 },
 }));

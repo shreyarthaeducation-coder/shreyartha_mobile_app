@@ -10,7 +10,7 @@ import {
   View,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { SLATE, SPACING } from '../../../constants/theme';
+import { SLATE, SPACING, TYPE } from '../../../constants/theme';
 import { usePalette } from '../../ui/PaletteContext';
 import useDebouncedValue from '../../../hooks/useDebouncedValue';
 import useStaffResource from '../../../hooks/useStaffResource';
@@ -113,7 +113,7 @@ export default function SchoolSearchSheet({ visible, onClose, onSelect }) {
           <Text style={styles.sheetTitle}>Find the school</Text>
 
           <View style={styles.searchRow}>
-            <Ionicons name="search" size={16} color={SLATE[400]} />
+            <Ionicons name="search" size={18} color={SLATE[400]} />
             <TextInput
               style={styles.searchInput}
               value={query}
@@ -122,14 +122,14 @@ export default function SchoolSearchSheet({ visible, onClose, onSelect }) {
                 setAdding(false);
               }}
               placeholder="School name or pincode"
-              placeholderTextColor={SLATE[400]}
+              placeholderTextColor={SLATE[500]}
               autoCorrect={false}
               autoFocus
               returnKeyType="search"
             />
             {query ? (
               <Pressable onPress={() => setQuery('')} hitSlop={8} accessibilityLabel="Clear search">
-                <Ionicons name="close-circle" size={17} color={SLATE[400]} />
+                <Ionicons name="close-circle" size={19} color={SLATE[400]} />
               </Pressable>
             ) : null}
           </View>
@@ -146,7 +146,7 @@ export default function SchoolSearchSheet({ visible, onClose, onSelect }) {
                 value={addPincode}
                 onChangeText={(v) => setAddPincode(v.replace(/\D/g, '').slice(0, 6))}
                 placeholder="6-digit pincode"
-                placeholderTextColor={SLATE[400]}
+                placeholderTextColor={SLATE[500]}
                 keyboardType="number-pad"
                 maxLength={6}
               />
@@ -256,7 +256,7 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.sm,
   },
   sheetTitle: {
-    fontSize: 15,
+    fontSize: TYPE.heading,
     fontWeight: '700',
     color: SLATE[800],
     paddingHorizontal: SPACING.md,
@@ -274,17 +274,17 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     backgroundColor: SLATE[50],
   },
-  searchInput: { flex: 1, paddingVertical: 10, fontSize: 14.5, color: SLATE[900] },
+  searchInput: { flex: 1, paddingVertical: 10, fontSize: TYPE.heading, color: SLATE[900] },
 
   hint: {
-    fontSize: 12,
-    color: SLATE[400],
+    fontSize: TYPE.label,
+    color: SLATE[500],
     paddingHorizontal: SPACING.md,
     paddingBottom: SPACING.sm,
   },
   noMatch: {
-    fontSize: 13,
-    color: SLATE[400],
+    fontSize: TYPE.body,
+    color: SLATE[500],
     fontStyle: 'italic',
     textAlign: 'center',
     paddingVertical: SPACING.lg,
@@ -297,9 +297,9 @@ const styles = StyleSheet.create({
     borderTopColor: SLATE[100],
   },
   optionPressed: { backgroundColor: SLATE[50] },
-  optionName: { fontSize: 15, color: SLATE[800], fontWeight: '600' },
-  optionMeta: { fontSize: 12.5, color: SLATE[500], marginTop: 2 },
-  colleague: { fontSize: 11.5, color: SLATE[400], fontStyle: 'italic', marginTop: 2 },
+  optionName: { fontSize: TYPE.heading, color: SLATE[800], fontWeight: '600' },
+  optionMeta: { fontSize: TYPE.label, color: SLATE[500], marginTop: 2 },
+  colleague: { fontSize: TYPE.caption, color: SLATE[500], fontStyle: 'italic', marginTop: 2 },
 
   addRow: {
     flexDirection: 'row',
@@ -310,22 +310,22 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: SLATE[100],
   },
-  addRowText: { fontSize: 14, fontWeight: '600', flex: 1 },
+  addRowText: { fontSize: TYPE.heading, fontWeight: '600', flex: 1 },
 
   addBox: { paddingHorizontal: SPACING.md, paddingBottom: SPACING.md },
-  addTitle: { fontSize: 15, fontWeight: '700', color: SLATE[800], marginBottom: 4 },
+  addTitle: { fontSize: TYPE.heading, fontWeight: '700', color: SLATE[800], marginBottom: 4 },
   addInput: {
     borderWidth: 1,
     borderColor: SLATE[200],
     borderRadius: 10,
     paddingHorizontal: 12,
     paddingVertical: 10,
-    fontSize: 15,
+    fontSize: TYPE.heading,
     color: SLATE[900],
     backgroundColor: '#ffffff',
     marginTop: SPACING.sm,
   },
-  error: { marginTop: 6, fontSize: 12.5, color: '#b91c1c', fontWeight: '500' },
+  error: { marginTop: 6, fontSize: TYPE.label, color: '#b91c1c', fontWeight: '500' },
   addActions: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -333,8 +333,8 @@ const styles = StyleSheet.create({
     marginTop: SPACING.md,
   },
   addBtn: { borderRadius: 10, paddingVertical: 11, paddingHorizontal: 18 },
-  addBtnText: { color: '#ffffff', fontWeight: '700', fontSize: 14 },
-  link: { fontSize: 13, fontWeight: '600' },
+  addBtnText: { color: '#ffffff', fontWeight: '700', fontSize: TYPE.heading },
+  link: { fontSize: TYPE.body, fontWeight: '600' },
   pressed: { opacity: 0.85 },
   spinner: { paddingVertical: SPACING.sm },
 });

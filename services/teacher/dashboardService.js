@@ -121,3 +121,19 @@ export function photoOf(hr) {
   const url = hr?.profilePictureUrl;
   return typeof url === 'string' && url.trim() ? url.trim() : null;
 }
+
+/**
+ * The SCHOOL's crest, from the role profile — not the person's photo, which is `photoOf(hr)`.
+ *
+ * `schoolLogo` has been on `TeacherProfileResponse` all along and was fetched and discarded on
+ * every staff dashboard. It is now the left-hand mark in the header. Reads from whichever profile
+ * DTO the caller has: the teacher's and (since this change) the counsellor's both carry the field
+ * under the same name, so one accessor serves four of the six school-bound portals.
+ *
+ * Null when the school has no logo uploaded — the common case on a new school, and the header
+ * falls back to the 3C Edge mark alone.
+ */
+export function schoolLogoOf(profile) {
+  const url = profile?.schoolLogo;
+  return typeof url === 'string' && url.trim() ? url.trim() : null;
+}

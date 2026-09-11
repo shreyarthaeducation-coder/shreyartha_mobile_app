@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { FEEDBACK, PORTALS, SLATE, SPACING } from '../../../constants/theme';
+import { FEEDBACK, PORTALS, SLATE, SPACING, TYPE, leading } from '../../../constants/theme';
 
 /**
  * Live in-class quiz — logic ported verbatim from TeachAiPanel's ClassQuiz.
@@ -115,10 +115,10 @@ export default function ClassQuiz({ questions = [] }) {
 
 const styles = StyleSheet.create({
   section: { marginTop: SPACING.md },
-  sectionTitle: { fontSize: 14.5, fontWeight: '700', color: SLATE[800], marginBottom: SPACING.sm },
+  sectionTitle: { fontSize: TYPE.heading, fontWeight: '700', color: SLATE[800], marginBottom: SPACING.sm },
   progress: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 },
-  progressText: { fontSize: 12, fontWeight: '600', color: SLATE[500] },
-  progressSolved: { fontSize: 12, fontWeight: '700', color: PALETTE.primaryDark },
+  progressText: { fontSize: TYPE.label, fontWeight: '600', color: SLATE[500] },
+  progressSolved: { fontSize: TYPE.label, fontWeight: '700', color: PALETTE.primaryDark },
 
   card: {
     borderWidth: 1,
@@ -127,7 +127,7 @@ const styles = StyleSheet.create({
     padding: SPACING.sm,
     backgroundColor: '#ffffff',
   },
-  question: { fontSize: 14, fontWeight: '700', color: SLATE[800], marginBottom: SPACING.sm },
+  question: { fontSize: TYPE.heading, fontWeight: '700', color: SLATE[800], marginBottom: SPACING.sm },
 
   option: {
     flexDirection: 'row',
@@ -141,24 +141,24 @@ const styles = StyleSheet.create({
     marginBottom: 7,
     backgroundColor: '#ffffff',
   },
-  optionCorrect: { borderColor: FEEDBACK.successText, backgroundColor: FEEDBACK.successBg },
+  optionCorrect: { borderColor: FEEDBACK.successOnBg, backgroundColor: FEEDBACK.successBg },
   optionWrong: { borderColor: FEEDBACK.errorBorder, backgroundColor: FEEDBACK.errorBg },
-  optionText: { flex: 1, fontSize: 13.5, color: SLATE[700] },
+  optionText: { flex: 1, fontSize: TYPE.body, color: SLATE[700] },
   optionTextCorrect: { color: FEEDBACK.successText, fontWeight: '700' },
   optionTextWrong: { color: FEEDBACK.errorText },
-  mark: { fontSize: 15, fontWeight: '700', color: FEEDBACK.successText },
-  markWrong: { fontSize: 15, fontWeight: '700', color: FEEDBACK.errorText },
+  mark: { fontSize: TYPE.heading, fontWeight: '700', color: FEEDBACK.successText },
+  markWrong: { fontSize: TYPE.heading, fontWeight: '700', color: FEEDBACK.errorText },
 
   hint: {
-    fontSize: 12.5,
-    lineHeight: 18,
+    fontSize: TYPE.label,
+    lineHeight: leading(TYPE.label),
     color: '#b45309',
     backgroundColor: '#fffbeb',
     borderRadius: 8,
     padding: SPACING.sm,
     marginTop: 4,
   },
-  correctNote: { fontSize: 13, fontWeight: '700', color: FEEDBACK.successText, marginTop: 4 },
+  correctNote: { fontSize: TYPE.body, fontWeight: '700', color: FEEDBACK.successText, marginTop: 4 },
 
   nextBtn: {
     alignSelf: 'flex-start',
@@ -168,7 +168,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     backgroundColor: PALETTE.primaryDark,
   },
-  nextText: { fontSize: 13, fontWeight: '700', color: '#ffffff' },
-  done: { fontSize: 13.5, fontWeight: '700', color: FEEDBACK.successText, marginTop: SPACING.sm },
+  nextText: { fontSize: TYPE.body, fontWeight: '700', color: '#ffffff' },
+  done: { fontSize: TYPE.heading, fontWeight: '700', color: FEEDBACK.successText, marginTop: SPACING.sm },
   pressed: { opacity: 0.75 },
 });

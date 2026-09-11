@@ -2,15 +2,15 @@
   "expo": {
     "name": "Shreyartha",
     "slug": "shreyartha-mobile-app",
-    "version": "2.0.0",
+    "version": "2.1.0",
     "scheme": "shreyartha",
     "orientation": "portrait",
-    "icon": "./assets/images/AppLogo.png",
+    "icon": "./assets/images/The3CEdge.png",
     "userInterfaceStyle": "light",
     "platforms": ["ios", "android"],
     "privacy": "public",
     "splash": {
-      "image": "./assets/images/AppLogo.png",
+      "image": "./assets/images/The3CEdge.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
@@ -28,15 +28,15 @@
     },
     "android": {
       "package": "com.the3cedgeai.app",
-      "versionCode": 14,
+      "versionCode": 15,
       "softwareKeyboardLayoutMode": "pan",
       "splash": {
-        "image": "./assets/images/AppLogo.png",
+        "image": "./assets/images/The3CEdge.png",
         "resizeMode": "contain",
         "backgroundColor": "#ffffff"
       },
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/AppLogo.png",
+        "foregroundImage": "./assets/images/The3CEdge.png",
         "backgroundColor": "#ffffff"
       },
       "permissions": [
@@ -67,7 +67,8 @@
         }
       ],
       "@config-plugins/react-native-blob-util",
-      "@config-plugins/react-native-pdf"
+      "@config-plugins/react-native-pdf",
+      "expo-notifications"
     ],
     "extra": {
       "router": {},

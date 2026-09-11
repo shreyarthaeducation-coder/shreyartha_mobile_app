@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useState } from 'react';
 import { Text, View } from 'react-native';
-import { SLATE, SPACING } from '../../../constants/theme';
+import { SLATE, SPACING, TYPE, leading } from '../../../constants/theme';
 import {
   Card,
   CardTitle,
@@ -205,8 +205,8 @@ const useStyles = makeStyles(() => ({
     justifyContent: 'space-between',
     marginTop: 6,
   },
-  meta: { fontSize: 12, color: SLATE[500] },
-  body: { fontSize: 13, color: SLATE[600], lineHeight: 19, marginTop: SPACING.sm },
+  meta: { fontSize: TYPE.label, color: SLATE[500] },
+  body: { fontSize: TYPE.body, color: SLATE[600], lineHeight: leading(TYPE.body), marginTop: SPACING.sm },
   strong: { fontWeight: '800' },
   qualified: { flexDirection: 'row', alignItems: 'center', gap: SPACING.sm, marginTop: SPACING.sm },
   ledgerRow: {
@@ -217,8 +217,8 @@ const useStyles = makeStyles(() => ({
     borderBottomWidth: 1,
     borderBottomColor: SLATE[100],
   },
-  ledgerNote: { fontSize: 13, color: SLATE[700] },
+  ledgerNote: { fontSize: TYPE.body, color: SLATE[700] },
   ledgerRight: { alignItems: 'flex-end', gap: 4 },
-  ledgerAmount: { fontSize: 14, fontWeight: '700', color: SLATE[800] },
+  ledgerAmount: { fontSize: TYPE.heading, fontWeight: '700', color: SLATE[800] },
   negative: { color: '#dc2626' },
 }));

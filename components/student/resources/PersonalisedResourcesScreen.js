@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Linking, Pressable, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { BAND, DONE, INK, SPACING, TOUCH, TYPE } from '../../../constants/theme';
+import { BAND, DONE, FEEDBACK, INK, SLATE, SPACING, TOUCH, TYPE, leading } from '../../../constants/theme';
 import { usePalette } from '../../ui/PaletteContext';
 import { makeStyles } from '../../../utils/makeStyles';
 import { CalendarGrid, EmptyState, MonthNavigator, useToast } from '../../ui';
@@ -140,9 +140,8 @@ export default function PersonalisedResourcesScreen() {
     >
       <Text style={styles.intro}>{t.intro}</Text>
 
-      <StudentCard tone="dark">
+      <StudentCard>
         <MonthNavigator
-          tone="dark"
           year={view.year}
           month={view.month}
           onChange={(next) => {
@@ -154,7 +153,6 @@ export default function PersonalisedResourcesScreen() {
         />
 
         <CalendarGrid
-          tone="dark"
           dates={monthDates}
           selectedDate={selected}
           onDayPress={(d) => setSelected((prev) => (prev === d ? null : d))}
@@ -184,7 +182,7 @@ export default function PersonalisedResourcesScreen() {
 
       {visible.length === 0 ? (
         selected ? (
-          <StudentCard tone="dark">
+          <StudentCard>
             <StudentNote>{t.emptyDay}</StudentNote>
           </StudentCard>
         ) : (
@@ -196,10 +194,10 @@ export default function PersonalisedResourcesScreen() {
           const url = r.fileUrl || r.linkUrl;
           const isNote = r.resourceType === 'NOTE';
           return (
-            <StudentCard key={r.id} tone="dark" style={r.completed && styles.cardDone}>
+            <StudentCard key={r.id} style={r.completed && styles.cardDone}>
               <View style={styles.rowTop}>
                 <View style={styles.typeChip}>
-                  <Ionicons name={meta.icon} size={13} color={palette.primary} />
+                  <Ionicons name={meta.icon} size={15} color={palette.primary} />
                   <Text style={styles.typeText}>{meta.label}</Text>
                 </View>
 
@@ -228,8 +226,8 @@ export default function PersonalisedResourcesScreen() {
                   ) : (
                     <Ionicons
                       name="checkmark"
-                      size={16}
-                      color={r.completed ? '#ffffff' : palette.onDark}
+                      size={18}
+                      color={r.completed ? '#ffffff' : SLATE[600]}
                     />
                   )}
                 </Pressable>
@@ -257,7 +255,7 @@ export default function PersonalisedResourcesScreen() {
                 >
                   <Ionicons
                     name={r.resourceType === 'VIDEO' ? 'play' : 'open-outline'}
-                    size={14}
+                    size={16}
                     color={palette.onPrimary}
                   />
                   <Text style={styles.actionText}>
@@ -284,11 +282,11 @@ function formatDay(key) {
 }
 
 const useStyles = makeStyles((p) => ({
-  intro: { fontSize: TYPE.label, color: p.onDark, lineHeight: 19, marginBottom: SPACING.md },
+  intro: { fontSize: TYPE.label, color: SLATE[600], lineHeight: leading(TYPE.label), marginBottom: SPACING.md },
 
   legend: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: SPACING.sm },
   legendDot: { width: 6, height: 6, borderRadius: 999, backgroundColor: p.primary },
-  legendText: { fontSize: TYPE.caption, color: p.onDark },
+  legendText: { fontSize: TYPE.caption, color: SLATE[600] },
 
   listHead: {
     flexDirection: 'row',
@@ -319,7 +317,7 @@ const useStyles = makeStyles((p) => ({
     borderRadius: 999,
     backgroundColor: 'rgba(245, 158, 11, 0.18)',
   },
-  gapText: { fontSize: TYPE.micro, fontWeight: '800', color: BAND.fair },
+  gapText: { fontSize: TYPE.micro, fontWeight: '800', color: FEEDBACK.warningOnBg },
 
   tick: {
     width: 32,
@@ -328,25 +326,25 @@ const useStyles = makeStyles((p) => ({
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: p.glassDarkBorder,
-    backgroundColor: p.glassDarkRaised,
+    borderColor: SLATE[200],
+    backgroundColor: SLATE[50],
   },
   tickOn: { backgroundColor: DONE, borderColor: DONE },
 
-  title: { fontSize: TYPE.heading, fontWeight: '700', color: '#ffffff' },
-  body: { fontSize: TYPE.body, color: INK.dark.body, lineHeight: 19, marginTop: 4 },
+  title: { fontSize: TYPE.heading, fontWeight: '700', color: SLATE[800] },
+  body: { fontSize: TYPE.body, color: INK.light.body, lineHeight: leading(TYPE.body), marginTop: 4 },
   // A NOTE's description is the whole resource, so it gets its own inset rather than reading as a
   // caption under a title.
   note: {
     marginTop: SPACING.sm,
     padding: SPACING.sm,
     borderRadius: 12,
-    backgroundColor: p.glassDarkRaised,
+    backgroundColor: SLATE[50],
   },
 
   meta: { flexDirection: 'row', flexWrap: 'wrap', gap: 4, marginTop: SPACING.sm },
-  metaText: { fontSize: TYPE.caption, color: p.onDark },
-  doneText: { fontSize: TYPE.caption, fontWeight: '700', color: DONE },
+  metaText: { fontSize: TYPE.caption, color: SLATE[600] },
+  doneText: { fontSize: TYPE.caption, fontWeight: '700', color: FEEDBACK.successText },
 
   action: {
     flexDirection: 'row',

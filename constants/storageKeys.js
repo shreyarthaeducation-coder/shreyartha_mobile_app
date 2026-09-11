@@ -36,6 +36,20 @@ export const STAFF_ATTENDANCE_ACTIVE_KEY = 'staffAttendanceActiveSession';
 export const STAFF_PHOTO_KEY = 'staffProfilePhotoUrl';
 
 /**
+ * Last known school crest URL, for the left of the header.
+ *
+ * Cached for the same reason the photo above is: the logo arrives on a profile call, and without a
+ * cache every school-bound dashboard shows the 3C Edge mark for a beat and then swaps it for the
+ * school's, which reads as a glitch on the one element that is meant to say "this is your school".
+ *
+ * MUST be in ALL_AUTH_KEYS below. A crest is not personal, but it belongs to ONE school, and a
+ * device shared between a teacher at one school and a counsellor at another would otherwise show
+ * the wrong crest under the right name — the identical leak STAFF_PHOTO_KEY and partnerUserType
+ * each had.
+ */
+export const SCHOOL_LOGO_KEY = 'schoolLogoUrl';
+
+/**
  * Completed attendance records — the offline fallback log.
  *
  * CLEARED ON LOGOUT, and it must stay that way. It used to be excluded on the grounds that "the
@@ -125,6 +139,9 @@ export const ALL_AUTH_KEYS = [
   // staffroom device this showed the previous user's log to the next one.
   STAFF_ATTENDANCE_HISTORY_KEY,
   STAFF_PHOTO_KEY,
+  // Belongs to one school. On a device shared across schools this would otherwise show the wrong
+  // crest under the right name — see the key's own note.
+  SCHOOL_LOGO_KEY,
   SALES_VISIT_QUEUE_KEY,
   STUDENT_SEARCH_INDEX_KEY,
   PARENT_SEARCH_INDEX_KEY,

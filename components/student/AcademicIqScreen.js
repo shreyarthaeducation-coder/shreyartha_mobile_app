@@ -1,7 +1,7 @@
 import { Pressable, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { SLATE, SPACING, TYPE } from '../../constants/theme';
+import { SLATE, SPACING, TYPE, leading } from '../../constants/theme';
 import { usePalette } from '../ui/PaletteContext';
 import { makeStyles } from '../../utils/makeStyles';
 import StudentScaffold from './StudentScaffold';
@@ -99,7 +99,7 @@ export default function AcademicIqScreen() {
                 <Text style={styles.title}>{s.title}</Text>
                 <Text style={styles.subtitle}>{s.subtitle}</Text>
               </View>
-              <Ionicons name="chevron-forward" size={16} color={palette.deep} />
+              <Ionicons name="chevron-forward" size={18} color={palette.deep} />
             </View>
           </StudentCard>
         </Pressable>
@@ -109,7 +109,7 @@ export default function AcademicIqScreen() {
 }
 
 const useStyles = makeStyles((p) => ({
-  intro: { fontSize: TYPE.label, color: p.onDark, lineHeight: 19, marginBottom: SPACING.md },
+  intro: { fontSize: TYPE.label, color: SLATE[600], lineHeight: leading(TYPE.label), marginBottom: SPACING.md },
   row: { flexDirection: 'row', alignItems: 'center', gap: SPACING.md },
   iconWrap: {
     width: 42,
@@ -121,6 +121,6 @@ const useStyles = makeStyles((p) => ({
   },
   text: { flex: 1 },
   title: { fontSize: TYPE.heading, fontWeight: '700', color: SLATE[800] },
-  subtitle: { fontSize: TYPE.label, color: SLATE[500], lineHeight: 17, marginTop: 2 },
+  subtitle: { fontSize: TYPE.label, color: SLATE[500], lineHeight: leading(TYPE.label), marginTop: 2 },
   pressed: { opacity: 0.78 },
 }));

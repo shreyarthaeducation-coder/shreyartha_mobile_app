@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { FEEDBACK, PORTALS, SLATE, SPACING } from '../../../constants/theme';
+import { FEEDBACK, PORTALS, SLATE, SPACING, TYPE } from '../../../constants/theme';
 import { FormSheet } from '../../ui';
 import {
   EXAM_STATUS,
@@ -43,8 +43,8 @@ function StatusToggle({ status, onPick, disabled }) {
   return (
     <View style={styles.statusToggle}>
       {[
-        { value: EXAM_STATUS.PRESENT, short: 'P', tone: FEEDBACK.successText, bg: FEEDBACK.successBg },
-        { value: EXAM_STATUS.ABSENT, short: 'A', tone: FEEDBACK.errorText, bg: FEEDBACK.errorBg },
+        { value: EXAM_STATUS.PRESENT, short: 'P', tone: FEEDBACK.successOnBg, bg: FEEDBACK.successBg },
+        { value: EXAM_STATUS.ABSENT, short: 'A', tone: FEEDBACK.errorOnBg, bg: FEEDBACK.errorBg },
       ].map((option) => {
         const active = status === option.value;
         return (
@@ -284,7 +284,7 @@ export default function MarksSheet({ visible, exam, onClose, onSaved, showToast 
                       <Text style={styles.totalText}>
                         {absent ? '—' : `${rowTotal(s.studentId)}/${maxMarks ?? 0}`}
                       </Text>
-                      <Ionicons name="chevron-forward" size={14} color={SLATE[500]} />
+                      <Ionicons name="chevron-forward" size={16} color={SLATE[500]} />
                     </Pressable>
                   ) : (
                     <View style={styles.markBox}>
@@ -294,7 +294,7 @@ export default function MarksSheet({ visible, exam, onClose, onSaved, showToast 
                         editable={!absent}
                         keyboardType="numeric"
                         placeholder="—"
-                        placeholderTextColor={SLATE[400]}
+                        placeholderTextColor={SLATE[500]}
                         onChangeText={(text) =>
                           patch(s.studentId, { marksObtained: sanitise(text, maxMarks) })
                         }
@@ -336,7 +336,7 @@ export default function MarksSheet({ visible, exam, onClose, onSaved, showToast 
                 value={studentEntry?.marks?.[q.id] ?? ''}
                 keyboardType="numeric"
                 placeholder="—"
-                placeholderTextColor={SLATE[400]}
+                placeholderTextColor={SLATE[500]}
                 onChangeText={(text) =>
                   patch(openStudent, {
                     marks: { ...(studentEntry?.marks || {}), [q.id]: sanitise(text, q.marks) },
@@ -354,10 +354,10 @@ export default function MarksSheet({ visible, exam, onClose, onSaved, showToast 
 
 const styles = StyleSheet.create({
   loader: { marginVertical: SPACING.xl },
-  empty: { fontSize: 13, color: SLATE[500], textAlign: 'center', paddingVertical: SPACING.lg },
+  empty: { fontSize: TYPE.body, color: SLATE[500], textAlign: 'center', paddingVertical: SPACING.lg },
 
   bulkRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: SPACING.sm },
-  progress: { flex: 1, fontSize: 12.5, fontWeight: '700', color: SLATE[600] },
+  progress: { flex: 1, fontSize: TYPE.label, fontWeight: '700', color: SLATE[600] },
   bulkBtn: {
     paddingVertical: 7,
     paddingHorizontal: 10,
@@ -365,7 +365,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: SLATE[200],
   },
-  bulkText: { fontSize: 12, fontWeight: '700' },
+  bulkText: { fontSize: TYPE.label, fontWeight: '700' },
 
   row: {
     flexDirection: 'row',
@@ -375,8 +375,8 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: SLATE[100],
   },
-  index: { width: 20, fontSize: 12, fontWeight: '700', color: SLATE[400] },
-  name: { flex: 1, fontSize: 14, fontWeight: '600', color: SLATE[800] },
+  index: { minWidth: 20, fontSize: TYPE.label, fontWeight: '700', color: SLATE[500] },
+  name: { flex: 1, fontSize: TYPE.heading, fontWeight: '600', color: SLATE[800] },
 
   markBox: { flexDirection: 'row', alignItems: 'center', gap: 3 },
   markInput: {
@@ -387,12 +387,12 @@ const styles = StyleSheet.create({
     borderColor: SLATE[200],
     borderRadius: 8,
     textAlign: 'center',
-    fontSize: 14,
+    fontSize: TYPE.heading,
     fontWeight: '700',
     color: SLATE[900],
     backgroundColor: '#ffffff',
   },
-  markMax: { fontSize: 11.5, color: SLATE[500], fontWeight: '600' },
+  markMax: { fontSize: TYPE.caption, color: SLATE[500], fontWeight: '600' },
   disabled: { opacity: 0.45 },
 
   totalBtn: {
@@ -406,7 +406,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     backgroundColor: SLATE[50],
   },
-  totalText: { fontSize: 13, fontWeight: '700', color: SLATE[700] },
+  totalText: { fontSize: TYPE.body, fontWeight: '700', color: SLATE[700] },
 
   statusToggle: { flexDirection: 'row', gap: 4 },
   statusBtn: {
@@ -419,7 +419,7 @@ const styles = StyleSheet.create({
     borderColor: SLATE[200],
     backgroundColor: SLATE[50],
   },
-  statusText: { fontSize: 12.5, fontWeight: '800', color: SLATE[400] },
+  statusText: { fontSize: TYPE.label, fontWeight: '800', color: SLATE[500] },
 
   qRow: {
     flexDirection: 'row',
@@ -429,7 +429,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: SLATE[100],
   },
-  qLabel: { flex: 1, fontSize: 13, color: SLATE[700] },
+  qLabel: { flex: 1, fontSize: TYPE.body, color: SLATE[700] },
 
   pressed: { opacity: 0.72 },
 });

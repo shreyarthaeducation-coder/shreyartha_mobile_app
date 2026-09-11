@@ -1,7 +1,7 @@
 import { useCallback, useMemo } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { SLATE, SPACING } from '../../../constants/theme';
+import { SLATE, SPACING, TYPE } from '../../../constants/theme';
 import {
   Card,
   CardTitle,
@@ -281,8 +281,8 @@ function Deviation({ deviation, styles }) {
 }
 
 const useStyles = makeStyles(() => ({
-  cardNote: { fontSize: 12.5, color: SLATE[500], marginTop: -4, marginBottom: SPACING.sm },
-  meta: { fontSize: 12.5, color: SLATE[500], marginTop: 2 },
+  cardNote: { fontSize: TYPE.label, color: SLATE[500], marginTop: -4, marginBottom: SPACING.sm },
+  meta: { fontSize: TYPE.label, color: SLATE[500], marginTop: 2 },
 
   analysisRow: {
     flexDirection: 'row',
@@ -293,8 +293,8 @@ const useStyles = makeStyles(() => ({
   legend: { flex: 1, gap: 4 },
   legendRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   swatch: { width: 10, height: 10, borderRadius: 3 },
-  legendLabel: { flex: 1, fontSize: 12.5, color: SLATE[700] },
-  legendCount: { fontSize: 13, fontWeight: '700', color: SLATE[800] },
+  legendLabel: { flex: 1, fontSize: TYPE.label, color: SLATE[700] },
+  legendCount: { fontSize: TYPE.body, fontWeight: '700', color: SLATE[800] },
 
   deviation: {
     borderTopWidth: 1,
@@ -303,13 +303,13 @@ const useStyles = makeStyles(() => ({
     marginTop: SPACING.sm,
   },
   deviationLabel: {
-    fontSize: 11.5,
+    fontSize: TYPE.caption,
     fontWeight: '700',
     color: SLATE[500],
     textTransform: 'uppercase',
     letterSpacing: 0.3,
   },
-  deviationValue: { fontSize: 22, fontWeight: '800', color: SLATE[800], marginTop: 2 },
+  deviationValue: { fontSize: TYPE.headline, fontWeight: '800', color: SLATE[800], marginTop: 2 },
   deviationUp: { color: '#16a34a' },
   deviationDown: { color: '#dc2626' },
 
@@ -321,9 +321,9 @@ const useStyles = makeStyles(() => ({
   chipRow: { flexDirection: 'row', marginTop: SPACING.sm },
 
   monthRow: { flexDirection: 'row', alignItems: 'center', gap: SPACING.sm, marginBottom: 7 },
-  monthLabel: { width: 74, fontSize: 12, color: SLATE[500] },
+  monthLabel: { minWidth: 74, fontSize: TYPE.label, color: SLATE[500] },
   monthBar: { flex: 1 },
-  monthValue: { width: 62, fontSize: 12, color: SLATE[700], textAlign: 'right' },
+  monthValue: { minWidth: 62, fontSize: TYPE.label, color: SLATE[700], textAlign: 'right' },
 
   followRow: {
     flexDirection: 'row',
@@ -334,7 +334,7 @@ const useStyles = makeStyles(() => ({
     borderTopColor: SLATE[100],
   },
   followText: { flex: 1 },
-  followName: { fontSize: 14, fontWeight: '600', color: SLATE[800] },
-  followReading: { fontSize: 12, fontWeight: '700' },
+  followName: { fontSize: TYPE.heading, fontWeight: '600', color: SLATE[800] },
+  followReading: { fontSize: TYPE.label, fontWeight: '700' },
   pressed: { opacity: 0.85 },
 }));

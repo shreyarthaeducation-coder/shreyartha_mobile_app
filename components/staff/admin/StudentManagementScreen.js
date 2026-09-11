@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
-import { FEEDBACK, SLATE, SPACING } from '../../../constants/theme';
+import { FEEDBACK, SLATE, SPACING, TYPE, leading } from '../../../constants/theme';
 import { usePalette } from '../../ui/PaletteContext';
 import {
   Card,
@@ -256,7 +256,7 @@ export default function StudentManagementScreen({ homeRoute, apiBase }) {
 }
 
 const useStyles = makeStyles(() => ({
-  school: { fontSize: 12.5, color: SLATE[500], fontWeight: '600', marginBottom: SPACING.sm },
+  school: { fontSize: TYPE.label, color: SLATE[500], fontWeight: '600', marginBottom: SPACING.sm },
   statRow: { flexDirection: 'row', gap: 8 },
   statCard: {
     flex: 1,
@@ -267,18 +267,18 @@ const useStyles = makeStyles(() => ({
     paddingVertical: 12,
     alignItems: 'center',
   },
-  statValue: { fontSize: 20, fontWeight: '800', color: SLATE[800] },
-  statLabel: { fontSize: 11.5, color: SLATE[500], fontWeight: '600', marginTop: 2 },
+  statValue: { fontSize: TYPE.headline, fontWeight: '800', color: SLATE[800] },
+  statLabel: { fontSize: TYPE.caption, color: SLATE[500], fontWeight: '600', marginTop: 2 },
   pressed: { opacity: 0.7 },
   tabs: { marginTop: SPACING.sm, marginBottom: SPACING.sm },
   item: { marginBottom: SPACING.sm },
   head: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  name: { flex: 1, fontSize: 15, fontWeight: '700', color: SLATE[800] },
-  meta: { fontSize: 12.5, color: SLATE[600], marginTop: 3, fontWeight: '600' },
-  contact: { fontSize: 12, color: SLATE[500], marginTop: 1 },
+  name: { flex: 1, fontSize: TYPE.heading, fontWeight: '700', color: SLATE[800] },
+  meta: { fontSize: TYPE.label, color: SLATE[600], marginTop: 3, fontWeight: '600' },
+  contact: { fontSize: TYPE.label, color: SLATE[500], marginTop: 1 },
   chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: SPACING.sm },
   historyRows: { marginTop: 6, gap: 3 },
-  historyRow: { fontSize: 12.5, color: SLATE[600], lineHeight: 18 },
+  historyRow: { fontSize: TYPE.label, color: SLATE[600], lineHeight: leading(TYPE.label) },
   historyLabel: { color: SLATE[500], fontWeight: '700' },
-  historyError: { fontSize: 13, color: FEEDBACK.errorText, marginTop: SPACING.sm },
+  historyError: { fontSize: TYPE.body, color: FEEDBACK.errorText, marginTop: SPACING.sm },
 }));

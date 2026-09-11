@@ -17,6 +17,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuth } from '../../context/AuthContext';
 import { ALL_AUTH_KEYS } from '../../constants/storageKeys';
 import { loginStudent, lookupInstitutionCode, signupStudent } from '../../services/authService';
+import { SLATE, TYPE, leading } from '../../constants/theme';
 
 /**
  * Student login and sign-up.
@@ -200,7 +201,7 @@ export default function StudentLoginScreen() {
         value={email}
         onChangeText={setEmail}
         placeholder="Enter your email"
-        placeholderTextColor="#aaa"
+        placeholderTextColor={SLATE[500]}
         keyboardType="email-address"
         autoCapitalize="none"
         autoCorrect={false}
@@ -215,7 +216,7 @@ export default function StudentLoginScreen() {
           value={password}
           onChangeText={setPassword}
           placeholder="Enter your password"
-          placeholderTextColor="#aaa"
+          placeholderTextColor={SLATE[500]}
           secureTextEntry={!showPassword}
           // These three matter ONLY once the eye toggle is tapped. While `secureTextEntry` is true
           // Android suppresses autocapitalise and autocorrect on its own; the moment the password is
@@ -285,7 +286,7 @@ export default function StudentLoginScreen() {
         value={signup.fullName}
         onChangeText={(v) => patch('fullName', v)}
         placeholder="Your full name"
-        placeholderTextColor="#aaa"
+        placeholderTextColor={SLATE[500]}
         autoCapitalize="words"
         editable={!signupBusy}
       />
@@ -296,7 +297,7 @@ export default function StudentLoginScreen() {
         value={signup.email}
         onChangeText={(v) => patch('email', v)}
         placeholder="you@example.com"
-        placeholderTextColor="#aaa"
+        placeholderTextColor={SLATE[500]}
         keyboardType="email-address"
         autoCapitalize="none"
         autoCorrect={false}
@@ -309,7 +310,7 @@ export default function StudentLoginScreen() {
         value={signup.mobile}
         onChangeText={(v) => patch('mobile', v)}
         placeholder="10-digit mobile number"
-        placeholderTextColor="#aaa"
+        placeholderTextColor={SLATE[500]}
         keyboardType="phone-pad"
         editable={!signupBusy}
       />
@@ -322,7 +323,7 @@ export default function StudentLoginScreen() {
         onChangeText={(v) => patch('code', v.toUpperCase())}
         onBlur={checkCode}
         placeholder={`Enter your ${institutionLabel.toLowerCase()} code, or NONE`}
-        placeholderTextColor="#aaa"
+        placeholderTextColor={SLATE[500]}
         autoCapitalize="characters"
         autoCorrect={false}
         editable={!signupBusy}
@@ -346,7 +347,7 @@ export default function StudentLoginScreen() {
           value={signup.password}
           onChangeText={(v) => patch('password', v)}
           placeholder="At least 8 characters"
-          placeholderTextColor="#aaa"
+          placeholderTextColor={SLATE[500]}
           secureTextEntry={!showSignupPassword}
           // Same reason as the login field above, and it bites harder here: a capital letter the
           // student never typed gets baked into the account they are creating.
@@ -410,7 +411,7 @@ export default function StudentLoginScreen() {
 
           <View style={styles.logoContainer}>
             <Image
-              source={require('../../assets/images/AppLogo.png')}
+              source={require('../../assets/images/The3CEdge.png')}
               style={styles.logo}
               resizeMode="contain"
             />
@@ -475,11 +476,11 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.12)',
     marginBottom: 8,
   },
-  backText: { color: '#fff', fontWeight: '700', fontSize: 14 },
+  backText: { color: '#fff', fontWeight: '700', fontSize: TYPE.heading },
   logoContainer: { alignItems: 'center', marginVertical: 28 },
-  logo: { width: 90, height: 90, borderRadius: 18 },
-  appName: { color: '#fff', fontSize: 22, fontWeight: '800', marginTop: 12 },
-  tagline: { color: 'rgba(255,255,255,0.6)', fontSize: 13, marginTop: 2 },
+  logo: { width: 190, height: 122, borderRadius: 18 },
+  appName: { color: '#fff', fontSize: TYPE.headline, fontWeight: '800', marginTop: 12 },
+  tagline: { color: 'rgba(255,255,255,0.6)', fontSize: TYPE.body, marginTop: 2 },
   card: {
     backgroundColor: '#fff',
     borderRadius: 20,
@@ -500,10 +501,10 @@ const styles = StyleSheet.create({
   },
   tab: { flex: 1, alignItems: 'center', paddingVertical: 10, borderRadius: 9 },
   tabOn: { backgroundColor: '#b0003a' },
-  tabText: { fontSize: 14, fontWeight: '700', color: '#6b7280' },
+  tabText: { fontSize: TYPE.heading, fontWeight: '700', color: '#6b7280' },
   tabTextOn: { color: '#fff' },
 
-  cardSubtitle: { fontSize: 13, color: '#64748b', marginBottom: 12 },
+  cardSubtitle: { fontSize: TYPE.body, color: '#64748b', marginBottom: 12 },
   errorBox: {
     backgroundColor: '#fef2f2',
     borderRadius: 10,
@@ -512,7 +513,7 @@ const styles = StyleSheet.create({
     borderLeftWidth: 3,
     borderLeftColor: '#ef4444',
   },
-  errorText: { color: '#dc2626', fontSize: 13, lineHeight: 18 },
+  errorText: { color: '#dc2626', fontSize: TYPE.body, lineHeight: leading(TYPE.body) },
   noticeBox: {
     backgroundColor: '#f0fdf4',
     borderRadius: 10,
@@ -521,9 +522,9 @@ const styles = StyleSheet.create({
     borderLeftWidth: 3,
     borderLeftColor: '#22c55e',
   },
-  noticeText: { color: '#15803d', fontSize: 13, lineHeight: 18 },
+  noticeText: { color: '#15803d', fontSize: TYPE.body, lineHeight: leading(TYPE.body) },
 
-  label: { fontSize: 13, fontWeight: '600', color: '#374151', marginBottom: 6, marginTop: 14 },
+  label: { fontSize: TYPE.body, fontWeight: '600', color: '#374151', marginBottom: 6, marginTop: 14 },
   input: {
     backgroundColor: '#f9fafb',
     borderWidth: 1,
@@ -531,7 +532,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     paddingHorizontal: 14,
     paddingVertical: 13,
-    fontSize: 15,
+    fontSize: TYPE.heading,
     color: '#111827',
   },
   passwordRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
@@ -559,12 +560,12 @@ const styles = StyleSheet.create({
     borderColor: '#e5e7eb',
   },
   typeBtnOn: { backgroundColor: '#fdf2f6', borderColor: '#b0003a' },
-  typeText: { fontSize: 13.5, fontWeight: '600', color: '#6b7280' },
+  typeText: { fontSize: TYPE.heading, fontWeight: '600', color: '#6b7280' },
   typeTextOn: { color: '#b0003a', fontWeight: '700' },
 
-  hint: { fontSize: 11.5, color: '#9ca3af', marginTop: 6 },
-  hintOk: { fontSize: 11.5, color: '#15803d', fontWeight: '600', marginTop: 6 },
-  hintBad: { fontSize: 11.5, color: '#dc2626', fontWeight: '600', marginTop: 6 },
+  hint: { fontSize: TYPE.caption, color: '#9ca3af', marginTop: 6 },
+  hintOk: { fontSize: TYPE.caption, color: '#15803d', fontWeight: '600', marginTop: 6 },
+  hintBad: { fontSize: TYPE.caption, color: '#dc2626', fontWeight: '600', marginTop: 6 },
 
   termsRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 18, marginBottom: 20 },
   checkbox: {
@@ -578,10 +579,10 @@ const styles = StyleSheet.create({
   },
   checkboxOn: { backgroundColor: '#b0003a', borderColor: '#b0003a' },
   checkboxTick: { color: '#fff', fontSize: 13, fontWeight: '800' },
-  termsText: { flex: 1, fontSize: 12.5, color: '#4b5563', lineHeight: 18 },
+  termsText: { flex: 1, fontSize: TYPE.label, color: '#4b5563', lineHeight: leading(TYPE.label) },
 
   forgotLink: { alignSelf: 'flex-end', marginTop: 10, marginBottom: 22 },
-  forgotText: { fontSize: 13, color: '#b0003a', fontWeight: '600' },
+  forgotText: { fontSize: TYPE.body, color: '#b0003a', fontWeight: '600' },
   loginBtn: {
     backgroundColor: '#b0003a',
     borderRadius: 14,
@@ -594,5 +595,5 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   loginBtnDisabled: { opacity: 0.7 },
-  loginBtnText: { color: '#fff', fontSize: 16, fontWeight: '700', letterSpacing: 0.3 },
+  loginBtnText: { color: '#fff', fontSize: TYPE.heading, fontWeight: '700', letterSpacing: 0.3 },
 });

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { SPACING, TYPE } from '../../constants/theme';
+import { SLATE, SPACING, TYPE } from '../../constants/theme';
 import { Card, CardTitle, EmptyState, ProgressBar, ScreenScaffold, Select } from '../ui';
 import { usePalette } from '../ui/PaletteContext';
 import { makeStyles } from '../../utils/makeStyles';
@@ -129,7 +129,7 @@ export default function PartnerOverviewScreen({ homeRoute = '/partner' }) {
       <Card>
         <CardTitle>{profile?.fullName || 'Partner'}</CardTitle>
         <View style={styles.codeRow}>
-          <Ionicons name="pricetag-outline" size={15} color={palette.primary} />
+          <Ionicons name="pricetag-outline" size={17} color={palette.primary} />
           <Text style={styles.code}>{profile?.partnerCode || '—'}</Text>
           {isMaster ? (
             <View style={styles.tier}>
@@ -239,7 +239,7 @@ const useStyles = makeStyles((p) => ({
     backgroundColor: p.tint,
   },
   tierText: { fontSize: TYPE.micro, fontWeight: '800', color: p.primaryDark, letterSpacing: 0.5 },
-  hint: { fontSize: TYPE.caption, color: p.primaryDark, opacity: 0.75, marginTop: 4 },
+  hint: { fontSize: TYPE.caption, color: SLATE[600], marginTop: 4 },
 
   schoolWrap: { marginTop: SPACING.md },
   schoolLabel: {
@@ -247,8 +247,7 @@ const useStyles = makeStyles((p) => ({
     fontWeight: '700',
     letterSpacing: 0.5,
     textTransform: 'uppercase',
-    color: p.primaryDark,
-    opacity: 0.65,
+    color: SLATE[600],
     marginBottom: 6,
   },
   schoolChips: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
@@ -267,11 +266,11 @@ const useStyles = makeStyles((p) => ({
   statSmallCell: { flex: 1, alignItems: 'center' },
   statValue: { fontSize: TYPE.title, fontWeight: '800', color: p.primaryDark },
   statSmall: { fontSize: TYPE.body, fontWeight: '800', color: p.primaryDark },
-  statLabel: { fontSize: TYPE.micro, color: p.primaryDark, opacity: 0.7, marginTop: 2 },
+  statLabel: { fontSize: TYPE.micro, color: SLATE[600], marginTop: 2 },
 
   monthRow: { marginTop: SPACING.sm },
   monthHead: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 },
   monthLabel: { fontSize: TYPE.label, fontWeight: '600', color: p.primaryDark },
   monthValue: { fontSize: TYPE.label, fontWeight: '700', color: p.primaryDark },
-  split: { fontSize: TYPE.micro, color: p.primaryDark, opacity: 0.7, marginTop: 3 },
+  split: { fontSize: TYPE.micro, color: SLATE[600], marginTop: 3 },
 }));

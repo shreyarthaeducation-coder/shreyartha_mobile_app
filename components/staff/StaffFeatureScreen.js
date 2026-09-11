@@ -12,7 +12,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import AppWebView, { FORCE_DESKTOP_VIEWPORT_JS } from '../AppWebView';
-import { SLATE, SPACING } from '../../constants/theme';
+import { SLATE, SPACING, TYPE } from '../../constants/theme';
 import { useAuth } from '../../context/AuthContext';
 import { readSchoolSession } from '../../services/schoolSession';
 import StaffHeader from './StaffHeader';
@@ -201,13 +201,13 @@ const useStyles = makeStyles((p) => ({
     padding: SPACING.lg,
   },
   errorTitle: {
-    fontSize: 16,
+    fontSize: TYPE.title,
     fontWeight: '700',
     color: SLATE[800],
     marginTop: SPACING.sm,
   },
   errorText: {
-    fontSize: 14,
+    fontSize: TYPE.body,
     color: SLATE[500],
     textAlign: 'center',
     marginTop: 6,
@@ -219,5 +219,5 @@ const useStyles = makeStyles((p) => ({
     borderRadius: 10,
     backgroundColor: p.primaryDark,
   },
-  retryText: { color: '#ffffff', fontWeight: '700', fontSize: 14 },
+  retryText: { color: '#ffffff', fontWeight: '700', fontSize: TYPE.heading },
 }));

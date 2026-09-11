@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Pressable, Text, View } from 'react-native';
-import { QUIZ, SLATE, SPACING, TYPE } from '../../../constants/theme';
+import { QUIZ, SLATE, SPACING, TYPE, leading } from '../../../constants/theme';
 import { usePalette } from '../../ui/PaletteContext';
 import { makeStyles } from '../../../utils/makeStyles';
 import ShreyaSpeakButton from '../ai/ShreyaSpeakButton';
@@ -283,7 +283,7 @@ const useStyles = makeStyles((p) => ({
   },
   fill: { height: '100%', borderRadius: 4, backgroundColor: p.primaryDark },
   bloomStatus: { fontSize: TYPE.caption, fontWeight: '700', color: p.deep, marginTop: 5 },
-  bloomRemark: { fontSize: TYPE.label, color: SLATE[600], lineHeight: 18, marginTop: 2 },
+  bloomRemark: { fontSize: TYPE.label, color: SLATE[600], lineHeight: leading(TYPE.label), marginTop: 2 },
 
   qHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   qNum: { fontSize: TYPE.caption, fontWeight: '800', color: p.deep },
@@ -309,10 +309,10 @@ const useStyles = makeStyles((p) => ({
   optionPicked: { backgroundColor: p.tint, borderColor: p.primary },
   optionCorrect: { backgroundColor: QUIZ.correctBg, borderColor: QUIZ.correctBorder },
   optionWrong: { backgroundColor: QUIZ.wrongBg, borderColor: QUIZ.wrongBorder },
-  optionKey: { fontSize: TYPE.label, fontWeight: '800', color: SLATE[500], width: 15 },
+  optionKey: { fontSize: TYPE.label, fontWeight: '800', color: SLATE[500], minWidth: 15 },
   optionKeyOn: { color: SLATE[800] },
   optionBody: { flex: 1 },
-  optionText: { fontSize: TYPE.body, color: SLATE[700], lineHeight: 19 },
+  optionText: { fontSize: TYPE.body, color: SLATE[700], lineHeight: leading(TYPE.body) },
   mark: { fontSize: TYPE.heading, fontWeight: '800', color: SLATE[700] },
 
   explain: {

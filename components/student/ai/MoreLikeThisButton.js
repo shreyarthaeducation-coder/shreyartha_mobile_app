@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Modal, Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { FEEDBACK, QUIZ, SLATE, SPACING, TOUCH, TYPE } from '../../../constants/theme';
+import { FEEDBACK, QUIZ, SLATE, SPACING, TOUCH, TYPE, leading } from '../../../constants/theme';
 import { makeStyles } from '../../../utils/makeStyles';
 import RichText from '../../RichText';
 import ShreyaSpeakButton from './ShreyaSpeakButton';
@@ -277,19 +277,19 @@ const useStyles = makeStyles(() => ({
   optPicked: { borderColor: PURPLE.primary },
   optRight: { backgroundColor: QUIZ.correctBg, borderColor: QUIZ.correctBorder },
   optWrong: { backgroundColor: QUIZ.wrongBg, borderColor: QUIZ.wrongBorder },
-  optKey: { fontSize: TYPE.label, fontWeight: '800', color: SLATE[500], width: 15 },
+  optKey: { fontSize: TYPE.label, fontWeight: '800', color: SLATE[500], minWidth: 15 },
   optBody: { flex: 1 },
-  optText: { fontSize: TYPE.body, color: SLATE[700], lineHeight: 19 },
+  optText: { fontSize: TYPE.body, color: SLATE[700], lineHeight: leading(TYPE.body) },
   mark: { fontSize: TYPE.heading, fontWeight: '800' },
 
   hintBtn: { alignSelf: 'flex-start', marginTop: SPACING.sm },
   hintBtnText: { fontSize: TYPE.label, fontWeight: '700', color: PURPLE.deep },
-  hint: { fontSize: TYPE.label, color: SLATE[600], lineHeight: 19, marginTop: 5 },
+  hint: { fontSize: TYPE.label, color: SLATE[600], lineHeight: leading(TYPE.label), marginTop: 5 },
 
   centre: { alignItems: 'center', paddingVertical: SPACING.xl, gap: 6, paddingHorizontal: SPACING.lg },
   loadingText: { fontSize: TYPE.body, fontWeight: '700', color: PURPLE.deep, marginTop: SPACING.sm },
   loadingHint: { fontSize: TYPE.caption, color: SLATE[500] },
-  error: { fontSize: TYPE.body, color: FEEDBACK.errorText, textAlign: 'center', lineHeight: 19 },
+  error: { fontSize: TYPE.body, color: FEEDBACK.errorText, textAlign: 'center', lineHeight: leading(TYPE.body) },
   retry: {
     marginTop: SPACING.md,
     paddingVertical: 10,

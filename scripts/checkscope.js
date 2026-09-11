@@ -45,6 +45,12 @@ const NAMES = [
   'StatusChip', 'SegmentedTabs', 'TextField', 'DateTimeField', 'MonthNavigator', 'CalendarGrid',
   'Card', 'CardTitle', 'useToast', 'Toast', 'Ionicons', 'useStaffResource', 'staffApi',
   'useMemo', 'useCallback', 'useEffect', 'useState', 'useRef',
+  // THE TYPE SCALE AND ITS NEIGHBOURS. Added with the readability pass, which moved ~1,200 numeric
+  // font sizes onto `TYPE.` across 139 files — so `TYPE` is precisely the identifier a codemod of
+  // that shape leaves dangling, and it was NOT watched. It went missing in ShreyaChatSheet.js on
+  // the first edit of that pass and this checker reported clean, which is the same hole the
+  // `makeStyles` codemod fell through.
+  'TYPE', 'TOUCH', 'INK', 'COLORS', 'GRADIENT',
 ];
 
 const dirs = ['components', 'app', 'utils', 'constants', 'hooks', 'services']

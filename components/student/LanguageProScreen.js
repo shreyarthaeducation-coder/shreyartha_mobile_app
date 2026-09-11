@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { SLATE, SPACING, TYPE } from '../../constants/theme';
+import { SLATE, SPACING, TYPE, leading } from '../../constants/theme';
 import { usePalette } from '../ui/PaletteContext';
 import { makeStyles } from '../../utils/makeStyles';
 import { useToast } from '../ui';
@@ -114,7 +114,7 @@ export default function LanguageProScreen() {
                 <Text style={styles.title}>{card.title}</Text>
                 <Text style={styles.subtitle}>{card.subtitle}</Text>
               </View>
-              <Ionicons name="chevron-forward" size={17} color={palette.deep} />
+              <Ionicons name="chevron-forward" size={19} color={palette.deep} />
             </View>
             <Text style={styles.note}>{card.note}</Text>
           </StudentCard>
@@ -128,7 +128,7 @@ const useStyles = makeStyles((p) => ({
   tagline: {
     fontSize: TYPE.body,
     fontWeight: '600',
-    color: p.onDark,
+    color: SLATE[600],
     marginBottom: SPACING.md,
   },
   row: { flexDirection: 'row', alignItems: 'center', gap: 11 },
@@ -143,6 +143,6 @@ const useStyles = makeStyles((p) => ({
   body: { flex: 1 },
   title: { fontSize: TYPE.heading, fontWeight: '700', color: SLATE[800] },
   subtitle: { fontSize: TYPE.label, fontWeight: '600', color: p.deep, marginTop: 2 },
-  note: { fontSize: TYPE.label, color: SLATE[500], lineHeight: 18, marginTop: SPACING.sm },
+  note: { fontSize: TYPE.label, color: SLATE[500], lineHeight: leading(TYPE.label), marginTop: SPACING.sm },
   pressed: { opacity: 0.78 },
 }));

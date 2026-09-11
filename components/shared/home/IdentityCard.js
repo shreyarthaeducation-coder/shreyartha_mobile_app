@@ -1,6 +1,6 @@
 import { Image, Pressable, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { FEEDBACK, SLATE, SPACING, TYPE } from '../../../constants/theme';
+import { FEEDBACK, SLATE, SPACING, TYPE, leading } from '../../../constants/theme';
 import { usePalette } from '../../ui/PaletteContext';
 import { makeStyles } from '../../../utils/makeStyles';
 import { initialsOf } from '../../staff/helpers';
@@ -143,9 +143,9 @@ export default function IdentityCard({
             const body = (
               <>
                 <View style={[styles.iconTile, styles[row.tint || 'blue']]}>
-                  <Ionicons name={row.icon} size={15} color={palette.primary} />
+                  <Ionicons name={row.icon} size={17} color={palette.primary} />
                 </View>
-                <Text style={[styles.rowLabel, light && styles.rowLabelLight]} numberOfLines={1}>
+                <Text style={[styles.rowLabel, light && styles.rowLabelLight]} numberOfLines={2}>
                   {row.label}
                 </Text>
                 <Text
@@ -223,7 +223,7 @@ const useStyles = makeStyles((p) => ({
   lead: { width: 116, alignItems: 'flex-start' },
   title: { fontSize: TYPE.title, fontWeight: '800', color: '#ffffff', marginBottom: 2 },
   titleLight: { color: SLATE[800] },
-  subtitle: { fontSize: TYPE.caption, color: p.onDark, lineHeight: 15, marginBottom: SPACING.sm },
+  subtitle: { fontSize: TYPE.caption, color: p.onDark, lineHeight: leading(TYPE.caption), marginBottom: SPACING.sm },
   subtitleLight: { color: SLATE[500] },
 
   avatar: {
@@ -276,12 +276,16 @@ const useStyles = makeStyles((p) => ({
 
   rowDividedLight: { borderTopWidth: 1, borderTopColor: SLATE[200] },
 
-  rowLabel: { fontSize: TYPE.caption, color: p.onDark, width: 78 },
+  // minWidth + maxWidth, not a fixed 78pt box, and two lines rather than one. This label is
+  // machine-translated into 22 languages, and at the raised `caption` size "Student Name" alone
+  // reached the 78pt edge in English — a Tamil or Malayalam label simply lost its end. The value
+  // beside it is `flex: 1`, so the cap at 45% is what stops a long label crowding it out.
+  rowLabel: { fontSize: TYPE.caption, color: p.onDark, minWidth: 78, maxWidth: '45%' },
   rowLabelLight: { color: SLATE[500] },
   rowValue: { flex: 1, fontSize: TYPE.label, fontWeight: '700', color: '#ffffff', textAlign: 'right' },
   rowValueLight: { color: SLATE[800] },
   // Last in the cascade at both tones, so "Not set" always reads as absent rather than as a value.
-  rowValueEmpty: { fontWeight: '500', color: SLATE[400] },
+  rowValueEmpty: { fontWeight: '500', color: SLATE[500] },
 
   // The pill and the Upgrade button share one right-aligned row. The alignment and the bottom
   // margin live here rather than on each child, which is where they used to be back when only one

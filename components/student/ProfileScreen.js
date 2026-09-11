@@ -9,6 +9,7 @@ import { makeStyles } from '../../utils/makeStyles';
 import { useToast } from '../ui';
 import usePortalLogout from '../../hooks/usePortalLogout';
 import { TAB_BAR_HEIGHT } from '../shared/home/PortalTabBar';
+import ChangePasswordRow from '../shared/home/ChangePasswordRow';
 import StudentScaffold from './StudentScaffold';
 import { StudentCard, StudentCardTitle } from './StudentCard';
 import ProfileFormTab from './ProfileFormTab';
@@ -305,8 +306,8 @@ export default function ProfileScreen() {
             >
               <Ionicons
                 name={t.icon}
-                size={14}
-                color={on ? palette.onPrimary : palette.onDark}
+                size={16}
+                color={on ? palette.onPrimary : SLATE[600]}
               />
               <Text style={[styles.tabText, on && styles.tabTextOn]}>{t.label}</Text>
               {/* The dot is the whole reason the web has this rail. */}
@@ -335,6 +336,11 @@ export default function ProfileScreen() {
         <ProfileFormTab key={tab} tabKey={tab} showToast={showToast} />
       )}
 
+      {/* Change password lives here for the same reason Log Out does — see below. It was a chip in
+          the dashboard header until the school crest took that side of the bar, and the student's
+          Support tab is a chatbot, not a settings screen, so this is now the only route to it. */}
+      <ChangePasswordRow route="/student/change-password" />
+
       {/* LOG OUT LIVES HERE NOW.
           It was a header icon on the dashboard, which the redesign replaced with the brand bar —
           and the design's footer has exactly three tabs, none of them an account menu. Profile is
@@ -350,7 +356,7 @@ export default function ProfileScreen() {
         accessibilityRole="button"
         accessibilityLabel="Log out"
       >
-        <Ionicons name="log-out-outline" size={18} color={FEEDBACK.errorText} />
+        <Ionicons name="log-out-outline" size={20} color={FEEDBACK.errorText} />
         <Text style={styles.logoutText}>Log Out</Text>
       </Pressable>
 
@@ -410,12 +416,12 @@ const useStyles = makeStyles((p) => ({
     paddingVertical: 8,
     paddingHorizontal: 13,
     borderRadius: 999,
-    backgroundColor: 'rgba(255,255,255,0.14)',
+    backgroundColor: SLATE[100],
     borderWidth: 1,
     borderColor: p.headerBorder,
   },
   tabOn: { backgroundColor: p.primary, borderColor: p.primary },
-  tabText: { fontSize: TYPE.label, fontWeight: '600', color: p.onDark },
+  tabText: { fontSize: TYPE.label, fontWeight: '600', color: SLATE[600] },
   tabTextOn: { color: p.onPrimary },
   dot: {
     width: 14,
@@ -441,7 +447,7 @@ const useStyles = makeStyles((p) => ({
   mediaBtnText: { fontSize: TYPE.label, fontWeight: '700', color: p.onPrimary },
   removeBtn: { minHeight: TOUCH.min, justifyContent: 'center', paddingHorizontal: 10 },
   removeText: { fontSize: TYPE.caption, fontWeight: '700', color: FEEDBACK.errorText },
-  mediaNote: { fontSize: TYPE.caption, color: SLATE[400], textAlign: 'center', marginTop: SPACING.sm },
+  mediaNote: { fontSize: TYPE.caption, color: SLATE[500], textAlign: 'center', marginTop: SPACING.sm },
   dim: { opacity: 0.6 },
   pressed: { opacity: 0.78 },
 }));

@@ -3,7 +3,7 @@ import {
   Alert, Linking,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { COLORS, SPACING, SHADOWS } from '../../constants/theme';
+import { COLORS, SHADOWS, SPACING, TYPE } from '../../constants/theme';
 
 export default function SettingsScreen() {
   const handleLink = (url) => {
@@ -63,7 +63,7 @@ function SettingsRow({ icon, label, onPress, right }) {
 const sectionStyles = StyleSheet.create({
   container: { marginHorizontal: SPACING.md, marginTop: SPACING.md },
   title: {
-    fontSize: 13,
+    fontSize: TYPE.body,
     fontWeight: '700',
     color: COLORS.textLight,
     textTransform: 'uppercase',
@@ -88,7 +88,7 @@ const rowStyles = StyleSheet.create({
     borderBottomColor: COLORS.border,
   },
   icon: { fontSize: 20, width: 32 },
-  label: { flex: 1, fontSize: 15, color: COLORS.text, marginLeft: 6 },
+  label: { flex: 1, fontSize: TYPE.heading, color: COLORS.text, marginLeft: 6 },
   arrow: { fontSize: 20, color: COLORS.textLight },
 });
 
@@ -99,7 +99,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: SPACING.lg,
     paddingVertical: SPACING.lg,
   },
-  headerTitle: { color: '#fff', fontSize: 22, fontWeight: '700' },
+  headerTitle: { color: '#fff', fontSize: TYPE.headline, fontWeight: '700' },
   scroll: { flex: 1 },
   scrollContent: { paddingTop: SPACING.md, paddingBottom: SPACING.xxl },
 });

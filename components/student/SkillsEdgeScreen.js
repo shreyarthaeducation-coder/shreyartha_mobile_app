@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Linking, Pressable, ScrollView, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { DONE, FEEDBACK, SLATE, SPACING, TYPE } from '../../constants/theme';
+import { DONE, FEEDBACK, SLATE, SPACING, TYPE, leading } from '../../constants/theme';
 import { usePalette } from '../ui/PaletteContext';
 import { makeStyles } from '../../utils/makeStyles';
 import { EmptyState, useToast } from '../ui';
@@ -417,7 +417,7 @@ export default function SkillsEdgeScreen() {
                 <Text style={styles.rowTitle}>{s.name}</Text>
                 <Ionicons
                   name={locked ? 'lock-closed' : 'chevron-forward'}
-                  size={16}
+                  size={18}
                   color={locked ? SLATE[400] : palette.deep}
                 />
               </View>
@@ -450,10 +450,10 @@ export default function SkillsEdgeScreen() {
               <StudentCard style={locked ? styles.lockedCard : undefined}>
                 <View style={styles.rowHead}>
                   <Text style={styles.rowTitle}>{t.name}</Text>
-                  {done ? <Ionicons name="checkmark-circle" size={16} color={DONE} /> : null}
+                  {done ? <Ionicons name="checkmark-circle" size={18} color={DONE} /> : null}
                   <Ionicons
                     name={locked ? 'lock-closed' : 'chevron-forward'}
-                    size={16}
+                    size={18}
                     color={locked ? SLATE[400] : palette.deep}
                   />
                 </View>
@@ -539,7 +539,7 @@ export default function SkillsEdgeScreen() {
                   <Text style={styles.rowTitle}>{lo.text || lo.name}</Text>
                   <Ionicons
                     name={locked ? 'lock-closed' : 'chevron-forward'}
-                    size={16}
+                    size={18}
                     color={locked ? SLATE[400] : palette.deep}
                   />
                 </View>
@@ -620,13 +620,13 @@ export default function SkillsEdgeScreen() {
             <View style={styles.rowHead}>
               <Ionicons
                 name={done ? 'checkmark-circle' : 'ellipse-outline'}
-                size={17}
+                size={19}
                 color={done ? DONE : SLATE[300]}
               />
               <Text style={styles.rowTitle}>{moduleLabel(m, i)}</Text>
               <Ionicons
                 name={locked ? 'lock-closed' : 'chevron-forward'}
-                size={16}
+                size={18}
                 color={locked ? SLATE[400] : palette.deep}
               />
             </View>
@@ -712,7 +712,7 @@ export default function SkillsEdgeScreen() {
                 onPress={() => openUrl(module.videoUrl)}
                 style={({ pressed }) => [styles.mediaBtn, pressed && styles.pressed]}
               >
-                <Ionicons name="videocam-outline" size={15} color={palette.deep} />
+                <Ionicons name="videocam-outline" size={17} color={palette.deep} />
                 <Text style={styles.mediaText}>Watch the video</Text>
               </Pressable>
             ) : null}
@@ -721,7 +721,7 @@ export default function SkillsEdgeScreen() {
                 onPress={() => openUrl(module.imageUrl)}
                 style={({ pressed }) => [styles.mediaBtn, pressed && styles.pressed]}
               >
-                <Ionicons name="image-outline" size={15} color={palette.deep} />
+                <Ionicons name="image-outline" size={17} color={palette.deep} />
                 <Text style={styles.mediaText}>View the image</Text>
               </Pressable>
             ) : null}
@@ -730,7 +730,7 @@ export default function SkillsEdgeScreen() {
                 onPress={() => openUrl(module.pdfUrl)}
                 style={({ pressed }) => [styles.mediaBtn, pressed && styles.pressed]}
               >
-                <Ionicons name="document-text-outline" size={15} color={palette.deep} />
+                <Ionicons name="document-text-outline" size={17} color={palette.deep} />
                 <Text style={styles.mediaText}>Open the PDF</Text>
               </Pressable>
             ) : null}
@@ -747,7 +747,7 @@ export default function SkillsEdgeScreen() {
           >
             <Ionicons
               name={doneModules.has(module.id) ? 'checkmark-circle' : 'ellipse-outline'}
-              size={17}
+              size={19}
               color={doneModules.has(module.id) ? '#ffffff' : palette.onPrimary}
             />
             <Text
@@ -810,7 +810,7 @@ export default function SkillsEdgeScreen() {
           accessibilityRole="button"
           accessibilityLabel="Go back one level"
         >
-          <Ionicons name="arrow-back" size={14} color={palette.onDark} />
+          <Ionicons name="arrow-back" size={16} color={SLATE[600]} />
           <Text style={styles.crumbText} numberOfLines={1}>
             {trail}
           </Text>
@@ -823,7 +823,8 @@ export default function SkillsEdgeScreen() {
 }
 
 const useStyles = makeStyles((p) => ({
-  loader: { marginVertical: SPACING.xl },
+  loader: { marginVertical: SPACING.xl },
+
 
   crumb: {
     flexDirection: 'row',
@@ -832,12 +833,12 @@ const useStyles = makeStyles((p) => ({
     paddingVertical: 8,
     paddingHorizontal: 12,
     borderRadius: 999,
-    backgroundColor: p.glass,
+    backgroundColor: '#ffffff',
     borderWidth: 1,
-    borderColor: p.glassBorder,
+    borderColor: SLATE[200],
     marginBottom: SPACING.md,
   },
-  crumbText: { flex: 1, fontSize: TYPE.label, fontWeight: '600', color: p.onDark },
+  crumbText: { flex: 1, fontSize: TYPE.label, fontWeight: '600', color: SLATE[600] },
 
   rowHead: { flexDirection: 'row', alignItems: 'center', gap: SPACING.sm },
   rowTitle: { flex: 1, fontSize: TYPE.heading, fontWeight: '700', color: SLATE[800] },
@@ -848,7 +849,7 @@ const useStyles = makeStyles((p) => ({
   certIssued: { fontSize: TYPE.body, fontWeight: '700', color: FEEDBACK.successOnBg },
   certRejected: { fontSize: TYPE.body, fontWeight: '700', color: FEEDBACK.warningText },
   certReady: { fontSize: TYPE.body, fontWeight: '700', color: FEEDBACK.successOnBg },
-  certNote: { fontSize: TYPE.label, color: SLATE[500], lineHeight: 18, marginTop: 3 },
+  certNote: { fontSize: TYPE.label, color: SLATE[500], lineHeight: leading(TYPE.label), marginTop: 3 },
   certBtn: {
     alignSelf: 'flex-start',
     marginTop: SPACING.sm,
@@ -866,12 +867,12 @@ const useStyles = makeStyles((p) => ({
     paddingVertical: 9,
     paddingHorizontal: 10,
     borderRadius: 999,
-    backgroundColor: 'rgba(255,255,255,0.14)',
+    backgroundColor: SLATE[100],
     borderWidth: 1,
     borderColor: p.headerBorder,
   },
   tabOn: { backgroundColor: p.primary, borderColor: p.primary },
-  tabText: { fontSize: TYPE.label, fontWeight: '600', color: p.onDark },
+  tabText: { fontSize: TYPE.label, fontWeight: '600', color: SLATE[600] },
   tabTextOn: { color: p.onPrimary },
 
   mediaBtn: {

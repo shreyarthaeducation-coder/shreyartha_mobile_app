@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { SLATE, SPACING } from '../../../constants/theme';
+import { SLATE, SPACING, TYPE, leading } from '../../../constants/theme';
 import { usePalette } from '../../ui/PaletteContext';
 import { Card, EmptyState, FormSheet, ScreenScaffold, StatusChip, useToast } from '../../ui';
 import { ProgressBar } from '../../ui/charts';
@@ -169,7 +169,7 @@ export default function StaffEvaluationScreen({ homeRoute, apiBase }) {
           style={({ pressed }) => [styles.back, pressed && styles.pressed]}
           accessibilityRole="button"
         >
-          <Ionicons name="arrow-back" size={16} color={PALETTE.primaryDark} />
+          <Ionicons name="arrow-back" size={18} color={PALETTE.primaryDark} />
           <Text style={[styles.backText, { color: PALETTE.primaryDark }]}>
             {staffId ? prettyRoleName(role) : 'All categories'}
           </Text>
@@ -199,7 +199,7 @@ export default function StaffEvaluationScreen({ homeRoute, apiBase }) {
                   style={[styles.typeDot, { backgroundColor: EVAL_ROLE_COLOR[item] || SLATE[400] }]}
                 />
                 <Text style={styles.typeName}>{prettyRoleName(item)}</Text>
-                <Ionicons name="chevron-forward" size={17} color={SLATE[400]} />
+                <Ionicons name="chevron-forward" size={19} color={SLATE[400]} />
               </Pressable>
             ))}
           </View>
@@ -236,7 +236,7 @@ export default function StaffEvaluationScreen({ homeRoute, apiBase }) {
                     {member.designation || member.email || '—'}
                   </Text>
                 </View>
-                <Ionicons name="chevron-forward" size={17} color={SLATE[400]} />
+                <Ionicons name="chevron-forward" size={19} color={SLATE[400]} />
               </Pressable>
               <Pressable
                 onPress={() => setRating(member)}
@@ -370,9 +370,9 @@ export default function StaffEvaluationScreen({ homeRoute, apiBase }) {
 }
 
 const useStyles = makeStyles(() => ({
-  intro: { fontSize: 13, color: SLATE[500], marginBottom: SPACING.sm },
+  intro: { fontSize: TYPE.body, color: SLATE[500], marginBottom: SPACING.sm },
   back: { flexDirection: 'row', alignItems: 'center', gap: 5, marginBottom: SPACING.sm },
-  backText: { fontSize: 13.5, fontWeight: '700' },
+  backText: { fontSize: TYPE.heading, fontWeight: '700' },
   typeCard: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -385,7 +385,7 @@ const useStyles = makeStyles(() => ({
     marginBottom: 8,
   },
   typeDot: { width: 10, height: 10, borderRadius: 5 },
-  typeName: { flex: 1, fontSize: 14.5, fontWeight: '700', color: SLATE[800] },
+  typeName: { flex: 1, fontSize: TYPE.heading, fontWeight: '700', color: SLATE[800] },
   item: { marginBottom: SPACING.sm },
   memberHead: { flexDirection: 'row', alignItems: 'center', gap: SPACING.sm },
   avatar: {
@@ -397,29 +397,29 @@ const useStyles = makeStyles(() => ({
   },
   avatarText: { fontSize: 15, fontWeight: '800' },
   memberText: { flex: 1 },
-  name: { fontSize: 15, fontWeight: '700', color: SLATE[800] },
-  sub: { fontSize: 12.5, color: SLATE[500], marginTop: 2 },
+  name: { fontSize: TYPE.heading, fontWeight: '700', color: SLATE[800] },
+  sub: { fontSize: TYPE.label, color: SLATE[500], marginTop: 2 },
   evalBtn: { marginTop: SPACING.sm, borderRadius: 9, paddingVertical: 9, alignItems: 'center' },
-  evalBtnText: { color: '#ffffff', fontWeight: '700', fontSize: 13.5 },
+  evalBtnText: { color: '#ffffff', fontWeight: '700', fontSize: TYPE.heading },
   scoreBox: { alignItems: 'center', marginTop: SPACING.md },
-  score: { fontSize: 38, fontWeight: '800' },
-  scoreLabel: { fontSize: 12, color: SLATE[500], textAlign: 'center', marginTop: 2 },
+  score: { fontSize: TYPE.figure, fontWeight: '800' },
+  scoreLabel: { fontSize: TYPE.label, color: SLATE[500], textAlign: 'center', marginTop: 2 },
   sectionTitle: {
-    fontSize: 14,
+    fontSize: TYPE.heading,
     fontWeight: '800',
     color: SLATE[700],
     marginTop: SPACING.md,
     marginBottom: SPACING.sm,
   },
   metricHead: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  metricName: { flex: 1, fontSize: 14, fontWeight: '700', color: SLATE[800] },
-  metricScore: { fontSize: 17, fontWeight: '800', marginTop: 4, marginBottom: 6 },
-  sheetHint: { fontSize: 12.5, color: SLATE[500], lineHeight: 18, marginBottom: SPACING.sm },
+  metricName: { flex: 1, fontSize: TYPE.heading, fontWeight: '700', color: SLATE[800] },
+  metricScore: { fontSize: TYPE.title, fontWeight: '800', marginTop: 4, marginBottom: 6 },
+  sheetHint: { fontSize: TYPE.label, color: SLATE[500], lineHeight: leading(TYPE.label), marginBottom: SPACING.sm },
   metricRow: { marginTop: SPACING.sm },
-  metricLabel: { fontSize: 13.5, fontWeight: '700', color: SLATE[700], marginBottom: 4 },
+  metricLabel: { fontSize: TYPE.heading, fontWeight: '700', color: SLATE[700], marginBottom: 4 },
   stars: { flexDirection: 'row', gap: 4 },
   star: { padding: 2 },
   spinner: { marginTop: SPACING.lg },
-  error: { fontSize: 13, color: SLATE[500], marginTop: SPACING.sm },
+  error: { fontSize: TYPE.body, color: SLATE[500], marginTop: SPACING.sm },
   pressed: { opacity: 0.7 },
 }));

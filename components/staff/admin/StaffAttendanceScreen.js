@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useState } from 'react';
 import { Text, View } from 'react-native';
-import { FEEDBACK, SLATE, SPACING } from '../../../constants/theme';
+import { FEEDBACK, SLATE, SPACING, TYPE } from '../../../constants/theme';
 import { usePalette } from '../../ui/PaletteContext';
 import {
   Card,
@@ -211,15 +211,15 @@ const useStyles = makeStyles(() => ({
   tabs: { marginTop: SPACING.sm, marginBottom: SPACING.sm },
   item: { marginBottom: SPACING.sm },
   head: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 },
-  name: { flex: 1, fontSize: 15, fontWeight: '700', color: SLATE[800] },
-  sub: { fontSize: 12, color: SLATE[500], marginTop: -4, marginBottom: 6 },
+  name: { flex: 1, fontSize: TYPE.heading, fontWeight: '700', color: SLATE[800] },
+  sub: { fontSize: TYPE.label, color: SLATE[500], marginTop: -4, marginBottom: 6 },
   countRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginTop: 8 },
-  count: { fontSize: 12, fontWeight: '700', color: SLATE[500] },
+  count: { fontSize: TYPE.label, fontWeight: '700', color: SLATE[500] },
   timeRow: { flexDirection: 'row', gap: SPACING.sm, marginTop: 4 },
   timeCol: { flex: 1 },
-  timeLabel: { fontSize: 11, fontWeight: '800', color: SLATE[400], letterSpacing: 0.4 },
-  timeValue: { fontSize: 12.5, color: SLATE[800], fontWeight: '600', marginTop: 2 },
-  locationText: { fontSize: 11.5, color: SLATE[500], marginTop: 2 },
-  duration: { fontSize: 12.5, color: SLATE[600], fontWeight: '700', marginTop: 8 },
-  error: { fontSize: 13, color: FEEDBACK.errorText, marginTop: SPACING.sm },
+  timeLabel: { fontSize: TYPE.caption, fontWeight: '800', color: SLATE[500], letterSpacing: 0.4 },
+  timeValue: { fontSize: TYPE.label, color: SLATE[800], fontWeight: '600', marginTop: 2 },
+  locationText: { fontSize: TYPE.caption, color: SLATE[500], marginTop: 2 },
+  duration: { fontSize: TYPE.label, color: SLATE[600], fontWeight: '700', marginTop: 8 },
+  error: { fontSize: TYPE.body, color: FEEDBACK.errorText, marginTop: SPACING.sm },
 }));

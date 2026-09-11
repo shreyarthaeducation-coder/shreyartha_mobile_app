@@ -1,7 +1,7 @@
 import { useMemo, useRef, useState } from 'react';
 import { PanResponder, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { PORTALS, SLATE, SPACING } from '../../../constants/theme';
+import { PORTALS, SLATE, SPACING, TYPE } from '../../../constants/theme';
 import { Select } from '../../ui';
 import { CANONICAL_BLOOMS } from '../../../services/teacher/aiContentService';
 import { MIN_SNIP_PX } from '../../../utils/snipCapture';
@@ -136,7 +136,7 @@ export default function SnipOverlay({ layout, busy, onGenerate, onView3D }) {
               style={({ pressed }) => [styles.btn, styles.btnPrimary, pressed && styles.pressed]}
               accessibilityRole="button"
             >
-              <Ionicons name="sparkles" size={14} color="#ffffff" />
+              <Ionicons name="sparkles" size={16} color="#ffffff" />
               <Text style={styles.btnPrimaryText}>Generate</Text>
             </Pressable>
             <Pressable
@@ -153,7 +153,7 @@ export default function SnipOverlay({ layout, busy, onGenerate, onView3D }) {
               style={({ pressed }) => [styles.btn, styles.btnGhost, pressed && styles.pressed]}
               accessibilityRole="button"
             >
-              <Ionicons name="close" size={14} color={SLATE[600]} />
+              <Ionicons name="close" size={16} color={SLATE[600]} />
               <Text style={styles.btnGhostText}>Redraw</Text>
             </Pressable>
           </View>
@@ -174,7 +174,7 @@ const styles = StyleSheet.create({
   },
   hintWrap: { position: 'absolute', left: 0, right: 0, top: '45%', alignItems: 'center', gap: 4 },
   hint: {
-    fontSize: 13,
+    fontSize: TYPE.body,
     fontWeight: '700',
     color: '#ffffff',
     backgroundColor: 'rgba(15,23,42,0.78)',
@@ -184,7 +184,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   hintSmall: {
-    fontSize: 11.5,
+    fontSize: TYPE.caption,
     color: '#ffffff',
     backgroundColor: 'rgba(15,23,42,0.6)',
     paddingHorizontal: 10,
@@ -217,10 +217,10 @@ const styles = StyleSheet.create({
     borderRadius: 9,
   },
   btnPrimary: { flex: 1, backgroundColor: PALETTE.primaryDark },
-  btnPrimaryText: { fontSize: 12.5, fontWeight: '700', color: '#ffffff' },
+  btnPrimaryText: { fontSize: TYPE.label, fontWeight: '700', color: '#ffffff' },
   btn3d: { backgroundColor: PALETTE.tint },
-  btn3dText: { fontSize: 12.5, fontWeight: '700', color: PALETTE.primaryDark },
+  btn3dText: { fontSize: TYPE.label, fontWeight: '700', color: PALETTE.primaryDark },
   btnGhost: { backgroundColor: SLATE[100] },
-  btnGhostText: { fontSize: 12.5, fontWeight: '700', color: SLATE[600] },
+  btnGhostText: { fontSize: TYPE.label, fontWeight: '700', color: SLATE[600] },
   pressed: { opacity: 0.75 },
 });

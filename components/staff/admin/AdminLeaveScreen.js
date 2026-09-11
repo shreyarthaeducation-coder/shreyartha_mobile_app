@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Pressable, Text, TextInput, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { FEEDBACK, SLATE, SPACING } from '../../../constants/theme';
+import { FEEDBACK, SLATE, SPACING, TYPE, leading } from '../../../constants/theme';
 import { usePalette } from '../../ui/PaletteContext';
 import {
   Card,
@@ -116,7 +116,7 @@ function RequestCard({ request, showActions, onDecide, styles }) {
             accessibilityRole="button"
             accessibilityLabel={`Approve leave for ${request.employeeName}`}
           >
-            <Ionicons name="checkmark" size={15} color="#ffffff" />
+            <Ionicons name="checkmark" size={17} color="#ffffff" />
             <Text style={styles.actionText}>Approve</Text>
           </Pressable>
           <Pressable
@@ -125,7 +125,7 @@ function RequestCard({ request, showActions, onDecide, styles }) {
             accessibilityRole="button"
             accessibilityLabel={`Reject leave for ${request.employeeName}`}
           >
-            <Ionicons name="close" size={15} color="#ffffff" />
+            <Ionicons name="close" size={17} color="#ffffff" />
             <Text style={styles.actionText}>Reject</Text>
           </Pressable>
         </View>
@@ -151,7 +151,7 @@ function BalanceCard({ row, onAdjust, styles }) {
           accessibilityRole="button"
           accessibilityLabel={`Adjust balance for ${row.fullName}`}
         >
-          <Ionicons name="create-outline" size={17} color={SLATE[600]} />
+          <Ionicons name="create-outline" size={19} color={SLATE[600]} />
         </Pressable>
       </View>
 
@@ -400,7 +400,7 @@ export default function AdminLeaveScreen({ homeRoute = '/staff/principal' }) {
           value={remarks}
           onChangeText={setRemarks}
           placeholder="Visible to the requester (optional)"
-          placeholderTextColor={SLATE[400]}
+          placeholderTextColor={SLATE[500]}
           multiline
           numberOfLines={3}
           textAlignVertical="top"
@@ -432,7 +432,7 @@ export default function AdminLeaveScreen({ homeRoute = '/staff/principal' }) {
           value={adjustForm.days}
           onChangeText={(days) => setAdjustForm((p) => ({ ...p, days }))}
           placeholder="e.g. 2 to credit, -1 to debit"
-          placeholderTextColor={SLATE[400]}
+          placeholderTextColor={SLATE[500]}
           // A minus sign is meaningful here — a debit — so this cannot be numeric-only on Android,
           // where "numeric" hides the sign on several keyboards.
           keyboardType="numbers-and-punctuation"
@@ -445,7 +445,7 @@ export default function AdminLeaveScreen({ homeRoute = '/staff/principal' }) {
           value={adjustForm.reason}
           onChangeText={(reason) => setAdjustForm((p) => ({ ...p, reason }))}
           placeholder="Why this adjustment was made"
-          placeholderTextColor={SLATE[400]}
+          placeholderTextColor={SLATE[500]}
           multiline
           numberOfLines={3}
           textAlignVertical="top"
@@ -458,21 +458,21 @@ export default function AdminLeaveScreen({ homeRoute = '/staff/principal' }) {
 }
 
 const useStyles = makeStyles((p) => ({
-  intro: { fontSize: 13, color: SLATE[500], lineHeight: 19, marginBottom: SPACING.md },
+  intro: { fontSize: TYPE.body, color: SLATE[500], lineHeight: leading(TYPE.body), marginBottom: SPACING.md },
   body: { marginTop: SPACING.md },
   yearPicker: { marginBottom: SPACING.md },
   card: { marginBottom: SPACING.sm },
   cardHead: { flexDirection: 'row', alignItems: 'flex-start', gap: SPACING.sm },
   cardHeadText: { flex: 1 },
-  name: { fontSize: 15, fontWeight: '800', color: SLATE[800] },
-  sub: { fontSize: 12.5, color: SLATE[500], marginTop: 2 },
+  name: { fontSize: TYPE.heading, fontWeight: '800', color: SLATE[800] },
+  sub: { fontSize: TYPE.label, color: SLATE[500], marginTop: 2 },
   metaRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 6, flexWrap: 'wrap' },
-  meta: { fontSize: 12.5, color: SLATE[600], fontWeight: '600' },
-  metaDot: { fontSize: 12.5, color: SLATE[400] },
-  unpaid: { fontSize: 12.5, fontWeight: '700', color: FEEDBACK.errorText },
-  dates: { fontSize: 13, color: SLATE[700], marginTop: 8, fontWeight: '600' },
-  reason: { fontSize: 13, color: SLATE[600], lineHeight: 19, marginTop: 6 },
-  entitle: { fontSize: 14, fontWeight: '800' },
+  meta: { fontSize: TYPE.label, color: SLATE[600], fontWeight: '600' },
+  metaDot: { fontSize: TYPE.label, color: SLATE[500] },
+  unpaid: { fontSize: TYPE.label, fontWeight: '700', color: FEEDBACK.errorText },
+  dates: { fontSize: TYPE.body, color: SLATE[700], marginTop: 8, fontWeight: '600' },
+  reason: { fontSize: TYPE.body, color: SLATE[600], lineHeight: leading(TYPE.body), marginTop: 6 },
+  entitle: { fontSize: TYPE.heading, fontWeight: '800' },
   actions: { flexDirection: 'row', gap: SPACING.sm, marginTop: SPACING.md },
   approve: {
     flex: 1,
@@ -494,7 +494,7 @@ const useStyles = makeStyles((p) => ({
     borderRadius: 10,
     backgroundColor: FEEDBACK.errorText,
   },
-  actionText: { color: '#ffffff', fontSize: 13.5, fontWeight: '700' },
+  actionText: { color: '#ffffff', fontSize: TYPE.heading, fontWeight: '700' },
   adjustBtn: {
     width: 34,
     height: 34,
@@ -512,12 +512,12 @@ const useStyles = makeStyles((p) => ({
     borderTopColor: SLATE[100],
     marginTop: 6,
   },
-  balanceName: { flex: 1, fontSize: 13, color: SLATE[600] },
-  balanceValue: { fontSize: 13, fontWeight: '700', color: SLATE[800] },
+  balanceName: { flex: 1, fontSize: TYPE.body, color: SLATE[600] },
+  balanceValue: { fontSize: TYPE.body, fontWeight: '700', color: SLATE[800] },
   pressed: { opacity: 0.75 },
 
   label: {
-    fontSize: 13,
+    fontSize: TYPE.body,
     fontWeight: '700',
     color: SLATE[700],
     marginTop: SPACING.md,
@@ -529,7 +529,7 @@ const useStyles = makeStyles((p) => ({
     borderRadius: 10,
     paddingHorizontal: 13,
     paddingVertical: 11,
-    fontSize: 14.5,
+    fontSize: TYPE.heading,
     color: SLATE[800],
     backgroundColor: '#ffffff',
   },
@@ -540,9 +540,9 @@ const useStyles = makeStyles((p) => ({
     borderRadius: 10,
     paddingHorizontal: 13,
     paddingVertical: 11,
-    fontSize: 14.5,
+    fontSize: TYPE.heading,
     color: SLATE[800],
     backgroundColor: '#ffffff',
   },
-  sheetError: { color: FEEDBACK.errorText, fontSize: 12.5, marginTop: SPACING.sm },
+  sheetError: { color: FEEDBACK.errorText, fontSize: TYPE.label, marginTop: SPACING.sm },
 }));

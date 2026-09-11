@@ -2,6 +2,7 @@ import { Pressable, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { makeStyles } from '../../utils/makeStyles';
+import { TYPE } from '../../constants/theme';
 /**
  * The back-button header every staff sub-screen shares.
  * `fallbackRoute` is where Back lands when there is no history to pop (deep link).
@@ -19,7 +20,7 @@ export default function StaffHeader({ title, fallbackRoute }) {
         accessibilityRole="button"
         accessibilityLabel="Go back"
       >
-        <Ionicons name="chevron-back" size={18} color="#ffffff" />
+        <Ionicons name="chevron-back" size={20} color="#ffffff" />
         <Text style={styles.backText}>Back</Text>
       </Pressable>
       <Text style={styles.headerTitle} numberOfLines={1}>
@@ -47,13 +48,13 @@ const useStyles = makeStyles((p) => ({
     borderRadius: 8,
     backgroundColor: 'rgba(255,255,255,0.16)',
   },
-  backText: { color: '#ffffff', fontWeight: '700', fontSize: 13 },
+  backText: { color: '#ffffff', fontWeight: '700', fontSize: TYPE.body },
   headerTitle: {
     flex: 1,
     textAlign: 'center',
     color: '#ffffff',
     fontWeight: '700',
-    fontSize: 15,
+    fontSize: TYPE.heading,
     marginHorizontal: 8,
   },
   headerSpacer: { width: 62 },

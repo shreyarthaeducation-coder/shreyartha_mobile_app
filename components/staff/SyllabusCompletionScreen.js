@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { FEEDBACK, PORTALS, SLATE, SPACING } from '../../constants/theme';
+import { FEEDBACK, PORTALS, SLATE, SPACING, TYPE } from '../../constants/theme';
 import {
   Card,
   CardTitle,
@@ -280,7 +280,7 @@ export default function SyllabusCompletionScreen({
                         <StatusChipSmall status={subject.status} />
                         <Ionicons
                           name={open ? 'chevron-up' : 'chevron-down'}
-                          size={17}
+                          size={19}
                           color={SLATE[500]}
                         />
                       </Pressable>
@@ -316,7 +316,7 @@ export default function SyllabusCompletionScreen({
                                         ? 'time-outline'
                                         : 'ellipse-outline'
                                   }
-                                  size={18}
+                                  size={20}
                                   color={statusOf(chapter.status).color}
                                 />
                               </View>
@@ -347,17 +347,17 @@ const styles = StyleSheet.create({
     borderColor: SLATE[200],
     backgroundColor: '#ffffff',
   },
-  chipText: { fontSize: 13, fontWeight: '600', color: SLATE[600] },
+  chipText: { fontSize: TYPE.body, fontWeight: '600', color: SLATE[600] },
   pressed: { opacity: 0.72 },
 
   overview: { flexDirection: 'row', alignItems: 'center', gap: SPACING.md },
   statColumn: { flex: 1, gap: 6 },
   statTile: { flexDirection: 'row', alignItems: 'baseline', gap: 6 },
-  statValue: { fontSize: 17, fontWeight: '800', color: SLATE[800], minWidth: 34 },
-  statLabel: { flex: 1, fontSize: 12, color: SLATE[500], fontWeight: '600' },
+  statValue: { fontSize: TYPE.title, fontWeight: '800', color: SLATE[800], minWidth: 34 },
+  statLabel: { flex: 1, fontSize: TYPE.label, color: SLATE[500], fontWeight: '600' },
 
   sectionHeading: {
-    fontSize: 12,
+    fontSize: TYPE.label,
     fontWeight: '800',
     color: SLATE[500],
     textTransform: 'uppercase',
@@ -367,12 +367,12 @@ const styles = StyleSheet.create({
 
   subjectHead: { flexDirection: 'row', alignItems: 'center', gap: SPACING.sm },
   subjectText: { flex: 1 },
-  subjectName: { fontSize: 15, fontWeight: '700', color: SLATE[800] },
-  subjectMeta: { fontSize: 12, color: SLATE[500], marginTop: 1 },
+  subjectName: { fontSize: TYPE.heading, fontWeight: '700', color: SLATE[800] },
+  subjectMeta: { fontSize: TYPE.label, color: SLATE[500], marginTop: 1 },
   subjectBar: { marginTop: SPACING.sm },
 
   statusChip: { paddingHorizontal: 9, paddingVertical: 3, borderRadius: 999 },
-  statusChipText: { fontSize: 11, fontWeight: '700' },
+  statusChipText: { fontSize: TYPE.caption, fontWeight: '700' },
 
   chapterList: {
     marginTop: SPACING.sm,
@@ -387,8 +387,8 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
   },
   chapterText: { flex: 1 },
-  chapterName: { fontSize: 13.5, fontWeight: '600', color: SLATE[700] },
-  chapterMeta: { fontSize: 11.5, color: SLATE[500], marginTop: 1 },
+  chapterName: { fontSize: TYPE.heading, fontWeight: '600', color: SLATE[700] },
+  chapterMeta: { fontSize: TYPE.caption, color: SLATE[500], marginTop: 1 },
 
-  empty: { fontSize: 12.5, color: SLATE[400], fontStyle: 'italic', paddingVertical: 6 },
+  empty: { fontSize: TYPE.label, color: SLATE[500], fontStyle: 'italic', paddingVertical: 6 },
 });

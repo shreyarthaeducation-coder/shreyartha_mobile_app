@@ -202,7 +202,8 @@ function assertions(menu, calendar, layoutSrc, src, fee, chatbot, routeNames) {
 
   // ── 1. the menu still mirrors the web sidebar ─────────────────────────────
   const web = webSidebarItems();
-  if (web.length !== 9) bad(`web sidebar extractor found ${web.length} items, expected 9`);
+  // Ten since Notifications joined the web sidebar (the parent inbox); the app menu carries it too.
+  if (web.length !== 10) bad(`web sidebar extractor found ${web.length} items, expected 10`);
 
   // "home" is deliberately absent: the tile grid IS home, and its header already shows the child
   // card that page renders. Everything else must be present, in order.

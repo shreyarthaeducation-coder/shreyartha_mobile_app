@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Alert, Pressable, Text, View } from 'react-native';
 import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
-import { SLATE, SPACING } from '../../../constants/theme';
+import { SLATE, SPACING, TYPE } from '../../../constants/theme';
 import {
   Card,
   EmptyState,
@@ -419,18 +419,18 @@ const useStyles = makeStyles((p) => ({
   pressed: { opacity: 0.85 },
   disabled: { opacity: 0.45 },
   primaryBtn: { paddingHorizontal: SPACING.md, paddingVertical: 9, borderRadius: 10 },
-  primaryBtnText: { color: '#ffffff', fontWeight: '700', fontSize: 13 },
+  primaryBtnText: { color: '#ffffff', fontWeight: '700', fontSize: TYPE.body },
 
   card: { marginBottom: SPACING.sm },
   head: { flexDirection: 'row', alignItems: 'center', gap: SPACING.sm },
-  school: { flex: 1, fontSize: 15, fontWeight: '700', color: SLATE[800] },
-  meta: { fontSize: 12.5, color: SLATE[500], marginTop: 2 },
+  school: { flex: 1, fontSize: TYPE.heading, fontWeight: '700', color: SLATE[800] },
+  meta: { fontSize: TYPE.label, color: SLATE[500], marginTop: 2 },
   amounts: { flexDirection: 'row', alignItems: 'baseline', gap: SPACING.md, marginTop: SPACING.sm },
-  amountLine: { fontSize: 12.5, color: SLATE[500] },
-  amountTotal: { marginLeft: 'auto', fontSize: 16, fontWeight: '800', color: p.primaryDark },
-  rejected: { fontSize: 12.5, color: '#dc2626', marginTop: 6 },
+  amountLine: { fontSize: TYPE.label, color: SLATE[500] },
+  amountTotal: { marginLeft: 'auto', fontSize: TYPE.title, fontWeight: '800', color: p.primaryDark },
+  rejected: { fontSize: TYPE.label, color: '#dc2626', marginTop: 6 },
   actions: { flexDirection: 'row', gap: SPACING.md, marginTop: SPACING.sm },
-  link: { fontSize: 13, fontWeight: '600' },
+  link: { fontSize: TYPE.body, fontWeight: '600' },
   danger: { color: '#dc2626' },
 
   itemCard: {
@@ -445,8 +445,8 @@ const useStyles = makeStyles((p) => ({
 
   summary: { borderRadius: 12, padding: SPACING.md, marginBottom: SPACING.sm },
   summaryRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 3 },
-  summaryLabel: { fontSize: 13, color: SLATE[600] },
-  summaryValue: { fontSize: 13, color: SLATE[700], fontWeight: '600' },
+  summaryLabel: { fontSize: TYPE.body, color: SLATE[600] },
+  summaryValue: { fontSize: TYPE.body, color: SLATE[700], fontWeight: '600' },
   summaryStrong: { fontWeight: '800', color: p.primaryDark },
-  summaryNote: { fontSize: 11.5, color: SLATE[500], marginTop: 6 },
+  summaryNote: { fontSize: TYPE.caption, color: SLATE[500], marginTop: 6 },
 }));

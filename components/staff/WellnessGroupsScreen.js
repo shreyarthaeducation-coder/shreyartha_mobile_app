@@ -1,7 +1,7 @@
 import { useCallback, useState } from 'react';
 import { ActivityIndicator, Pressable, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { SLATE, SPACING } from '../../constants/theme';
+import { SLATE, SPACING, TYPE, leading } from '../../constants/theme';
 import { usePalette } from '../../components/ui/PaletteContext';
 import {
   EMPTY_SCHOOL_SCOPE,
@@ -195,7 +195,7 @@ export default function WellnessGroupsScreen({
                     <Text style={[styles.riskText, { color: meta.color }]}>{meta.label}</Text>
                   </View>
                 ) : null}
-                <Ionicons name="chevron-forward" size={16} color={SLATE[400]} />
+                <Ionicons name="chevron-forward" size={18} color={SLATE[400]} />
               </Pressable>
             );
           })}
@@ -267,7 +267,7 @@ export default function WellnessGroupsScreen({
                     style={({ pressed }) => [styles.revert, pressed && styles.pressed]}
                     accessibilityRole="button"
                   >
-                    <Ionicons name="refresh-outline" size={14} color={SLATE[600]} />
+                    <Ionicons name="refresh-outline" size={16} color={SLATE[600]} />
                     <Text style={styles.revertText}>Revert</Text>
                   </Pressable>
                 ) : null}
@@ -294,7 +294,7 @@ const useStyles = makeStyles((p) => ({
   legend: { flexDirection: 'row', gap: SPACING.md, paddingVertical: SPACING.sm },
   legendItem: { flexDirection: 'row', alignItems: 'center', gap: 5 },
   legendDot: { width: 9, height: 9, borderRadius: 5 },
-  legendText: { fontSize: 11.5, color: SLATE[500], fontWeight: '600' },
+  legendText: { fontSize: TYPE.caption, color: SLATE[500], fontWeight: '600' },
 
   row: {
     flexDirection: 'row',
@@ -305,10 +305,10 @@ const useStyles = makeStyles((p) => ({
     borderTopColor: SLATE[100],
   },
   rowText: { flex: 1 },
-  name: { fontSize: 14, fontWeight: '600', color: SLATE[800] },
-  meta: { fontSize: 11.5, color: SLATE[500], marginTop: 1 },
+  name: { fontSize: TYPE.heading, fontWeight: '600', color: SLATE[800] },
+  meta: { fontSize: TYPE.caption, color: SLATE[500], marginTop: 1 },
   riskChip: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 999 },
-  riskText: { fontSize: 11.5, fontWeight: '700' },
+  riskText: { fontSize: TYPE.caption, fontWeight: '700' },
 
   chart: { marginBottom: SPACING.md },
 
@@ -318,11 +318,11 @@ const useStyles = makeStyles((p) => ({
     borderTopColor: SLATE[100],
   },
   indexHeader: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  indexName: { flex: 1, fontSize: 13.5, fontWeight: '700', color: SLATE[800] },
-  indexCode: { fontSize: 11, fontWeight: '700', color: SLATE[400] },
-  indexMessage: { fontSize: 12.5, marginTop: 3, lineHeight: 18 },
-  indexMarks: { fontSize: 11.5, color: SLATE[500], marginTop: 2 },
-  indexEmpty: { fontSize: 12, color: SLATE[400], fontStyle: 'italic', marginTop: 3 },
+  indexName: { flex: 1, fontSize: TYPE.heading, fontWeight: '700', color: SLATE[800] },
+  indexCode: { fontSize: TYPE.caption, fontWeight: '700', color: SLATE[500] },
+  indexMessage: { fontSize: TYPE.label, marginTop: 3, lineHeight: leading(TYPE.label) },
+  indexMarks: { fontSize: TYPE.caption, color: SLATE[500], marginTop: 2 },
+  indexEmpty: { fontSize: TYPE.label, color: SLATE[500], fontStyle: 'italic', marginTop: 3 },
   indexActions: { flexDirection: 'row', alignItems: 'center', gap: SPACING.sm, marginTop: 8 },
   revert: {
     flexDirection: 'row',
@@ -333,6 +333,6 @@ const useStyles = makeStyles((p) => ({
     borderRadius: 999,
     backgroundColor: SLATE[100],
   },
-  revertText: { fontSize: 12, fontWeight: '600', color: SLATE[600] },
+  revertText: { fontSize: TYPE.label, fontWeight: '600', color: SLATE[600] },
   pressed: { opacity: 0.72 },
 }));

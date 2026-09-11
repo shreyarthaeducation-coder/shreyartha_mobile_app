@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Switch, Text, View } from 'react-native';
-import { SLATE, SPACING } from '../../../constants/theme';
+import { SLATE, SPACING, TYPE } from '../../../constants/theme';
 import { usePalette } from '../../../components/ui/PaletteContext';
 import { FormSheet, StatusChip } from '../../ui';
 import {
@@ -140,10 +140,10 @@ export default function PsychometricSheet({ visible, student, onClose, showToast
 
 const useStyles = makeStyles((p) => ({
   loader: { marginVertical: SPACING.xl },
-  empty: { fontSize: 13, color: SLATE[500], textAlign: 'center', paddingVertical: SPACING.xl },
+  empty: { fontSize: TYPE.body, color: SLATE[500], textAlign: 'center', paddingVertical: SPACING.xl },
   group: { marginBottom: SPACING.md },
   groupTitle: {
-    fontSize: 12,
+    fontSize: TYPE.label,
     fontWeight: '700',
     color: p.primaryDark,
     textTransform: 'uppercase',
@@ -159,6 +159,6 @@ const useStyles = makeStyles((p) => ({
     borderTopColor: SLATE[100],
   },
   rowText: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' },
-  topicName: { fontSize: 13.5, color: SLATE[700] },
+  topicName: { fontSize: TYPE.body, color: SLATE[700] },
   chip: { marginLeft: 0 },
 }));

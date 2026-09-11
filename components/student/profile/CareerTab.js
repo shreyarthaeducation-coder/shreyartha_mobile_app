@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { SLATE, SPACING, TYPE } from '../../../constants/theme';
+import { SLATE, SPACING, TYPE, leading } from '../../../constants/theme';
 import { usePalette } from '../../ui/PaletteContext';
 import { makeStyles } from '../../../utils/makeStyles';
 import { Select } from '../../ui';
@@ -227,10 +227,10 @@ const useStyles = makeStyles((p) => ({
   lockText: { fontSize: TYPE.micro, fontWeight: '700', color: p.deep },
   allLocked: {
     fontSize: TYPE.label,
-    color: p.onDark,
+    color: SLATE[600],
     textAlign: 'center',
     marginBottom: SPACING.lg,
-    lineHeight: 18,
+    lineHeight: leading(TYPE.label),
   },
   save: {
     alignItems: 'center',

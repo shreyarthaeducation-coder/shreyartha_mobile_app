@@ -1,7 +1,7 @@
 import { useCallback, useState } from 'react';
 import { ActivityIndicator, Pressable, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { SLATE, SPACING } from '../../constants/theme';
+import { SLATE, SPACING, TYPE } from '../../constants/theme';
 import { usePalette } from '../../components/ui/PaletteContext';
 import { EmptyState, ScreenScaffold, StatusChip, useToast } from '../ui';
 import useStaffResource from '../../hooks/useStaffResource';
@@ -201,13 +201,13 @@ export default function CounsellorReportFormScreen({ homeRoute = '/teacher', api
               accessibilityState={{ expanded: treeOpen }}
               accessibilityLabel={`Change selection, currently ${leafSummary}`}
             >
-              <Ionicons name="funnel-outline" size={15} color={PALETTE.primaryDark} />
+              <Ionicons name="funnel-outline" size={17} color={PALETTE.primaryDark} />
               <Text style={styles.summaryText} numberOfLines={1}>
                 {leafSummary}
               </Text>
               <Ionicons
                 name={treeOpen ? 'chevron-up' : 'chevron-down'}
-                size={16}
+                size={18}
                 color={PALETTE.primaryDark}
               />
             </Pressable>
@@ -224,11 +224,11 @@ export default function CounsellorReportFormScreen({ homeRoute = '/teacher', api
                     style={({ pressed }) => [styles.schoolRow, pressed && styles.pressed]}
                     accessibilityRole="button"
                   >
-                    <Ionicons name="business-outline" size={17} color={PALETTE.primaryDark} />
+                    <Ionicons name="business-outline" size={19} color={PALETTE.primaryDark} />
                     <Text style={styles.schoolName}>{school.schoolName}</Text>
                     <Ionicons
                       name={schoolOpen ? 'chevron-up' : 'chevron-down'}
-                      size={16}
+                      size={18}
                       color={SLATE[400]}
                     />
                   </Pressable>
@@ -249,7 +249,7 @@ export default function CounsellorReportFormScreen({ homeRoute = '/teacher', api
                             <Text style={styles.className}>Class {klass.className}</Text>
                             <Ionicons
                               name={classOpen ? 'chevron-up' : 'chevron-down'}
-                              size={16}
+                              size={18}
                               color={SLATE[400]}
                             />
                           </Pressable>
@@ -349,7 +349,7 @@ export default function CounsellorReportFormScreen({ homeRoute = '/teacher', api
                       ) : null}
                     </View>
                     {s.hasReport ? <StatusChip label="Report saved" tone="success" /> : null}
-                    <Ionicons name="chevron-forward" size={16} color={SLATE[400]} />
+                    <Ionicons name="chevron-forward" size={18} color={SLATE[400]} />
                   </Pressable>
                 ))}
               </View>
@@ -386,7 +386,7 @@ const useStyles = makeStyles((p) => ({
     backgroundColor: p.tint,
     marginBottom: SPACING.sm,
   },
-  summaryText: { flex: 1, fontSize: 13, fontWeight: '700', color: p.primaryDark },
+  summaryText: { flex: 1, fontSize: TYPE.body, fontWeight: '700', color: p.primaryDark },
   school: { marginBottom: SPACING.sm },
   schoolRow: {
     flexDirection: 'row',
@@ -394,15 +394,15 @@ const useStyles = makeStyles((p) => ({
     gap: SPACING.sm,
     paddingVertical: 12,
   },
-  schoolName: { flex: 1, fontSize: 14.5, fontWeight: '700', color: SLATE[800] },
+  schoolName: { flex: 1, fontSize: TYPE.heading, fontWeight: '700', color: SLATE[800] },
 
   class: { borderTopWidth: 1, borderTopColor: SLATE[100] },
   classRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 11 },
-  className: { flex: 1, fontSize: 14, fontWeight: '600', color: SLATE[700] },
+  className: { flex: 1, fontSize: TYPE.heading, fontWeight: '600', color: SLATE[700] },
 
   year: { paddingLeft: SPACING.sm, paddingBottom: SPACING.sm },
   yearHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 6 },
-  yearLabel: { fontSize: 12.5, fontWeight: '600', color: SLATE[500] },
+  yearLabel: { fontSize: TYPE.label, fontWeight: '600', color: SLATE[500] },
   leafRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
   leaf: {
     paddingVertical: 7,
@@ -413,15 +413,15 @@ const useStyles = makeStyles((p) => ({
     backgroundColor: '#ffffff',
   },
   leafOn: { backgroundColor: p.tint, borderColor: p.primary },
-  leafText: { fontSize: 12.5, fontWeight: '600', color: SLATE[600] },
+  leafText: { fontSize: TYPE.label, fontWeight: '600', color: SLATE[600] },
   leafTextOn: { color: p.primaryDark },
 
   loader: { marginVertical: SPACING.xl },
   roster: { marginTop: SPACING.md },
   rosterTitle: {
-    fontSize: 11.5,
+    fontSize: TYPE.caption,
     fontWeight: '700',
-    color: SLATE[400],
+    color: SLATE[500],
     textTransform: 'uppercase',
     letterSpacing: 0.4,
     marginBottom: 6,
@@ -435,7 +435,7 @@ const useStyles = makeStyles((p) => ({
     borderTopColor: SLATE[100],
   },
   studentText: { flex: 1 },
-  studentName: { fontSize: 14, fontWeight: '600', color: SLATE[800] },
-  studentMeta: { fontSize: 11.5, color: SLATE[500], marginTop: 1 },
+  studentName: { fontSize: TYPE.heading, fontWeight: '600', color: SLATE[800] },
+  studentMeta: { fontSize: TYPE.caption, color: SLATE[500], marginTop: 1 },
   pressed: { opacity: 0.72 },
 }));

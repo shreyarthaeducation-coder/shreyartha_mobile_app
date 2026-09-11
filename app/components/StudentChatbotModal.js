@@ -10,6 +10,7 @@ import {
   View,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import { TYPE, leading } from '../../constants/theme';
 
 const STUDENT_SECTIONS = [
   {
@@ -346,8 +347,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   avatarText: { fontSize: 20 },
-  chatHeaderTitle: { color: '#fff', fontWeight: '700', fontSize: 16 },
-  chatHeaderSubtitle: { color: 'rgba(255,255,255,0.75)', fontSize: 11, marginTop: 1 },
+  chatHeaderTitle: { color: '#fff', fontWeight: '700', fontSize: TYPE.title },
+  chatHeaderSubtitle: { color: 'rgba(255,255,255,0.75)', fontSize: TYPE.caption, marginTop: 1 },
   closeBtn: { padding: 4 },
   closeBtnText: { color: '#fff', fontSize: 18, fontWeight: '700' },
   messageList: { flex: 1 },
@@ -369,7 +370,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#4f46e5',
     borderBottomRightRadius: 4,
   },
-  messageText: { fontSize: 14, color: '#1e293b', lineHeight: 22 },
+  messageText: { fontSize: TYPE.body, color: '#1e293b', lineHeight: leading(TYPE.body) },
   boldText: { fontWeight: '700', color: '#1e293b' },
   userText: { color: '#fff' },
   chipsContainer: {
@@ -387,7 +388,7 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     paddingHorizontal: 12,
   },
-  chipText: { color: '#4f46e5', fontSize: 12, fontWeight: '600' },
+  chipText: { color: '#4f46e5', fontSize: TYPE.label, fontWeight: '600' },
   actionsContainer: {
     marginTop: 10,
     gap: 8,
@@ -420,7 +421,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     alignItems: 'center',
   },
-  actionBtnTextLight: { color: '#fff', fontSize: 13, fontWeight: '700' },
-  actionBtnTextOutline: { color: '#4f46e5', fontSize: 13, fontWeight: '700' },
-  actionBtnTextGhost: { color: '#94a3b8', fontSize: 13, fontWeight: '600' },
+  actionBtnTextLight: { color: '#fff', fontSize: TYPE.body, fontWeight: '700' },
+  actionBtnTextOutline: { color: '#4f46e5', fontSize: TYPE.body, fontWeight: '700' },
+  actionBtnTextGhost: { color: '#94a3b8', fontSize: TYPE.body, fontWeight: '600' },
 });

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Alert, Pressable, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { SLATE, SPACING } from '../../../constants/theme';
+import { SLATE, SPACING, TYPE, leading } from '../../../constants/theme';
 import { usePalette } from '../../ui/PaletteContext';
 import {
   Card,
@@ -310,7 +310,7 @@ export default function ClassManagementScreen({ homeRoute, apiBase, academicYear
                 >
                   <Ionicons
                     name={expanded ? 'chevron-down' : 'chevron-forward'}
-                    size={17}
+                    size={19}
                     color={PALETTE.primaryDark}
                   />
                   <Text style={styles.className}>Class {cls.className}</Text>
@@ -326,7 +326,7 @@ export default function ClassManagementScreen({ homeRoute, apiBase, academicYear
                   accessibilityRole="button"
                   accessibilityLabel={`Delete class ${cls.className}`}
                 >
-                  <Ionicons name="trash-outline" size={17} color={SLATE[400]} />
+                  <Ionicons name="trash-outline" size={19} color={SLATE[400]} />
                 </Pressable>
               </View>
 
@@ -345,7 +345,7 @@ export default function ClassManagementScreen({ homeRoute, apiBase, academicYear
                           >
                             <Ionicons
                               name={open ? 'chevron-down' : 'chevron-forward'}
-                              size={15}
+                              size={17}
                               color={SLATE[500]}
                             />
                             <Text style={styles.sectionName}>Section {section.sectionName}</Text>
@@ -366,7 +366,7 @@ export default function ClassManagementScreen({ homeRoute, apiBase, academicYear
                             accessibilityRole="button"
                             accessibilityLabel={`Delete section ${section.sectionName}`}
                           >
-                            <Ionicons name="trash-outline" size={15} color={SLATE[400]} />
+                            <Ionicons name="trash-outline" size={17} color={SLATE[400]} />
                           </Pressable>
                         </View>
 
@@ -397,7 +397,7 @@ export default function ClassManagementScreen({ homeRoute, apiBase, academicYear
                                   accessibilityRole="button"
                                   accessibilityLabel={`Edit ${subject.subjectName}`}
                                 >
-                                  <Ionicons name="pencil-outline" size={15} color={SLATE[400]} />
+                                  <Ionicons name="pencil-outline" size={17} color={SLATE[400]} />
                                 </Pressable>
                                 <Pressable
                                   onPress={() =>
@@ -409,7 +409,7 @@ export default function ClassManagementScreen({ homeRoute, apiBase, academicYear
                                   accessibilityRole="button"
                                   accessibilityLabel={`Delete ${subject.subjectName}`}
                                 >
-                                  <Ionicons name="trash-outline" size={15} color={SLATE[400]} />
+                                  <Ionicons name="trash-outline" size={17} color={SLATE[400]} />
                                 </Pressable>
                               </View>
                             ))}
@@ -421,7 +421,7 @@ export default function ClassManagementScreen({ homeRoute, apiBase, academicYear
                               style={({ pressed }) => [styles.addRow, pressed && styles.pressed]}
                               accessibilityRole="button"
                             >
-                              <Ionicons name="add" size={16} color={PALETTE.primaryDark} />
+                              <Ionicons name="add" size={18} color={PALETTE.primaryDark} />
                               <Text style={[styles.addText, { color: PALETTE.primaryDark }]}>
                                 Add subjects
                               </Text>
@@ -437,7 +437,7 @@ export default function ClassManagementScreen({ homeRoute, apiBase, academicYear
                     style={({ pressed }) => [styles.addRow, pressed && styles.pressed]}
                     accessibilityRole="button"
                   >
-                    <Ionicons name="add" size={16} color={PALETTE.primaryDark} />
+                    <Ionicons name="add" size={18} color={PALETTE.primaryDark} />
                     <Text style={[styles.addText, { color: PALETTE.primaryDark }]}>
                       Add sections
                     </Text>
@@ -719,12 +719,12 @@ export default function ClassManagementScreen({ homeRoute, apiBase, academicYear
 
 const useStyles = makeStyles((p) => ({
   yearBar: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  board: { fontSize: 12, color: SLATE[500], fontWeight: '600', marginTop: 6 },
+  board: { fontSize: TYPE.label, color: SLATE[500], fontWeight: '600', marginTop: 6 },
   iconBtn: { padding: 5 },
   node: { marginTop: SPACING.sm },
   nodeHead: { flexDirection: 'row', alignItems: 'center' },
   nodeTap: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 7, paddingVertical: 4 },
-  className: { flex: 1, fontSize: 15, fontWeight: '700', color: SLATE[800] },
+  className: { flex: 1, fontSize: TYPE.heading, fontWeight: '700', color: SLATE[800] },
   nodeBody: { marginTop: 6 },
   section: {
     borderTopWidth: 1,
@@ -733,7 +733,7 @@ const useStyles = makeStyles((p) => ({
     marginTop: 6,
     paddingLeft: 8,
   },
-  sectionName: { flex: 1, fontSize: 13.5, fontWeight: '700', color: SLATE[700] },
+  sectionName: { flex: 1, fontSize: TYPE.heading, fontWeight: '700', color: SLATE[700] },
   subjectList: { paddingLeft: 12, marginTop: 4 },
   subject: {
     flexDirection: 'row',
@@ -743,10 +743,10 @@ const useStyles = makeStyles((p) => ({
     borderBottomColor: SLATE[100],
   },
   subjectText: { flex: 1 },
-  subjectName: { fontSize: 13, fontWeight: '600', color: SLATE[700] },
-  subjectMeta: { fontSize: 11, color: SLATE[400], marginTop: 1 },
+  subjectName: { fontSize: TYPE.body, fontWeight: '600', color: SLATE[700] },
+  subjectMeta: { fontSize: TYPE.caption, color: SLATE[500], marginTop: 1 },
   addRow: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingVertical: 8 },
-  addText: { fontSize: 13, fontWeight: '700' },
+  addText: { fontSize: TYPE.body, fontWeight: '700' },
   pressed: { opacity: 0.7 },
   fab: {
     position: 'absolute',
@@ -768,13 +768,13 @@ const useStyles = makeStyles((p) => ({
     borderColor: SLATE[200],
     backgroundColor: '#ffffff',
   },
-  chipText: { fontSize: 13, fontWeight: '700', color: SLATE[600] },
+  chipText: { fontSize: TYPE.body, fontWeight: '700', color: SLATE[600] },
   groupLabel: {
-    fontSize: 12.5,
+    fontSize: TYPE.label,
     fontWeight: '800',
     color: p.primaryDark,
     marginTop: SPACING.sm,
     marginBottom: 6,
   },
-  hint: { fontSize: 12.5, color: SLATE[500], lineHeight: 18, marginTop: 4 },
+  hint: { fontSize: TYPE.label, color: SLATE[500], lineHeight: leading(TYPE.label), marginTop: 4 },
 }));

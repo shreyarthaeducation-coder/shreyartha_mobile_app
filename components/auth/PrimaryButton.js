@@ -1,6 +1,6 @@
 import React from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text } from 'react-native';
-import { SPACING } from '../../constants/theme';
+import { SPACING, TYPE } from '../../constants/theme';
 
 /**
  * Primary submit button.
@@ -44,5 +44,5 @@ const styles = StyleSheet.create({
   },
   pressed: { opacity: 0.88, transform: [{ scale: 0.995 }] },
   disabled: { opacity: 0.6 },
-  text: { fontSize: 16, fontWeight: '700', letterSpacing: 0.2 },
+  text: { fontSize: TYPE.heading, fontWeight: '700', letterSpacing: 0.2 },
 });

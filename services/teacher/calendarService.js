@@ -36,23 +36,32 @@ export async function fetchCalendarEvents({ year, month }, signal) {
 }
 
 /**
- * The staff member's own marked attendance for a month.
+ * The staff member's own attendance for a month — each day's status, and when and where it was
+ * recorded.
  *
- * Returns a bare map with a key for **every** day of the month and `null` where nothing is marked,
- * so `Object.keys(...).length` tells you nothing — count non-null values.
+ * Reads the self-attendance **sheet**, not `/api/staff/attendance/calendar`. That endpoint returns
+ * the same date → status map and nothing else; the sheet adds `details` (the mark's time and place,
+ * a check-in's school, the day's sign-in). The sheet's role guard admits every role this calendar
+ * serves.
  *
- * Values are only ever `PRESENT` or `ABSENT`. This reads the teacher *self*-attendance table, whose
- * validator permits nothing else; `INCOMPLETE` belongs to the separate login/logout table and can
- * never appear here, which makes the web's "Incomplete" branch dead code.
+ * `attendance` has a key for **every** day of the month and `null` where nothing is marked, so
+ * `Object.keys(...).length` tells you nothing — count non-null values. Values are `PRESENT`,
+ * `ABSENT` or `WORK_FROM_HOME`; `INCOMPLETE` belongs to the separate sign-in table and never
+ * appears here.
  *
- * @returns {Promise<Record<string, 'PRESENT'|'ABSENT'|null>>}
+ * @returns {Promise<{ attendance: Record<string, 'PRESENT'|'ABSENT'|'WORK_FROM_HOME'|null>,
+ *                     details: Record<string, object> }>}
  */
 export async function fetchAttendanceCalendar({ year, month }, signal) {
-  const res = await staffApi.get('/api/staff/attendance/calendar', {
+  const res = await staffApi.get('/api/teacher/self-attendance/sheet', {
     params: { year, month },
     signal,
   });
-  return res && typeof res === 'object' && !Array.isArray(res) ? res : {};
+  const isMap = (v) => v && typeof v === 'object' && !Array.isArray(v);
+  return {
+    attendance: isMap(res?.attendance) ? res.attendance : {},
+    details: isMap(res?.details) ? res.details : {},
+  };
 }
 
 /** `"2026-08-14T09:00:00"` → `"2026-08-14"`, without constructing a Date. */

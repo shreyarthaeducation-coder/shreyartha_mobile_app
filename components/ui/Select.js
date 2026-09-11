@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { FlatList, Modal, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { FEEDBACK, SLATE, SPACING } from '../../constants/theme';
+import { FEEDBACK, SLATE, SPACING, TYPE } from '../../constants/theme';
 import { usePalette } from './PaletteContext';
 
 /**
@@ -75,7 +75,7 @@ export default function Select({
       </Text>
       <Ionicons
         name="chevron-down"
-        size={14}
+        size={16}
         color={selected ? palette.primaryDark : SLATE[500]}
       />
     </Pressable>
@@ -97,7 +97,7 @@ export default function Select({
         <Text style={[styles.fieldValue, !selected && styles.placeholder]} numberOfLines={1}>
           {selected ? selected.label : placeholder}
         </Text>
-        <Ionicons name="chevron-down" size={18} color={SLATE[500]} />
+        <Ionicons name="chevron-down" size={20} color={SLATE[500]} />
       </Pressable>
       {error ? <Text style={styles.error}>{error}</Text> : null}
     </View>
@@ -116,19 +116,19 @@ export default function Select({
 
             {searchable ? (
               <View style={styles.searchRow}>
-                <Ionicons name="search" size={16} color={SLATE[400]} />
+                <Ionicons name="search" size={18} color={SLATE[400]} />
                 <TextInput
                   style={styles.searchInput}
                   value={query}
                   onChangeText={setQuery}
                   placeholder="Search…"
-                  placeholderTextColor={SLATE[400]}
+                  placeholderTextColor={SLATE[500]}
                   autoCorrect={false}
                   returnKeyType="search"
                 />
                 {query ? (
                   <Pressable onPress={() => setQuery('')} hitSlop={8} accessibilityLabel="Clear search">
-                    <Ionicons name="close-circle" size={17} color={SLATE[400]} />
+                    <Ionicons name="close-circle" size={19} color={SLATE[400]} />
                   </Pressable>
                 ) : null}
               </View>
@@ -189,11 +189,11 @@ const styles = StyleSheet.create({
     maxWidth: '100%',
   },
   chipDisabled: { opacity: 0.5 },
-  chipText: { flexShrink: 1, fontSize: 13, fontWeight: '600', color: SLATE[600] },
+  chipText: { flexShrink: 1, fontSize: TYPE.body, fontWeight: '600', color: SLATE[600] },
   pressed: { opacity: 0.7 },
 
   fieldWrap: { marginBottom: SPACING.md },
-  label: { fontSize: 13, fontWeight: '600', color: SLATE[700], marginBottom: 6 },
+  label: { fontSize: TYPE.body, fontWeight: '600', color: SLATE[700], marginBottom: 6 },
   field: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -204,9 +204,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 13,
   },
-  fieldValue: { flex: 1, fontSize: 15, color: SLATE[900] },
-  placeholder: { color: SLATE[400] },
-  error: { marginTop: 5, fontSize: 12.5, color: FEEDBACK.errorText, fontWeight: '500' },
+  fieldValue: { flex: 1, fontSize: TYPE.heading, color: SLATE[900] },
+  placeholder: { color: SLATE[600] },
+  error: { marginTop: 5, fontSize: TYPE.label, color: FEEDBACK.errorText, fontWeight: '500' },
 
   backdrop: { flex: 1, backgroundColor: 'rgba(15,23,42,0.45)', justifyContent: 'flex-end' },
   sheet: {
@@ -226,7 +226,7 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.sm,
   },
   sheetTitle: {
-    fontSize: 15,
+    fontSize: TYPE.heading,
     fontWeight: '700',
     color: SLATE[800],
     paddingHorizontal: SPACING.md,
@@ -244,10 +244,10 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     backgroundColor: SLATE[50],
   },
-  searchInput: { flex: 1, paddingVertical: 10, fontSize: 14.5, color: SLATE[900] },
+  searchInput: { flex: 1, paddingVertical: 10, fontSize: TYPE.heading, color: SLATE[900] },
   noMatch: {
-    fontSize: 13,
-    color: SLATE[400],
+    fontSize: TYPE.body,
+    color: SLATE[500],
     fontStyle: 'italic',
     textAlign: 'center',
     paddingVertical: SPACING.lg,
@@ -262,5 +262,5 @@ const styles = StyleSheet.create({
     borderTopColor: SLATE[100],
   },
   optionPressed: { backgroundColor: SLATE[50] },
-  optionText: { flex: 1, fontSize: 15, color: SLATE[700] },
+  optionText: { flex: 1, fontSize: TYPE.heading, color: SLATE[700] },
 });

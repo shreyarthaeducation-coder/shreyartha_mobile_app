@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Image, Pressable, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { SPACING, TOUCH, TYPE } from '../../constants/theme';
+import { SLATE, SPACING, TOUCH, TYPE, leading } from '../../constants/theme';
 import { usePalette } from '../ui/PaletteContext';
 import { makeStyles } from '../../utils/makeStyles';
 import { EmptyState, SegmentedTabs } from '../ui';
@@ -142,7 +142,6 @@ export default function JyoraHubScreen() {
       </View>
 
       <SegmentedTabs
-        tone="dark"
         options={[
           { value: 'topic', label: t.tabTopic },
           { value: 'stuck', label: t.tabStuck },
@@ -152,7 +151,7 @@ export default function JyoraHubScreen() {
       />
 
       {mode === 'stuck' ? (
-        <StudentCard tone="dark" style={styles.stuck}>
+        <StudentCard style={styles.stuck}>
           <StudentCardTitle>{t.stuckTitle}</StudentCardTitle>
           <StudentNote>{t.stuckBody}</StudentNote>
           <Pressable
@@ -160,12 +159,12 @@ export default function JyoraHubScreen() {
             style={({ pressed }) => [styles.cta, pressed && styles.pressed]}
             accessibilityRole="button"
           >
-            <Ionicons name="camera-outline" size={16} color={palette.onPrimary} />
+            <Ionicons name="camera-outline" size={18} color={palette.onPrimary} />
             <Text style={styles.ctaText}>{t.stuckCta}</Text>
           </Pressable>
         </StudentCard>
       ) : error ? (
-        <StudentCard tone="dark">
+        <StudentCard>
           <StudentNote>{error}</StudentNote>
         </StudentCard>
       ) : subjects.length === 0 ? (
@@ -181,7 +180,7 @@ export default function JyoraHubScreen() {
           {subjects.map((subject) => {
             const subjectOpen = openSubject === subject.id;
             return (
-              <StudentCard key={subject.id} tone="dark">
+              <StudentCard key={subject.id}>
                 <Pressable
                   onPress={() => {
                     setOpenSubject(subjectOpen ? null : subject.id);
@@ -194,7 +193,7 @@ export default function JyoraHubScreen() {
                   <Text style={styles.subjectName}>{subject.name}</Text>
                   <Ionicons
                     name={subjectOpen ? 'chevron-up' : 'chevron-down'}
-                    size={16}
+                    size={18}
                     color={palette.primary}
                   />
                 </Pressable>
@@ -213,8 +212,8 @@ export default function JyoraHubScreen() {
                             <Text style={styles.chapterName}>{chapter.name}</Text>
                             <Ionicons
                               name={chapterOpen ? 'chevron-up' : 'chevron-down'}
-                              size={14}
-                              color={palette.onDark}
+                              size={16}
+                              color={SLATE[600]}
                             />
                           </Pressable>
 
@@ -231,7 +230,7 @@ export default function JyoraHubScreen() {
                                   <Text style={styles.topicText} numberOfLines={2}>
                                     {topic.name}
                                   </Text>
-                                  <Ionicons name="sparkles-outline" size={14} color={palette.primary} />
+                                  <Ionicons name="sparkles-outline" size={16} color={palette.primary} />
                                 </Pressable>
                               ))
                             : null}
@@ -275,16 +274,16 @@ const useStyles = makeStyles((p) => ({
   avatar: { width: 88, height: 88, borderRadius: 44, marginBottom: SPACING.sm },
   subtitle: {
     fontSize: TYPE.label,
-    color: p.onDark,
+    color: SLATE[600],
     textAlign: 'center',
-    lineHeight: 19,
+    lineHeight: leading(TYPE.label),
   },
 
   tree: { marginTop: SPACING.md },
   header: {
     fontSize: TYPE.caption,
     fontWeight: '700',
-    color: p.onDark,
+    color: SLATE[600],
     textTransform: 'uppercase',
     letterSpacing: 0.5,
     marginBottom: SPACING.sm,
@@ -296,9 +295,9 @@ const useStyles = makeStyles((p) => ({
     gap: SPACING.sm,
     minHeight: TOUCH.min,
   },
-  subjectName: { flex: 1, fontSize: TYPE.heading, fontWeight: '700', color: '#ffffff' },
+  subjectName: { flex: 1, fontSize: TYPE.heading, fontWeight: '700', color: SLATE[800] },
   chapter: { marginLeft: SPACING.sm, marginTop: 2 },
-  chapterName: { flex: 1, fontSize: TYPE.body, fontWeight: '600', color: p.onDark },
+  chapterName: { flex: 1, fontSize: TYPE.body, fontWeight: '600', color: SLATE[600] },
   topic: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -308,9 +307,9 @@ const useStyles = makeStyles((p) => ({
     marginLeft: SPACING.md,
     marginBottom: 5,
     borderRadius: 10,
-    backgroundColor: p.glassDarkRaised,
+    backgroundColor: SLATE[50],
   },
-  topicText: { flex: 1, fontSize: TYPE.body, color: '#ffffff' },
+  topicText: { flex: 1, fontSize: TYPE.body, color: SLATE[700] },
 
   stuck: { marginTop: SPACING.md },
   cta: {
@@ -326,7 +325,7 @@ const useStyles = makeStyles((p) => ({
   ctaText: { fontSize: TYPE.heading, fontWeight: '800', color: p.onPrimary },
 
   preparing: { flexDirection: 'row', alignItems: 'center', gap: SPACING.sm, marginTop: SPACING.md },
-  preparingText: { fontSize: TYPE.label, color: p.onDark },
+  preparingText: { fontSize: TYPE.label, color: SLATE[600] },
 
   pressed: { opacity: 0.78 },
 }));

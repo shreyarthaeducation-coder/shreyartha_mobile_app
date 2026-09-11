@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { FEEDBACK, RECORDING, SLATE, SPACING, TYPE } from '../../../constants/theme';
+import { FEEDBACK, RECORDING, SLATE, SPACING, TYPE, leading } from '../../../constants/theme';
 import { usePalette } from '../../ui/PaletteContext';
 import { makeStyles } from '../../../utils/makeStyles';
 import { StudentCard, StudentCardTitle } from '../StudentCard';
@@ -432,10 +432,10 @@ const useStyles = makeStyles((p) => ({
   evaluating: { fontSize: TYPE.body, color: SLATE[600], textAlign: 'center' },
 
   speaking: { fontSize: TYPE.label, fontWeight: '700', color: p.deep, marginBottom: 6 },
-  passage: { fontSize: TYPE.title, color: SLATE[800], lineHeight: 26 },
+  passage: { fontSize: TYPE.title, color: SLATE[800], lineHeight: leading(TYPE.title) },
   passageWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
-  passageWord: { fontSize: TYPE.title, fontWeight: '600', lineHeight: 26 },
-  legend: { fontSize: TYPE.caption, color: SLATE[400], marginTop: SPACING.sm },
+  passageWord: { fontSize: TYPE.title, fontWeight: '600', lineHeight: leading(TYPE.title) },
+  legend: { fontSize: TYPE.caption, color: SLATE[500], marginTop: SPACING.sm },
 
   micRow: { flexDirection: 'row', alignItems: 'center', gap: SPACING.md },
   mic: {
@@ -448,11 +448,11 @@ const useStyles = makeStyles((p) => ({
   },
   micOn: { backgroundColor: RECORDING },
   micOff: { backgroundColor: SLATE[400] },
-  micHint: { flex: 1, fontSize: TYPE.body, color: SLATE[600], lineHeight: 19 },
-  error: { fontSize: TYPE.label, color: FEEDBACK.errorText, lineHeight: 18, marginTop: SPACING.sm },
+  micHint: { flex: 1, fontSize: TYPE.body, color: SLATE[600], lineHeight: leading(TYPE.body) },
+  error: { fontSize: TYPE.label, color: FEEDBACK.errorText, lineHeight: leading(TYPE.label), marginTop: SPACING.sm },
 
   overall: { fontSize: TYPE.figure, fontWeight: '800', textAlign: 'center' },
-  overallMax: { fontSize: TYPE.title, fontWeight: '600', color: SLATE[400] },
+  overallMax: { fontSize: TYPE.title, fontWeight: '600', color: SLATE[500] },
   metricRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -470,7 +470,7 @@ const useStyles = makeStyles((p) => ({
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
-  question: { fontSize: TYPE.title, color: SLATE[800], lineHeight: 26, marginTop: 4 },
+  question: { fontSize: TYPE.title, color: SLATE[800], lineHeight: leading(TYPE.title), marginTop: 4 },
   heardLabel: {
     fontSize: TYPE.micro,
     fontWeight: '800',
@@ -479,7 +479,7 @@ const useStyles = makeStyles((p) => ({
     letterSpacing: 0.4,
     marginTop: SPACING.md,
   },
-  heard: { fontSize: TYPE.heading, color: SLATE[800], lineHeight: 21, marginTop: 3 },
+  heard: { fontSize: TYPE.heading, color: SLATE[800], lineHeight: leading(TYPE.heading), marginTop: 3 },
   confirmRow: { flexDirection: 'row', gap: SPACING.sm, marginTop: SPACING.md },
 
   primary: {

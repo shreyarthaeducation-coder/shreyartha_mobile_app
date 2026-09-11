@@ -145,19 +145,19 @@ export default function PartnerSchoolAnalyticsScreen({ homeRoute = '/partner' })
           </View>
 
           <View style={styles.searchWrap}>
-            <Ionicons name="search" size={16} color={SLATE[400]} />
+            <Ionicons name="search" size={18} color={SLATE[400]} />
             <TextInput
               style={styles.search}
               value={search}
               onChangeText={setSearch}
               placeholder="Search name, email or class"
-              placeholderTextColor={SLATE[400]}
+              placeholderTextColor={SLATE[500]}
               autoCapitalize="none"
               autoCorrect={false}
             />
             {search ? (
               <Pressable onPress={() => setSearch('')} hitSlop={8} accessibilityLabel="Clear search">
-                <Ionicons name="close-circle" size={16} color={SLATE[400]} />
+                <Ionicons name="close-circle" size={18} color={SLATE[400]} />
               </Pressable>
             ) : null}
           </View>
@@ -275,7 +275,7 @@ const useStyles = makeStyles((p) => ({
     borderColor: p.cardBorder,
   },
   summaryValue: { fontSize: TYPE.title, fontWeight: '800', color: p.primaryDark },
-  summaryLabel: { fontSize: TYPE.micro, color: p.primaryDark, opacity: 0.7, marginTop: 2 },
+  summaryLabel: { fontSize: TYPE.micro, color: SLATE[600], marginTop: 2 },
 
   searchWrap: {
     flexDirection: 'row',
@@ -311,6 +311,6 @@ const useStyles = makeStyles((p) => ({
   student: { flex: 1, fontSize: TYPE.title, fontWeight: '700', color: p.primaryDark },
   paid: { fontSize: TYPE.title, fontWeight: '800', color: p.primary },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 6 },
-  meta: { fontSize: TYPE.caption, color: p.primaryDark, opacity: 0.8, marginTop: 4 },
+  meta: { fontSize: TYPE.caption, color: SLATE[600], marginTop: 4 },
   pressed: { opacity: 0.75 },
 }));

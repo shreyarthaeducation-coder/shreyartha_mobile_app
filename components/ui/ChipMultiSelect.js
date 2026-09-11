@@ -1,5 +1,5 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { SLATE, SPACING } from '../../constants/theme';
+import { SLATE, SPACING, TYPE } from '../../constants/theme';
 import { usePalette } from './PaletteContext';
 
 /**
@@ -74,6 +74,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   pressed: { opacity: 0.75 },
-  text: { fontSize: 13, color: SLATE[600] },
+  text: { fontSize: TYPE.body, color: SLATE[600] },
   textOn: { color: '#ffffff', fontWeight: '600' },
 });

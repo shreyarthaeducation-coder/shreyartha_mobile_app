@@ -48,6 +48,8 @@ const codeOnly = (s) => s.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/
 
 const SRC = {
   home: 'components/staff/home/StaffHomeScreen.js',
+  // Holds the shell's only route to change-password now that it has left the shared header.
+  support: 'components/staff/home/StaffSupportScreen.js',
   layout: 'app/staff/[role]/_layout.js',
   tabBar: 'components/shared/home/PortalTabBar.js',
 };
@@ -82,7 +84,9 @@ async function loadConstants(mutate) {
     const lifted = [
       ...[...bar.matchAll(/export const [A-Z_]+_TABS = \[[\s\S]*?\n\];/g)].map((m) => m[0]),
       ...[...bar.matchAll(/export const STAFF_TABS = \{[\s\S]*?\n\};/g)].map((m) => m[0]),
+      ...[...bar.matchAll(/export const STAFF_FABS = \{[\s\S]*?\n\};/g)].map((m) => m[0]),
       'export function staffTabsFor(r){return STAFF_TABS[String(r||"").toLowerCase()]||[];}',
+      'export function staffFabFor(r){return STAFF_FABS[String(r||"").toLowerCase()]||null;}',
     ].join('\n');
     fs.writeFileSync(path.join(dir, 'tabs.mjs'), lifted);
 
@@ -113,7 +117,7 @@ async function assertions(mods, src) {
 
   const { STAFF_HOME, assertArrangementCovers, heroRoute } = mods.home;
   const { resolveStaffMenus } = mods.roles;
-  const { staffTabsFor } = mods.tabs;
+  const { staffTabsFor, staffFabFor } = mods.tabs;
   const { STAFF_ROLE_PALETTES } = mods.theme;
 
   const roles = Object.keys(STAFF_HOME);
@@ -171,6 +175,40 @@ async function assertions(mods, src) {
         bad(`${role}: heroes "${routesSeen.get(route)}" and "${hero.key}" both open ${route}`);
       }
       routesSeen.set(route, hero.key);
+    }
+
+    // ── QUICK ACTIONS ────────────────────────────────────────────────────────
+    //
+    // Same route hazard as the heroes, and one extra: a quick action is a SHORTCUT rather than a
+    // placement, so `assertArrangementCovers` deliberately does not count it — which means nothing
+    // else in this file would notice one naming a tile that does not exist. It would simply be
+    // dropped from the rail at render time, leaving four cards where the design shows five and no
+    // error anywhere.
+    const quick = home.quickActions || [];
+    const seenQuickKeys = new Set();
+    for (const action of quick) {
+      if (!action.key) { bad(`${role}: a quick action has no key`); continue; }
+      if (seenQuickKeys.has(action.key)) bad(`${role}: two quick actions share the key "${action.key}"`);
+      seenQuickKeys.add(action.key);
+      if (!action.label) bad(`${role}: quick action "${action.key}" has no label`);
+      if (!action.icon) bad(`${role}: quick action "${action.key}" has no icon`);
+
+      const route = heroRoute(action, role, config.menu);
+      if (!route) { bad(`${role}: quick action "${action.key}" resolves to no route`); continue; }
+      if (!routeExists(route.split('?')[0])) {
+        bad(`${role}: quick action "${action.key}" -> ${route} has no wrapper file`);
+      }
+    }
+    // The coverage function's own report on them — a key the menu does not carry.
+    const quickCov = assertArrangementCovers(config.menu, home);
+    if (quickCov.unknownQuickActions?.length) {
+      bad(`${role}: quick actions name unknown tiles: ${quickCov.unknownQuickActions.join(', ')}`);
+    }
+    // A panel that asks for the photo-led header must give it something to put in it, and vice
+    // versa: the rail and the header shipped together and a descriptor with one and not the other
+    // is half a design.
+    if (quick.length && !home.profileHeader) {
+      bad(`${role}: has quick actions but no profileHeader — the design pairs them`);
     }
 
     // Workspace and attendance tiles are the same hazard one level down.
@@ -234,6 +272,31 @@ async function assertions(mods, src) {
       bad(`${role}: the Home tab does not point at the panel root`);
     }
 
+    // ── THE CENTRE FAB ───────────────────────────────────────────────────────
+    //
+    // Optional. When present it must satisfy the same route rules as a tab, plus one of its own:
+    // its destination must NOT be in `tabs`.
+    //
+    // That rule is not tidiness. `isTabRoot(pathname, tabs)` is what decides whether the bar
+    // renders at all, and every screen it says yes to must pad itself by
+    // `TAB_BAR_HEIGHT + insets.bottom` or its last control sits under the bar. A FAB route added to
+    // `tabs` would put the bar on a screen that never padded for it — and the reverse, a FAB and a
+    // tab opening the same screen, is a five-slot bar with four real destinations.
+    const fab = staffFabFor(role);
+    if (fab) {
+      if (!fab.route) bad(`${role}: the FAB has no route`);
+      else {
+        if (!String(fab.route).startsWith(`/staff/${role}`)) {
+          bad(`${role}: the FAB routes to ${fab.route} — another role's panel`);
+        }
+        if (!routeExists(fab.route)) bad(`${role}: the FAB -> ${fab.route} has no wrapper file`);
+        if (tabs.some((t) => t.route === fab.route)) {
+          bad(`${role}: the FAB opens ${fab.route}, which is also a tab — one slot is wasted and the bar would render on a screen that padded for it as a root`);
+        }
+      }
+      if (!fab.label) bad(`${role}: the FAB has no label`);
+    }
+
     // ── The identity row the screen must actually implement ──────────────────
     const source = home.identityRow3?.source;
     if (source && !ROW3_SOURCES.includes(source)) {
@@ -274,8 +337,22 @@ async function assertions(mods, src) {
   // initials on their own profile), and the back override is the difference between leaving the
   // panel and unwinding a stack the user never built.
   const homeCode = codeOnly(src.home);
-  if (!/setItem\(\s*STAFF_PHOTO_KEY/.test(homeCode)) {
-    bad('StaffHomeScreen does not write STAFF_PHOTO_KEY — every staff profile screen drops to initials');
+  // ANCHORED ON THE LOAD PATH, not on the bare call.
+  //
+  // This assertion went vacuous the moment the photo-led header added a SECOND write — the one in
+  // the upload handler. A plain `setItem(STAFF_PHOTO_KEY` presence test then passed with the
+  // cold-start write deleted, which is the write StaffProfileScreen actually depends on: it reads
+  // the cache instead of making its own HR call, so without this one a staff member sees their
+  // face on the dashboard and initials on their own profile. Pinning it to the `photoOf(next.hr)`
+  // idiom is what makes the two writes distinguishable.
+  if (!/photoOf\(next\.hr\)[\s\S]{0,200}?setItem\(\s*STAFF_PHOTO_KEY/.test(homeCode)) {
+    bad('StaffHomeScreen does not cache the HR photo on load — every staff profile screen drops to initials');
+  }
+  // And the upload path must cache too, or a photo the user just picked shows on the dashboard and
+  // reverts to initials on their profile until the next cold start.
+  const photoWrites = (homeCode.match(/setItem\(\s*STAFF_PHOTO_KEY/g) || []).length;
+  if (/uploadStaffPhoto/.test(homeCode) && photoWrites < 2) {
+    bad('StaffHomeScreen uploads a photo without caching it — the profile screen keeps the old one');
   }
   if (!/hardwareBackPress/.test(homeCode)) {
     bad('StaffHomeScreen has no Android back override — Back unwinds into the panel instead of leaving it');
@@ -283,10 +360,59 @@ async function assertions(mods, src) {
   if (!/confirmLogout/.test(homeCode)) {
     bad('StaffHomeScreen has no confirmLogout — it ends the attendance session before clearing keys');
   }
-  // Change Password reaches these roles ONLY through BrandBar now; StaffMenuScreen's header-action
-  // chip row went with it.
-  if (!/changePasswordRoute/.test(homeCode)) {
-    bad('StaffHomeScreen does not pass changePasswordRoute — the roles lose their only way to change it');
+  // CHANGE PASSWORD MOVED OUT OF THE HEADER.
+  //
+  // It was a chip in BrandBar, which is the header of ten surfaces; when the school crest took the
+  // lead position the chip was removed. What must NOT change is that these roles keep a way in —
+  // and for the staff shell that is the row in StaffSupportScreen, which was the only non-header
+  // route in the entire app before this move. Assert the row, not the removed prop.
+  const supportCode = codeOnly(src.support);
+  if (!/router\.push\(config\.routes\.changePassword\)/.test(supportCode)) {
+    bad('StaffSupportScreen has no Change Password row — the staff roles lose their only way in');
+  }
+  // And the copy must not send anyone to the header control that no longer exists.
+  if (/lock icon at the top/i.test(supportCode)) {
+    bad('StaffSupportScreen still tells staff to use the header lock icon, which was removed');
+  }
+  if (/changePasswordRoute/.test(homeCode)) {
+    bad('StaffHomeScreen still passes changePasswordRoute — BrandBar no longer accepts it');
+  }
+
+  // ── THE SCHOOL CREST, AND WHO IS ALLOWED ONE ──────────────────────────────
+  //
+  // This shell serves seven roles and only three of them belong to a single school. The other four
+  // — sales and the three Shreyartha HQ roles — work across schools or none, and must never wear
+  // one school's crest. Before `schoolBound` existed, sales was safe ONLY because its profile DTO
+  // happens to omit `schoolLogo`; adding that field server-side would have silently changed a
+  // header. Evaluated, not grepped: a regex's idea of the descriptor is not what the app reads.
+  const SCHOOL_BOUND = ['counselor', 'principal', 'vice_principal'];
+  for (const role of roles) {
+    const config = resolveStaffMenus(role);
+    if (!config) continue;
+    const expected = SCHOOL_BOUND.includes(role);
+    if (!!config.schoolBound !== expected) {
+      bad(`${role}: schoolBound is ${!!config.schoolBound}, expected ${expected}`);
+    }
+    if (expected && !config.schoolLogoSource) {
+      bad(`${role}: is school-bound but declares no schoolLogoSource`);
+    }
+  }
+  // The principal is the role this was actually broken for: `profileEndpoints: []` means
+  // `schoolLogoOf(identity.profile)` is structurally always null, so it rendered the prop while the
+  // value could never be anything but null. Its crest has to come from the dashboard stats instead.
+  const principal = resolveStaffMenus('principal');
+  if (principal && principal.schoolLogoSource !== 'dashboardStats') {
+    bad('principal must read its crest from dashboardStats — it has no profile endpoint to read');
+  }
+  if (principal && (principal.profileEndpoints || []).length > 0
+      && principal.schoolLogoSource === 'dashboardStats') {
+    bad('principal gained a profile endpoint — re-check whether dashboardStats is still the source');
+  }
+  if (!/fetchDashboardStats\(\)/.test(homeCode)) {
+    bad('StaffHomeScreen never fetches dashboard stats — the principal crest would always be null');
+  }
+  if (!/config\.schoolBound \? schoolLogo : null/.test(homeCode)) {
+    bad('StaffHomeScreen passes the crest ungated — sales and the HQ roles would inherit a school');
   }
   // The gate is the layout's, but the screen re-implements it, and "not yet known" must render a
   // blank frame rather than resolve to "unverified" — otherwise any role whose profile call fails is
@@ -419,9 +545,61 @@ const MUTATIONS = [
       : s),
   },
   {
+    // A quick action pointed at a tile its role does not carry. It would be dropped from the rail
+    // silently — four cards where the design shows five, and no error anywhere.
+    //
+    // TWO ANCHORING TRAPS, both hit on the first attempt:
+    //   · `itemKey: 'leads'` also appears on the SALES *hero*, and a non-global `.replace` takes
+    //     the first occurrence, so a bare swap mutates the hero and leaves the rail intact.
+    //   · adding a second `itemKey` to the same object literal is INERT — the later key wins, so
+    //     the mutation applied cleanly, changed the source, and changed nothing about the value.
+    // `tint: 'blue', itemKey: 'leads'` is unique to the quick action: no hero carries a tint.
+    name: 'a quick action names a tile the role does not have',
+    mutate: (f, s) => (f === 'constants/staffHome.js'
+      ? s.replace("tint: 'blue', itemKey: 'leads'", "tint: 'blue', itemKey: 'nosuchtile'")
+      : s),
+  },
+  {
+    // The FAB and a tab opening the same screen — a five-slot bar with four destinations, and a
+    // bar rendered on a screen that padded for it as a tab root.
+    name: 'the FAB collides with a tab',
+    mutate: (f, s) => (f === 'components/shared/home/PortalTabBar.js'
+      ? s.replace(
+          "sales: { label: 'Mark Visit', icon: 'add', route: '/staff/sales/sales-visits' },",
+          "sales: { label: 'Mark Visit', icon: 'add', route: '/staff/sales/sales-leads' },",
+        )
+      : s),
+  },
+  {
+    // A FAB route with no wrapper file — expo-router's "Unmatched" page, which reads as a bug in
+    // the button rather than in a constant.
+    name: 'the FAB route has no wrapper file',
+    // Anchored on the CURRENT counsellor FAB destination. This went inert once already, when the
+    // FAB moved from the counselling sheet to the face-to-face room and the old literal stopped
+    // matching — the mutation applied cleanly, changed nothing, and was reported as an uncaught
+    // assertion. Re-anchor whenever that route moves.
+    mutate: (f, s) => (f === 'components/shared/home/PortalTabBar.js'
+      ? s.replace("route: '/staff/counselor/face-to-face' }", "route: '/staff/counselor/nosuchscreen' }")
+      : s),
+  },
+  {
+    // The COLD-START write. `.replace` is non-global, so this removes the first occurrence, which
+    // is the one in `load()` — the write StaffProfileScreen depends on. The upload handler's write
+    // survives, which is exactly the case that used to make the assertion pass anyway.
     name: 'the HR photo cache write dropped (profiles silently lose the face)',
     mutate: (f, s) => (f === 'components/staff/home/StaffHomeScreen.js'
       ? s.replace(/AsyncStorage\.setItem\(STAFF_PHOTO_KEY[\s\S]*?;/, '')
+      : s),
+  },
+  {
+    // And the other direction: the upload succeeds but never reaches the cache, so the new photo
+    // shows on the dashboard and the profile screen keeps serving the old one.
+    name: 'the uploaded photo is never cached',
+    mutate: (f, s) => (f === 'components/staff/home/StaffHomeScreen.js'
+      ? s.replace(
+          'AsyncStorage.setItem(STAFF_PHOTO_KEY, url).catch(() => {});\n      }\n    } catch (e) {',
+          '}\n    } catch (e) {',
+        )
       : s),
   },
   {
@@ -458,10 +636,67 @@ const MUTATIONS = [
         "{ key: 'queries', label: 'Queries', icon: 'help-circle-outline', path:")
       : s),
   },
+  {
+    // Sales made school-bound: a rep who belongs to no school would wear a school's crest the
+    // moment its DTO grew the field.
+    name: 'a role that works across schools is marked school-bound',
+    mutate: (f, s) => (f === 'constants/staffRoles.js'
+      ? s.replace("    userType: 'SALES',", "    userType: 'SALES',\n    schoolBound: true,")
+      : s),
+  },
+  {
+    name: 'the principal loses its crest source and silently falls back to a null profile',
+    mutate: (f, s) => (f === 'constants/staffRoles.js'
+      ? s.replace("    schoolLogoSource: 'dashboardStats',", "    schoolLogoSource: 'profile',")
+      : s),
+  },
+  {
+    name: 'the dashboard-stats fetch is dropped (principal crest always null)',
+    mutate: (f, s) => (f === 'components/staff/home/StaffHomeScreen.js'
+      ? s.replace('await fetchDashboardStats()', 'null')
+      : s),
+  },
+  {
+    name: 'the crest is passed ungated to every role this shell serves',
+    mutate: (f, s) => (f === 'components/staff/home/StaffHomeScreen.js'
+      ? s.replace('config.schoolBound ? schoolLogo : null', 'schoolLogo')
+      : s),
+  },
+  {
+    name: 'the staff Change Password row is removed (the shell loses its only route)',
+    mutate: (f, s) => (f === 'components/staff/home/StaffSupportScreen.js'
+      ? s.replace('router.push(config.routes.changePassword)', 'undefined')
+      : s),
+  },
 ];
+
+/**
+ * Did this mutation actually change anything?
+ *
+ * A `.replace` whose anchor has since been reworded is a silent no-op: the mutation "applies",
+ * nothing changes, no assertion fires, and the harness reports the ASSERTION as vacuous when the
+ * real fault is the mutation. That misdiagnosis cost real time when the counsellor FAB moved and
+ * its route literal stopped matching — so the two are now told apart by name.
+ */
+function mutationChanges(mutate) {
+  for (const name of CONSTANTS) {
+    const rel = 'constants/' + name + '.js';
+    const before = read(rel);
+    if (mutate(rel, before) !== before) return true;
+  }
+  for (const rel of Object.values(SRC)) {
+    const before = read(rel);
+    if (mutate(rel, before) !== before) return true;
+  }
+  return false;
+}
 
 console.log('Self-tests (each mutation must be caught):');
 for (const m of MUTATIONS) {
+  if (!mutationChanges(m.mutate)) {
+    fail(`INERT: ${m.name} — its anchor no longer matches the source, so it tests nothing`);
+    continue;
+  }
   let caught;
   try {
     const staged = await loadConstants(m.mutate);

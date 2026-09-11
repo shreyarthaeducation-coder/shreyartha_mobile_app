@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Image, Pressable, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { SPACING, TYPE } from '../../constants/theme';
+import { SLATE, SPACING, TYPE, leading } from '../../constants/theme';
 import { Card, CardTitle, ScreenScaffold, TextField, useToast } from '../ui';
 import { usePalette } from '../ui/PaletteContext';
 import { makeStyles } from '../../utils/makeStyles';
@@ -214,7 +214,7 @@ export default function PartnerBankInfoScreen({ homeRoute = '/partner' }) {
             <ActivityIndicator size="small" color={palette.primaryDark} />
           ) : (
             <>
-              <Ionicons name="image-outline" size={16} color={palette.primaryDark} />
+              <Ionicons name="image-outline" size={18} color={palette.primaryDark} />
               <Text style={styles.uploadText}>
                 {upiImageUrl ? 'Replace image' : 'Attach image'}
               </Text>
@@ -229,12 +229,11 @@ export default function PartnerBankInfoScreen({ homeRoute = '/partner' }) {
 const useStyles = makeStyles((p) => ({
   hint: {
     fontSize: TYPE.label,
-    color: p.primaryDark,
-    opacity: 0.8,
+    color: SLATE[600],
     marginBottom: SPACING.sm,
-    lineHeight: 18,
+    lineHeight: leading(TYPE.label),
   },
-  updated: { fontSize: TYPE.caption, color: p.primaryDark, opacity: 0.65, marginTop: 4 },
+  updated: { fontSize: TYPE.caption, color: SLATE[600], marginTop: 4 },
   save: {
     minHeight: 46,
     alignItems: 'center',
@@ -264,7 +263,7 @@ const useStyles = makeStyles((p) => ({
     borderColor: p.cardBorder,
     marginBottom: SPACING.sm,
   },
-  qrEmptyText: { fontSize: TYPE.caption, color: p.primaryDark, opacity: 0.6 },
+  qrEmptyText: { fontSize: TYPE.caption, color: SLATE[600] },
   upload: {
     flexDirection: 'row',
     alignItems: 'center',

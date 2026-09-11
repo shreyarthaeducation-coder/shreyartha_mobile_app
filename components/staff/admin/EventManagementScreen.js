@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Alert, Image, Pressable, Text, View } from 'react-native';
 import Constants from 'expo-constants';
 import { Ionicons } from '@expo/vector-icons';
-import { SLATE, SPACING } from '../../../constants/theme';
+import { SLATE, SPACING, TYPE, leading } from '../../../constants/theme';
 import { usePalette } from '../../ui/PaletteContext';
 import {
   Card,
@@ -217,7 +217,7 @@ export default function EventManagementScreen({ homeRoute, apiBase, classesBase 
                   accessibilityRole="button"
                   accessibilityLabel={`Delete ${event.title}`}
                 >
-                  <Ionicons name="trash-outline" size={17} color={SLATE[500]} />
+                  <Ionicons name="trash-outline" size={19} color={SLATE[500]} />
                 </Pressable>
               </View>
               {event.description ? (
@@ -359,10 +359,10 @@ const useStyles = makeStyles(() => ({
   item: { marginBottom: SPACING.sm },
   banner: { width: '100%', height: 130, borderRadius: 10, marginBottom: SPACING.sm },
   head: { flexDirection: 'row', alignItems: 'flex-start', gap: 8 },
-  title: { flex: 1, fontSize: 15.5, fontWeight: '700', color: SLATE[800] },
+  title: { flex: 1, fontSize: TYPE.heading, fontWeight: '700', color: SLATE[800] },
   deleteBtn: { padding: 4 },
-  description: { fontSize: 13, color: SLATE[500], lineHeight: 19, marginTop: 4 },
-  when: { fontSize: 12.5, color: SLATE[600], fontWeight: '600', marginTop: 8 },
+  description: { fontSize: TYPE.body, color: SLATE[500], lineHeight: leading(TYPE.body), marginTop: 4 },
+  when: { fontSize: TYPE.label, color: SLATE[600], fontWeight: '600', marginTop: 8 },
   classRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 8 },
   pressed: { opacity: 0.7 },
   fab: {
@@ -378,13 +378,13 @@ const useStyles = makeStyles(() => ({
   },
   multiline: { minHeight: 84, textAlignVertical: 'top' },
   pickerLabel: {
-    fontSize: 12.5,
+    fontSize: TYPE.label,
     fontWeight: '700',
     color: SLATE[600],
     marginTop: SPACING.sm,
     marginBottom: 6,
   },
-  pickerHint: { fontSize: 12.5, color: SLATE[400] },
+  pickerHint: { fontSize: TYPE.label, color: SLATE[500] },
   classPicker: { flexDirection: 'row', flexWrap: 'wrap', gap: 7 },
   classChip: {
     paddingHorizontal: 13,
@@ -394,7 +394,7 @@ const useStyles = makeStyles(() => ({
     borderColor: SLATE[200],
     backgroundColor: '#ffffff',
   },
-  classChipText: { fontSize: 13, fontWeight: '700', color: SLATE[600] },
+  classChipText: { fontSize: TYPE.body, fontWeight: '700', color: SLATE[600] },
   bannerPick: {
     borderRadius: 10,
     borderWidth: 1,
@@ -404,5 +404,5 @@ const useStyles = makeStyles(() => ({
   },
   bannerPreview: { width: '100%', height: 140 },
   bannerEmpty: { alignItems: 'center', justifyContent: 'center', paddingVertical: 26, gap: 6 },
-  bannerEmptyText: { fontSize: 13, color: SLATE[500], fontWeight: '600' },
+  bannerEmptyText: { fontSize: TYPE.body, color: SLATE[500], fontWeight: '600' },
 }));

@@ -1,5 +1,5 @@
 import { StyleSheet, Text, View } from 'react-native';
-import { SLATE } from '../../../constants/theme';
+import { SLATE, TYPE } from '../../../constants/theme';
 import { usePalette } from '../PaletteContext';
 
 /**
@@ -55,8 +55,8 @@ export default function ProgressBar({
 
 const styles = StyleSheet.create({
   head: { flexDirection: 'row', alignItems: 'center', marginBottom: 5 },
-  label: { flex: 1, fontSize: 12.5, fontWeight: '600', color: SLATE[600] },
-  value: { fontSize: 12.5, fontWeight: '700', color: SLATE[700], marginLeft: 8 },
+  label: { flex: 1, fontSize: TYPE.label, fontWeight: '600', color: SLATE[600] },
+  value: { fontSize: TYPE.label, fontWeight: '700', color: SLATE[700], marginLeft: 8 },
   track: { backgroundColor: SLATE[200], overflow: 'hidden', width: '100%' },
   fill: {},
 });

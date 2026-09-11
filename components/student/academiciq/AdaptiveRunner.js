@@ -1,6 +1,6 @@
 import { ActivityIndicator, Pressable, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { FEEDBACK, QUIZ, SLATE, SPACING, TYPE } from '../../../constants/theme';
+import { FEEDBACK, QUIZ, SLATE, SPACING, TYPE, leading } from '../../../constants/theme';
 import { usePalette } from '../../ui/PaletteContext';
 import { makeStyles } from '../../../utils/makeStyles';
 import RichText from '../../RichText';
@@ -139,7 +139,7 @@ export default function AdaptiveRunner({ session, title, subtitle, onExit, onFin
         accessibilityRole="button"
         accessibilityLabel="Leave the test"
       >
-        <Ionicons name="arrow-back" size={14} color={palette.onDark} />
+        <Ionicons name="arrow-back" size={16} color={SLATE[600]} />
         <Text style={styles.crumbText} numberOfLines={1}>
           {subtitle ? `${title} · ${subtitle}` : title}
         </Text>
@@ -224,7 +224,7 @@ export default function AdaptiveRunner({ session, title, subtitle, onExit, onFin
 
 const useStyles = makeStyles((p) => ({
   loader: { marginVertical: SPACING.xl },
-  error: { fontSize: TYPE.body, color: FEEDBACK.errorText, lineHeight: 19 },
+  error: { fontSize: TYPE.body, color: FEEDBACK.errorText, lineHeight: leading(TYPE.body) },
 
   crumb: {
     flexDirection: 'row',
@@ -233,12 +233,12 @@ const useStyles = makeStyles((p) => ({
     paddingVertical: 8,
     paddingHorizontal: 12,
     borderRadius: 999,
-    backgroundColor: p.glass,
+    backgroundColor: '#ffffff',
     borderWidth: 1,
-    borderColor: p.glassBorder,
+    borderColor: SLATE[200],
     marginBottom: SPACING.md,
   },
-  crumbText: { flex: 1, fontSize: TYPE.label, fontWeight: '600', color: p.onDark },
+  crumbText: { flex: 1, fontSize: TYPE.label, fontWeight: '600', color: SLATE[600] },
 
   progressHead: {
     flexDirection: 'row',
@@ -276,9 +276,9 @@ const useStyles = makeStyles((p) => ({
   optionPicked: { backgroundColor: p.tint, borderColor: p.primary },
   optionCorrect: { backgroundColor: QUIZ.correctBg, borderColor: QUIZ.correctBorder },
   optionWrong: { backgroundColor: QUIZ.wrongBg, borderColor: QUIZ.wrongBorder },
-  optionKey: { fontSize: TYPE.label, fontWeight: '800', color: SLATE[500], width: 15 },
+  optionKey: { fontSize: TYPE.label, fontWeight: '800', color: SLATE[500], minWidth: 15 },
   optionBody: { flex: 1 },
-  optionText: { fontSize: TYPE.body, color: SLATE[700], lineHeight: 19 },
+  optionText: { fontSize: TYPE.body, color: SLATE[700], lineHeight: leading(TYPE.body) },
   mark: { fontSize: TYPE.heading, fontWeight: '800', color: SLATE[700] },
 
   feedback: { fontSize: TYPE.body, fontWeight: '800', textAlign: 'center', marginTop: SPACING.sm },

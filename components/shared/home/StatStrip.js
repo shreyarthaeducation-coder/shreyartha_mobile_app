@@ -80,7 +80,7 @@ const useStyles = makeStyles(() => ({
   // `adjustsFontSizeToFit` above lets a long rupee figure shrink rather than truncate; the floor
   // keeps it from becoming unreadable.
   value: { fontSize: TYPE.headline, fontWeight: '800', color: '#ffffff' },
-  label: { fontSize: TYPE.micro, fontWeight: '700', color: '#ffffff', opacity: 0.9 },
-  note: { fontSize: TYPE.micro, color: '#ffffff', opacity: 0.75, marginTop: 1 },
+  label: { fontSize: TYPE.micro, fontWeight: '700', color: '#ffffff' },
+  note: { fontSize: TYPE.micro, color: '#ffffff', marginTop: 1 },
   badge: { marginTop: 4 },
 }));

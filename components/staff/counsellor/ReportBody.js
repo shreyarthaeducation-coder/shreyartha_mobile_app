@@ -1,6 +1,6 @@
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { FEEDBACK, SLATE, SPACING } from '../../../constants/theme';
+import { FEEDBACK, SLATE, SPACING, TYPE } from '../../../constants/theme';
 import { Card, CardTitle, GaugeChart, GroupedBars, RadarChart } from '../../ui';
 import {
   FORM_DATA_SECTIONS,
@@ -55,7 +55,7 @@ function Stars({ value }) {
         <Ionicons
           key={i}
           name={i < n ? 'star' : 'star-outline'}
-          size={14}
+          size={16}
           color={i < n ? '#f59e0b' : SLATE[300]}
         />
       ))}
@@ -215,24 +215,24 @@ export default function ReportBody({ report }) {
 
 const styles = StyleSheet.create({
   reportHead: { marginTop: SPACING.lg },
-  reportTitle: { fontSize: 16, fontWeight: '800', color: SLATE[800] },
-  reportMeta: { fontSize: 12, color: SLATE[500], marginTop: 2 },
+  reportTitle: { fontSize: TYPE.title, fontWeight: '800', color: SLATE[800] },
+  reportMeta: { fontSize: TYPE.label, color: SLATE[500], marginTop: 2 },
 
   field: { paddingVertical: 6 },
-  fieldLabel: { fontSize: 11.5, fontWeight: '700', color: SLATE[500], marginBottom: 3 },
-  value: { fontSize: 13.5, color: SLATE[800] },
+  fieldLabel: { fontSize: TYPE.caption, fontWeight: '700', color: SLATE[500], marginBottom: 3 },
+  value: { fontSize: TYPE.body, color: SLATE[800] },
 
   starRow: { flexDirection: 'row', alignItems: 'center', gap: 2 },
-  starValue: { fontSize: 11.5, color: SLATE[500], fontWeight: '700', marginLeft: 5 },
+  starValue: { fontSize: TYPE.caption, color: SLATE[500], fontWeight: '700', marginLeft: 5 },
 
   pill: { alignSelf: 'flex-start', paddingHorizontal: 10, paddingVertical: 3, borderRadius: 999 },
   pillYes: { backgroundColor: FEEDBACK.errorBg },
   pillNo: { backgroundColor: FEEDBACK.successBg },
-  pillText: { fontSize: 11.5, fontWeight: '700' },
+  pillText: { fontSize: TYPE.caption, fontWeight: '700' },
 
   chipWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 5 },
   chip: { paddingHorizontal: 9, paddingVertical: 4, borderRadius: 999, backgroundColor: SLATE[100] },
-  chipText: { fontSize: 11.5, fontWeight: '600', color: SLATE[600] },
+  chipText: { fontSize: TYPE.caption, fontWeight: '600', color: SLATE[600] },
 
   chart: { marginTop: SPACING.sm },
   gauges: { gap: SPACING.md, paddingVertical: SPACING.sm },

@@ -8,7 +8,7 @@ import {
   View,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { FEEDBACK, SLATE, SPACING } from '../../constants/theme';
+import { FEEDBACK, SLATE, SPACING, TYPE } from '../../constants/theme';
 
 /**
  * Dropdown replacement built as a bottom-sheet modal.
@@ -48,7 +48,7 @@ export default function SelectField({
         <Text style={[styles.value, !selected && styles.placeholder]}>
           {selected ? selected.label : placeholder}
         </Text>
-        <Ionicons name="chevron-down" size={18} color={SLATE[500]} />
+        <Ionicons name="chevron-down" size={20} color={SLATE[500]} />
       </Pressable>
 
       {error ? <Text style={styles.error}>{error}</Text> : null}
@@ -103,7 +103,7 @@ export default function SelectField({
 
 const styles = StyleSheet.create({
   wrap: { marginBottom: SPACING.md },
-  label: { fontSize: 13, fontWeight: '600', color: SLATE[700], marginBottom: 6 },
+  label: { fontSize: TYPE.body, fontWeight: '600', color: SLATE[700], marginBottom: 6 },
   required: { color: '#e74c3c' },
   field: {
     flexDirection: 'row',
@@ -115,9 +115,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 13,
   },
-  value: { fontSize: 15, color: SLATE[900] },
-  placeholder: { color: SLATE[400] },
-  error: { marginTop: 5, fontSize: 12.5, color: FEEDBACK.errorText, fontWeight: '500' },
+  value: { fontSize: TYPE.heading, color: SLATE[900] },
+  placeholder: { color: SLATE[600] },
+  error: { marginTop: 5, fontSize: TYPE.label, color: FEEDBACK.errorText, fontWeight: '500' },
   backdrop: {
     flex: 1,
     backgroundColor: 'rgba(15,23,42,0.45)',
@@ -140,7 +140,7 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.sm,
   },
   sheetTitle: {
-    fontSize: 15,
+    fontSize: TYPE.heading,
     fontWeight: '700',
     color: SLATE[800],
     paddingHorizontal: SPACING.md,
@@ -156,5 +156,5 @@ const styles = StyleSheet.create({
     borderTopColor: SLATE[100],
   },
   optionPressed: { backgroundColor: SLATE[50] },
-  optionText: { fontSize: 15, color: SLATE[700] },
+  optionText: { fontSize: TYPE.heading, color: SLATE[700] },
 });

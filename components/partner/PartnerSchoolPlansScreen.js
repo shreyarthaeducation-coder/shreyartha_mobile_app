@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { SPACING, TYPE } from '../../constants/theme';
+import { SLATE, SPACING, TYPE, leading } from '../../constants/theme';
 import { Card, ScreenScaffold } from '../ui';
 import { usePalette } from '../ui/PaletteContext';
 import { makeStyles } from '../../utils/makeStyles';
@@ -59,7 +59,7 @@ export default function PartnerSchoolPlansScreen({ homeRoute = '/partner' }) {
               </View>
               <Ionicons
                 name={open ? 'chevron-up' : 'chevron-down'}
-                size={18}
+                size={20}
                 color={palette.primaryDark}
               />
             </Pressable>
@@ -73,7 +73,7 @@ export default function PartnerSchoolPlansScreen({ homeRoute = '/partner' }) {
                       <View key={item.text} style={styles.item}>
                         <Ionicons
                           name={item.included ? 'checkmark-circle' : 'close-circle'}
-                          size={16}
+                          size={18}
                           color={item.included ? plan.accent : styles.excludedIcon.color}
                         />
                         <Text
@@ -113,20 +113,19 @@ export default function PartnerSchoolPlansScreen({ homeRoute = '/partner' }) {
 const useStyles = makeStyles((p) => ({
   intro: {
     fontSize: TYPE.label,
-    color: p.primaryDark,
-    opacity: 0.85,
+    color: SLATE[600],
     marginBottom: SPACING.md,
-    lineHeight: 18,
+    lineHeight: leading(TYPE.label),
   },
   card: { padding: 0, overflow: 'hidden' },
   head: { flexDirection: 'row', alignItems: 'center', gap: SPACING.sm, padding: SPACING.md },
   accent: { width: 4, alignSelf: 'stretch', borderRadius: 2 },
   headText: { flex: 1 },
   name: { fontSize: TYPE.title, fontWeight: '700', color: p.primaryDark },
-  subtitle: { fontSize: TYPE.caption, color: p.primaryDark, opacity: 0.7, marginTop: 2 },
+  subtitle: { fontSize: TYPE.caption, color: SLATE[600], marginTop: 2 },
   priceRow: { flexDirection: 'row', alignItems: 'baseline', gap: 6, marginTop: 6 },
   price: { fontSize: TYPE.headline, fontWeight: '800' },
-  priceLabel: { fontSize: TYPE.caption, color: p.primaryDark, opacity: 0.7, flexShrink: 1 },
+  priceLabel: { fontSize: TYPE.caption, color: SLATE[600], flexShrink: 1 },
 
   body: { paddingHorizontal: SPACING.md, paddingBottom: SPACING.md },
   section: { marginTop: SPACING.sm },
@@ -135,12 +134,11 @@ const useStyles = makeStyles((p) => ({
     fontWeight: '700',
     letterSpacing: 0.5,
     textTransform: 'uppercase',
-    color: p.primaryDark,
-    opacity: 0.65,
+    color: SLATE[600],
     marginBottom: 6,
   },
   item: { flexDirection: 'row', alignItems: 'flex-start', gap: 8, marginBottom: 6 },
-  itemText: { flex: 1, fontSize: TYPE.label, color: p.primaryDark, lineHeight: 18 },
+  itemText: { flex: 1, fontSize: TYPE.label, color: p.primaryDark, lineHeight: leading(TYPE.label) },
   itemBold: { fontWeight: '700' },
   itemExcluded: { opacity: 0.5, textDecorationLine: 'line-through' },
   // Referenced as a colour, not applied as a style — see the Ionicons call above.
@@ -155,6 +153,6 @@ const useStyles = makeStyles((p) => ({
     borderTopColor: p.cardBorder,
   },
   revWho: { flex: 1, fontSize: TYPE.label, fontWeight: '600', color: p.primaryDark },
-  revShare: { flex: 1, fontSize: TYPE.caption, color: p.primaryDark, opacity: 0.8, textAlign: 'right' },
+  revShare: { flex: 1, fontSize: TYPE.caption, color: SLATE[600], textAlign: 'right' },
   pressed: { opacity: 0.75 },
 }));

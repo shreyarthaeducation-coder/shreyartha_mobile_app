@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { FEEDBACK, QUIZ, SLATE, SPACING, TYPE } from '../../constants/theme';
+import { FEEDBACK, QUIZ, SLATE, SPACING, TYPE, leading } from '../../constants/theme';
 import { usePalette } from '../ui/PaletteContext';
 import { makeStyles } from '../../utils/makeStyles';
 import { CalendarGrid, EmptyState, MonthNavigator } from '../ui';
@@ -133,7 +133,7 @@ export default function EventsScreen() {
       {notifications.length > 0 ? (
         <StudentCard style={styles.notice}>
           <View style={styles.noticeTop}>
-            <Ionicons name="notifications" size={16} color={palette.deep} />
+            <Ionicons name="notifications" size={18} color={palette.deep} />
             <Text style={styles.noticeTitle}>
               {notifications.length === 1 ? 'Notification' : `${notifications.length} notifications`}
             </Text>
@@ -177,7 +177,7 @@ export default function EventsScreen() {
 
           {dayCounselling ? (
             <View style={styles.counselling}>
-              <Ionicons name="chatbubbles-outline" size={14} color={palette.deep} />
+              <Ionicons name="chatbubbles-outline" size={16} color={palette.deep} />
               <Text style={styles.counsellingText}>Counselling session: {dayCounselling}</Text>
             </View>
           ) : null}
@@ -231,7 +231,7 @@ const useStyles = makeStyles((p) => ({
   notice: { borderColor: p.primary },
   noticeTop: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 4 },
   noticeTitle: { fontSize: TYPE.label, fontWeight: '700', color: p.deep },
-  noticeText: { fontSize: TYPE.body, lineHeight: 19, color: SLATE[700], marginTop: 2 },
+  noticeText: { fontSize: TYPE.body, lineHeight: leading(TYPE.body), color: SLATE[700], marginTop: 2 },
 
   legend: { flexDirection: 'row', flexWrap: 'wrap', gap: SPACING.md, marginTop: SPACING.sm },
   legendItem: { flexDirection: 'row', alignItems: 'center', gap: 5 },
@@ -255,7 +255,7 @@ const useStyles = makeStyles((p) => ({
   eventBar: { width: 3, borderRadius: 2 },
   eventText: { flex: 1 },
   eventTitle: { fontSize: TYPE.heading, fontWeight: '600', color: SLATE[800] },
-  eventDesc: { fontSize: TYPE.label, lineHeight: 18, color: SLATE[600], marginTop: 2 },
+  eventDesc: { fontSize: TYPE.label, lineHeight: leading(TYPE.label), color: SLATE[600], marginTop: 2 },
   holidayTag: { fontSize: TYPE.caption, fontWeight: '700', color: FEEDBACK.errorOnBg, marginTop: 3 },
 
   inlineLoader: { marginVertical: SPACING.md },

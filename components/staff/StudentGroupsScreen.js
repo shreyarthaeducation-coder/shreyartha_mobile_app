@@ -12,15 +12,7 @@ import {
   View,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import {
-  FEEDBACK,
-  GROUP_LEVELS,
-  PORTALS,
-  SHADOWS,
-  SLATE,
-  SPACING,
-  groupLevelMeta,
-} from '../../constants/theme';
+import { FEEDBACK, GROUP_LEVELS, PORTALS, SHADOWS, SLATE, SPACING, TYPE, groupLevelMeta, leading } from '../../constants/theme';
 import {
   EMPTY_SCHOOL_SCOPE,
   EMPTY_SCOPE,
@@ -409,7 +401,7 @@ export default function StudentGroupsScreen({
           <View style={styles.createHeader}>
             {isAllSubjects ? (
               <View style={styles.infoBanner}>
-                <Ionicons name="information-circle" size={16} color={PALETTE.primaryDark} />
+                <Ionicons name="information-circle" size={18} color={PALETTE.primaryDark} />
                 <Text style={styles.infoText}>
                   These bands will be written identically for every subject you teach in this
                   section. Edit an individual subject afterwards from the View tab.
@@ -565,7 +557,7 @@ export default function StudentGroupsScreen({
                           accessibilityRole="button"
                           accessibilityLabel={`Change ${row.studentName}'s group`}
                         >
-                          <Ionicons name="swap-horizontal" size={17} color={SLATE[600]} />
+                          <Ionicons name="swap-horizontal" size={19} color={SLATE[600]} />
                         </Pressable>
                         )}
                         <Pressable
@@ -575,7 +567,7 @@ export default function StudentGroupsScreen({
                           accessibilityRole="button"
                           accessibilityLabel={`Remove ${row.studentName} from their group`}
                         >
-                          <Ionicons name="close" size={18} color={FEEDBACK.errorText} />
+                          <Ionicons name="close" size={20} color={FEEDBACK.errorText} />
                         </Pressable>
                       </View>
                     )}
@@ -676,7 +668,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     backgroundColor: PALETTE.tint,
   },
-  infoText: { flex: 1, fontSize: 12.5, lineHeight: 17, color: SLATE[700] },
+  infoText: { flex: 1, fontSize: TYPE.label, lineHeight: leading(TYPE.label), color: SLATE[700] },
 
   legend: { flexDirection: 'row', flexWrap: 'wrap', gap: SPACING.sm },
   legendItem: { flexDirection: 'row', alignItems: 'center', gap: 5 },
@@ -688,11 +680,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  legendKeyText: { fontSize: 11, fontWeight: '800' },
-  legendText: { fontSize: 11.5, color: SLATE[500], fontWeight: '600' },
+  legendKeyText: { fontSize: TYPE.caption, fontWeight: '800' },
+  legendText: { fontSize: TYPE.caption, color: SLATE[500], fontWeight: '600' },
 
   quickRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  quickLabel: { flex: 1, fontSize: 12.5, fontWeight: '700', color: SLATE[500] },
+  quickLabel: { flex: 1, fontSize: TYPE.label, fontWeight: '700', color: SLATE[500] },
   quickBtn: {
     width: 34,
     height: 30,
@@ -701,7 +693,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  quickBtnText: { fontSize: 13, fontWeight: '800' },
+  quickBtnText: { fontSize: TYPE.body, fontWeight: '800' },
 
   row: {
     flexDirection: 'row',
@@ -713,8 +705,8 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: SLATE[100],
   },
-  rowIndex: { width: 20, fontSize: 12.5, fontWeight: '700', color: SLATE[400] },
-  rowName: { flex: 1, fontSize: 14.5, fontWeight: '600', color: SLATE[800] },
+  rowIndex: { minWidth: 20, fontSize: TYPE.label, fontWeight: '700', color: SLATE[500] },
+  rowName: { flex: 1, fontSize: TYPE.heading, fontWeight: '600', color: SLATE[800] },
   levelRow: { flexDirection: 'row', gap: 5 },
   levelBtn: {
     width: 34,
@@ -726,7 +718,7 @@ const styles = StyleSheet.create({
     borderColor: SLATE[200],
     backgroundColor: SLATE[50],
   },
-  levelBtnText: { fontSize: 13, fontWeight: '800', color: SLATE[400] },
+  levelBtnText: { fontSize: TYPE.body, fontWeight: '800', color: SLATE[500] },
   pressed: { opacity: 0.72 },
 
   viewScroll: { padding: SPACING.md, paddingBottom: SPACING.xxl },
@@ -747,7 +739,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: SPACING.md,
     borderLeftWidth: 4,
   },
-  levelCardTitle: { fontSize: 14, fontWeight: '800' },
+  levelCardTitle: { fontSize: TYPE.heading, fontWeight: '800' },
   countBadge: {
     minWidth: 24,
     paddingHorizontal: 7,
@@ -755,10 +747,10 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     alignItems: 'center',
   },
-  countBadgeText: { color: '#ffffff', fontSize: 12, fontWeight: '800' },
+  countBadgeText: { color: '#ffffff', fontSize: TYPE.label, fontWeight: '800' },
   emptyBand: {
-    fontSize: 12.5,
-    color: SLATE[400],
+    fontSize: TYPE.label,
+    color: SLATE[500],
     fontStyle: 'italic',
     padding: SPACING.md,
   },
@@ -772,8 +764,8 @@ const styles = StyleSheet.create({
     borderTopColor: SLATE[100],
   },
   memberText: { flex: 1 },
-  memberName: { fontSize: 14, fontWeight: '600', color: SLATE[800] },
-  memberEmail: { fontSize: 11.5, color: SLATE[500], marginTop: 1 },
+  memberName: { fontSize: TYPE.heading, fontWeight: '600', color: SLATE[800] },
+  memberEmail: { fontSize: TYPE.caption, color: SLATE[500], marginTop: 1 },
   memberActions: { flexDirection: 'row', gap: 4 },
   iconBtn: {
     width: 32,
@@ -796,7 +788,7 @@ const styles = StyleSheet.create({
     borderTopColor: SLATE[200],
     ...SHADOWS.md,
   },
-  footerCount: { flex: 1, fontSize: 13, fontWeight: '700', color: SLATE[600] },
+  footerCount: { flex: 1, fontSize: TYPE.body, fontWeight: '700', color: SLATE[600] },
   saveBtn: {
     minWidth: 120,
     alignItems: 'center',
@@ -806,7 +798,7 @@ const styles = StyleSheet.create({
     backgroundColor: PALETTE.primaryDark,
   },
   saveBtnDisabled: { backgroundColor: SLATE[300] },
-  saveText: { fontSize: 14, fontWeight: '700', color: '#ffffff' },
+  saveText: { fontSize: TYPE.heading, fontWeight: '700', color: '#ffffff' },
 
   backdrop: { flex: 1, backgroundColor: 'rgba(15,23,42,0.45)', justifyContent: 'flex-end' },
   sheet: {
@@ -825,7 +817,7 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.sm,
   },
   sheetTitle: {
-    fontSize: 15,
+    fontSize: TYPE.heading,
     fontWeight: '700',
     color: SLATE[800],
     paddingHorizontal: SPACING.md,
@@ -842,5 +834,5 @@ const styles = StyleSheet.create({
   },
   sheetOptionPressed: { backgroundColor: SLATE[50] },
   sheetDot: { width: 10, height: 10, borderRadius: 5 },
-  sheetOptionText: { flex: 1, fontSize: 15, color: SLATE[700] },
+  sheetOptionText: { flex: 1, fontSize: TYPE.heading, color: SLATE[700] },
 });

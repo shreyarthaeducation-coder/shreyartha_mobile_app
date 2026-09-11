@@ -69,7 +69,7 @@ const useStyles = makeStyles(() => ({
   strip: { flexDirection: 'row', gap: SPACING.sm },
   item: { flex: 1 },
   labelRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 4 },
-  label: { flexShrink: 1, fontSize: TYPE.micro, fontWeight: '600', color: '#ffffff', opacity: 0.92 },
+  label: { flexShrink: 1, fontSize: TYPE.micro, fontWeight: '600', color: '#ffffff' },
   value: { fontSize: TYPE.micro, fontWeight: '800', color: '#ffffff' },
   track: {
     height: 5,
@@ -79,5 +79,5 @@ const useStyles = makeStyles(() => ({
     overflow: 'hidden',
   },
   fill: { height: '100%', borderRadius: 999, backgroundColor: '#ffffff' },
-  note: { fontSize: TYPE.caption, color: '#ffffff', opacity: 0.9 },
+  note: { fontSize: TYPE.caption, color: '#ffffff' },
 }));

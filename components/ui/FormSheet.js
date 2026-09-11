@@ -10,7 +10,7 @@ import {
   View,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { SHADOWS, SLATE, SPACING } from '../../constants/theme';
+import { SHADOWS, SLATE, SPACING, TYPE } from '../../constants/theme';
 import { usePalette } from './PaletteContext';
 
 /**
@@ -85,7 +85,7 @@ export default function FormSheet({
                   ) : (
                     <Ionicons
                       name={headerAction.icon || 'share-outline'}
-                      size={18}
+                      size={20}
                       color={palette.primaryDark}
                     />
                   )}
@@ -176,8 +176,8 @@ const styles = StyleSheet.create({
     borderBottomColor: SLATE[100],
   },
   headerText: { flex: 1 },
-  title: { fontSize: 16.5, fontWeight: '700', color: SLATE[800] },
-  subtitle: { fontSize: 12.5, color: SLATE[500], marginTop: 2 },
+  title: { fontSize: TYPE.title, fontWeight: '700', color: SLATE[800] },
+  subtitle: { fontSize: TYPE.label, color: SLATE[500], marginTop: 2 },
   closeBtn: {
     width: 34,
     height: 34,
@@ -209,7 +209,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: SLATE[200],
   },
-  cancelText: { fontSize: 14, fontWeight: '700', color: SLATE[600] },
+  cancelText: { fontSize: TYPE.heading, fontWeight: '700', color: SLATE[600] },
   submitBtn: {
     flex: 1.4,
     alignItems: 'center',
@@ -218,6 +218,6 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
   submitDisabled: { backgroundColor: SLATE[300] },
-  submitText: { fontSize: 14, fontWeight: '700', color: '#ffffff' },
+  submitText: { fontSize: TYPE.heading, fontWeight: '700', color: '#ffffff' },
   pressed: { opacity: 0.75 },
 });

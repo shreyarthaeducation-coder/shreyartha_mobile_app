@@ -203,7 +203,7 @@ const SHREYARTHA_TEACHER = {
       key: 'personal',
       label: 'Personal',
       icon: 'person-outline',
-      itemKeys: ['myCalendar', 'upskill'],
+      itemKeys: ['myCalendar', 'upskill', 'expenses'],
     },
   ],
 
@@ -292,7 +292,7 @@ const COUNSELOR = {
       key: 'caseload',
       label: 'My Caseload',
       icon: 'people-outline',
-      itemKeys: ['attendance', 'counselling', 'counsellorReport'],
+      itemKeys: ['attendance', 'counselling', 'faceToFace', 'counsellorReport'],
     },
     {
       key: 'personal',
@@ -325,6 +325,36 @@ const COUNSELOR = {
    * Management tab is for. The two Shreyartha roles and usually the VP have none.
    */
   identityRow3: { label: 'Classes I Support', source: 'assignedClasses' },
+
+  /** The photo-led header from the approved counsellor design. */
+  profileHeader: true,
+
+  /**
+   * ── THREE OF THE DESIGN'S CARDS ARE NOT HERE, AND WILL NOT BE ───────────
+   * Mark Visit, My Performance and Request Meeting.
+   *
+   *   Mark Visit       there is NO counsellor visit entity, controller or service anywhere in the
+   *                    backend. Visits belong to sales, and `SalesController` is
+   *                    `hasRole('SHREYARTHA_SALES')` at class level with a second
+   *                    `requireSalesUser` check inside every service method — widening the guard
+   *                    would still 400 on every call.
+   *   My Performance   `/api/school-admin/staff-evaluation/**` is `hasRole('SCHOOL_ADMIN')` → 403.
+   *                    `peer-evaluation` is this counsellor evaluating OTHERS, not a self read.
+   *   Request Meeting  `/api/school/staff-meetings` is SCHOOL_ADMIN or PRINCIPAL only.
+   *
+   * What replaces them is what a counsellor actually does: open a session, and look at the two
+   * screens their week is organised around.
+   */
+  quickActions: [
+    { key: 'newSession', label: 'New Session', blurb: 'Record a counselling session', icon: 'add-circle', tint: 'violet', itemKey: 'counselling' },
+    { key: 'appliedLeave', label: 'Applied Leave', blurb: 'Apply for leave and track status', icon: 'clipboard', tint: 'green', itemKey: 'leave' },
+    { key: 'wellness', label: 'Wellness Groups', blurb: 'Wellbeing indices by student', icon: 'pulse', tint: 'blue', itemKey: 'groups' },
+    { key: 'report', label: 'Counsellor Report', blurb: 'Write and publish reports', icon: 'document-text', tint: 'amber', itemKey: 'counsellorReport' },
+  ],
+
+  /** Today's Summary + Today's Sessions, both backed by /api/counselor/*. */
+  metrics: 'counsellor',
+  todayList: true,
 
   search: true,
 };
@@ -381,13 +411,13 @@ const SHREYARTHA_COUNCELLOR = {
       key: 'caseload',
       label: 'My Caseload',
       icon: 'people-outline',
-      itemKeys: ['attendance', 'counselling', 'counsellorReport', 'queries'],
+      itemKeys: ['attendance', 'counselling', 'faceToFace', 'counsellorReport', 'queries'],
     },
     {
       key: 'personal',
       label: 'Personal',
       icon: 'person-outline',
-      itemKeys: ['liveCounselling', 'myCalendar'],
+      itemKeys: ['liveCounselling', 'myCalendar', 'expenses'],
     },
   ],
 
@@ -415,6 +445,30 @@ const SHREYARTHA_COUNCELLOR = {
     endpoint: '/api/shreya01/counsellor/schools-classes',
     icon: 'business-outline',
   },
+
+  /** The photo-led header from the approved counsellor design, as Portal A takes it. */
+  profileHeader: true,
+
+  /**
+   * The same four as Portal A, plus Queries, which is one of the two tiles this portal has and the
+   * other does not. Mark Visit / My Performance / Request Meeting are absent for the reasons set
+   * out on the COUNSELOR descriptor — none of the three has a backend a counsellor can call.
+   *
+   * "My Schools" from the design's tab bar is deliberately NOT a quick action here either: this
+   * portal's schools come from `/api/shreya01/counsellor/schools-classes`, which has no screen of
+   * its own — it feeds the identity row and the Live Counselling scope picker. A card leading
+   * nowhere is worse than one card fewer.
+   */
+  quickActions: [
+    { key: 'newSession', label: 'New Session', blurb: 'Record a counselling session', icon: 'add-circle', tint: 'violet', itemKey: 'counselling' },
+    { key: 'appliedLeave', label: 'Applied Leave', blurb: 'Apply for leave and track status', icon: 'clipboard', tint: 'green', itemKey: 'leave' },
+    { key: 'wellness', label: 'Wellness Groups', blurb: 'Wellbeing indices by student', icon: 'pulse', tint: 'blue', itemKey: 'groups' },
+    { key: 'report', label: 'Counsellor Report', blurb: 'Write and publish reports', icon: 'document-text', tint: 'amber', itemKey: 'counsellorReport' },
+    { key: 'queries', label: 'Queries', blurb: 'Student questions awaiting a reply', icon: 'help-circle', tint: 'rose', itemKey: 'queries' },
+  ],
+
+  metrics: 'counsellor',
+  todayList: true,
 
   search: true,
 };
@@ -659,7 +713,7 @@ const SALES = {
       key: 'personal',
       label: 'Personal',
       icon: 'person-outline',
-      itemKeys: ['myCalendar', 'tutorial'],
+      itemKeys: ['myCalendar', 'tutorial', 'expenses'],
     },
   ],
 
@@ -678,6 +732,34 @@ const SALES = {
    * class. A help page is the honest surface.
    */
   support: 'help',
+
+  /**
+   * The photo-led header from the approved design, in place of the labelled-rows IdentityCard.
+   * Only the two panels with an approved mockup take it; the other four are untouched.
+   */
+  profileHeader: true,
+
+  /**
+   * The Quick Actions rail. SHORTCUTS, not placements — every one of these tiles also lives in a
+   * hero or a workspace group, which is why `assertArrangementCovers` checks them without counting
+   * them. See the note on that function.
+   *
+   * ── "REQUEST MEETING" IS NOT HERE ───────────────────────────────────────
+   * The design's fifth card. The only meeting API in the platform is
+   * `/api/school/staff-meetings`, guarded `hasRole('SCHOOL_ADMIN') or hasRole('PRINCIPAL')` — no
+   * SALES arm anywhere, and no sales-side meeting concept at all. My Schools takes the slot
+   * because it is a real destination the rail can otherwise not reach.
+   */
+  quickActions: [
+    { key: 'markVisit', label: 'Mark Visit', blurb: 'Mark and log your visit', icon: 'location', tint: 'violet', itemKey: 'visits' },
+    { key: 'appliedLeave', label: 'Applied Leave', blurb: 'Apply for leave and track status', icon: 'clipboard', tint: 'green', itemKey: 'leave' },
+    { key: 'myLead', label: 'My Lead', blurb: 'View and manage your leads', icon: 'people', tint: 'blue', itemKey: 'leads' },
+    { key: 'myPerformance', label: 'My Sales Performance', blurb: 'Track your sales performance', icon: 'trending-up', tint: 'amber', itemKey: 'dashboard' },
+    { key: 'mySchools', label: 'My Schools', blurb: 'Schools you are working', icon: 'business', tint: 'rose', itemKey: 'schools' },
+  ],
+
+  /** Which metric block this panel renders. See StaffHomeScreen. */
+  metrics: 'sales',
 
   /** Search over this panel's own menu. There is no roster or class list to index. */
   search: true,
@@ -726,7 +808,17 @@ export function itemsFor(menu, itemKeys = []) {
  *
  * Exported rather than inlined so a checker can CALL it rather than grep for its shape.
  *
- * @returns {{ missing: string[], duplicated: string[], unknown: string[] }} all empty when correct
+ * ── QUICK ACTIONS ARE SHORTCUTS, NOT PLACEMENTS ─────────────────────────────
+ * A hero counts as a destination; a quick action deliberately does not. The distinction is real:
+ * a hero is where a tile LIVES, so a tile fronted by one must not also sit in a workspace group,
+ * and `duplicated` is what enforces that. A quick action is an express lane to somewhere the panel
+ * already reaches — the sales design's "Applied Leave" opens the same screen My Attendance does,
+ * and that is the point of it. Counting them would report every correct panel as duplicated.
+ *
+ * They are still checked, just differently: `unknownQuickActions` reports any that name a tile the
+ * role does not carry, so a typo is caught rather than silently rendering one card fewer.
+ *
+ * @returns {{ missing, duplicated, unknown, unknownQuickActions }} all empty when correct
  */
 export function assertArrangementCovers(menu, home) {
   const menuKeys = (menu || []).map((item) => item.key);
@@ -763,10 +855,18 @@ export function assertArrangementCovers(menu, home) {
   // placed only as `fees|due` is reachable, and reporting it missing would be false.
   const placedKeys = new Set([...seen.keys()].map((e) => e.split('|')[0]));
 
+  // Checked but NOT counted — see the note above. A quick action names its target the same four
+  // ways a hero does, and only the tile forms can be validated against the menu.
+  const quickKeys = (home?.quickActions || []).flatMap((action) => {
+    const keys = action.itemKeys || (action.itemKey ? [action.itemKey] : []);
+    return keys;
+  });
+
   return {
     missing: menuKeys.filter((key) => !placedKeys.has(key)),
     duplicated: [...seen.entries()].filter(([, count]) => count > 1).map(([entry]) => entry),
     unknown: [...placedKeys].filter((key) => !menuKeys.includes(key)),
+    unknownQuickActions: quickKeys.filter((key) => !menuKeys.includes(key)),
   };
 }
 

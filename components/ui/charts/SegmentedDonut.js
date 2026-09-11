@@ -1,6 +1,6 @@
 import { StyleSheet, Text, View } from 'react-native';
 import Svg, { Circle, G } from 'react-native-svg';
-import { SLATE } from '../../../constants/theme';
+import { SLATE, TYPE } from '../../../constants/theme';
 
 /**
  * A ring split into several slices — the multi-segment pie the kit has been missing.
@@ -94,6 +94,6 @@ export default function SegmentedDonut({
 const styles = StyleSheet.create({
   wrap: { alignItems: 'center' },
   centre: { position: 'absolute', alignItems: 'center', justifyContent: 'center' },
-  value: { fontSize: 24, fontWeight: '800', color: SLATE[800] },
-  caption: { fontSize: 11, fontWeight: '600', color: SLATE[500], marginTop: 1 },
+  value: { fontSize: TYPE.headline, fontWeight: '800', color: SLATE[800] },
+  caption: { fontSize: TYPE.caption, fontWeight: '600', color: SLATE[500], marginTop: 1 },
 });

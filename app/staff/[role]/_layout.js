@@ -7,7 +7,11 @@ import { staffPalette } from '../../../constants/theme';
 import { api } from '../../../services/apiService';
 import { getStaffRoleConfig } from '../../../constants/staffRoles';
 import { PaletteProvider } from '../../../components/ui/PaletteContext';
-import PortalTabBar, { isTabRoot, staffTabsFor } from '../../../components/shared/home/PortalTabBar';
+import PortalTabBar, {
+  isTabRoot,
+  staffFabFor,
+  staffTabsFor,
+} from '../../../components/shared/home/PortalTabBar';
 
 /**
  * Route guard for the config-driven staff shells (counselor, principal, vice_principal and the
@@ -150,6 +154,9 @@ export default function StaffRoleLayout() {
   // screens — an absolutely-positioned View over a scroll area still eats touches along its edge
   // even when it renders nothing.
   const tabs = staffTabsFor(roleKey);
+  // The raised centre button. Null for every role without one, and PortalTabBar then renders the
+  // plain bar it always did. Its destination is deliberately not in `tabs` — see STAFF_FABS.
+  const fab = staffFabFor(roleKey);
 
   return (
     <PaletteProvider palette={palette}>
@@ -163,11 +170,18 @@ export default function StaffRoleLayout() {
       {/* The multi-tile hero hub. One route, not one per hero — see admin-hub.js. */}
       <Stack.Screen name="admin-hub" />
       <Stack.Screen name="support" />
+      {/* The staff inbox behind the bell. Registered for every role, like every other screen in
+          this group — the bell itself only appears on the panels that pass BrandBar a `bell`. */}
+      <Stack.Screen name="notifications" />
       <Stack.Screen name="search" />
       <Stack.Screen name="profile" />
       <Stack.Screen name="self-attendance" />
       <Stack.Screen name="attendance" />
       <Stack.Screen name="counselling" />
+      {/* The face-to-face room — the counsellor FAB's destination. Registered for every role like
+          everything else in this group; the screen returns null for a role with no counsellor
+          portal, which is what keeps the other four panels unaffected. */}
+      <Stack.Screen name="face-to-face" />
       <Stack.Screen name="counsellor-report" />
       <Stack.Screen name="groups" />
       <Stack.Screen name="queries" />
@@ -204,6 +218,9 @@ export default function StaffRoleLayout() {
       {/* Self-service HR, on /api/staff/hr — the two teacher panels. */}
       <Stack.Screen name="leave" />
       <Stack.Screen name="payroll" />
+      {/* My Expenses, on /api/staff/travel-expenses — sales, Shreyartha teacher and Shreyartha
+          counsellor. Not in the sales block below: it serves all three Shreyartha shells. */}
+      <Stack.Screen name="travel-expenses" />
       {/* Admin HR and fees, on /api/school-admin — Principal (all three) and VP (HR only). */}
       <Stack.Screen name="leave-management" />
       <Stack.Screen name="payroll-management" />
@@ -227,7 +244,7 @@ export default function StaffRoleLayout() {
 
     {/* tone="light" like every staff BrandBar: these palettes carry none of the dark-glass tokens
         the bar's default styles read, and an undefined colour renders as unset, not as an error. */}
-    {isTabRoot(pathname, tabs) ? <PortalTabBar tabs={tabs} tone="light" /> : null}
+    {isTabRoot(pathname, tabs) ? <PortalTabBar tabs={tabs} tone="light" fab={fab} /> : null}
     </View>
     </PaletteProvider>
   );

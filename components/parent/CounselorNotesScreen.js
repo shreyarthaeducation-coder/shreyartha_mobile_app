@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
 import { Text, View } from 'react-native';
-import { SLATE, SPACING } from '../../constants/theme';
+import { SLATE, SPACING, TYPE, leading } from '../../constants/theme';
 import { Card, EmptyState, ScreenScaffold, StatusChip } from '../ui';
 import useStaffResource from '../../hooks/useStaffResource';
 import { fetchCounselorNotes } from '../../services/parent/insightsService';
@@ -79,8 +79,8 @@ export default function CounselorNotesScreen() {
 const useStyles = makeStyles(() => ({
   item: { marginBottom: SPACING.sm },
   head: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  counselor: { flex: 1, fontSize: 15, fontWeight: '700', color: SLATE[800] },
-  date: { fontSize: 12.5, color: SLATE[500], marginTop: 3, fontWeight: '600' },
-  notes: { fontSize: 13.5, color: SLATE[600], lineHeight: 20, marginTop: SPACING.sm },
+  counselor: { flex: 1, fontSize: TYPE.heading, fontWeight: '700', color: SLATE[800] },
+  date: { fontSize: TYPE.label, color: SLATE[500], marginTop: 3, fontWeight: '600' },
+  notes: { fontSize: TYPE.body, color: SLATE[600], lineHeight: leading(TYPE.body), marginTop: SPACING.sm },
   footer: { flexDirection: 'row', marginTop: SPACING.sm },
 }));

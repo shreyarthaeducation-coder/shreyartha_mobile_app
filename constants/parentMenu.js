@@ -27,7 +27,10 @@ const PARENT_BASE = '/parent/platform/dashboard';
  * `ParentHome` renders exactly one thing: the linked child's profile card — avatar, name, class,
  * stream, school. On mobile the tile grid IS the home screen, and its Welcome header already shows
  * that card. A "Home" tile sitting on the home screen, navigating to information visible directly
- * above it, is noise. Eight tiles here + the header equals the web's nine sidebar items.
+ * above it, is noise. Nine tiles here + the header equals the web's ten sidebar items.
+ *
+ * Notifications joined both lists with the parent inbox — every school event aimed at the child's
+ * class. It sits after Schedule because it is about the same events.
  */
 export const PARENT_MENU = [
   { key: 'academic-progress', label: 'Academic Progress', icon: 'stats-chart-outline', native: '/parent/academic-progress' },
@@ -37,6 +40,7 @@ export const PARENT_MENU = [
   { key: 'counsellor-report', label: 'Counsellor Report', icon: 'reader-outline', native: '/parent/counsellor-report' },
   { key: 'attendance', label: 'Attendance', icon: 'calendar-outline', native: '/parent/attendance' },
   { key: 'schedule', label: 'Schedule', icon: 'today-outline', native: '/parent/schedule' },
+  { key: 'notifications', label: 'Notifications', icon: 'notifications-outline', native: '/parent/notifications' },
   { key: 'fees', label: 'School Fees', icon: 'cash-outline', native: '/parent/fees' },
 ];
 

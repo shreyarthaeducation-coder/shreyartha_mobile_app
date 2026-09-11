@@ -2,7 +2,7 @@ import { useCallback, useRef, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { FEEDBACK, SLATE, SPACING } from '../../constants/theme';
+import { FEEDBACK, SLATE, SPACING, TYPE, leading } from '../../constants/theme';
 import { usePalette } from '../ui/PaletteContext';
 import { Card, CardTitle, EmptyState, ScreenScaffold, StatusChip, TextField } from '../ui';
 import { ProgressBar } from '../ui/charts';
@@ -176,7 +176,7 @@ export default function FeesScreen() {
                   accessibilityRole="button"
                 >
                   <Text style={styles.payText}>Pay now</Text>
-                  <Ionicons name="open-outline" size={15} color="#ffffff" />
+                  <Ionicons name="open-outline" size={17} color="#ffffff" />
                 </Pressable>
               ) : null}
             </Card>
@@ -203,7 +203,7 @@ export default function FeesScreen() {
                     accessibilityRole="button"
                   >
                     <Text style={[styles.rowPayText, { color: palette.primaryDark }]}>Pay</Text>
-                    <Ionicons name="chevron-forward" size={14} color={palette.primaryDark} />
+                    <Ionicons name="chevron-forward" size={16} color={palette.primaryDark} />
                   </Pressable>
                 ) : null}
               </Card>
@@ -266,14 +266,14 @@ const useStyles = makeStyles((p) => ({
     paddingHorizontal: 8,
     alignItems: 'center',
   },
-  tileValue: { fontSize: 16, fontWeight: '800', color: SLATE[800] },
-  tileLabel: { fontSize: 11.5, color: SLATE[500], fontWeight: '600', marginTop: 3 },
+  tileValue: { fontSize: TYPE.title, fontWeight: '800', color: SLATE[800] },
+  tileLabel: { fontSize: TYPE.caption, color: SLATE[500], fontWeight: '600', marginTop: 3 },
   progressHead: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 },
   progressTitle: { flex: 1, marginBottom: 0 },
   dueCard: { borderLeftWidth: 3, borderLeftColor: FEEDBACK.warningText },
-  dueLabel: { fontSize: 12, color: SLATE[500], fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.4 },
-  dueAmount: { fontSize: 22, fontWeight: '800', color: SLATE[800], marginTop: 4 },
-  dueDate: { fontSize: 13, color: SLATE[500], marginTop: 2 },
+  dueLabel: { fontSize: TYPE.label, color: SLATE[500], fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.4 },
+  dueAmount: { fontSize: TYPE.headline, fontWeight: '800', color: SLATE[800], marginTop: 4 },
+  dueDate: { fontSize: TYPE.body, color: SLATE[500], marginTop: 2 },
   payBtn: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -283,9 +283,9 @@ const useStyles = makeStyles((p) => ({
     paddingVertical: 12,
     marginTop: SPACING.sm,
   },
-  payText: { color: '#ffffff', fontWeight: '700', fontSize: 14.5 },
+  payText: { color: '#ffffff', fontWeight: '700', fontSize: TYPE.heading },
   sectionTitle: {
-    fontSize: 13,
+    fontSize: TYPE.body,
     fontWeight: '800',
     color: SLATE[500],
     textTransform: 'uppercase',
@@ -293,15 +293,15 @@ const useStyles = makeStyles((p) => ({
     marginTop: SPACING.lg,
     marginBottom: SPACING.sm,
   },
-  muted: { fontSize: 13, color: SLATE[400], fontStyle: 'italic' },
-  refusal: { fontSize: 13.5, color: SLATE[600], lineHeight: 20 },
+  muted: { fontSize: TYPE.body, color: SLATE[500], fontStyle: 'italic' },
+  refusal: { fontSize: TYPE.body, color: SLATE[600], lineHeight: leading(TYPE.body) },
   row: { marginBottom: SPACING.sm },
   rowHead: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  rowTitle: { flex: 1, fontSize: 14.5, fontWeight: '700', color: SLATE[800] },
+  rowTitle: { flex: 1, fontSize: TYPE.heading, fontWeight: '700', color: SLATE[800] },
   rowBody: { flexDirection: 'row', alignItems: 'center', marginTop: 6 },
-  rowMeta: { flex: 1, fontSize: 12.5, color: SLATE[500] },
-  rowAmount: { fontSize: 14, fontWeight: '700', color: SLATE[800] },
-  receipt: { fontSize: 12, color: SLATE[500], fontWeight: '600' },
+  rowMeta: { flex: 1, fontSize: TYPE.label, color: SLATE[500] },
+  rowAmount: { fontSize: TYPE.heading, fontWeight: '700', color: SLATE[800] },
+  receipt: { fontSize: TYPE.label, color: SLATE[500], fontWeight: '600' },
   rowPay: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -311,6 +311,6 @@ const useStyles = makeStyles((p) => ({
     borderTopWidth: 1,
     borderTopColor: SLATE[100],
   },
-  rowPayText: { fontSize: 13.5, fontWeight: '700' },
+  rowPayText: { fontSize: TYPE.heading, fontWeight: '700' },
   pressed: { opacity: 0.7 },
 }));

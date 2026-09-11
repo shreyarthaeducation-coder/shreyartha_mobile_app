@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Image, Pressable, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { BAND, FEEDBACK, SLATE, SPACING, TYPE } from '../../../constants/theme';
+import { BAND, FEEDBACK, SLATE, SPACING, TYPE, leading } from '../../../constants/theme';
 import { usePalette } from '../../ui/PaletteContext';
 import { makeStyles } from '../../../utils/makeStyles';
 import { ProgressBar } from '../../ui';
@@ -67,7 +67,7 @@ function Stars({ rating }) {
         <Ionicons
           key={i}
           name={i < value ? 'star' : 'star-outline'}
-          size={13}
+          size={15}
           color={i < value ? BAND.fair : SLATE[300]}
         />
       ))}
@@ -98,7 +98,7 @@ function Expander({ label, open, onPress, right, children, styles }) {
       >
         <Text style={styles.expLabel}>{label}</Text>
         {right}
-        <Ionicons name={open ? 'chevron-up' : 'chevron-down'} size={15} color={SLATE[400]} />
+        <Ionicons name={open ? 'chevron-up' : 'chevron-down'} size={17} color={SLATE[400]} />
       </Pressable>
       {open ? <View style={styles.expBody}>{children}</View> : null}
     </>
@@ -306,7 +306,7 @@ export default function AnalyticsBody({
                 {p.chapterName ? <Text style={styles.careerPath}>{p.chapterName}</Text> : null}
               </View>
               {onOpenCareer ? (
-                <Ionicons name="chevron-forward" size={15} color={palette.deep} />
+                <Ionicons name="chevron-forward" size={17} color={palette.deep} />
               ) : null}
             </Pressable>
           ))
@@ -347,7 +347,7 @@ export default function AnalyticsBody({
                 accessibilityRole="button"
               >
                 <Text style={styles.linkText}>Open Psychometric Assessment</Text>
-                <Ionicons name="chevron-forward" size={14} color={palette.deep} />
+                <Ionicons name="chevron-forward" size={16} color={palette.deep} />
               </Pressable>
             </>
           ) : (
@@ -359,7 +359,7 @@ export default function AnalyticsBody({
                 accessibilityRole="button"
               >
                 <Text style={styles.linkText}>Take the assessment</Text>
-                <Ionicons name="chevron-forward" size={14} color={palette.deep} />
+                <Ionicons name="chevron-forward" size={16} color={palette.deep} />
               </Pressable>
             </>
           )}
@@ -743,8 +743,8 @@ const useStyles = makeStyles((p) => ({
   identityText: { flex: 1 },
   name: { fontSize: TYPE.title, fontWeight: '800', color: SLATE[800] },
   meta: { fontSize: TYPE.label, color: SLATE[500], marginTop: 2 },
-  body: { fontSize: TYPE.body, color: SLATE[600], lineHeight: 19 },
-  unavailable: { fontSize: TYPE.label, color: SLATE[400], fontStyle: 'italic', lineHeight: 18 },
+  body: { fontSize: TYPE.body, color: SLATE[600], lineHeight: leading(TYPE.body) },
+  unavailable: { fontSize: TYPE.label, color: SLATE[500], fontStyle: 'italic', lineHeight: leading(TYPE.label) },
 
   careerRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 8 },
   priority: {
@@ -838,7 +838,7 @@ const useStyles = makeStyles((p) => ({
     marginTop: SPACING.sm,
   },
   gapTemplate: { fontSize: TYPE.label, fontStyle: 'italic', fontWeight: '600', marginBottom: 5 },
-  gapTopic: { fontSize: TYPE.label, color: SLATE[600], lineHeight: 18, marginTop: 2 },
+  gapTopic: { fontSize: TYPE.label, color: SLATE[600], lineHeight: leading(TYPE.label), marginTop: 2 },
 
   metricRow: {
     flexDirection: 'row',
@@ -877,7 +877,7 @@ const useStyles = makeStyles((p) => ({
     marginBottom: SPACING.sm,
   },
   showing: { fontSize: TYPE.label, fontWeight: '700', color: SLATE[700] },
-  remark: { fontSize: TYPE.label, color: SLATE[600], lineHeight: 19, marginTop: 4 },
+  remark: { fontSize: TYPE.label, color: SLATE[600], lineHeight: leading(TYPE.label), marginTop: 4 },
 
   weakBox: {
     backgroundColor: '#fff5f5',

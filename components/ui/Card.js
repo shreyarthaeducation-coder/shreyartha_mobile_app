@@ -1,6 +1,6 @@
 import { StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { SHADOWS, SLATE, SPACING } from '../../constants/theme';
+import { SHADOWS, SLATE, SPACING, TYPE } from '../../constants/theme';
 import { usePalette } from './PaletteContext';
 
 /**
@@ -28,7 +28,7 @@ export function InfoRow({ icon, label, value, palette: paletteProp }) {
     <View style={styles.row}>
       {icon ? (
         <View style={[styles.rowIcon, { backgroundColor: palette.tint }]}>
-          <Ionicons name={icon} size={17} color={palette.primaryDark} />
+          <Ionicons name={icon} size={19} color={palette.primaryDark} />
         </View>
       ) : null}
       <View style={styles.rowText}>
@@ -50,7 +50,7 @@ const styles = StyleSheet.create({
     ...SHADOWS.sm,
   },
   cardTitle: {
-    fontSize: 12,
+    fontSize: TYPE.label,
     fontWeight: '700',
     color: SLATE[500],
     textTransform: 'uppercase',
@@ -67,6 +67,6 @@ const styles = StyleSheet.create({
     marginRight: SPACING.sm,
   },
   rowText: { flex: 1 },
-  rowLabel: { fontSize: 11.5, color: SLATE[500], fontWeight: '600' },
-  rowValue: { fontSize: 14.5, color: SLATE[800], marginTop: 1 },
+  rowLabel: { fontSize: TYPE.caption, color: SLATE[500], fontWeight: '600' },
+  rowValue: { fontSize: TYPE.heading, color: SLATE[800], marginTop: 1 },
 });

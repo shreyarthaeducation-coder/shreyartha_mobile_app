@@ -1,5 +1,6 @@
 import React from 'react';
 import { Pressable, StyleSheet, Text } from 'react-native';
+import { TYPE } from '../../constants/theme';
 
 /** Inline text link — "Forgot Password?", "Back to Login", the signup/login footer toggle. */
 export default function LinkButton({ label, onPress, color, align = 'center', style }) {
@@ -22,6 +23,6 @@ const alignToFlex = (align) =>
 
 const styles = StyleSheet.create({
   press: { paddingVertical: 6 },
-  text: { fontSize: 14, fontWeight: '600' },
+  text: { fontSize: TYPE.body, fontWeight: '600' },
   pressed: { opacity: 0.6, textDecorationLine: 'underline' },
 });

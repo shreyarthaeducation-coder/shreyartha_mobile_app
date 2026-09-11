@@ -55,6 +55,39 @@ const SHARED_DIRS = [
   path.join(APP, 'components/shared/search'),
 ];
 const SHARED_FILES = [path.join(APP, 'components/shared/LanguagePicker.js')];
+
+/**
+ * Where the FONT-SIZE ban applies — the whole app, and deliberately wider than the hex budget.
+ *
+ * The ban used to cover only the redesigned panels, because `components/staff` alone carried 600+
+ * numeric font sizes in shipped screens. The readability pass moved every one of the app's ~1,200
+ * literals onto `TYPE`, so nothing is left to exempt — and a ban scoped to five directories is
+ * exactly how the drift that caused the problem would come back, one hardcoded 12.5 at a time.
+ *
+ * The HEX budget stays on `panelFiles()`: the staff tree still holds raw colours nobody has
+ * tokenised, and turning that on here would fail against code this pass never touched.
+ */
+const TYPE_ROOTS = [path.join(APP, 'components'), path.join(APP, 'app')];
+function typeFiles() {
+  const out = [];
+  const walk = (dir) => {
+    for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
+      const p = path.join(dir, e.name);
+      if (e.isDirectory()) walk(p);
+      else if (e.name.endsWith('.js')) out.push(p);
+    }
+  };
+  TYPE_ROOTS.forEach(walk);
+  return out;
+}
+
+/**
+ * A GLYPH is an emoji or icon rendered as text — its size is a picture's size, not type, so it is
+ * not on the scale. The per-file list below held three; the whole app holds ~60 (hero emoji at 56,
+ * the ✕ on a close button, a ▾ caret, avatar initials in a fixed circle), so they are recognised
+ * by what the style is called, plus anything 40 and over, which is never running text.
+ */
+const GLYPH_KEY = /(icon|emoji|glyph|avatar|arrow|^stars?$|initials|closeBtn|^eye|caret|symbol|tick)/i;
 const THEME = path.join(APP, 'constants/theme.js');
 
 let failures = 0;
@@ -127,6 +160,10 @@ const GLYPH_SIZES = [
   ['SoundStudioTutorial.js', 'icon'],
   ['SubjectCareerScreen.js', 'resultIcon'],
 ];
+const isGlyph = (rel, key, num) =>
+  Number(num) >= 40
+  || (!!key && GLYPH_KEY.test(key))
+  || GLYPH_SIZES.some(([f, k]) => rel.endsWith(f) && k === key);
 
 /* ── Assertions ──────────────────────────────────────────────────────────── */
 
@@ -152,6 +189,16 @@ async function assertions(mutate, panelMutation) {
   }
   if (!T.TOUCH || T.TOUCH.min < 44) {
     bad(`TOUCH.min is ${T.TOUCH?.min}, below the 44pt platform guideline`);
+  }
+  // THE LEGIBILITY FLOOR. `body` was 13 and `label` 12 — both under Material's 14sp minimum — and
+  // between them, `caption` and `micro` they are ~79% of every styled string in the app. The scale
+  // was raised for exactly that reason, and this is what stops a later "just shave a point off"
+  // fix for one clipped row from undoing it for every screen.
+  const TYPE_FLOOR = 11.5;
+  for (const [role, size] of Object.entries(T.TYPE || {})) {
+    if (size < TYPE_FLOOR) {
+      bad(`TYPE.${role} is ${size}, below the ${TYPE_FLOOR} legibility floor`);
+    }
   }
 
   /* ── 2. BAND took the WEBSITE's amber ──────────────────────────────────── */
@@ -190,14 +237,15 @@ async function assertions(mutate, panelMutation) {
   const strayType = [];
   const strayHex = [];
 
-  for (const file of panelFiles()) {
-    const rel = path.relative(PANEL, file).replace(/\\/g, '/');
+  const panelSet = new Set(panelFiles());
+  for (const file of typeFiles()) {
+    const rel = path.relative(PANEL, file).split(path.sep).join('/');
     const src = codeOnly(mutatePanel(rel, read(file), panelMutation));
 
-    // Font sizes must come from TYPE, except the listed glyph sizes.
+    // Font sizes must come from TYPE — everywhere in the app now, glyphs excepted.
     for (const m of src.matchAll(/(\w+): \{[^}]*?fontSize: (\d+(?:\.\d+)?)\b/g)) {
       const [, key, num] = m;
-      if (GLYPH_SIZES.some(([f, k]) => rel.endsWith(f) && k === key)) continue;
+      if (isGlyph(rel, key, num)) continue;
       strayType.push(`${rel} ${key}: ${num}`);
     }
     // The bare form, outside a named style key.
@@ -205,10 +253,12 @@ async function assertions(mutate, panelMutation) {
       const num = m[1];
       const around = src.slice(Math.max(0, m.index - 120), m.index);
       const key = [...around.matchAll(/(\w+): \{/g)].pop()?.[1];
-      if (GLYPH_SIZES.some(([f, k]) => rel.endsWith(f) && k === key)) continue;
+      if (isGlyph(rel, key, num)) continue;
       if (!strayType.some((s) => s.startsWith(`${rel} ${key}:`))) strayType.push(`${rel} ${key ?? '?'}: ${num}`);
     }
 
+    // The hex budget is NOT widened — see TYPE_ROOTS.
+    if (!panelSet.has(file)) continue;
     for (const m of src.matchAll(/#[0-9a-fA-F]{6}\b/g)) {
       const hex = m[0];
       if (IDENTITY_HEX.has(hex) || IDENTITY_HEX.has(hex.toLowerCase())) continue;
@@ -223,9 +273,37 @@ async function assertions(mutate, panelMutation) {
     bad(`${strayHex.length} hardcoded hex colour(s) with a token available: ${[...new Set(strayHex)].slice(0, 6).join(', ')}${strayHex.length > 6 ? ' …' : ''}`);
   }
 
+  /* ── 3b. No text is faded with opacity ─────────────────────────────────── */
+  //
+  // Opacity multiplies contrast down invisibly: the declared colour passes and the rendered pixel
+  // does not. It is how the chat history went "greyish" (0.62 on every restored message) and how
+  // 22 partner labels fell below AA while their stated colour measured 9.7:1. A style that sets a
+  // text colour must reach that colour — a quieter tone is a different colour, not a fade. Press
+  // feedback, disabled controls and a struck-out old price are transient or deliberately inert.
+  const FADE_OK = /(pressed|disabled|Off$|struck|^was$)/i;
+  const faded = [];
+  for (const file of typeFiles()) {
+    const rel = path.relative(PANEL, file).split(path.sep).join('/');
+    const src = codeOnly(mutatePanel(rel, read(file), panelMutation));
+    for (const m of src.matchAll(/(\w+): \{([^{}]*)\}/g)) {
+      const [, key, body] = m;
+      if (FADE_OK.test(key)) continue;
+      if (/(?<![A-Za-z])color:/.test(body) && /(?<![A-Za-z])opacity:\s*0?\.\d/.test(body)) {
+        faded.push(`${rel} ${key}`);
+      }
+    }
+  }
+  if (faded.length) {
+    bad(`${faded.length} text style(s) faded with opacity: ${faded.slice(0, 6).join(', ')}${faded.length > 6 ? ' …' : ''}`);
+  }
+
   /* ── 4. The note style is single-sourced ───────────────────────────────── */
 
-  const CANON = /empty: \{ fontSize: TYPE\.body, color: SLATE\[500\], lineHeight: 19 \}/;
+  // Tracks the shared note style's CURRENT shape. Its leading used to be the literal 19; once `body`
+  // moved from 13 to 16 that was a 1.19 ratio, so the real style (StudentCard `note`) now derives it
+  // from the role. A stale pattern here would not fail — it would just stop matching real copies,
+  // and the duplicate-note budget would report zero for ever while its own mutation stayed green.
+  const CANON = /empty: \{ fontSize: TYPE\.body, color: SLATE\[500\], lineHeight: leading\(TYPE\.body\) \}/;
   const dupes = panelFiles().filter((f) => CANON.test(mutatePanel(relOf(f), read(f), panelMutation)));
   if (dupes.length) {
     bad(`${dupes.length} file(s) re-declare the shared note style instead of using <StudentNote>: ${dupes.map((f) => path.basename(f)).join(', ')}`);
@@ -265,12 +343,20 @@ const MUTATIONS = [
     k === 'theme' ? t.replace(/export const DONE = BAND\.good;/, "export const DONE = '#22c55e';") : t],
   ['RECORDING aliased to FEEDBACK instead of holding its own value', (k, t) =>
     k === 'theme' ? t.replace(/export const RECORDING = '#dc2626';/, 'export const RECORDING = FEEDBACK.errorText;') : t],
+  // Flattens the on-tint variant onto whatever `successText` currently is. That value moved from
+  // #16a34a (3.30:1 on white — a WCAG AA failure) to #15803d, so this mutation had to move with it:
+  // pointing it at the old colour would leave the two tokens unequal and the assertion silent.
   ['the on-tint success variant flattened', (k, t) =>
-    k === 'theme' ? t.replace(/successOnBg: '#166534'/, "successOnBg: '#16a34a'") : t],
+    k === 'theme' ? t.replace(/successOnBg: '#166534'/, "successOnBg: '#15803d'") : t],
   ['TOUCH.min lowered below the guideline', (k, t) =>
     k === 'theme' ? t.replace(/export const TOUCH = \{ min: 44 \};/, 'export const TOUCH = { min: 32 };') : t],
   ['two TYPE roles given the same size', (k, t) =>
-    k === 'theme' ? t.replace(/heading: 15,/, 'heading: 13,') : t],
+    k === 'theme' ? t.replace(/heading: 18,/, 'heading: 16,') : t],
+  // THE FLOOR. The readability pass raised the scale because `body` 13 and `label` 12 were under
+  // the platform minimum; the easy response to a clipped row is to shave a point off a token here,
+  // which fixes one screen and silently un-does that everywhere. 11.5 is `micro`, the smallest role.
+  ['a TYPE role dropped below the legibility floor', (k, t) =>
+    k === 'theme' ? t.replace(/caption: 13,/, 'caption: 10,') : t],
 ];
 
 /** Mutations applied to PANEL files, proving each budget actually scans them. */
@@ -281,11 +367,17 @@ const PANEL_MUTATIONS = [
     rel === 'MyProject.js' ? t.replace('color={FEEDBACK.errorText}', "color=\"#b91c1c\"") : t],
   ['a control shrinks below the tap guideline', (rel, t) =>
     rel === 'ai/ShreyaSpeakButton.js' ? t.replace('minHeight: TOUCH.min', 'minHeight: 30') : t],
+  ['a hardcoded font size in the shared UI kit, outside the student panel', (rel, t) =>
+    rel.endsWith('ui/Card.js') ? t.replace('fontSize: TYPE.heading', 'fontSize: 15') : t],
+  ['a hardcoded font size in a staff screen', (rel, t) =>
+    rel.endsWith('staff/ShreyaChatSheet.js') ? t.replace('fontSize: TYPE.caption', 'fontSize: 11') : t],
+  ['the chat history faded again', (rel, t) =>
+    rel.endsWith('staff/ShreyaChatSheet.js') ? t.replace('bubbleText: {', 'bubbleText: { opacity: 0.62,') : t],
   ['the shared note style is copied back into a screen', (rel, t) =>
     rel === 'MyProject.js'
       ? t.replace(
           '  loader: {',
-          '  empty: { fontSize: TYPE.body, color: SLATE[500], lineHeight: 19 },\n  loader: {',
+          '  empty: { fontSize: TYPE.body, color: SLATE[500], lineHeight: leading(TYPE.body) },\n  loader: {',
         )
       : t],
 ];

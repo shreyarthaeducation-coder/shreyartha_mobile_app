@@ -1,7 +1,7 @@
 import { Modal, Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { SLATE, SPACING } from '../../constants/theme';
+import { SLATE, SPACING, TYPE, leading } from '../../constants/theme';
 import { usePalette } from '../ui/PaletteContext';
 import { makeStyles } from '../../utils/makeStyles';
 import { PARTNER_TERMS, TERMS_TITLE, TERMS_VERSION } from '../../constants/partnerTerms';
@@ -99,8 +99,8 @@ const useStyles = makeStyles((p) => ({
     paddingVertical: SPACING.md,
   },
   headerText: { flex: 1 },
-  title: { color: '#ffffff', fontSize: 15, fontWeight: '800', lineHeight: 21 },
-  version: { color: 'rgba(255,255,255,0.78)', fontSize: 12, marginTop: 2, fontWeight: '600' },
+  title: { color: '#ffffff', fontSize: TYPE.heading, fontWeight: '800', lineHeight: leading(TYPE.heading) },
+  version: { color: 'rgba(255,255,255,0.78)', fontSize: TYPE.label, marginTop: 2, fontWeight: '600' },
   closeBtn: {
     width: 34,
     height: 34,
@@ -111,11 +111,11 @@ const useStyles = makeStyles((p) => ({
   },
   scroll: { padding: SPACING.md, paddingBottom: SPACING.xl },
   section: { marginBottom: SPACING.lg },
-  heading: { fontSize: 14.5, fontWeight: '800', color: SLATE[800], marginBottom: 8 },
-  paragraph: { fontSize: 13.5, color: SLATE[600], lineHeight: 21, marginBottom: 8 },
+  heading: { fontSize: TYPE.heading, fontWeight: '800', color: SLATE[800], marginBottom: 8 },
+  paragraph: { fontSize: TYPE.body, color: SLATE[600], lineHeight: leading(TYPE.body), marginBottom: 8 },
   list: { gap: 8 },
   listRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 9 },
   bullet: { width: 6, height: 6, borderRadius: 3, marginTop: 7.5 },
-  listText: { flex: 1, fontSize: 13.5, color: SLATE[600], lineHeight: 21 },
+  listText: { flex: 1, fontSize: TYPE.body, color: SLATE[600], lineHeight: leading(TYPE.body) },
   lead: { fontWeight: '800', color: SLATE[800] },
 }));

@@ -1,5 +1,5 @@
 import { Tabs } from 'expo-router';
-import { COLORS } from '../../constants/theme';
+import { COLORS, TYPE } from '../../constants/theme';
 
 export default function TabsLayout() {
   return (
@@ -14,7 +14,7 @@ export default function TabsLayout() {
           borderTopColor: '#eeeeee',
         },
         tabBarLabelStyle: {
-          fontSize: 11,
+          fontSize: TYPE.caption,
           fontWeight: '600',
         },
       }}
@@ -61,5 +61,5 @@ export default function TabsLayout() {
 
 function TabIcon({ emoji, label }) {
   const { Text } = require('react-native');
-  return <Text style={{ fontSize: 20 }} accessibilityLabel={label}>{emoji}</Text>;
+  return <Text style={{ fontSize: TYPE.headline }} accessibilityLabel={label}>{emoji}</Text>;
 }

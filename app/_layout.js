@@ -12,7 +12,7 @@ SplashScreen.preventAutoHideAsync().catch(() => {});
 // Always start at the tabs landing page regardless of previous navigation state.
 export const unstable_settings = { initialRouteName: "(tabs)" };
 
-const LOGO = require("../assets/images/AppLogo.png");
+const LOGO = require("../assets/images/The3CEdge.png");
 
 export default function RootLayout() {
   const [ready, setReady] = useState(false);
@@ -63,6 +63,12 @@ export default function RootLayout() {
             <Stack.Screen name="auth/student-login" />
             <Stack.Screen
               name="auth/school-login"
+              options={{ headerShown: false }}
+            />
+            {/* The second staff door. Same screen as school-login with a different variant, but it
+                must be registered in its own right or the route resolves to nothing. */}
+            <Stack.Screen
+              name="auth/employee-login"
               options={{ headerShown: false }}
             />
             <Stack.Screen

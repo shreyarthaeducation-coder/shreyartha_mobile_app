@@ -30,14 +30,14 @@ export default function SearchEntry({ placeholder, buttonLabel, onSearch, tone =
 
   return (
     <View style={[styles.wrap, light && styles.wrapLight]}>
-      <Ionicons name="search" size={18} color={light ? SLATE[400] : palette.onDark} />
+      <Ionicons name="search" size={20} color={light ? SLATE[500] : palette.onDark} />
       <TextInput
         style={[styles.input, light && styles.inputLight]}
         value={query}
         onChangeText={setQuery}
         onSubmitEditing={submit}
         placeholder={placeholder || 'Search to explore topics, resources, courses and more…'}
-        placeholderTextColor={light ? SLATE[400] : palette.onDark}
+        placeholderTextColor={light ? SLATE[500] : palette.onDark}
         autoCorrect={false}
         returnKeyType="search"
       />

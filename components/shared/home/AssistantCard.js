@@ -1,6 +1,6 @@
 import { Image, Pressable, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { INK, SLATE, SPACING, TOUCH, TYPE } from '../../../constants/theme';
+import { INK, SLATE, SPACING, TOUCH, TYPE, leading } from '../../../constants/theme';
 import { makeStyles } from '../../../utils/makeStyles';
 
 /**
@@ -92,7 +92,7 @@ export default function AssistantCard({
           <Text style={styles.ctaText} numberOfLines={1}>
             {cta}
           </Text>
-          <Ionicons name="chevron-forward" size={13} color="#ffffff" />
+          <Ionicons name="chevron-forward" size={15} color="#ffffff" />
         </View>
       </View>
     </Pressable>
@@ -142,7 +142,7 @@ const useStyles = makeStyles((p) => ({
   blurb: {
     fontSize: TYPE.caption,
     color: INK.dark.body,
-    lineHeight: 16,
+    lineHeight: leading(TYPE.caption),
     textAlign: 'center',
     marginTop: SPACING.sm,
     marginBottom: SPACING.sm,

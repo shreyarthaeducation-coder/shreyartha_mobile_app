@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Modal, Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { SLATE, SPACING, TYPE } from '../../../constants/theme';
+import { SLATE, SPACING, TYPE, leading } from '../../../constants/theme';
 import { usePalette } from '../../ui/PaletteContext';
 import { makeStyles } from '../../../utils/makeStyles';
 
@@ -199,11 +199,11 @@ const useStyles = makeStyles((p) => ({
     textAlign: 'center',
     marginBottom: SPACING.sm,
   },
-  text: { fontSize: TYPE.body, color: SLATE[600], lineHeight: 21, textAlign: 'center' },
+  text: { fontSize: TYPE.body, color: SLATE[600], lineHeight: leading(TYPE.body), textAlign: 'center' },
   hint: {
     fontSize: TYPE.label,
     color: p.deep,
-    lineHeight: 19,
+    lineHeight: leading(TYPE.label),
     textAlign: 'center',
     backgroundColor: p.tint,
     borderRadius: 10,
@@ -217,7 +217,7 @@ const useStyles = makeStyles((p) => ({
   dotOn: { backgroundColor: p.primary, width: 18 },
   counter: {
     fontSize: TYPE.caption,
-    color: SLATE[400],
+    color: SLATE[500],
     textAlign: 'center',
     marginTop: SPACING.sm,
   },

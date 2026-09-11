@@ -9,6 +9,7 @@ import { usePalette } from '../ui/PaletteContext';
 import { makeStyles } from '../../utils/makeStyles';
 import { useTranslations } from '../../hooks/useTranslations';
 import BrandBar from '../shared/home/BrandBar';
+import useSchoolLogo from '../../hooks/useSchoolLogo';
 import IdentityCard from '../shared/home/IdentityCard';
 import AssistantCard from '../shared/home/AssistantCard';
 import SectionDivider from '../shared/home/SectionDivider';
@@ -20,8 +21,11 @@ import { fetchLinkedStudent } from '../../services/parent/dashboardService';
 import { loadReportFigures, reportStats } from '../../services/parent/reportCardService';
 import { defaultAcademicYear } from '../../services/parent/feeService';
 import usePortalLogout from '../../hooks/usePortalLogout';
+import { fetchParentUnreadCount } from '../../services/parent/notificationService';
+import { unregisterParentPush } from '../../services/parent/pushService';
 import ShreyaChatSheet from '../staff/ShreyaChatSheet';
 import { PARENT_CHATBOT_CONFIG } from '../../constants/parentChatbotConfig';
+import ChangePasswordRow from '../shared/home/ChangePasswordRow';
 
 /**
  * The parent dashboard.
@@ -124,9 +128,18 @@ export default function ParentMenuScreen() {
   const palette = usePalette();
   const router = useRouter();
   const t = useTranslations(STRINGS);
-  const { confirmLogout } = usePortalLogout({ loginRoute: '/auth/parent-login' });
+  // Unregister this phone from push BEFORE the keys go — the call needs the session it is ending.
+  const { confirmLogout } = usePortalLogout({
+    loginRoute: '/auth/parent-login',
+    beforeLogout: unregisterParentPush,
+  });
 
   const [student, setStudent] = useState(null);
+  const [unread, setUnread] = useState(0);
+  // The child's school crest. `LinkedStudentResponse` carried no school identity at all before
+  // this — only `schoolName` as a display string — so there was no client path to a logo even
+  // indirectly; the field was added to that DTO rather than exposing a school id to a parent.
+  const schoolLogo = useSchoolLogo(student?.schoolLogo);
   const [parent, setParent] = useState({ name: 'Parent', email: '' });
   // null = unknown, so the dashboard never flashes before the gate resolves.
   const [verified, setVerified] = useState(null);
@@ -195,6 +208,9 @@ export default function ParentMenuScreen() {
       setFigures(null);
     }
 
+    // The Notifications tile's count. Never throws; a failure is simply no count.
+    setUnread(await fetchParentUnreadCount());
+
     setRefreshing(false);
   }, []);
 
@@ -248,16 +264,17 @@ export default function ParentMenuScreen() {
       color: '#2563eb',
       route: '/parent/fees?tab=history',
     },
-    // No parent notifications endpoint exists — `/api/students/notifications` is student-role only
-    // and a parent JWT gets a 403. See components/shared/ComingSoon.js.
+    // Live since the parent inbox (/api/parent/notifications): every school event aimed at the
+    // child's class — scheduled, rescheduled, cancelled — and the evening-before reminder, also
+    // pushed to this phone. The description carries the unread count.
     {
       key: 'notifications',
       label: t.notifications,
-      description: t.notificationsBody,
+      description: unread > 0 ? `${unread} unread` : t.notificationsBody,
       icon: 'notifications-outline',
       tint: 'amber',
       color: '#d97706',
-      soon: true,
+      route: '/parent/notifications',
     },
     // Zero file or PDF endpoints exist for a parent anywhere in the backend.
     //
@@ -308,7 +325,11 @@ export default function ParentMenuScreen() {
 
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'left', 'right']}>
-      <BrandBar strings={t} changePasswordRoute="/parent/change-password" tone="light" />
+      <BrandBar
+        tone="light"
+        schoolLogoUrl={schoolLogo}
+        schoolName={student?.schoolName || ''}
+      />
 
       <ScrollView
         contentContainerStyle={styles.scroll}
@@ -399,13 +420,17 @@ export default function ParentMenuScreen() {
           onSearch={(q) => router.push({ pathname: '/parent/search', params: { q } })}
         />
 
+        {/* Account actions, grouped above Log Out. This is the portal's ONLY route to
+            change-password now that the shared header chip is gone. */}
+        <ChangePasswordRow route="/parent/change-password" />
+
         <Pressable
           onPress={confirmLogout}
           style={({ pressed }) => [styles.logout, pressed && styles.pressed]}
           accessibilityRole="button"
           accessibilityLabel="Log out"
         >
-          <Ionicons name="log-out-outline" size={18} color={FEEDBACK.errorText} />
+          <Ionicons name="log-out-outline" size={20} color={FEEDBACK.errorText} />
           <Text style={styles.logoutText}>{t.logOut}</Text>
         </Pressable>
       </ScrollView>

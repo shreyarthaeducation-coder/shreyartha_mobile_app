@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { SHADOWS, SLATE, SPACING } from '../../constants/theme';
+import { SHADOWS, SLATE, SPACING, TYPE } from '../../constants/theme';
 import { usePalette } from './PaletteContext';
 
 /**
@@ -60,7 +60,7 @@ export default function MonthNavigator({
         accessibilityRole="button"
         accessibilityLabel="Previous month"
       >
-        <Ionicons name="chevron-back" size={18} color={arrowColor} />
+        <Ionicons name="chevron-back" size={20} color={arrowColor} />
       </Pressable>
 
       <Pressable
@@ -73,7 +73,7 @@ export default function MonthNavigator({
         <Text style={[styles.labelText, dark && styles.labelTextDark]}>
           {MONTH_NAMES[month - 1]} {year}
         </Text>
-        <Ionicons name="chevron-down" size={15} color={dark ? palette.onDark : SLATE[500]} />
+        <Ionicons name="chevron-down" size={17} color={dark ? palette.onDark : SLATE[500]} />
       </Pressable>
 
       <Pressable
@@ -84,7 +84,7 @@ export default function MonthNavigator({
         accessibilityRole="button"
         accessibilityLabel="Next month"
       >
-        <Ionicons name="chevron-forward" size={18} color={arrowColor} />
+        <Ionicons name="chevron-forward" size={20} color={arrowColor} />
       </Pressable>
 
       <Modal visible={open} transparent animationType="fade" onRequestClose={() => setOpen(false)}>
@@ -178,7 +178,7 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     borderRadius: 10,
   },
-  labelText: { fontSize: 15.5, fontWeight: '700', color: SLATE[800] },
+  labelText: { fontSize: TYPE.heading, fontWeight: '700', color: SLATE[800] },
   labelTextDark: { color: '#ffffff' },
   pressed: { backgroundColor: SLATE[100] },
 
@@ -195,7 +195,7 @@ const styles = StyleSheet.create({
     paddingBottom: SPACING.xl,
   },
   sheetTitle: {
-    fontSize: 12,
+    fontSize: TYPE.label,
     fontWeight: '700',
     color: SLATE[500],
     textTransform: 'uppercase',
@@ -213,7 +213,7 @@ const styles = StyleSheet.create({
     borderColor: SLATE[200],
     backgroundColor: SLATE[50],
   },
-  chipText: { fontSize: 14, fontWeight: '600', color: SLATE[700] },
+  chipText: { fontSize: TYPE.heading, fontWeight: '600', color: SLATE[700] },
   chipTextActive: { color: '#ffffff' },
   monthGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: SPACING.sm },
   monthCell: {
@@ -226,7 +226,7 @@ const styles = StyleSheet.create({
     borderColor: SLATE[200],
     backgroundColor: SLATE[50],
   },
-  monthText: { fontSize: 13.5, fontWeight: '600', color: SLATE[700] },
+  monthText: { fontSize: TYPE.body, fontWeight: '600', color: SLATE[700] },
   close: {
     marginTop: SPACING.lg,
     alignItems: 'center',
@@ -234,5 +234,5 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     backgroundColor: SLATE[100],
   },
-  closeText: { fontSize: 14, fontWeight: '700', color: SLATE[700] },
+  closeText: { fontSize: TYPE.heading, fontWeight: '700', color: SLATE[700] },
 });

@@ -113,10 +113,10 @@ export default function AnalyticsSummaryCard({
   const inner = (
     <View style={[styles.card, style]}>
       <View style={styles.head}>
-        <Ionicons name="sparkles-outline" size={15} color={palette.primary} />
+        <Ionicons name="sparkles-outline" size={17} color={palette.primary} />
         <Text style={styles.eyebrow}>At a glance</Text>
         {onPress ? (
-          <Ionicons name="chevron-forward" size={15} color={palette.primary} />
+          <Ionicons name="chevron-forward" size={17} color={palette.primary} />
         ) : null}
       </View>
       {body}
@@ -167,7 +167,7 @@ const useStyles = makeStyles((p) => ({
     borderColor: p.glassBorder || p.cardBorder,
   },
   chipText: { fontSize: TYPE.caption, fontWeight: '600', color: p.onDark },
-  note: { fontSize: TYPE.label, color: p.onDark, opacity: 0.85, marginTop: 6 },
+  note: { fontSize: TYPE.label, color: p.onDark, marginTop: 6 },
   pressed: { opacity: 0.75 },
 
   // Placeholder bars while the request is in flight, so the card does not pop in and shove the

@@ -14,6 +14,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { forgotPassword } from '../../services/authService';
+import { SLATE, TYPE, leading } from '../../constants/theme';
 
 const TYPE_LABELS = {
   student: 'Student',
@@ -68,7 +69,7 @@ export default function ForgotPasswordScreen() {
 
           <View style={styles.logoContainer}>
             <Image
-              source={require('../../assets/images/AppLogo.png')}
+              source={require('../../assets/images/The3CEdge.png')}
               style={styles.logo}
               resizeMode="contain"
             />
@@ -110,7 +111,7 @@ export default function ForgotPasswordScreen() {
                   value={emailOrPhone}
                   onChangeText={setEmailOrPhone}
                   placeholder="Enter email or phone"
-                  placeholderTextColor="#aaa"
+                  placeholderTextColor={SLATE[500]}
                   keyboardType="email-address"
                   autoCapitalize="none"
                   autoCorrect={false}
@@ -150,10 +151,10 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.12)',
     marginBottom: 8,
   },
-  backText: { color: '#fff', fontWeight: '700', fontSize: 14 },
+  backText: { color: '#fff', fontWeight: '700', fontSize: TYPE.heading },
   logoContainer: { alignItems: 'center', marginVertical: 28 },
-  logo: { width: 90, height: 90, borderRadius: 18 },
-  appName: { color: '#fff', fontSize: 22, fontWeight: '800', marginTop: 12 },
+  logo: { width: 190, height: 122, borderRadius: 18 },
+  appName: { color: '#fff', fontSize: TYPE.headline, fontWeight: '800', marginTop: 12 },
   card: {
     backgroundColor: '#fff',
     borderRadius: 20,
@@ -164,8 +165,8 @@ const styles = StyleSheet.create({
     shadowRadius: 16,
     elevation: 10,
   },
-  cardTitle: { fontSize: 22, fontWeight: '800', color: '#1a1a2e', marginBottom: 4 },
-  cardSubtitle: { fontSize: 13, color: '#64748b', marginBottom: 20, lineHeight: 19 },
+  cardTitle: { fontSize: TYPE.headline, fontWeight: '800', color: '#1a1a2e', marginBottom: 4 },
+  cardSubtitle: { fontSize: TYPE.body, color: '#64748b', marginBottom: 20, lineHeight: leading(TYPE.body) },
   errorBox: {
     backgroundColor: '#fef2f2',
     borderRadius: 10,
@@ -174,8 +175,8 @@ const styles = StyleSheet.create({
     borderLeftWidth: 3,
     borderLeftColor: '#ef4444',
   },
-  errorText: { color: '#dc2626', fontSize: 13, lineHeight: 18 },
-  label: { fontSize: 13, fontWeight: '600', color: '#374151', marginBottom: 6, marginTop: 4 },
+  errorText: { color: '#dc2626', fontSize: TYPE.body, lineHeight: leading(TYPE.body) },
+  label: { fontSize: TYPE.body, fontWeight: '600', color: '#374151', marginBottom: 6, marginTop: 4 },
   input: {
     backgroundColor: '#f9fafb',
     borderWidth: 1,
@@ -183,7 +184,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     paddingHorizontal: 14,
     paddingVertical: 13,
-    fontSize: 15,
+    fontSize: TYPE.heading,
     color: '#111827',
     marginBottom: 22,
   },
@@ -199,15 +200,15 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   loginBtnDisabled: { opacity: 0.7 },
-  loginBtnText: { color: '#fff', fontSize: 16, fontWeight: '700', letterSpacing: 0.3 },
+  loginBtnText: { color: '#fff', fontSize: TYPE.heading, fontWeight: '700', letterSpacing: 0.3 },
   successContainer: { alignItems: 'center', paddingVertical: 8 },
   successIcon: { fontSize: 52, marginBottom: 16 },
-  successTitle: { fontSize: 22, fontWeight: '800', color: '#1a1a2e', marginBottom: 12 },
+  successTitle: { fontSize: TYPE.headline, fontWeight: '800', color: '#1a1a2e', marginBottom: 12 },
   successMsg: {
-    fontSize: 14,
+    fontSize: TYPE.body,
     color: '#64748b',
     textAlign: 'center',
-    lineHeight: 21,
+    lineHeight: leading(TYPE.body),
     marginBottom: 28,
   },
 });

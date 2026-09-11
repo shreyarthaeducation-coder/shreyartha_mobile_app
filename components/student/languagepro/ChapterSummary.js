@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
-import { BAND, DONE, FEEDBACK, SLATE, SPACING, TYPE } from '../../../constants/theme';
+import { BAND, DONE, FEEDBACK, SLATE, SPACING, TYPE, leading } from '../../../constants/theme';
 import { makeStyles } from '../../../utils/makeStyles';
 import { StudentCard, StudentCardTitle } from '../StudentCard';
 import { parseWordScores, scoreColor } from '../phonetics/wordScores';
@@ -188,7 +188,7 @@ const useStyles = makeStyles((p) => ({
   fill: { height: '100%', borderRadius: 4, backgroundColor: p.primaryDark },
   fillPass: { backgroundColor: DONE },
   target: { position: 'absolute', top: 0, bottom: 0, width: 2, backgroundColor: BAND.fair },
-  targetNote: { fontSize: TYPE.caption, color: SLATE[400], marginTop: 4 },
+  targetNote: { fontSize: TYPE.caption, color: SLATE[500], marginTop: 4 },
   phonetics: { fontSize: TYPE.caption, color: SLATE[500], marginTop: 6 },
 
   wordWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 7 },
@@ -204,15 +204,15 @@ const useStyles = makeStyles((p) => ({
   word: { fontSize: TYPE.body, fontWeight: '700' },
   wordScore: { fontSize: TYPE.caption, color: SLATE[500] },
 
-  warn: { fontSize: TYPE.label, color: FEEDBACK.warningOnBg, lineHeight: 19 },
+  warn: { fontSize: TYPE.label, color: FEEDBACK.warningOnBg, lineHeight: leading(TYPE.label) },
   error: { fontSize: TYPE.label, color: FEEDBACK.errorText, marginTop: SPACING.sm },
 
   answer: { paddingVertical: 8, borderTopWidth: 1, borderTopColor: SLATE[200] },
-  answerQ: { fontSize: TYPE.body, fontWeight: '600', color: SLATE[800], lineHeight: 19 },
+  answerQ: { fontSize: TYPE.body, fontWeight: '600', color: SLATE[800], lineHeight: leading(TYPE.body) },
   answerSaid: { fontSize: TYPE.label, color: SLATE[600], marginTop: 3 },
-  answerNote: { fontSize: TYPE.label, color: p.deep, marginTop: 3, lineHeight: 18 },
+  answerNote: { fontSize: TYPE.label, color: p.deep, marginTop: 3, lineHeight: leading(TYPE.label) },
 
-  nudge: { fontSize: TYPE.body, fontWeight: '700', color: FEEDBACK.successOnBg, lineHeight: 20 },
+  nudge: { fontSize: TYPE.body, fontWeight: '700', color: FEEDBACK.successOnBg, lineHeight: leading(TYPE.body) },
   allPass: {
     fontSize: TYPE.caption,
     color: FEEDBACK.successText,

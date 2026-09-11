@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { FEEDBACK, PORTALS, SLATE, SPACING } from '../../constants/theme';
+import { FEEDBACK, PORTALS, SLATE, SPACING, TYPE } from '../../constants/theme';
 import {
   Card,
   EMPTY_SCOPE,
@@ -214,7 +214,7 @@ export default function ExamsScreen({ homeRoute = '/teacher' }) {
                 style={({ pressed }) => [styles.actionBtn, pressed && styles.pressed]}
                 accessibilityRole="button"
               >
-                <Ionicons name="list-outline" size={15} color={PALETTE.primaryDark} />
+                <Ionicons name="list-outline" size={17} color={PALETTE.primaryDark} />
                 <Text style={styles.actionText}>Questions</Text>
               </Pressable>
               <Pressable
@@ -222,7 +222,7 @@ export default function ExamsScreen({ homeRoute = '/teacher' }) {
                 style={({ pressed }) => [styles.actionBtnPrimary, pressed && styles.pressed]}
                 accessibilityRole="button"
               >
-                <Ionicons name="create-outline" size={15} color="#ffffff" />
+                <Ionicons name="create-outline" size={17} color="#ffffff" />
                 <Text style={styles.actionTextPrimary}>
                   {/* The exam's question count decides which marks screen opens — say which. */}
                   {exam.questionCount > 0 ? 'Per-question marks' : 'Enter marks'}
@@ -333,7 +333,7 @@ export default function ExamsScreen({ homeRoute = '/teacher' }) {
                 style={({ pressed }) => [styles.analysisBtn, pressed && styles.pressed]}
                 accessibilityRole="button"
               >
-                <Ionicons name="stats-chart-outline" size={15} color={PALETTE.primaryDark} />
+                <Ionicons name="stats-chart-outline" size={17} color={PALETTE.primaryDark} />
                 <Text style={styles.actionText}>Detailed analysis</Text>
               </Pressable>
             </Card>
@@ -416,19 +416,19 @@ const styles = StyleSheet.create({
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   listContent: { padding: SPACING.md, paddingBottom: SPACING.xxl },
 
-  subjectHeader: { fontSize: 13, fontWeight: '700', color: SLATE[600], marginBottom: 2 },
+  subjectHeader: { fontSize: TYPE.body, fontWeight: '700', color: SLATE[600], marginBottom: 2 },
 
   examHead: { flexDirection: 'row', alignItems: 'flex-start', gap: SPACING.sm },
   examText: { flex: 1 },
-  examName: { fontSize: 15, fontWeight: '700', color: SLATE[800] },
-  examMeta: { fontSize: 12, color: SLATE[500], marginTop: 1 },
+  examName: { fontSize: TYPE.heading, fontWeight: '700', color: SLATE[800] },
+  examMeta: { fontSize: TYPE.label, color: SLATE[500], marginTop: 1 },
   visibleChip: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 999 },
   visibleOn: { backgroundColor: FEEDBACK.successBg },
   visibleOff: { backgroundColor: SLATE[100] },
-  visibleText: { fontSize: 10.5, fontWeight: '700' },
+  visibleText: { fontSize: TYPE.micro, fontWeight: '700' },
 
   examStats: { flexDirection: 'row', flexWrap: 'wrap', gap: SPACING.md, marginTop: SPACING.sm },
-  examStat: { fontSize: 12, color: SLATE[500], fontWeight: '600' },
+  examStat: { fontSize: TYPE.label, color: SLATE[500], fontWeight: '600' },
 
   examActions: { flexDirection: 'row', gap: SPACING.sm, marginTop: SPACING.md },
   actionBtn: {
@@ -452,8 +452,8 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     backgroundColor: PALETTE.primaryDark,
   },
-  actionText: { fontSize: 13, fontWeight: '700', color: PALETTE.primaryDark },
-  actionTextPrimary: { fontSize: 13, fontWeight: '700', color: '#ffffff' },
+  actionText: { fontSize: TYPE.body, fontWeight: '700', color: PALETTE.primaryDark },
+  actionTextPrimary: { fontSize: TYPE.body, fontWeight: '700', color: '#ffffff' },
 
   studentStrip: { gap: SPACING.sm, paddingBottom: SPACING.sm },
   studentChip: {
@@ -465,10 +465,10 @@ const styles = StyleSheet.create({
     backgroundColor: '#ffffff',
     maxWidth: 200,
   },
-  studentChipText: { fontSize: 13, fontWeight: '600', color: SLATE[600] },
+  studentChipText: { fontSize: TYPE.body, fontWeight: '600', color: SLATE[600] },
 
   hint: {
-    fontSize: 13,
+    fontSize: TYPE.body,
     color: SLATE[500],
     textAlign: 'center',
     paddingVertical: SPACING.lg,
@@ -476,8 +476,8 @@ const styles = StyleSheet.create({
   inlineLoader: { marginVertical: SPACING.lg },
 
   summaryHead: { flexDirection: 'row', alignItems: 'center', gap: SPACING.sm },
-  summaryScore: { fontSize: 14, fontWeight: '800', color: SLATE[800] },
-  summaryRemarks: { fontSize: 12.5, color: SLATE[600], marginTop: 5, fontStyle: 'italic' },
+  summaryScore: { fontSize: TYPE.heading, fontWeight: '800', color: SLATE[800] },
+  summaryRemarks: { fontSize: TYPE.label, color: SLATE[600], marginTop: 5, fontStyle: 'italic' },
   analysisBtn: {
     flexDirection: 'row',
     alignItems: 'center',

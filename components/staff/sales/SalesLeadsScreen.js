@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useState } from 'react';
 import { Alert, Pressable, Text, View } from 'react-native';
-import { SLATE, SPACING } from '../../../constants/theme';
+import { SLATE, SPACING, TYPE } from '../../../constants/theme';
 import {
   Card,
   ChipMultiSelect,
@@ -357,16 +357,16 @@ const useStyles = makeStyles(() => ({
     borderRadius: 10,
   },
   pressed: { opacity: 0.85 },
-  addBtnText: { color: '#ffffff', fontWeight: '700', fontSize: 13 },
+  addBtnText: { color: '#ffffff', fontWeight: '700', fontSize: TYPE.body },
   // The grade picker's own label and helper line. TextField draws its own label; ChipMultiSelect
   // is a bare control, so the form supplies one in the same visual language.
   fieldLabel: {
-    fontSize: 13,
+    fontSize: TYPE.body,
     fontWeight: '600',
     color: SLATE[600],
     marginBottom: 6,
   },
-  hint: { fontSize: 12, color: SLATE[400], marginTop: -2, marginBottom: SPACING.sm },
+  hint: { fontSize: TYPE.label, color: SLATE[500], marginTop: -2, marginBottom: SPACING.sm },
   card: { marginBottom: SPACING.sm },
   cardHead: {
     flexDirection: 'row',
@@ -375,8 +375,8 @@ const useStyles = makeStyles(() => ({
     gap: SPACING.sm,
     marginBottom: 4,
   },
-  school: { flex: 1, fontSize: 15, fontWeight: '700', color: SLATE[800] },
-  meta: { fontSize: 12.5, color: SLATE[500], marginTop: 2 },
+  school: { flex: 1, fontSize: TYPE.heading, fontWeight: '700', color: SLATE[800] },
+  meta: { fontSize: TYPE.label, color: SLATE[500], marginTop: 2 },
   footRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -384,8 +384,8 @@ const useStyles = makeStyles(() => ({
     gap: SPACING.sm,
     marginTop: SPACING.sm,
   },
-  foot: { flex: 1, fontSize: 12, color: SLATE[400] },
+  foot: { flex: 1, fontSize: TYPE.label, color: SLATE[500] },
   actions: { flexDirection: 'row', gap: SPACING.md },
-  link: { fontSize: 13, fontWeight: '600' },
+  link: { fontSize: TYPE.body, fontWeight: '600' },
   danger: { color: '#dc2626' },
 }));

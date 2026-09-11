@@ -1,7 +1,7 @@
 import { useCallback, useState } from 'react';
 import { Image, Linking, Pressable, Switch, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { SLATE, SPACING } from '../../../constants/theme';
+import { SLATE, SPACING, TYPE, leading } from '../../../constants/theme';
 import { usePalette } from '../../ui/PaletteContext';
 import { Card, EmptyState, FormSheet, ScreenScaffold, StatusChip, useToast } from '../../ui';
 import useStaffResource from '../../../hooks/useStaffResource';
@@ -52,7 +52,7 @@ function LinkAction({ icon, label, url }) {
       style={({ pressed }) => [styles.linkAction, pressed && styles.pressed]}
       accessibilityRole="link"
     >
-      <Ionicons name={icon} size={15} color={PALETTE.primaryDark} />
+      <Ionicons name={icon} size={17} color={PALETTE.primaryDark} />
       <Text style={[styles.linkActionText, { color: PALETTE.primaryDark }]} numberOfLines={1}>
         {label}
       </Text>
@@ -188,7 +188,7 @@ export default function LinkedCollegesScreen({ homeRoute, apiBase }) {
               <Text style={[styles.detailBtnText, { color: PALETTE.primaryDark }]}>
                 View details
               </Text>
-              <Ionicons name="chevron-forward" size={15} color={PALETTE.primaryDark} />
+              <Ionicons name="chevron-forward" size={17} color={PALETTE.primaryDark} />
             </Pressable>
           </Card>
         ))
@@ -259,7 +259,7 @@ export default function LinkedCollegesScreen({ homeRoute, apiBase }) {
 }
 
 const useStyles = makeStyles((p) => ({
-  intro: { fontSize: 13, color: SLATE[500], lineHeight: 19, marginBottom: SPACING.sm },
+  intro: { fontSize: TYPE.body, color: SLATE[500], lineHeight: leading(TYPE.body), marginBottom: SPACING.sm },
   item: { marginBottom: SPACING.sm },
   identity: { flexDirection: 'row', alignItems: 'center', gap: SPACING.sm },
   logoBox: {
@@ -275,8 +275,8 @@ const useStyles = makeStyles((p) => ({
   },
   logo: { width: '100%', height: '100%' },
   identityText: { flex: 1 },
-  name: { fontSize: 15, fontWeight: '700', color: SLATE[800] },
-  meta: { fontSize: 12, color: SLATE[500], marginTop: 2 },
+  name: { fontSize: TYPE.heading, fontWeight: '700', color: SLATE[800] },
+  meta: { fontSize: TYPE.label, color: SLATE[500], marginTop: 2 },
   actions: { flexDirection: 'row', alignItems: 'center', marginTop: SPACING.sm },
   spacer: { flex: 1 },
   detailBtn: {
@@ -288,7 +288,7 @@ const useStyles = makeStyles((p) => ({
     borderTopWidth: 1,
     borderTopColor: SLATE[100],
   },
-  detailBtnText: { fontSize: 13.5, fontWeight: '700' },
+  detailBtnText: { fontSize: TYPE.heading, fontWeight: '700' },
   pressed: { opacity: 0.7 },
   banner: { width: '100%', height: 120, borderRadius: 10, marginBottom: SPACING.sm },
   badgeRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: SPACING.sm },
@@ -299,11 +299,11 @@ const useStyles = makeStyles((p) => ({
     borderBottomColor: SLATE[100],
     gap: SPACING.sm,
   },
-  detailLabel: { flex: 1, fontSize: 12.5, color: SLATE[500], fontWeight: '600' },
-  detailValue: { flex: 1.4, fontSize: 13, color: SLATE[800], fontWeight: '600' },
+  detailLabel: { flex: 1, fontSize: TYPE.label, color: SLATE[500], fontWeight: '600' },
+  detailValue: { flex: 1.4, fontSize: TYPE.body, color: SLATE[800], fontWeight: '600' },
   block: { marginTop: SPACING.md },
-  blockTitle: { fontSize: 14, fontWeight: '800', color: p.primaryDark, marginBottom: 6 },
-  blockText: { fontSize: 13, color: SLATE[600], lineHeight: 20 },
+  blockTitle: { fontSize: TYPE.heading, fontWeight: '800', color: p.primaryDark, marginBottom: 6 },
+  blockText: { fontSize: TYPE.body, color: SLATE[600], lineHeight: leading(TYPE.body) },
   linkRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: SPACING.md },
   linkAction: {
     flexDirection: 'row',
@@ -314,7 +314,7 @@ const useStyles = makeStyles((p) => ({
     borderRadius: 8,
     backgroundColor: p.tint,
   },
-  linkActionText: { fontSize: 12.5, fontWeight: '700' },
+  linkActionText: { fontSize: TYPE.label, fontWeight: '700' },
   course: {
     borderWidth: 1,
     borderColor: SLATE[200],
@@ -324,11 +324,11 @@ const useStyles = makeStyles((p) => ({
     backgroundColor: SLATE[50],
   },
   courseHead: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  courseName: { flex: 1, fontSize: 14, fontWeight: '700', color: SLATE[800] },
-  courseMeta: { fontSize: 12, color: SLATE[500], marginTop: 2, marginBottom: 6 },
+  courseName: { flex: 1, fontSize: TYPE.heading, fontWeight: '700', color: SLATE[800] },
+  courseMeta: { fontSize: TYPE.label, color: SLATE[500], marginTop: 2, marginBottom: 6 },
   feeRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 2 },
-  feeLabel: { fontSize: 12, color: SLATE[500] },
-  feeValue: { fontSize: 12.5, color: SLATE[800], fontWeight: '700' },
-  eligibility: { fontSize: 12, color: SLATE[600], marginTop: 6, fontWeight: '600' },
-  courseDetails: { fontSize: 12, color: SLATE[500], marginTop: 5, lineHeight: 18 },
+  feeLabel: { fontSize: TYPE.label, color: SLATE[500] },
+  feeValue: { fontSize: TYPE.label, color: SLATE[800], fontWeight: '700' },
+  eligibility: { fontSize: TYPE.label, color: SLATE[600], marginTop: 6, fontWeight: '600' },
+  courseDetails: { fontSize: TYPE.label, color: SLATE[500], marginTop: 5, lineHeight: leading(TYPE.label) },
 }));

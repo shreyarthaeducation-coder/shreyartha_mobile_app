@@ -5,7 +5,11 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { PORTALS } from '../../constants/theme';
 import { api } from '../../services/apiService';
 import { getStaffRoleConfig } from '../../constants/staffRoles';
-import PortalTabBar, { TEACHER_TABS, isTabRoot } from '../../components/shared/home/PortalTabBar';
+import PortalTabBar, {
+  TEACHER_FAB,
+  TEACHER_TABS,
+  isTabRoot,
+} from '../../components/shared/home/PortalTabBar';
 
 /**
  * Route guard for the native teacher area — the mobile counterpart of the web's
@@ -119,7 +123,9 @@ export default function TeacherLayout() {
 
       {/* tone="light" like the teacher's BrandBar: this panel resolves to PORTALS.school, which
           defines none of the dark-glass tokens the bar's default styles read. */}
-      {isTabRoot(pathname, TEACHER_TABS) ? <PortalTabBar tabs={TEACHER_TABS} tone="light" /> : null}
+      {isTabRoot(pathname, TEACHER_TABS)
+      ? <PortalTabBar tabs={TEACHER_TABS} tone="light" fab={TEACHER_FAB} />
+      : null}
     </View>
   );
 }

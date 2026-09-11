@@ -5,7 +5,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { COLORS, SPACING, SHADOWS } from '../../constants/theme';
+import { COLORS, SHADOWS, SPACING, TYPE, leading } from '../../constants/theme';
 import SearchBar from '../components/SearchBar';
 
 
@@ -102,18 +102,18 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     color: '#fff',
-    fontSize: 24,
+    fontSize: TYPE.display,
     fontWeight: '700',
   },
   headerSubtitle: {
     color: 'rgba(255,255,255,0.8)',
-    fontSize: 14,
+    fontSize: TYPE.body,
     marginTop: 4,
   },
   scroll: { flex: 1 },
   scrollContent: { paddingBottom: SPACING.xxl },
   sectionTitle: {
-    fontSize: 20,
+    fontSize: TYPE.headline,
     fontWeight: '700',
     color: COLORS.secondary,
     marginHorizontal: SPACING.md,
@@ -121,7 +121,7 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   sectionSubtitle: {
-    fontSize: 14,
+    fontSize: TYPE.body,
     color: COLORS.textSecondary,
     marginHorizontal: SPACING.md,
     marginBottom: SPACING.md,
@@ -148,16 +148,16 @@ const styles = StyleSheet.create({
   },
   cardIcon: { fontSize: 28 },
   cardTitle: {
-    fontSize: 14,
+    fontSize: TYPE.heading,
     fontWeight: '700',
     color: COLORS.secondary,
     marginBottom: 6,
-    lineHeight: 20,
+    lineHeight: leading(TYPE.heading),
   },
   cardDesc: {
-    fontSize: 12,
+    fontSize: TYPE.label,
     color: COLORS.textSecondary,
-    lineHeight: 17,
+    lineHeight: leading(TYPE.label),
     marginBottom: SPACING.sm,
     flex: 1,
   },

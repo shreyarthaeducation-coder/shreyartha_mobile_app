@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Image, Text, View } from 'react-native';
-import { SPACING, TYPE } from '../../constants/theme';
+import { SLATE, SPACING, TYPE, leading } from '../../constants/theme';
 import { Card, EmptyState, ScreenScaffold, Select, StatusChip } from '../ui';
 import { makeStyles } from '../../utils/makeStyles';
 import useStaffResource from '../../hooks/useStaffResource';
@@ -166,11 +166,10 @@ const useStyles = makeStyles((p) => ({
   price: { fontSize: TYPE.headline, fontWeight: '800', color: p.primary },
   was: {
     fontSize: TYPE.label,
-    color: p.primaryDark,
-    opacity: 0.6,
+    color: SLATE[500],
     textDecorationLine: 'line-through',
   },
-  monthly: { fontSize: TYPE.label, color: p.primaryDark, opacity: 0.85, marginTop: 2 },
+  monthly: { fontSize: TYPE.label, color: SLATE[600], marginTop: 2 },
   partnerBadge: {
     alignSelf: 'flex-start',
     paddingHorizontal: 10,
@@ -180,5 +179,5 @@ const useStyles = makeStyles((p) => ({
     marginTop: SPACING.sm,
   },
   partnerBadgeText: { fontSize: TYPE.caption, fontWeight: '700', color: p.primaryDark },
-  details: { fontSize: TYPE.label, color: p.primaryDark, opacity: 0.85, marginTop: SPACING.sm, lineHeight: 18 },
+  details: { fontSize: TYPE.label, color: SLATE[600], marginTop: SPACING.sm, lineHeight: leading(TYPE.label) },
 }));

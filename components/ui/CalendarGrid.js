@@ -1,5 +1,5 @@
 import { StyleSheet, Text, View, Pressable } from 'react-native';
-import { SLATE } from '../../constants/theme';
+import { SLATE, TYPE } from '../../constants/theme';
 import { usePalette } from './PaletteContext';
 import { dayOfMonth, mondayFirstIndex } from '../../utils/dates';
 
@@ -125,8 +125,8 @@ const styles = StyleSheet.create({
   wrap: { width: '100%' },
   weekRow: { flexDirection: 'row', marginBottom: 4 },
   weekCell: { width: `${100 / 7}%`, alignItems: 'center', paddingVertical: 6 },
-  weekText: { fontSize: 11.5, fontWeight: '700', color: SLATE[500] },
-  weekTextSunday: { color: SLATE[400] },
+  weekText: { fontSize: TYPE.caption, fontWeight: '700', color: SLATE[500] },
+  weekTextSunday: { color: SLATE[500] },
   grid: { flexDirection: 'row', flexWrap: 'wrap' },
   cell: { width: `${100 / 7}%`, aspectRatio: 1, padding: 3 },
   cellPressed: { opacity: 0.65 },
@@ -143,7 +143,7 @@ const styles = StyleSheet.create({
   // — it renders under the teal, purple, red, orange and blue palettes alike, and a white wash reads
   // correctly on every one of them.
   dayDark: { backgroundColor: 'rgba(255,255,255,0.10)', borderColor: 'rgba(255,255,255,0.18)' },
-  dayText: { fontSize: 14, fontWeight: '600', color: SLATE[700] },
+  dayText: { fontSize: TYPE.body, fontWeight: '600', color: SLATE[700] },
   dayTextDark: { color: '#ffffff' },
   dayTextBold: { fontWeight: '800' },
   dayTextDisabled: { color: SLATE[300] },

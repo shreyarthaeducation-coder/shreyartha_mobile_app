@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { ActivityIndicator, Pressable, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { FEEDBACK, SLATE, SPACING, TYPE } from '../../../constants/theme';
+import { FEEDBACK, SLATE, SPACING, TYPE, leading } from '../../../constants/theme';
 import { usePalette } from '../../ui/PaletteContext';
 import { makeStyles } from '../../../utils/makeStyles';
 import { TextField } from '../../ui';
@@ -142,7 +142,7 @@ export default function CertificateSubmission({ topicId, skillName, submission, 
               accessibilityRole="button"
               accessibilityLabel={`Attach ${slot.label}`}
             >
-              <Ionicons name={slot.icon} size={17} color={file ? palette.deep : SLATE[400]} />
+              <Ionicons name={slot.icon} size={19} color={file ? palette.deep : SLATE[400]} />
               <View style={styles.slotBody}>
                 <Text style={styles.slotLabel}>{slot.label}</Text>
                 <Text style={styles.slotFile} numberOfLines={1}>
@@ -156,7 +156,7 @@ export default function CertificateSubmission({ topicId, skillName, submission, 
                   accessibilityRole="button"
                   accessibilityLabel={`Remove ${slot.label}`}
                 >
-                  <Ionicons name="close-circle" size={18} color={SLATE[400]} />
+                  <Ionicons name="close-circle" size={20} color={SLATE[400]} />
                 </Pressable>
               ) : null}
             </Pressable>
@@ -189,7 +189,7 @@ const useStyles = makeStyles((p) => ({
     marginBottom: SPACING.sm,
   },
   remarkLabel: { fontSize: TYPE.micro, fontWeight: '800', color: FEEDBACK.warningOnBg, textTransform: 'uppercase' },
-  remarkText: { fontSize: TYPE.label, color: '#78350f', lineHeight: 18, marginTop: 2 },
+  remarkText: { fontSize: TYPE.label, color: '#78350f', lineHeight: leading(TYPE.label), marginTop: 2 },
 
   textarea: { height: 100, textAlignVertical: 'top' },
   count: { fontSize: TYPE.caption, color: SLATE[500], textAlign: 'right', marginTop: -6, marginBottom: 8 },

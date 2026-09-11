@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Linking, Pressable, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { FEEDBACK, SLATE, SPACING, TYPE } from '../../constants/theme';
+import { FEEDBACK, SLATE, SPACING, TYPE, leading } from '../../constants/theme';
 import { usePalette } from '../ui/PaletteContext';
 import { makeStyles } from '../../utils/makeStyles';
 import { TextField } from '../ui';
@@ -232,10 +232,10 @@ export default function MyProject({
               <View style={styles.rowHead}>
                 <Text style={styles.rowTitle}>{p.title}</Text>
                 <Pressable onPress={() => edit(p)} hitSlop={8} accessibilityRole="button" accessibilityLabel="Edit project">
-                  <Ionicons name="create-outline" size={18} color={palette.deep} />
+                  <Ionicons name="create-outline" size={20} color={palette.deep} />
                 </Pressable>
                 <Pressable onPress={() => remove(p)} hitSlop={8} accessibilityRole="button" accessibilityLabel="Delete project">
-                  <Ionicons name="trash-outline" size={18} color={FEEDBACK.errorText} />
+                  <Ionicons name="trash-outline" size={20} color={FEEDBACK.errorText} />
                 </Pressable>
               </View>
               {p.description ? <Text style={styles.rowSub}>{p.description}</Text> : null}
@@ -304,7 +304,7 @@ export default function MyProject({
             >
               <Ionicons
                 name={slot.icon}
-                size={17}
+                size={19}
                 color={picked || stored ? palette.deep : SLATE[400]}
               />
               <View style={styles.slotBody}>
@@ -324,7 +324,7 @@ export default function MyProject({
                   accessibilityRole="button"
                   accessibilityLabel={`Remove ${slot.label}`}
                 >
-                  <Ionicons name="close-circle" size={18} color={SLATE[400]} />
+                  <Ionicons name="close-circle" size={20} color={SLATE[400]} />
                 </Pressable>
               ) : null}
             </Pressable>
@@ -380,7 +380,7 @@ function AttachmentLinks({ project, styles, palette }) {
           style={({ pressed }) => [styles.link, pressed && styles.pressed]}
           accessibilityRole="link"
         >
-          <Ionicons name={s.icon} size={14} color={palette.deep} />
+          <Ionicons name={s.icon} size={16} color={palette.deep} />
           <Text style={styles.linkText}>Open {s.label}</Text>
         </Pressable>
       ))}
@@ -394,7 +394,7 @@ const useStyles = makeStyles((p) => ({
 
   rowHead: { flexDirection: 'row', alignItems: 'center', gap: SPACING.sm },
   rowTitle: { flex: 1, fontSize: TYPE.heading, fontWeight: '700', color: SLATE[800] },
-  rowSub: { fontSize: TYPE.label, color: SLATE[600], lineHeight: 18, marginTop: 4 },
+  rowSub: { fontSize: TYPE.label, color: SLATE[600], lineHeight: leading(TYPE.label), marginTop: 4 },
 
   textarea: { height: 100, textAlignVertical: 'top' },
   count: { fontSize: TYPE.caption, color: SLATE[500], textAlign: 'right', marginTop: -6, marginBottom: 8 },

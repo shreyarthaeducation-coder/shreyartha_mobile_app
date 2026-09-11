@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useState } from 'react';
 import { ActivityIndicator, Alert, Pressable, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { FEEDBACK, SLATE, SPACING } from '../../../constants/theme';
+import { FEEDBACK, SLATE, SPACING, TYPE } from '../../../constants/theme';
 import { usePalette } from '../../../components/ui/PaletteContext';
 import { Card, CardTitle, EmptyState, FormSheet, Select } from '../../ui';
 import useStaffResource from '../../../hooks/useStaffResource';
@@ -139,7 +139,7 @@ export default function AcademicTab({ profile, onChanged, showToast, apiBase = '
           style={({ pressed }) => [styles.addBtn, pressed && styles.pressed]}
           accessibilityRole="button"
         >
-          <Ionicons name="add" size={16} color="#ffffff" />
+          <Ionicons name="add" size={18} color="#ffffff" />
           <Text style={styles.addText}>Add</Text>
         </Pressable>
       </View>
@@ -175,7 +175,7 @@ export default function AcademicTab({ profile, onChanged, showToast, apiBase = '
                   accessibilityRole="button"
                   accessibilityLabel={`Remove ${a.subjectName}`}
                 >
-                  <Ionicons name="close" size={17} color={FEEDBACK.errorText} />
+                  <Ionicons name="close" size={19} color={FEEDBACK.errorText} />
                 </Pressable>
               )}
             </View>
@@ -266,9 +266,9 @@ const useStyles = makeStyles((p) => ({
     borderRadius: 999,
     backgroundColor: p.primaryDark,
   },
-  addText: { fontSize: 13, fontWeight: '700', color: '#ffffff' },
+  addText: { fontSize: TYPE.body, fontWeight: '700', color: '#ffffff' },
   loader: { marginVertical: SPACING.xl },
-  empty: { fontSize: 12.5, color: SLATE[400], fontStyle: 'italic', marginBottom: SPACING.md },
+  empty: { fontSize: TYPE.label, color: SLATE[500], fontStyle: 'italic', marginBottom: SPACING.md },
 
   row: {
     flexDirection: 'row',
@@ -279,8 +279,8 @@ const useStyles = makeStyles((p) => ({
     borderTopColor: SLATE[100],
   },
   rowText: { flex: 1 },
-  rowTitle: { fontSize: 14, fontWeight: '700', color: SLATE[800] },
-  rowMeta: { fontSize: 12, color: SLATE[500], marginTop: 1 },
+  rowTitle: { fontSize: TYPE.heading, fontWeight: '700', color: SLATE[800] },
+  rowMeta: { fontSize: TYPE.label, color: SLATE[500], marginTop: 1 },
   iconBtn: {
     width: 30,
     height: 30,
@@ -290,7 +290,7 @@ const useStyles = makeStyles((p) => ({
     backgroundColor: FEEDBACK.errorBg,
   },
 
-  subjectLabel: { fontSize: 13, fontWeight: '600', color: SLATE[700], marginBottom: 6 },
+  subjectLabel: { fontSize: TYPE.body, fontWeight: '600', color: SLATE[700], marginBottom: 6 },
   subjectWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: SPACING.md },
   subjectChip: {
     paddingHorizontal: 12,
@@ -300,7 +300,7 @@ const useStyles = makeStyles((p) => ({
     borderColor: SLATE[200],
     backgroundColor: '#ffffff',
   },
-  subjectText: { fontSize: 13, fontWeight: '600', color: SLATE[600] },
+  subjectText: { fontSize: TYPE.body, fontWeight: '600', color: SLATE[600] },
 
   pressed: { opacity: 0.72 },
 }));

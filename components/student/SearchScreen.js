@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, Text, TextInput, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { SPACING, TOUCH, TYPE } from '../../constants/theme';
+import { SLATE, SPACING, TOUCH, TYPE } from '../../constants/theme';
 import { usePalette } from '../ui/PaletteContext';
 import { makeStyles } from '../../utils/makeStyles';
 import { EmptyState } from '../ui';
@@ -93,20 +93,20 @@ export default function SearchScreen() {
       }}
     >
       <View style={styles.bar}>
-        <Ionicons name="search" size={18} color={palette.onDark} />
+        <Ionicons name="search" size={20} color={SLATE[600]} />
         <TextInput
           ref={inputRef}
           style={styles.input}
           value={query}
           onChangeText={setQuery}
           placeholder={t.placeholder}
-          placeholderTextColor={palette.onDark}
+          placeholderTextColor={SLATE[600]}
           autoCorrect={false}
           returnKeyType="search"
         />
         {query ? (
           <Pressable onPress={() => setQuery('')} hitSlop={8} accessibilityLabel="Clear search">
-            <Ionicons name="close-circle" size={19} color={palette.onDark} />
+            <Ionicons name="close-circle" size={19} color={SLATE[600]} />
           </Pressable>
         ) : null}
       </View>
@@ -119,7 +119,7 @@ export default function SearchScreen() {
       ) : (
         <>
           {index.partial.length > 0 ? (
-            <StudentCard tone="dark">
+            <StudentCard>
               <StudentNote>
                 {t.partial} {index.partial.join(', ')}.
               </StudentNote>
@@ -139,7 +139,7 @@ export default function SearchScreen() {
               {groups.map((group) => (
                 <View key={group.module}>
                   <Text style={styles.group}>{group.module}</Text>
-                  <StudentCard tone="dark">
+                  <StudentCard>
                     {group.rows.map((row, i) => (
                       <Pressable
                         key={`${row.module}-${row.name}-${row.trail}-${i}`}
@@ -154,7 +154,7 @@ export default function SearchScreen() {
                       >
                         <Ionicons
                           name={row.kind === 'screen' ? 'apps-outline' : 'document-text-outline'}
-                          size={16}
+                          size={18}
                           color={palette.primary}
                         />
                         <View style={styles.rowText}>
@@ -167,7 +167,7 @@ export default function SearchScreen() {
                             </Text>
                           ) : null}
                         </View>
-                        <Ionicons name="chevron-forward" size={15} color={palette.onDark} />
+                        <Ionicons name="chevron-forward" size={17} color={SLATE[600]} />
                       </Pressable>
                     ))}
                   </StudentCard>
@@ -188,25 +188,25 @@ const useStyles = makeStyles((p) => ({
     gap: SPACING.sm,
     paddingHorizontal: SPACING.md,
     borderRadius: 999,
-    backgroundColor: p.glassDark,
+    backgroundColor: '#ffffff',
     borderWidth: 1,
-    borderColor: p.glassDarkBorder,
+    borderColor: SLATE[200],
     marginBottom: SPACING.md,
   },
   // No per-focus setState: the border never changes, so the field cannot re-render on focus and
   // take the Android keyboard down with it. See components/auth/FormField.
-  input: { flex: 1, paddingVertical: 12, fontSize: TYPE.label, color: '#ffffff' },
+  input: { flex: 1, paddingVertical: 12, fontSize: TYPE.label, color: SLATE[800] },
 
   centre: { alignItems: 'center', paddingVertical: SPACING.xl, gap: SPACING.md },
-  building: { fontSize: TYPE.label, color: p.onDark },
+  building: { fontSize: TYPE.label, color: SLATE[600] },
 
-  count: { fontSize: TYPE.caption, color: p.onDark, marginBottom: SPACING.sm },
+  count: { fontSize: TYPE.caption, color: SLATE[600], marginBottom: SPACING.sm },
   group: {
     fontSize: TYPE.caption,
     fontWeight: '800',
     letterSpacing: 0.6,
     textTransform: 'uppercase',
-    color: p.onDark,
+    color: SLATE[600],
     marginBottom: SPACING.sm,
   },
 
@@ -217,10 +217,10 @@ const useStyles = makeStyles((p) => ({
     minHeight: TOUCH.min,
     paddingVertical: 6,
   },
-  rowDivided: { borderTopWidth: 1, borderTopColor: p.glassDarkBorder },
+  rowDivided: { borderTopWidth: 1, borderTopColor: SLATE[200] },
   rowText: { flex: 1 },
-  rowName: { fontSize: TYPE.body, fontWeight: '600', color: '#ffffff' },
-  rowTrail: { fontSize: TYPE.caption, color: p.onDark, marginTop: 1 },
+  rowName: { fontSize: TYPE.body, fontWeight: '600', color: SLATE[800] },
+  rowTrail: { fontSize: TYPE.caption, color: SLATE[600], marginTop: 1 },
 
   pressed: { opacity: 0.75 },
 }));

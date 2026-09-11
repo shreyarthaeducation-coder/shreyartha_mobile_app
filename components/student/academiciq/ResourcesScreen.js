@@ -176,7 +176,7 @@ export default function ResourcesScreen({ source = 'school' }) {
             onPress={() => openUrl(video)}
             style={({ pressed }) => [styles.mediaBtn, pressed && styles.pressed]}
           >
-            <Ionicons name="videocam-outline" size={15} color={palette.deep} />
+            <Ionicons name="videocam-outline" size={17} color={palette.deep} />
             <Text style={styles.mediaText}>Watch the video</Text>
           </Pressable>
         ) : null}
@@ -185,7 +185,7 @@ export default function ResourcesScreen({ source = 'school' }) {
             onPress={() => openUrl(image)}
             style={({ pressed }) => [styles.mediaBtn, pressed && styles.pressed]}
           >
-            <Ionicons name="image-outline" size={15} color={palette.deep} />
+            <Ionicons name="image-outline" size={17} color={palette.deep} />
             <Text style={styles.mediaText}>View the image</Text>
           </Pressable>
         ) : null}
@@ -305,7 +305,7 @@ export default function ResourcesScreen({ source = 'school' }) {
               <Text style={styles.subjectName}>{subject.name}</Text>
               <Ionicons
                 name={subjectOpen ? 'chevron-up' : 'chevron-down'}
-                size={16}
+                size={18}
                 color={palette.deep}
               />
             </Pressable>
@@ -325,7 +325,7 @@ export default function ResourcesScreen({ source = 'school' }) {
                         <Text style={styles.chapterName}>{chapter.name}</Text>
                         <Ionicons
                           name={chapterOpen ? 'remove' : 'add'}
-                          size={15}
+                          size={17}
                           color={SLATE[500]}
                         />
                       </Pressable>
@@ -346,7 +346,7 @@ export default function ResourcesScreen({ source = 'school' }) {
                               >
                                 <Ionicons
                                   name={locked ? 'lock-closed' : 'document-text-outline'}
-                                  size={13}
+                                  size={15}
                                   color={locked ? SLATE[400] : palette.deep}
                                 />
                                 <Text style={styles.topicName}>{t.name}</Text>
@@ -392,7 +392,7 @@ export default function ResourcesScreen({ source = 'school' }) {
           accessibilityRole="button"
           accessibilityLabel="Back to the subject list"
         >
-          <Ionicons name="arrow-back" size={14} color={palette.onDark} />
+          <Ionicons name="arrow-back" size={16} color={SLATE[600]} />
           <Text style={styles.crumbText} numberOfLines={1}>
             {[topic.subjectName, topic.chapterName, topic.name].filter(Boolean).join(' › ')}
           </Text>
@@ -421,17 +421,17 @@ export default function ResourcesScreen({ source = 'school' }) {
 
 const useStyles = makeStyles((p) => ({
   loader: { marginVertical: SPACING.xl },
-  emptyInline: { fontSize: TYPE.label, color: SLATE[400], paddingVertical: 6, paddingLeft: 4 },
+  emptyInline: { fontSize: TYPE.label, color: SLATE[500], paddingVertical: 6, paddingLeft: 4 },
 
   header: {
     fontSize: TYPE.caption,
     fontWeight: '700',
-    color: p.onDark,
+    color: SLATE[600],
     textTransform: 'uppercase',
     letterSpacing: 0.5,
     marginBottom: SPACING.sm,
   },
-  saved: { fontSize: TYPE.caption, color: p.onDark, marginBottom: SPACING.sm },
+  saved: { fontSize: TYPE.caption, color: SLATE[600], marginBottom: SPACING.sm },
   crumb: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -439,12 +439,12 @@ const useStyles = makeStyles((p) => ({
     paddingVertical: 8,
     paddingHorizontal: 12,
     borderRadius: 999,
-    backgroundColor: p.glass,
+    backgroundColor: '#ffffff',
     borderWidth: 1,
-    borderColor: p.glassBorder,
+    borderColor: SLATE[200],
     marginBottom: SPACING.md,
   },
-  crumbText: { flex: 1, fontSize: TYPE.label, fontWeight: '600', color: p.onDark },
+  crumbText: { flex: 1, fontSize: TYPE.label, fontWeight: '600', color: SLATE[600] },
 
   rowHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
   subjectName: { flex: 1, fontSize: TYPE.heading, fontWeight: '700', color: SLATE[800] },
@@ -471,12 +471,12 @@ const useStyles = makeStyles((p) => ({
     alignItems: 'center',
     paddingVertical: 9,
     borderRadius: 999,
-    backgroundColor: 'rgba(255,255,255,0.14)',
+    backgroundColor: SLATE[100],
     borderWidth: 1,
     borderColor: p.headerBorder,
   },
   modeOn: { backgroundColor: p.primary, borderColor: p.primary },
-  modeText: { fontSize: TYPE.label, fontWeight: '600', color: p.onDark },
+  modeText: { fontSize: TYPE.label, fontWeight: '600', color: SLATE[600] },
   modeTextOn: { color: p.onPrimary },
 
   tabRow: { gap: 7, paddingBottom: SPACING.md, paddingRight: SPACING.md },
@@ -484,12 +484,12 @@ const useStyles = makeStyles((p) => ({
     paddingVertical: 7,
     paddingHorizontal: 13,
     borderRadius: 999,
-    backgroundColor: 'rgba(255,255,255,0.14)',
+    backgroundColor: SLATE[100],
     borderWidth: 1,
     borderColor: p.headerBorder,
   },
   tabOn: { backgroundColor: p.primary, borderColor: p.primary },
-  tabText: { fontSize: TYPE.label, fontWeight: '600', color: p.onDark },
+  tabText: { fontSize: TYPE.label, fontWeight: '600', color: SLATE[600] },
   tabTextOn: { color: p.onPrimary },
 
   mediaBtn: {

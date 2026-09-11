@@ -6,7 +6,7 @@
 import { useEffect } from 'react';
 import { useRouter } from 'expo-router';
 import { View, ActivityIndicator, StyleSheet } from 'react-native';
-import { STUDENT } from '../../constants/theme';
+import { PORTALS } from '../../constants/theme';
 
 export default function StudentDashboardRedirect() {
   const router = useRouter();
@@ -18,7 +18,7 @@ export default function StudentDashboardRedirect() {
 
   return (
     <View style={styles.container}>
-      <ActivityIndicator size="large" color={STUDENT.accent} />
+      <ActivityIndicator size="large" color={PORTALS.student.primary} />
     </View>
   );
 }
@@ -26,7 +26,9 @@ export default function StudentDashboardRedirect() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: STUDENT.bg,
+    // The student panel's own page colour. It used to paint the legacy dark theme's #0a0f1e,
+    // which now flashes dark for a frame before replacing into a light panel.
+    backgroundColor: PORTALS.student.pageBg,
     alignItems: 'center',
     justifyContent: 'center',
   },

@@ -16,7 +16,7 @@ import {
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
-import { SHADOWS, SLATE, SPACING } from '../../constants/theme';
+import { SHADOWS, SLATE, SPACING, TYPE, leading } from '../../constants/theme';
 import { usePalette } from '../ui/PaletteContext';
 import { makeStyles } from '../../utils/makeStyles';
 import { buildSectionExplanation, sectionsForPortal } from '../../constants/teacherChatbotData';
@@ -518,7 +518,6 @@ export default function ShreyaChatSheet({
                         style={[
                           styles.bubble,
                           isUser ? styles.userBubble : styles.botBubble,
-                          msg.history && styles.historyBubble,
                         ]}
                       >
                         {msg.typing ? (
@@ -618,7 +617,7 @@ export default function ShreyaChatSheet({
                     placeholder={`Ask Shreya about your ${
                       selectedSection ? selectedSection.label : 'classes'
                     }…`}
-                    placeholderTextColor={SLATE[400]}
+                    placeholderTextColor={SLATE[500]}
                     value={inputValue}
                     onChangeText={setInputValue}
                     onSubmitEditing={submit}
@@ -643,7 +642,7 @@ export default function ShreyaChatSheet({
                     {sending ? (
                       <ActivityIndicator size="small" color="#ffffff" />
                     ) : (
-                      <Ionicons name="send" size={17} color="#ffffff" />
+                      <Ionicons name="send" size={19} color="#ffffff" />
                     )}
                   </Pressable>
                 </View>
@@ -685,12 +684,12 @@ const useStyles = makeStyles((p) => ({
   },
   avatarImg: { width: '100%', height: '100%' },
   headerText: { flex: 1 },
-  headerTitle: { fontSize: 14.5, fontWeight: '700', color: '#ffffff' },
-  headerSubtitle: { fontSize: 11.5, color: 'rgba(255,255,255,0.78)', marginTop: 1 },
+  headerTitle: { fontSize: TYPE.heading, fontWeight: '700', color: '#ffffff' },
+  headerSubtitle: { fontSize: TYPE.caption, color: 'rgba(255,255,255,0.78)', marginTop: 1 },
   closeBtn: { padding: 4 },
 
   loader: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: SPACING.sm },
-  loaderText: { fontSize: 13, color: SLATE[500] },
+  loaderText: { fontSize: TYPE.body, color: SLATE[500] },
 
   messages: { padding: SPACING.md, paddingBottom: SPACING.lg },
   group: { marginBottom: 14 },
@@ -701,9 +700,14 @@ const useStyles = makeStyles((p) => ({
     backgroundColor: p.primary,
     borderBottomRightRadius: 4,
   },
-  // Restored turns are visibly older than the live conversation.
-  historyBubble: { opacity: 0.62 },
-  bubbleText: { fontSize: 14, lineHeight: 21, color: SLATE[800] },
+  // NO OPACITY HERE. Restored turns used to render at `opacity: 0.62` to read as "older", which
+  // dropped the bot bubble from ~13:1 to about 4.6:1 and the white-on-primary user bubble further
+  // still — so the previous conversation, the thing a counsellor scrolls back to actually read, was
+  // the least legible text in the sheet. The "New conversation" divider below already separates
+  // them, and it does it without costing contrast.
+  //
+  // If age needs to be clearer, add a timestamp — dimming is not a substitute for a label.
+  bubbleText: { fontSize: TYPE.body, lineHeight: leading(TYPE.body), color: SLATE[800] },
   bold: { fontWeight: '700' },
   userText: { color: '#ffffff' },
 
@@ -712,7 +716,9 @@ const useStyles = makeStyles((p) => ({
 
   divider: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 14 },
   dividerLine: { flex: 1, height: 1, backgroundColor: SLATE[200] },
-  dividerText: { fontSize: 11, fontWeight: '700', color: SLATE[400], textTransform: 'uppercase' },
+  // SLATE[600], not SLATE[400] (2.59:1). This label is now the ONLY thing marking where the
+  // restored conversation ends, so it cannot be the faintest text on the screen.
+  dividerText: { fontSize: TYPE.caption, fontWeight: '700', color: SLATE[600], textTransform: 'uppercase' },
 
   pageLink: {
     alignSelf: 'flex-start',
@@ -722,7 +728,7 @@ const useStyles = makeStyles((p) => ({
     borderRadius: 10,
     backgroundColor: p.tint,
   },
-  pageLinkText: { fontSize: 12.5, fontWeight: '700', color: p.primaryDark },
+  pageLinkText: { fontSize: TYPE.label, fontWeight: '700', color: p.primaryDark },
 
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 7, marginTop: 10 },
   chip: {
@@ -734,7 +740,7 @@ const useStyles = makeStyles((p) => ({
     backgroundColor: '#ffffff',
   },
   chipStarred: { backgroundColor: p.tint },
-  chipText: { fontSize: 12.5, fontWeight: '600', color: p.primaryDark },
+  chipText: { fontSize: TYPE.label, fontWeight: '600', color: p.primaryDark },
 
   actionRow: { flexGrow: 0, borderTopWidth: 1, borderTopColor: SLATE[100] },
   actionRowContent: { gap: 8, paddingHorizontal: SPACING.md, paddingVertical: 10 },
@@ -745,7 +751,7 @@ const useStyles = makeStyles((p) => ({
     backgroundColor: p.tint,
   },
   actionBtnGhost: { backgroundColor: SLATE[100] },
-  actionText: { fontSize: 12.5, fontWeight: '700', color: p.primaryDark },
+  actionText: { fontSize: TYPE.label, fontWeight: '700', color: p.primaryDark },
   actionTextGhost: { color: SLATE[500] },
 
   inputRow: {
@@ -764,7 +770,7 @@ const useStyles = makeStyles((p) => ({
     height: 44,
     borderRadius: 22,
     paddingHorizontal: 16,
-    fontSize: 14,
+    fontSize: TYPE.body,
     color: SLATE[800],
     backgroundColor: SLATE[100],
   },

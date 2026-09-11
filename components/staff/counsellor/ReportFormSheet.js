@@ -1,6 +1,6 @@
 import { Pressable, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { FEEDBACK, SLATE, SPACING } from '../../../constants/theme';
+import { FEEDBACK, SLATE, SPACING, TYPE, leading } from '../../../constants/theme';
 import { FormSheet, Select, TextField } from '../../ui';
 import { RATING_SCALE, REPORT_SECTIONS } from '../../../constants/counsellorReportConfig';
 import { makeStyles } from '../../../utils/makeStyles';
@@ -118,7 +118,23 @@ export default function ReportFormSheet({
   loading,
   error,
   existing,
+  // ── The two additive props the face-to-face room needs ────────────────────
+  // Defaults reproduce the previous behaviour exactly, so the authoring screen that shipped with
+  // this component is untouched.
+  //
+  // `sections` — the live session renders the SAME eleven sections but wants to control their
+  // order and, for a walk-in, drop the ones that assume a roster.
+  sections = REPORT_SECTIONS,
+  // `disabledKeys` — section keys that are read-only for now. The Griffin narrative is locked
+  // until the turn is finished, because until then there is no transcript and anything typed into
+  // it would be overwritten by the draft. Locked, not hidden: a counsellor should be able to see
+  // that the section exists and is coming.
+  disabledKeys = [],
+  title,
+  subtitle,
+  submitLabel,
 }) {
+  const locked = new Set(disabledKeys);
   const styles = useStyles();
   const subtitleParts = [
     leaf?.className ? `Class ${leaf.className}` : null,
@@ -129,20 +145,27 @@ export default function ReportFormSheet({
   return (
     <FormSheet
       visible={visible}
-      title={student?.studentName || 'Counsellor report'}
-      subtitle={subtitleParts.join(' · ') || undefined}
+      title={title || student?.studentName || 'Counsellor report'}
+      subtitle={subtitle || subtitleParts.join(' · ') || undefined}
       onClose={onClose}
       onSubmit={loading ? undefined : onSubmit}
       submitting={saving}
-      submitLabel={existing ? 'Update report' : 'Save report'}
+      submitLabel={submitLabel || (existing ? 'Update report' : 'Save report')}
       fullHeight
     >
       {error ? <Text style={styles.error}>{error}</Text> : null}
       {loading ? (
         <Text style={styles.loading}>Loading this student's report…</Text>
       ) : (
-        REPORT_SECTIONS.map((section) => (
-          <View key={section.key} style={styles.section}>
+        sections.map((section) => (
+          <View
+            key={section.key}
+            style={[styles.section, locked.has(section.key) && styles.sectionLocked]}
+            // Read-only rather than absent. `pointerEvents="none"` is what makes every field type
+            // inert at once — stars, pills, chips and inputs alike — without threading a `disabled`
+            // prop through five branches that do not all support one.
+            pointerEvents={locked.has(section.key) ? 'none' : 'auto'}
+          >
             <Text style={styles.sectionTitle}>{section.title}</Text>
             {section.subtitle ? <Text style={styles.sectionNote}>{section.subtitle}</Text> : null}
 
@@ -207,18 +230,21 @@ export default function ReportFormSheet({
 
 const useStyles = makeStyles((p) => ({
   error: {
-    fontSize: 12.5,
+    fontSize: TYPE.label,
     color: FEEDBACK.errorText,
     backgroundColor: FEEDBACK.errorBg,
     borderRadius: 10,
     padding: SPACING.sm,
     marginBottom: SPACING.sm,
   },
-  loading: { fontSize: 13, color: SLATE[500], textAlign: 'center', paddingVertical: SPACING.xl },
+  loading: { fontSize: TYPE.body, color: SLATE[500], textAlign: 'center', paddingVertical: SPACING.xl },
 
   section: { marginBottom: SPACING.lg },
+  // Visibly not-yet-editable. Dimmed rather than hidden so a counsellor can see the Griffin
+  // section is there and is waiting on the recording, instead of wondering where it went.
+  sectionLocked: { opacity: 0.45 },
   sectionTitle: {
-    fontSize: 12,
+    fontSize: TYPE.label,
     fontWeight: '700',
     color: p.primaryDark,
     textTransform: 'uppercase',
@@ -228,18 +254,18 @@ const useStyles = makeStyles((p) => ({
   // Explanatory line under a section heading — currently only Griffin, which has to say who
   // writes it and that generating it happens on the web.
   sectionNote: {
-    fontSize: 12,
-    lineHeight: 17,
+    fontSize: TYPE.label,
+    lineHeight: leading(TYPE.label),
     color: SLATE[500],
     marginTop: -6,
     marginBottom: SPACING.sm,
   },
   field: { marginBottom: SPACING.sm },
-  label: { fontSize: 13, fontWeight: '600', color: SLATE[700], marginBottom: 6 },
+  label: { fontSize: TYPE.body, fontWeight: '600', color: SLATE[700], marginBottom: 6 },
 
   starRow: { flexDirection: 'row', alignItems: 'center', gap: 2 },
   star: { padding: 2 },
-  starValue: { marginLeft: 8, fontSize: 12, color: SLATE[500], fontWeight: '600' },
+  starValue: { marginLeft: 8, fontSize: TYPE.label, color: SLATE[500], fontWeight: '600' },
 
   pillRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   pill: {
@@ -251,9 +277,9 @@ const useStyles = makeStyles((p) => ({
     backgroundColor: '#ffffff',
   },
   pillOn: { backgroundColor: p.tint, borderColor: p.primary },
-  pillText: { fontSize: 13, fontWeight: '600', color: SLATE[600] },
+  pillText: { fontSize: TYPE.body, fontWeight: '600', color: SLATE[600] },
   pillTextOn: { color: p.primaryDark },
-  notAnswered: { fontSize: 11.5, color: SLATE[400], fontStyle: 'italic' },
+  notAnswered: { fontSize: TYPE.caption, color: SLATE[500], fontStyle: 'italic' },
 
   chipWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
   chip: {
@@ -265,7 +291,7 @@ const useStyles = makeStyles((p) => ({
     backgroundColor: '#ffffff',
   },
   chipOn: { backgroundColor: p.tint, borderColor: p.primary },
-  chipText: { fontSize: 12.5, fontWeight: '600', color: SLATE[600] },
+  chipText: { fontSize: TYPE.label, fontWeight: '600', color: SLATE[600] },
   chipTextOn: { color: p.primaryDark },
 
   textarea: { height: 90, textAlignVertical: 'top' },

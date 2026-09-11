@@ -3,7 +3,7 @@ import { Image, Pressable, Text, TextInput, View } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { FEEDBACK, SLATE, SPACING, TYPE } from '../../constants/theme';
+import { FEEDBACK, SLATE, SPACING, TYPE, leading } from '../../constants/theme';
 import { usePalette } from '../ui/PaletteContext';
 import { DateTimeField, FormSheet, Select, useToast } from '../ui';
 import { makeStyles } from '../../utils/makeStyles';
@@ -263,7 +263,7 @@ export default function CounselorScreen() {
           value={form.queryDetails}
           onChangeText={(queryDetails) => patch({ queryDetails })}
           placeholder="Describe your query in detail..."
-          placeholderTextColor={SLATE[400]}
+          placeholderTextColor={SLATE[500]}
           multiline
           numberOfLines={4}
           textAlignVertical="top"
@@ -291,8 +291,8 @@ export default function CounselorScreen() {
 const useStyles = makeStyles((p) => ({
   subtitle: {
     fontSize: TYPE.heading,
-    color: p.onDark,
-    lineHeight: 21,
+    color: SLATE[600],
+    lineHeight: leading(TYPE.heading),
     marginBottom: SPACING.md,
   },
   card: { marginBottom: SPACING.md, alignItems: 'center' },
@@ -319,7 +319,7 @@ const useStyles = makeStyles((p) => ({
     fontSize: TYPE.body,
     color: SLATE[600],
     textAlign: 'center',
-    lineHeight: 20,
+    lineHeight: leading(TYPE.body),
     marginBottom: SPACING.md,
   },
   btn: {
@@ -335,7 +335,7 @@ const useStyles = makeStyles((p) => ({
   readonlyLabel: { fontSize: TYPE.body, fontWeight: '700', color: SLATE[600], marginBottom: 5 },
   readonlyValue: {
     fontSize: TYPE.heading,
-    color: SLATE[500],
+    color: SLATE[600],
     backgroundColor: SLATE[100],
     borderRadius: 10,
     paddingHorizontal: 13,
@@ -368,5 +368,5 @@ const useStyles = makeStyles((p) => ({
     borderLeftWidth: 3,
     borderLeftColor: FEEDBACK.errorBorder,
   },
-  errorBoxText: { color: FEEDBACK.errorText, fontSize: TYPE.body, lineHeight: 18 },
+  errorBoxText: { color: FEEDBACK.errorText, fontSize: TYPE.body, lineHeight: leading(TYPE.body) },
 }));

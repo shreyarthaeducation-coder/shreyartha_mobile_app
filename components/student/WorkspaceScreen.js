@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Image, Pressable, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { SPACING, TOUCH, TYPE } from '../../constants/theme';
+import { SLATE, SPACING, TOUCH, TYPE, leading } from '../../constants/theme';
 import { usePalette } from '../ui/PaletteContext';
 import { makeStyles } from '../../utils/makeStyles';
 import { useTranslations } from '../../hooks/useTranslations';
@@ -156,7 +156,7 @@ export default function WorkspaceScreen() {
             <Text style={styles.linkLabel}>{link.label}</Text>
             <Text style={styles.linkDesc}>{link.description}</Text>
           </View>
-          <Ionicons name="chevron-forward" size={16} color={palette.primary} />
+          <Ionicons name="chevron-forward" size={18} color={palette.primary} />
         </Pressable>
       ))}
 
@@ -185,14 +185,14 @@ export default function WorkspaceScreen() {
 }
 
 const useStyles = makeStyles((p) => ({
-  intro: { fontSize: TYPE.label, color: p.onDark, lineHeight: 19, marginBottom: SPACING.md },
+  intro: { fontSize: TYPE.label, color: SLATE[600], lineHeight: leading(TYPE.label), marginBottom: SPACING.md },
 
   group: {
     fontSize: TYPE.caption,
     fontWeight: '800',
     letterSpacing: 0.6,
     textTransform: 'uppercase',
-    color: p.onDark,
+    color: SLATE[600],
     marginBottom: SPACING.sm,
     marginTop: SPACING.sm,
   },
@@ -201,15 +201,15 @@ const useStyles = makeStyles((p) => ({
     flexDirection: 'row',
     alignItems: 'center',
     gap: SPACING.md,
-    backgroundColor: p.glassDark,
+    backgroundColor: '#ffffff',
     borderWidth: 1,
-    borderColor: p.glassDarkBorder,
+    borderColor: SLATE[200],
     borderRadius: 16,
     padding: SPACING.md,
     marginBottom: SPACING.sm,
   },
-  schoolLogo: { width: 46, height: 46, borderRadius: 10, backgroundColor: 'rgba(255,255,255,0.9)' },
-  schoolName: { flex: 1, fontSize: TYPE.heading, fontWeight: '700', color: '#ffffff' },
+  schoolLogo: { width: 46, height: 46, borderRadius: 10, backgroundColor: SLATE[100] },
+  schoolName: { flex: 1, fontSize: TYPE.heading, fontWeight: '700', color: SLATE[800] },
 
   // `rowGap` for the vertical gutter, `space-between` for the horizontal one. Deliberately NOT a
   // `gap` + `width: 48%` combination: 48+48 plus the gap exceeds 100% and drops the grid to one
@@ -252,9 +252,9 @@ const useStyles = makeStyles((p) => ({
     minHeight: TOUCH.min,
     padding: SPACING.md,
     borderRadius: 16,
-    backgroundColor: p.glassDark,
+    backgroundColor: '#ffffff',
     borderWidth: 1,
-    borderColor: p.glassDarkBorder,
+    borderColor: SLATE[200],
     marginBottom: SPACING.sm,
   },
   linkIcon: {
@@ -266,8 +266,8 @@ const useStyles = makeStyles((p) => ({
     backgroundColor: p.tint,
   },
   linkText: { flex: 1 },
-  linkLabel: { fontSize: TYPE.heading, fontWeight: '700', color: '#ffffff' },
-  linkDesc: { fontSize: TYPE.caption, color: p.onDark, lineHeight: 16, marginTop: 2 },
+  linkLabel: { fontSize: TYPE.heading, fontWeight: '700', color: SLATE[800] },
+  linkDesc: { fontSize: TYPE.caption, color: SLATE[600], lineHeight: leading(TYPE.caption), marginTop: 2 },
 
   plan: {
     flexDirection: 'row',
@@ -276,7 +276,7 @@ const useStyles = makeStyles((p) => ({
     minHeight: TOUCH.min,
     padding: SPACING.md,
     borderRadius: 16,
-    backgroundColor: p.glassDark,
+    backgroundColor: '#ffffff',
     borderWidth: 1,
     borderColor: p.primary,
     marginTop: SPACING.sm,

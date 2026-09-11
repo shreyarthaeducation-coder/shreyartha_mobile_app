@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { DONE, SLATE, SPACING, TYPE } from '../../../constants/theme';
+import { DONE, SLATE, SPACING, TYPE, leading } from '../../../constants/theme';
 import { usePalette } from '../../ui/PaletteContext';
 import { makeStyles } from '../../../utils/makeStyles';
 import { useToast } from '../../ui';
@@ -151,11 +151,11 @@ export default function LearnWithShreya() {
               <View style={styles.row}>
                 <Ionicons
                   name={c.completed ? 'checkmark-circle' : 'chatbubbles-outline'}
-                  size={17}
+                  size={19}
                   color={c.completed ? DONE : palette.deep}
                 />
                 <Text style={styles.rowTitle}>{c.name}</Text>
-                <Ionicons name="chevron-forward" size={15} color={palette.deep} />
+                <Ionicons name="chevron-forward" size={17} color={palette.deep} />
               </View>
             </StudentCard>
           </Pressable>
@@ -182,7 +182,7 @@ export default function LearnWithShreya() {
                 {(d.chapters || []).length} chapter
                 {(d.chapters || []).length === 1 ? '' : 's'}
               </Text>
-              <Ionicons name="chevron-forward" size={15} color={palette.deep} />
+              <Ionicons name="chevron-forward" size={17} color={palette.deep} />
             </View>
           </StudentCard>
         </Pressable>
@@ -222,7 +222,7 @@ export default function LearnWithShreya() {
           accessibilityRole="button"
           accessibilityLabel="Back"
         >
-          <Ionicons name="arrow-back" size={14} color={palette.onDark} />
+          <Ionicons name="arrow-back" size={16} color={SLATE[600]} />
           <Text style={styles.crumbText} numberOfLines={1}>
             {trail || 'Back'}
           </Text>
@@ -269,7 +269,7 @@ export default function LearnWithShreya() {
 }
 
 const useStyles = makeStyles((p) => ({
-  body: { fontSize: TYPE.body, color: SLATE[600], lineHeight: 20 },
+  body: { fontSize: TYPE.body, color: SLATE[600], lineHeight: leading(TYPE.body) },
 
   crumb: {
     flexDirection: 'row',
@@ -278,26 +278,26 @@ const useStyles = makeStyles((p) => ({
     paddingVertical: 8,
     paddingHorizontal: 12,
     borderRadius: 999,
-    backgroundColor: p.glass,
+    backgroundColor: '#ffffff',
     borderWidth: 1,
-    borderColor: p.glassBorder,
+    borderColor: SLATE[200],
     marginBottom: SPACING.md,
   },
-  crumbText: { flex: 1, fontSize: TYPE.label, fontWeight: '600', color: p.onDark },
+  crumbText: { flex: 1, fontSize: TYPE.label, fontWeight: '600', color: SLATE[600] },
 
   banner: {
-    backgroundColor: p.glass,
+    backgroundColor: '#ffffff',
     borderWidth: 1,
-    borderColor: p.glassBorder,
+    borderColor: SLATE[200],
     borderRadius: 12,
     padding: SPACING.md,
     marginBottom: SPACING.md,
   },
-  bannerText: { fontSize: TYPE.body, fontWeight: '600', color: '#ffffff', lineHeight: 19 },
+  bannerText: { fontSize: TYPE.body, fontWeight: '600', color: SLATE[700], lineHeight: leading(TYPE.body) },
   levelBadge: {
     fontSize: TYPE.caption,
     fontWeight: '700',
-    color: p.onDark,
+    color: SLATE[600],
     textTransform: 'uppercase',
     letterSpacing: 0.5,
     marginBottom: SPACING.sm,

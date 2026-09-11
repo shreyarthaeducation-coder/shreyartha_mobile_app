@@ -1,7 +1,7 @@
 import { ActivityIndicator, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { SLATE, SPACING } from '../../constants/theme';
+import { SLATE, SPACING, TYPE, leading } from '../../constants/theme';
 import { usePalette } from './PaletteContext';
 // Imported by path, not through components/staff/index.js: the barrel also exports the screens,
 // and those import this kit — going through it would close an import cycle.
@@ -39,7 +39,7 @@ function ErrorBlock({ message, onRetry, palette }) {
           ]}
           accessibilityRole="button"
         >
-          <Ionicons name="refresh" size={15} color="#ffffff" />
+          <Ionicons name="refresh" size={17} color="#ffffff" />
           <Text style={styles.retryText}>Try again</Text>
         </Pressable>
       ) : null}
@@ -130,10 +130,10 @@ const styles = StyleSheet.create({
     padding: SPACING.lg,
   },
   errorText: {
-    fontSize: 14,
+    fontSize: TYPE.body,
     color: SLATE[600],
     textAlign: 'center',
-    lineHeight: 20,
+    lineHeight: leading(TYPE.body),
     marginTop: SPACING.sm,
   },
   retry: {
@@ -146,9 +146,9 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
   retryPressed: { opacity: 0.8 },
-  retryText: { color: '#ffffff', fontWeight: '700', fontSize: 13.5 },
+  retryText: { color: '#ffffff', fontWeight: '700', fontSize: TYPE.heading },
   notice: {
-    fontSize: 13,
+    fontSize: TYPE.body,
     color: SLATE[500],
     textAlign: 'center',
     marginBottom: SPACING.sm,

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, ImageBackground, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { Redirect, Stack, usePathname } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { PORTALS } from '../../constants/theme';
@@ -10,19 +10,23 @@ import PortalTabBar, { STUDENT_TABS, isTabRoot } from '../../components/shared/h
  * Route guard and theme host for the native student panel — the student counterpart of
  * app/teacher/_layout.js.
  *
- * THE BACKGROUND LIVES HERE, NOT IN THE SCREENS, and that is the whole point. The web applies
- * `Background.png` once on a `.student-platform-theme` wrapper with `background-attachment: fixed`
- * (frontendmain/src/styles/student-platform.css), so it stays put while pages change. Painting it
- * per screen would restart and re-crop the image on every push — the fixed effect would be lost
- * and every navigation would flash. So the ImageBackground wraps the whole Stack, the Stack is
- * transparent, and every student screen renders over it.
+ * ── THE PHOTOGRAPHIC BACKGROUND IS GONE ────────────────────────────────────
+ * This used to wrap the whole Stack in an `ImageBackground` painting `assets/images/Background.png`
+ * over `#0a1628`, with the Stack itself transparent so the image stayed fixed across navigations —
+ * mirroring the web's `.student-platform-theme` wrapper.
  *
- * `#0a1628` is the fallback colour behind the image, matching the web's, so a slow image decode
- * shows the right dark rather than white.
+ * It was removed for readability. White text over a photograph is only as legible as the brightest
+ * region behind it, and the panel had accumulated four different translucent "glass" treatments
+ * trying to buy contrast back. The page is now the same opaque SLATE[50] as every other panel.
+ *
+ * The Stack keeps `contentStyle` painted rather than transparent: with no image behind it there is
+ * nothing for a transparent navigator card to reveal except the window, which flashes on push.
+ *
+ * `assets/images/Background.png` is deliberately left in the repo — the web still serves it, and
+ * this file was its only mobile reference.
  */
 
 const PALETTE = PORTALS.student;
-const BACKGROUND = require('../../assets/images/Background.png');
 
 export default function StudentLayout() {
   const [state, setState] = useState({ checking: true, token: null });
@@ -70,12 +74,11 @@ export default function StudentLayout() {
 
   return (
     <PaletteProvider palette={PALETTE}>
-      <ImageBackground source={BACKGROUND} style={styles.bg} resizeMode="cover">
+      <View style={styles.bg}>
         <Stack
           screenOptions={{
             headerShown: false,
-            // Without this the navigator paints its own opaque card and hides the background.
-            contentStyle: { backgroundColor: 'transparent' },
+            contentStyle: { backgroundColor: PALETTE.pageBg },
             animation: 'fade',
           }}
         >
@@ -105,8 +108,8 @@ export default function StudentLayout() {
           <Stack.Screen name="personalised-resources" />
         </Stack>
 
-        {isTabRoot(pathname, STUDENT_TABS) ? <PortalTabBar tabs={STUDENT_TABS} /> : null}
-      </ImageBackground>
+        {isTabRoot(pathname, STUDENT_TABS) ? <PortalTabBar tabs={STUDENT_TABS} tone="light" /> : null}
+      </View>
     </PaletteProvider>
   );
 }

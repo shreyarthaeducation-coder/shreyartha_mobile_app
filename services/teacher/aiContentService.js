@@ -8,8 +8,20 @@ import { staffApi } from '../staffApi';
 
 const BASE = '/api/shreya01/ai-content';
 
-/** Vision + DeepSeek; 3D generation is the slowest at ~10–30 s. */
-const AI_TIMEOUT_MS = 90000;
+/**
+ * Vision + DeepSeek; 3D generation is the slowest at ~10–30 s.
+ *
+ * ── WHY 90s WAS NOT ENOUGH ──────────────────────────────────────────────────
+ * The v4 models reason before answering, and reasoning is charged against the same token budget
+ * as the answer — so `DeepSeekClient` now sends a thinking allowance on top of each caller's
+ * budget, and retries once when a reply comes back empty because the model used the whole budget
+ * thinking. Measured against the live API, one HOTS deep-dive takes 16–40 s; a retried one
+ * therefore lands near 80 s, which 90 s does not safely cover.
+ *
+ * 180 s matches the 3D timeout, and the ceiling that actually matters is the backend's own
+ * per-attempt read timeout (120 s), not this one.
+ */
+const AI_TIMEOUT_MS = 180000;
 const THREE_D_TIMEOUT_MS = 180000;
 
 /**

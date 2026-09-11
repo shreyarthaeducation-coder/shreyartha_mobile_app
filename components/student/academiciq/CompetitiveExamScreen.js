@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Linking, Pressable, ScrollView, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { FEEDBACK, QUIZ, SLATE, SPACING, TYPE } from '../../../constants/theme';
+import { FEEDBACK, QUIZ, SLATE, SPACING, TYPE, leading } from '../../../constants/theme';
 import { usePalette } from '../../ui/PaletteContext';
 import { makeStyles } from '../../../utils/makeStyles';
 import { EmptyState, useToast } from '../../ui';
@@ -238,7 +238,7 @@ export default function CompetitiveExamScreen() {
               onPress={() => openUrl(content.videoUrl)}
               style={({ pressed }) => [styles.mediaBtn, pressed && styles.pressed]}
             >
-              <Ionicons name="videocam-outline" size={15} color={palette.deep} />
+              <Ionicons name="videocam-outline" size={17} color={palette.deep} />
               <Text style={styles.mediaText}>Watch the video</Text>
             </Pressable>
           ) : null}
@@ -247,7 +247,7 @@ export default function CompetitiveExamScreen() {
               onPress={() => openUrl(content.pdfUrl)}
               style={({ pressed }) => [styles.mediaBtn, pressed && styles.pressed]}
             >
-              <Ionicons name="document-text-outline" size={15} color={palette.deep} />
+              <Ionicons name="document-text-outline" size={17} color={palette.deep} />
               <Text style={styles.mediaText}>Open the PDF</Text>
             </Pressable>
           ) : null}
@@ -299,7 +299,7 @@ export default function CompetitiveExamScreen() {
           style={({ pressed }) => [styles.adaptiveBtn, pressed && styles.pressed]}
           accessibilityRole="button"
         >
-          <Ionicons name="flash-outline" size={16} color="#ffffff" />
+          <Ionicons name="flash-outline" size={18} color="#ffffff" />
           <Text style={styles.adaptiveText}>Take the adaptive assessment</Text>
         </Pressable>
 
@@ -389,7 +389,7 @@ export default function CompetitiveExamScreen() {
         <StudentCard key={paper.id}>
           <View style={styles.rowHead}>
             <Text style={styles.paperName}>{paper.name || paper.title}</Text>
-            <Ionicons name="chevron-forward" size={15} color={palette.deep} />
+            <Ionicons name="chevron-forward" size={17} color={palette.deep} />
           </View>
           {paper.durationMinutes ? (
             <Text style={styles.paperMeta}>{paper.durationMinutes} minutes</Text>
@@ -447,7 +447,7 @@ export default function CompetitiveExamScreen() {
               accessibilityRole="button"
             >
               <Text style={styles.warnLinkText}>Open Profile Settings</Text>
-              <Ionicons name="chevron-forward" size={14} color={palette.deep} />
+              <Ionicons name="chevron-forward" size={16} color={palette.deep} />
             </Pressable>
           </StudentCard>
         ) : null}
@@ -478,7 +478,7 @@ export default function CompetitiveExamScreen() {
                   <Text style={styles.examName}>{exam.name}</Text>
                   <Ionicons
                     name={allowed ? 'chevron-forward' : 'lock-closed'}
-                    size={15}
+                    size={17}
                     color={allowed ? palette.deep : SLATE[400]}
                   />
                 </Pressable>
@@ -516,7 +516,7 @@ export default function CompetitiveExamScreen() {
             <Text style={styles.subjectName}>{subject.name}</Text>
             <Ionicons
               name={subjectOpen ? 'chevron-up' : 'chevron-down'}
-              size={16}
+              size={18}
               color={palette.deep}
             />
           </Pressable>
@@ -532,7 +532,7 @@ export default function CompetitiveExamScreen() {
                       accessibilityRole="button"
                     >
                       <Text style={styles.chapterName}>{chapter.name}</Text>
-                      <Ionicons name={chapterOpen ? 'remove' : 'add'} size={15} color={SLATE[500]} />
+                      <Ionicons name={chapterOpen ? 'remove' : 'add'} size={17} color={SLATE[500]} />
                     </Pressable>
                     {chapterOpen
                       ? topics.map((t) => (
@@ -542,7 +542,7 @@ export default function CompetitiveExamScreen() {
                             style={({ pressed }) => [styles.topic, pressed && styles.pressed]}
                             accessibilityRole="button"
                           >
-                            <Ionicons name="document-text-outline" size={13} color={palette.deep} />
+                            <Ionicons name="document-text-outline" size={15} color={palette.deep} />
                             <Text style={styles.topicName}>{t.name}</Text>
                           </Pressable>
                         ))
@@ -591,7 +591,7 @@ export default function CompetitiveExamScreen() {
           accessibilityRole="button"
           accessibilityLabel="Back"
         >
-          <Ionicons name="arrow-back" size={14} color={palette.onDark} />
+          <Ionicons name="arrow-back" size={16} color={SLATE[600]} />
           <Text style={styles.crumbText} numberOfLines={1}>
             {[examName || subExam.name, topic?.subjectName, topic?.name].filter(Boolean).join(' › ')}
           </Text>
@@ -641,7 +641,8 @@ export default function CompetitiveExamScreen() {
 }
 
 const useStyles = makeStyles((p) => ({
-  loader: { marginVertical: SPACING.xl },
+  loader: { marginVertical: SPACING.xl },
+
 
   crumb: {
     flexDirection: 'row',
@@ -650,12 +651,12 @@ const useStyles = makeStyles((p) => ({
     paddingVertical: 8,
     paddingHorizontal: 12,
     borderRadius: 999,
-    backgroundColor: p.glass,
+    backgroundColor: '#ffffff',
     borderWidth: 1,
-    borderColor: p.glassBorder,
+    borderColor: SLATE[200],
     marginBottom: SPACING.md,
   },
-  crumbText: { flex: 1, fontSize: TYPE.label, fontWeight: '600', color: p.onDark },
+  crumbText: { flex: 1, fontSize: TYPE.label, fontWeight: '600', color: SLATE[600] },
 
   examRow: {
     flexDirection: 'row',
@@ -666,7 +667,7 @@ const useStyles = makeStyles((p) => ({
     borderTopColor: SLATE[200],
   },
   examLocked: { opacity: 0.55 },
-  warn: { fontSize: TYPE.body, color: FEEDBACK.warningOnBg, lineHeight: 20 },
+  warn: { fontSize: TYPE.body, color: FEEDBACK.warningOnBg, lineHeight: leading(TYPE.body) },
   warnLink: { flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: SPACING.sm },
   warnLinkText: { fontSize: TYPE.label, fontWeight: '700', color: p.deep },
   examName: { flex: 1, fontSize: TYPE.body, fontWeight: '600', color: SLATE[700] },
@@ -692,13 +693,13 @@ const useStyles = makeStyles((p) => ({
     gap: 5,
     paddingVertical: 9,
     borderRadius: 999,
-    backgroundColor: 'rgba(255,255,255,0.14)',
+    backgroundColor: SLATE[100],
     borderWidth: 1,
     borderColor: p.headerBorder,
   },
   sectionOn: { backgroundColor: p.primary, borderColor: p.primary },
   sectionBlocked: { opacity: 0.55 },
-  sectionText: { fontSize: TYPE.label, fontWeight: '600', color: p.onDark },
+  sectionText: { fontSize: TYPE.label, fontWeight: '600', color: SLATE[600] },
   sectionTextOn: { color: p.onPrimary },
 
   paperName: { flex: 1, fontSize: TYPE.heading, fontWeight: '700', color: SLATE[800] },
@@ -743,12 +744,12 @@ const useStyles = makeStyles((p) => ({
   optionPicked: { backgroundColor: p.tint, borderColor: p.primary },
   optionCorrect: { backgroundColor: QUIZ.correctBg, borderColor: QUIZ.correctBorder },
   optionWrong: { backgroundColor: QUIZ.wrongBg, borderColor: QUIZ.wrongBorder },
-  optionKey: { fontSize: TYPE.label, fontWeight: '800', color: SLATE[500], width: 15 },
+  optionKey: { fontSize: TYPE.label, fontWeight: '800', color: SLATE[500], minWidth: 15 },
   optionBody: { flex: 1 },
-  optionText: { fontSize: TYPE.body, color: SLATE[700], lineHeight: 19 },
+  optionText: { fontSize: TYPE.body, color: SLATE[700], lineHeight: leading(TYPE.body) },
 
   scoreValue: { fontSize: TYPE.figure, fontWeight: '800', color: p.primaryDark, textAlign: 'center' },
-  scoreMax: { fontSize: TYPE.title, fontWeight: '600', color: SLATE[400] },
+  scoreMax: { fontSize: TYPE.title, fontWeight: '600', color: SLATE[500] },
   scorePct: { fontSize: TYPE.body, fontWeight: '700', color: SLATE[500], textAlign: 'center' },
 
   primary: {

@@ -1,6 +1,6 @@
 import { ActivityIndicator, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { SPACING, TYPE } from '../../constants/theme';
+import { SLATE, SPACING, TYPE, leading } from '../../constants/theme';
 import { usePalette } from '../ui/PaletteContext';
 import { makeStyles } from '../../utils/makeStyles';
 import { Toast } from '../ui';
@@ -87,12 +87,13 @@ export default function StudentScaffold({
 }
 
 const useStyles = makeStyles((p) => ({
-  // Transparent on purpose — the layout's ImageBackground is underneath.
-  safe: { flex: 1, backgroundColor: 'transparent' },
+  // Opaque. It was transparent so the layout's ImageBackground showed through; that image is gone
+  // and a transparent page over a plain navigator card flashes the window colour on push.
+  safe: { flex: 1, backgroundColor: p.pageBg },
   fill: { flex: 1 },
   scroll: { padding: SPACING.md, paddingBottom: SPACING.xl },
   centre: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: SPACING.lg },
-  error: { fontSize: TYPE.heading, color: p.onDark, textAlign: 'center', lineHeight: 21 },
+  error: { fontSize: TYPE.heading, color: SLATE[700], textAlign: 'center', lineHeight: leading(TYPE.heading) },
   retry: {
     marginTop: SPACING.md,
     paddingVertical: 10,

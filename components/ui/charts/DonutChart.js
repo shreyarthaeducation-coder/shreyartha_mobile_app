@@ -1,6 +1,6 @@
 import { StyleSheet, Text, View } from 'react-native';
 import Svg, { Circle, G } from 'react-native-svg';
-import { SLATE } from '../../../constants/theme';
+import { SLATE, TYPE } from '../../../constants/theme';
 
 /**
  * Ring chart for completion percentages.
@@ -69,7 +69,7 @@ export default function DonutChart({
 const styles = StyleSheet.create({
   wrap: { alignItems: 'center' },
   centre: { position: 'absolute', alignItems: 'center', justifyContent: 'center' },
-  value: { fontSize: 22, fontWeight: '800', color: SLATE[800] },
-  caption: { fontSize: 11, fontWeight: '600', color: SLATE[500], marginTop: 1 },
-  sub: { fontSize: 12, color: SLATE[500], marginTop: 8, textAlign: 'center' },
+  value: { fontSize: TYPE.headline, fontWeight: '800', color: SLATE[800] },
+  caption: { fontSize: TYPE.caption, fontWeight: '600', color: SLATE[500], marginTop: 1 },
+  sub: { fontSize: TYPE.label, color: SLATE[500], marginTop: 8, textAlign: 'center' },
 });

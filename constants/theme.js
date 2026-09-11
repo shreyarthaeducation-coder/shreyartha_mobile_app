@@ -10,10 +10,11 @@ export const COLORS = {
   surfaceAlt: '#f0f2f5',
   text: '#1a1a2e',
   textSecondary: '#666666',
-  textLight: '#999999',
+  textLight: '#767676',    // was #999999 — 2.85:1 on white, a fail. This is the lightest grey
+                           // that clears AA while staying visibly lighter than textSecondary.
   border: '#eeeeee',
   borderDark: '#d0d0d0',
-  error: '#dc3545',
+  error: '#dc2626',        // aligned with FEEDBACK.errorText; #dc3545 was 4.53:1, a 0.03 margin
   success: '#28a745',
   white: '#ffffff',
   overlay: 'rgba(26,26,46,0.6)',
@@ -32,36 +33,94 @@ export const SPACING = {
 };
 
 /**
- * The type scale — seven roles, closed.
+ * The type scale — nine roles, closed.
  *
  * The student panel had accumulated **25 distinct font sizes** across six porting phases, including
  * the runs 10/10.5/11/11.5, 12/12.5/13/13.5 and 14/14.5/15/15.5. Half-point differences nobody can
  * see, but each one a decision re-made from scratch, and collectively the reason the panel read as
  * six screens by six hands.
  *
- * THE SIZES ARE TAKEN FROM WHAT WAS ALREADY THERE, not imposed. 12.5 (105 uses), 13 (69), 12 (63)
- * and 11.5 (56) were the real working sizes, so the scale keeps them and drops their one-off
- * neighbours — this re-typesets nothing, it just stops the drift.
+ * ══ THE SIZES WERE ONCE INHERITED. THEY ARE NOW CHOSEN. ════════════════════
+ * This block used to say the sizes were "taken from what was already there, not imposed" — 12.5,
+ * 13, 12 and 11.5 were the real working sizes, so the scale kept them and dropped their one-off
+ * neighbours. That ended the drift, which was the job at the time, but it also **froze in whatever
+ * the first port had happened to type**. Nobody had ever asked whether those sizes were legible.
+ *
+ * They were not. `body` was 13 and `label` was 12 — both under Material's 14sp floor for body copy,
+ * and a long way under the 17pt iOS uses — while `label`, `caption`, `body` and `micro` together are
+ * roughly **79% of every styled string in the app**. The whole product read small, and the report
+ * that came back was simply "the text everywhere is hard to read".
+ *
+ * So the scale below is now a designed one. `body` 16 clears the platform floor with room to spare,
+ * `label` 14 meets it, and the two ends were raised proportionally so the steps stay even. If a
+ * screen looks cramped after this, the fix is that screen's layout — **not a smaller size here**.
+ *
+ * ══ THE FLOOR IS 11.5, AND IT IS ASSERTED ══════════════════════════════════
+ * `scripts/checkdesign.mjs` fails if any value drops below it. That check exists because the easy
+ * response to a clipped row is to shave a point off the token, which fixes one screen and quietly
+ * un-does this change everywhere else.
  *
  * Sizes only. Weight and colour stay at the call site: a `body` line is SLATE[600] in a card and
- * white on the dark background, and folding that in would need two scales.
+ * white on a gradient, and folding that in would need two scales.
  *
- * `FONTS` above is the older, unrelated set used by the pre-port auth screens. Do not merge them.
+ * `FONTS` above is the older, unrelated set used by the pre-port marketing screens. Do not merge
+ * them — though note they now agree by accident (`FONTS.regular` 16 = `body`, `small` 13 = `caption`).
  */
 export const TYPE = {
-  figure: 34,    // the one big score or percentage a screen exists to show
-  display: 30,   // welcome and section headings
-  headline: 20,  // level names, stream names, IPA symbols — big, but still inline
-  title: 17,     // screen and card titles
-  heading: 15,   // section headings, primary button labels
-  body: 13,      // paragraphs, list rows, form values
-  label: 12,     // field labels, secondary rows
-  caption: 11,   // hints, metadata, helper text
-  micro: 10.5,   // uppercase eyebrow labels and badges
+  figure: 36,    // the one big score or percentage a screen exists to show
+  display: 32,   // welcome and section headings
+  headline: 23,  // level names, stream names, IPA symbols — big, but still inline
+  title: 20,     // screen and card titles
+  heading: 18,   // section headings, primary button labels
+  body: 16,      // paragraphs, list rows, form values
+  label: 14,     // field labels, secondary rows
+  caption: 13,   // hints, metadata, helper text
+  micro: 11.5,   // uppercase eyebrow labels and badges
 };
 
 /** Every value TYPE permits — for the design checker, and for a quick `includes` at a call site. */
 export const TYPE_SCALE = Object.values(TYPE);
+
+/**
+ * Line height, as a ratio of font size.
+ *
+ * ══ WHY THIS EXISTS ════════════════════════════════════════════════════════
+ * There were **322 hand-typed `lineHeight` values** and no helper, so the same size was leaded three
+ * different ways: `fontSize: 13` appeared with `lineHeight` 19 (54 times), 18 (31) and 20 (24). No
+ * rule, just whatever each author typed.
+ *
+ * That was survivable while the sizes never moved. It stopped being survivable the moment the scale
+ * was raised: a `lineHeight` left behind does not merely look tight, it CLIPS — and it clips worst
+ * in the scripts this app actually ships in. The UI is machine-translated into 22 Indian languages
+ * (`context/LanguageContext.js`), and Devanagari, Bengali, Tamil and Gurmukhi need more vertical box
+ * than Latin at the same size for their matras and vowel signs. A ratio that merely looks snug in
+ * English loses the diacritic in Hindi.
+ *
+ * `relaxed` for paragraphs, `normal` for rows and labels, `tight` for headings and figures, which
+ * are short and where generous leading reads as a gap rather than as breathing room.
+ */
+export const LEADING = { tight: 1.25, normal: 1.45, relaxed: 1.6 };
+
+/** `lineHeight` for a size. Rounded — a fractional line box rounds inconsistently across densities. */
+export const leading = (size, ratio = LEADING.normal) => Math.round(size * ratio);
+
+/**
+ * Icon sizes, paired to the type role they sit beside.
+ *
+ * The app had **428 inline `size={n}` props** and no token, but they were not arbitrary: the working
+ * convention was consistently `icon ≈ fontSize + 3`, and roughly 180 rows are an icon immediately
+ * followed by a label. Raising the type scale without these would have closed that gap to +1 and
+ * left every one of those rows looking like the icon had shrunk.
+ */
+export const ICON = {
+  micro: 14,
+  caption: 16,
+  label: 17,
+  body: 19,
+  heading: 21,
+  title: 23,
+  headline: 26,
+};
 
 /**
  * Minimum tap target.
@@ -121,84 +180,83 @@ export const PORTALS = {
   school: {
     key: 'school',
     gradient: ['#1a5276', '#2e86ab', '#48c9b0'],
-    primary: '#2e86ab',
+    primary: '#1f6f8f', // was #2e86ab — 4.11:1 under a white label; this is 5.63
     primaryDark: '#1a5276',
     accent: '#48c9b0',
     onPrimary: '#ffffff',
     link: '#1a5276',
     headerBg: '#1a5276',
-    tint: 'rgba(46, 134, 171, 0.12)',
+    tint: 'rgba(31, 111, 143, 0.12)',
     inputBg: '#ffffff',
     inputBorder: SLATE[200],
-    inputFocus: '#2e86ab',
+    inputFocus: '#1f6f8f',
   },
   /**
    * The student PLATFORM (post-login), from frontendmain/src/styles/student-platform.css and
    * student/platform/dashboard.css.
    *
-   * STRUCTURALLY UNLIKE THE STAFF PALETTES. Staff screens are opaque white cards on a SLATE[50]
-   * page; the student panel is translucent white cards floating on a fixed photographic
-   * background (assets/images/Background.png) over #0a1628. `pageBg` is therefore a fallback
-   * behind the image, not the page colour, and `card` is deliberately not opaque.
+   * ── IT USED TO BE DARK, AND IS NOT ANY MORE ────────────────────────────────
+   * Until the readability pass this panel was translucent white cards floating on a fixed
+   * photographic background (assets/images/Background.png) over #0a1628, and every token below was
+   * chosen for that. It is now an opaque light page like every other panel: same SLATE[50] ground
+   * as parent and partner, white cards, dark ink.
+   *
+   * Two consequences worth knowing before editing anything here:
+   *
+   *   1. THE ACCENT HAD TO DARKEN — TWICE. `primary` was #4fc3f7, a light sky blue picked to read
+   *      AGAINST a dark photo; on white it measures about 1.9:1. It first became indigo #6366f1,
+   *      but that measures 4.47:1 — a hair under AA for body-size text and for the white label on
+   *      every primary button — so it went one shade deeper, to #4f46e5 (6.3:1). That is
+   *      COLORS.accent, the website's own indigo, so it is still a colour the system already had.
+   *      The hero gradients were darkened in the same pass for the same reason: white text on the
+   *      old GRADIENT.blue measured 2.14:1.
+   *
+   *   2. THE DARK TOKENS ARE STILL DEFINED, DELIBERATELY. `onDark`, `glass*` and `glassDark*` are
+   *      kept because `scripts/checkpalette.mjs` fails on any `p.<token>` read whose palette lacks
+   *      the token, and the shared components/shared/home kit still has a dark branch that reads
+   *      `palette.onDark`. They are no longer READ by student screens — those were converted to
+   *      light ink — and repointing them to dark values instead would have made every one of their
+   *      names a lie.
    *
    * NOT the student LOGIN, which is crimson (#a80036, student/StudentAuth.css) and already lives
-   * in the marketing COLORS. The dark theme begins after login, at the dashboard.
+   * in the marketing COLORS.
    */
   student: {
     key: 'student',
-    gradient: ['#0a1628', '#0288d1', '#4fc3f7'],
-    primary: '#4fc3f7',
-    primaryDark: '#0288d1',
-    accent: '#29b6f6',
-    deep: '#0277bd',
-    onPrimary: '#0a1628', // dark text ON the light-blue buttons, as the web does
-    link: '#4fc3f7',
-    headerBg: 'rgba(10, 22, 40, 0.95)',
-    // The student home header only. `headerBg` at 95% reads as a solid slab and hides the
-    // background photo entirely; this is the same hue at 65%, so the header floats over
-    // assets/images/Background.png as a frosted panel instead. Kept as its own token rather than
-    // lowering headerBg, which the staff and parent headers also use — those sit on a gradient,
-    // not a photo, and go muddy when made translucent.
-    //
-    // NOT the same thing as `glass` below (10%): that one is a barely-there inner panel. At 10% a
-    // header carrying white text over a photo fails contrast outright.
-    headerGlass: 'rgba(10, 22, 40, 0.65)',
-    headerBorder: 'rgba(79, 195, 247, 0.2)',
-    pageBg: '#0a1628',
+    gradient: ['#4f46e5', '#6366f1', '#a5b4fc'],
+    primary: '#4f46e5',
+    primaryDark: '#4338ca',
+    accent: '#818cf8',
+    deep: '#3730a3',
+    onPrimary: '#ffffff', // white ON indigo. It was dark text on a light-blue button.
+    link: '#4f46e5',
+    headerBg: '#ffffff',
+    // The student home header. Was a 65%-opaque navy so the background photo showed through it as
+    // a frosted panel; with no photo behind it there is nothing to frost, so it is simply the page
+    // header colour. Kept as its own token because StudentHeader reads it and headerBg is shared
+    // with the staff and parent headers.
+    headerGlass: '#ffffff',
+    headerBorder: SLATE[200],
+    pageBg: SLATE[50],
+    // Retained for the shared kit's dark branch — see note 2 above. No student screen reads it.
     onDark: '#b3e5fc',
-    // THREE panel treatments, because the web has three and they are not interchangeable:
-    //   card  — profile.css's main panel, near-opaque, DARK text inside
-    //   tile  — .dashboard-section-card is `background:#fff`, fully OPAQUE. The dashboard images
-    //           are white-boxed PNGs, so anything translucent leaves them looking pasted on.
-    //   glass — .dashboard-user-info, barely-there frosted panel sitting straight on the
-    //           background photo, with LIGHT text on it (onDark / primary), never dark text.
-    card: 'rgba(255, 255, 255, 0.93)',
-    cardBorder: 'rgba(79, 195, 247, 0.3)',
+    // The panel treatments. `card` was 93% white so the photo showed through; opaque now, because
+    // there is nothing behind it to reveal and a translucent card over a flat page just muddies
+    // its own text. `tile` was already opaque.
+    card: '#ffffff',
+    cardBorder: SLATE[200],
     tile: '#ffffff',
+    // Retained, unread by student screens — see note 2. `glass` and `glassDark` only ever made
+    // sense over a photograph: one lightened it, the other darkened it.
     glass: 'rgba(255, 255, 255, 0.10)',
     glassBorder: 'rgba(79, 195, 247, 0.25)',
-    // A FOURTH treatment, added by the dashboard redesign: dark glass that can carry BODY COPY.
-    //
-    // The three above cannot. `card` and `tile` are light surfaces that need dark text, so on a
-    // photograph they read as opaque sheets of paper pasted over it — which is precisely the "white
-    // background" the redesign was asked to remove. `glass` is 10% WHITE: it lightens the photo
-    // underneath instead of darkening it, so a bright region of Background.png stays bright and the
-    // white text on it disappears. That is the readability complaint, exactly.
-    //
-    // `glassDark` darkens instead. 72% of #0a1628 over the busiest part of the image still measures
-    // better than 7:1 against white text, and the photo remains legible through it — which is the
-    // whole point of keeping a photographic background at all.
-    //
-    // `glassDarkRaised` is for a panel INSIDE a glassDark panel (a row, an inset). Stacking two
-    // 72% layers would compound to 92% and go flat black, so nested surfaces take this instead of
-    // a second copy of the same token.
     glassDark: 'rgba(10, 22, 40, 0.72)',
     glassDarkBorder: 'rgba(79, 195, 247, 0.28)',
     glassDarkRaised: 'rgba(10, 22, 40, 0.84)',
-    tint: 'rgba(79, 195, 247, 0.14)',
+    tint: 'rgba(79, 70, 229, 0.12)',
     inputBg: '#ffffff',
     inputBorder: SLATE[200],
-    inputFocus: '#4fc3f7',
+    inputFocus: '#4f46e5',
   },
   // frontendmain/src/School/Counselor/CounselorDashboard.css — #6d28d9 → #7c3aed → #a78bfa.
   //
@@ -275,16 +333,16 @@ export const PORTALS = {
   vicePrincipal: {
     key: 'vicePrincipal',
     gradient: ['#c2410c', '#ea580c', '#fb923c'],
-    primary: '#ea580c',
-    primaryDark: '#c2410c',
+    primary: '#c2410c', // was #ea580c — 3.56:1 under a white label; this is 5.18
+    primaryDark: '#9a3412',
     accent: '#fb923c',
     onPrimary: '#ffffff',
-    link: '#c2410c',
+    link: '#9a3412',
     headerBg: '#c2410c',
     tint: 'rgba(234, 88, 12, 0.12)',
     inputBg: '#ffffff',
     inputBorder: SLATE[200],
-    inputFocus: '#ea580c',
+    inputFocus: '#c2410c',
   },
   // frontendmain/src/School/ShreyarthaTeacher/ShreyarthaTeacherDashboard.css — this panel's header
   // is a NEUTRAL slate (#1e293b), so the accent rather than the header carries its identity: #6366f1
@@ -298,16 +356,16 @@ export const PORTALS = {
   shreyarthaTeacher: {
     key: 'shreyarthaTeacher',
     gradient: ['#4338ca', '#6366f1', '#a5b4fc'],
-    primary: '#6366f1',
+    primary: '#4f46e5', // was #6366f1 — 4.47:1, a hair under AA; this is 6.29
     primaryDark: '#4338ca',
     accent: '#a5b4fc',
     onPrimary: '#ffffff',
     link: '#4338ca',
     headerBg: '#4338ca',
-    tint: 'rgba(99, 102, 241, 0.12)',
+    tint: 'rgba(79, 70, 229, 0.12)',
     inputBg: '#ffffff',
     inputBorder: SLATE[200],
-    inputFocus: '#6366f1',
+    inputFocus: '#4f46e5',
   },
   // frontendmain/src/School/ShreyarthaCounsellor/ShreyarthaCouncellorDashboard.css — the header is
   // `linear-gradient(135deg, #0f766e 0%, #14b8a6 100%)`. #5eead4 completes the ramp upwards.
@@ -320,16 +378,16 @@ export const PORTALS = {
   shreyarthaCounsellor: {
     key: 'shreyarthaCounsellor',
     gradient: ['#0f766e', '#14b8a6', '#5eead4'],
-    primary: '#14b8a6',
-    primaryDark: '#0f766e',
+    primary: '#0f766e', // was #14b8a6 — 2.49:1 under a white label; this is 5.47
+    primaryDark: '#115e59',
     accent: '#5eead4',
     onPrimary: '#ffffff',
     link: '#0f766e',
     headerBg: '#0f766e',
-    tint: 'rgba(20, 184, 166, 0.12)',
+    tint: 'rgba(15, 118, 110, 0.12)',
     inputBg: '#ffffff',
     inputBorder: SLATE[200],
-    inputFocus: '#14b8a6',
+    inputFocus: '#0f766e',
   },
   // frontendmain/src/Parent/ParentAuth.css — #6b21a8 → #9333ea → #c084fc
   parent: {
@@ -429,7 +487,10 @@ export const FEEDBACK = {
   errorText: '#dc2626',
   successBg: '#f0fdf4',
   successBorder: '#bbf7d0',
-  successText: '#16a34a',
+  // #15803d, not #16a34a. The old value measured 3.30:1 on white and 3.15:1 on its own tint —
+  // a WCAG AA failure at every size it was used at, across 26 text sites. This is green-700, and
+  // it is already TINTS.green.fg, so the palette does not grow. Still distinct from successOnBg.
+  successText: '#15803d',
   warningBg: '#fffbeb',
   warningBorder: '#fde68a',
   warningText: '#b45309',
@@ -554,17 +615,64 @@ export const INK = {
  * Ordered light-to-dark is wrong for these: `expo-linear-gradient` paints `colors[0]` at the start
  * point, and the design has the saturated end at the top-left.
  */
+/**
+ * Pastel icon tints for the light dashboard blocks — Quick Actions, the metric row, the today list.
+ *
+ * ── WHY THESE ARE FIXED HUES AND NOT DRAWN FROM THE PORTAL PALETTE ──────────
+ * Everywhere else in the home kit, decoration comes from `usePalette()` so a panel keeps its own
+ * colour — `IdentityCard`'s four row tiles are washes of the panel's own blue for exactly that
+ * reason, and its comment says so: a new colour per row is more values to keep in step, for
+ * decoration that carries no meaning.
+ *
+ * The Quick Actions rail is where that stops being true. The approved designs give each action its
+ * own hue and the hues are how a rep finds the one they want at a glance — five cards in five
+ * washes of one indigo are five identical cards.
+ *
+ * ── AND WHY THEY LIVE HERE RATHER THAN BESIDE THE COMPONENTS ────────────────
+ * They are design tokens, and `scripts/checkdesign.mjs` reads this file as THE source of them: a
+ * hex written anywhere under `components/` that could have come from a token is a finding. Putting
+ * them in a component-local module would have been a re-derivation by definition. They are
+ * deliberately NOT part of `PORTALS`, though — adding five keys to six palettes would mean any
+ * palette that missed one renders `undefined`, which React Native treats as *unset* rather than
+ * as an error.
+ *
+ * `bg` is the circle, `fg` inks the icon and the card title. Both are chosen against a WHITE card;
+ * on a gradient use `StatStrip`, whose colours are alphas of white.
+ */
+export const TINTS = {
+  violet: { bg: '#ede9fe', fg: '#6d28d9' },
+  green: { bg: '#dcfce7', fg: '#15803d' },
+  blue: { bg: '#dbeafe', fg: '#1d4ed8' },
+  amber: { bg: '#ffedd5', fg: '#c2410c' },
+  rose: { bg: '#fce7f3', fg: '#be185d' },
+  teal: { bg: '#ccfbf1', fg: '#0f766e' },
+};
+
+/** The order the dashboards cycle through when a descriptor names no tint per item. */
+export const TINT_CYCLE = ['violet', 'green', 'blue', 'amber', 'rose'];
+
+/**
+ * Hero-card gradients. EVERY ONE CARRIES WHITE TEXT, so every one is sized for it.
+ *
+ * They were bright pastels — `blue` started at #38bdf8, `teal` at #2dd4bf — and white text on them
+ * measured 1.9–2.5:1, with the 14px subtitles lower still. These are the most prominent cards on
+ * the student, teacher, partner and principal homes, and they were the least readable text there.
+ *
+ * Same hues, one to two shades deeper. The FIRST stop is where HeroCard's text sits (the gradient
+ * runs diagonally from the top-left), and each first stop clears 4.5:1 with white — 5.0 to 7.9. The
+ * second stop clears 3:1 for the large bold titles that can reach it. Lighten a stop and re-measure.
+ */
 export const GRADIENT = {
-  violet: ['#7c5cff', '#a78bfa'],
-  blue: ['#38bdf8', '#60a5fa'],
+  violet: ['#6d28d9', '#8b5cf6'],
+  blue: ['#1d4ed8', '#3b82f6'],
   // The teacher dashboard's third card. Added when a design first called for three heroes rather
   // than two; the pair above is untouched, so the student and partner dashboards are unaffected.
-  teal: ['#2dd4bf', '#5eead4'],
+  teal: ['#0f766e', '#0d9488'],
   // Added for the Principal panel, whose design leads with six differently-coloured cards rather
   // than three. Same two-stop shape as the others.
-  green: ['#10b981', '#6ee7b7'],
-  amber: ['#f59e0b', '#fcd34d'],
-  indigo: ['#6366f1', '#a5b4fc'],
+  green: ['#047857', '#059669'],
+  amber: ['#b45309', '#d97706'],
+  indigo: ['#4338ca', '#6366f1'],
 };
 
 /**

@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useState } from 'react';
 import { Image, Text, View } from 'react-native';
-import { FEEDBACK, SLATE, SPACING } from '../../constants/theme';
+import { FEEDBACK, SLATE, SPACING, TYPE, leading } from '../../constants/theme';
 import { usePalette } from '../ui/PaletteContext';
 import { CalendarGrid, Card, EmptyState, MonthNavigator, ScreenScaffold, StatusChip } from '../ui';
 import useStaffResource from '../../hooks/useStaffResource';
@@ -32,8 +32,8 @@ import { makeStyles } from '../../utils/makeStyles';
  */
 
 const ATTENDANCE_TINT = {
-  PRESENT: { bg: FEEDBACK.successBg, color: FEEDBACK.successText },
-  ABSENT: { bg: FEEDBACK.errorBg, color: FEEDBACK.errorText },
+  PRESENT: { bg: FEEDBACK.successBg, color: FEEDBACK.successOnBg },
+  ABSENT: { bg: FEEDBACK.errorBg, color: FEEDBACK.errorOnBg },
 };
 
 const BASE_URL = 'https://shreyartha.com';
@@ -235,16 +235,16 @@ const useStyles = makeStyles(() => ({
   summary: { marginTop: SPACING.sm },
   summaryRow: { flexDirection: 'row' },
   summaryCell: { flex: 1, alignItems: 'center' },
-  summaryValue: { fontSize: 20, fontWeight: '800', color: SLATE[800] },
-  summaryLabel: { fontSize: 11.5, color: SLATE[500], fontWeight: '600', marginTop: 2 },
-  summaryEmpty: { fontSize: 13, color: SLATE[400], textAlign: 'center' },
+  summaryValue: { fontSize: TYPE.headline, fontWeight: '800', color: SLATE[800] },
+  summaryLabel: { fontSize: TYPE.caption, color: SLATE[500], fontWeight: '600', marginTop: 2 },
+  summaryEmpty: { fontSize: TYPE.body, color: SLATE[500], textAlign: 'center' },
   grid: { marginTop: SPACING.sm },
   legend: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginTop: SPACING.sm },
   legendItem: { flexDirection: 'row', alignItems: 'center', gap: 5 },
   legendDot: { width: 9, height: 9, borderRadius: 5 },
-  legendText: { fontSize: 11.5, color: SLATE[500], fontWeight: '600' },
+  legendText: { fontSize: TYPE.caption, color: SLATE[500], fontWeight: '600' },
   feedTitle: {
-    fontSize: 13,
+    fontSize: TYPE.body,
     fontWeight: '800',
     color: SLATE[500],
     textTransform: 'uppercase',
@@ -255,9 +255,9 @@ const useStyles = makeStyles(() => ({
   item: { marginBottom: SPACING.sm },
   banner: { width: '100%', height: 120, borderRadius: 10, marginBottom: SPACING.sm },
   itemHead: { flexDirection: 'row', alignItems: 'flex-start', gap: 8 },
-  itemTitle: { flex: 1, fontSize: 15, fontWeight: '700', color: SLATE[800] },
-  itemText: { fontSize: 13, color: SLATE[500], lineHeight: 19, marginTop: 5 },
-  when: { fontSize: 12.5, color: SLATE[600], fontWeight: '600', marginTop: 8 },
+  itemTitle: { flex: 1, fontSize: TYPE.heading, fontWeight: '700', color: SLATE[800] },
+  itemText: { fontSize: TYPE.body, color: SLATE[500], lineHeight: leading(TYPE.body), marginTop: 5 },
+  when: { fontSize: TYPE.label, color: SLATE[600], fontWeight: '600', marginTop: 8 },
   classRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 8 },
-  error: { fontSize: 13, color: FEEDBACK.errorText, marginTop: SPACING.sm },
+  error: { fontSize: TYPE.body, color: FEEDBACK.errorText, marginTop: SPACING.sm },
 }));

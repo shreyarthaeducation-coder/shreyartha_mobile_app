@@ -32,6 +32,7 @@ const BASE_URL = (
 
 const SIX_HOURS_MS = 6 * 60 * 60 * 1000;
 const LOCATION_TIMEOUT_MS = 5000; // matches the web's geolocation { timeout: 5000 }
+const SIGN_IN_LOCATION_TIMEOUT_MS = 10000;
 const REQUEST_TIMEOUT_MS = 10000;
 
 /**
@@ -41,7 +42,10 @@ const REQUEST_TIMEOUT_MS = 10000;
  * @returns {Promise<{status:'ok'|'denied'|'error'|'unavailable', lat?:number, lng?:number,
  *                    accuracy?:number, message?:string, capturedAt:string}>}
  */
-export async function captureLocation() {
+export async function captureLocation({
+  accuracy = Location.Accuracy.Balanced,
+  timeoutMs = LOCATION_TIMEOUT_MS,
+} = {}) {
   const capturedAt = new Date().toISOString();
   try {
     const servicesEnabled = await Location.hasServicesEnabledAsync();
@@ -55,8 +59,8 @@ export async function captureLocation() {
     // getCurrentPositionAsync has no timeout option, so race it — a slow GPS lock must never
     // hold up the login.
     const position = await Promise.race([
-      Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced }),
-      new Promise((resolve) => setTimeout(() => resolve(null), LOCATION_TIMEOUT_MS)),
+      Location.getCurrentPositionAsync({ accuracy }),
+      new Promise((resolve) => setTimeout(() => resolve(null), timeoutMs)),
     ]);
 
     if (!position?.coords) {
@@ -107,7 +111,13 @@ async function postAttendance(path, body) {
  */
 export async function startStaffAttendanceSession(userData = {}) {
   try {
-    const loginLocation = await captureLocation();
+    // High accuracy and a longer wait than sign-out gets: this reading is now shown to the staff
+    // member as "where you signed in", and nothing waits on it — the caller fires and forgets.
+    // Sign-out keeps the fast Balanced default, because the session-expiry path awaits it.
+    const loginLocation = await captureLocation({
+      accuracy: Location.Accuracy.High,
+      timeoutMs: SIGN_IN_LOCATION_TIMEOUT_MS,
+    });
     const loginAt = new Date().toISOString();
 
     await postAttendance('/api/staff/attendance/start', { loginAt, location: loginLocation });

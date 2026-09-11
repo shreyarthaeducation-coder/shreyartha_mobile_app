@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { FEEDBACK, RECORDING, SLATE, SPACING, TYPE } from '../../../constants/theme';
+import { FEEDBACK, RECORDING, SLATE, SPACING, TYPE, leading } from '../../../constants/theme';
 import { usePalette } from '../../ui/PaletteContext';
 import { makeStyles } from '../../../utils/makeStyles';
 import { StudentCard, StudentCardTitle } from '../StudentCard';
@@ -253,8 +253,8 @@ export default function PlacementAssessment({ onPlaced }) {
 
 const useStyles = makeStyles((p) => ({
   loader: { marginVertical: SPACING.md },
-  body: { fontSize: TYPE.body, color: SLATE[600], lineHeight: 20 },
-  error: { fontSize: TYPE.label, color: FEEDBACK.errorText, lineHeight: 18, marginTop: SPACING.sm },
+  body: { fontSize: TYPE.body, color: SLATE[600], lineHeight: leading(TYPE.body) },
+  error: { fontSize: TYPE.label, color: FEEDBACK.errorText, lineHeight: leading(TYPE.label), marginTop: SPACING.sm },
 
   level: { fontSize: TYPE.figure, fontWeight: '800', color: p.primaryDark, textAlign: 'center' },
 
@@ -266,7 +266,7 @@ const useStyles = makeStyles((p) => ({
     letterSpacing: 0.5,
   },
   speaking: { fontSize: TYPE.label, fontWeight: '700', color: p.deep, marginTop: 4 },
-  question: { fontSize: TYPE.title, color: SLATE[800], lineHeight: 26, marginTop: 4 },
+  question: { fontSize: TYPE.title, color: SLATE[800], lineHeight: leading(TYPE.title), marginTop: 4 },
 
   micRow: { flexDirection: 'row', alignItems: 'center', gap: SPACING.md },
   mic: {
@@ -279,7 +279,7 @@ const useStyles = makeStyles((p) => ({
   },
   micOn: { backgroundColor: RECORDING },
   micOff: { backgroundColor: SLATE[400] },
-  micHint: { flex: 1, fontSize: TYPE.body, color: SLATE[600], lineHeight: 19 },
+  micHint: { flex: 1, fontSize: TYPE.body, color: SLATE[600], lineHeight: leading(TYPE.body) },
 
   heardLabel: {
     fontSize: TYPE.micro,
@@ -289,7 +289,7 @@ const useStyles = makeStyles((p) => ({
     letterSpacing: 0.4,
     marginTop: SPACING.md,
   },
-  heard: { fontSize: TYPE.heading, color: SLATE[800], lineHeight: 21, marginTop: 3 },
+  heard: { fontSize: TYPE.heading, color: SLATE[800], lineHeight: leading(TYPE.heading), marginTop: 3 },
   confirmRow: { flexDirection: 'row', gap: SPACING.sm, marginTop: SPACING.md },
 
   primary: {

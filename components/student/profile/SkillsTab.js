@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { SLATE, SPACING, TOUCH, TYPE } from '../../../constants/theme';
+import { SLATE, SPACING, TOUCH, TYPE, leading } from '../../../constants/theme';
 import { usePalette } from '../../ui/PaletteContext';
 import { makeStyles } from '../../../utils/makeStyles';
 import { StudentCard, StudentCardTitle } from '../StudentCard';
@@ -263,7 +263,7 @@ export default function SkillsTab({ showToast }) {
         ]}
         accessibilityRole="button"
       >
-        {locked ? <Ionicons name="lock-closed" size={15} color="#ffffff" /> : null}
+        {locked ? <Ionicons name="lock-closed" size={17} color="#ffffff" /> : null}
         <Text style={styles.primaryText}>
           {locked ? 'Selections Saved' : saving ? 'Saving…' : 'Save Skills Edge'}
         </Text>
@@ -274,7 +274,7 @@ export default function SkillsTab({ showToast }) {
 
 const useStyles = makeStyles((p) => ({
   loader: { marginVertical: SPACING.xl },
-  hint: { fontSize: TYPE.label, color: SLATE[500], lineHeight: 18, marginBottom: SPACING.sm },
+  hint: { fontSize: TYPE.label, color: SLATE[500], lineHeight: leading(TYPE.label), marginBottom: SPACING.sm },
 
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   chip: {

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Alert, Pressable, Text, TextInput, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { FEEDBACK, SLATE, SPACING } from '../../../constants/theme';
+import { FEEDBACK, SLATE, SPACING, TYPE, leading } from '../../../constants/theme';
 import { usePalette } from '../../ui/PaletteContext';
 import {
   Card,
@@ -477,7 +477,7 @@ export default function FeeManagementScreen({ homeRoute = '/staff/principal', ap
             value={configForm.keyId}
             onChangeText={(keyId) => setConfigForm((f) => ({ ...f, keyId }))}
             placeholder="rzp_live_..."
-            placeholderTextColor={SLATE[400]}
+            placeholderTextColor={SLATE[500]}
             autoCapitalize="none"
             autoCorrect={false}
             editable={!saving}
@@ -489,7 +489,7 @@ export default function FeeManagementScreen({ homeRoute = '/staff/principal', ap
             value={configForm.keySecret}
             onChangeText={(keySecret) => setConfigForm((f) => ({ ...f, keySecret }))}
             placeholder="Key Secret"
-            placeholderTextColor={SLATE[400]}
+            placeholderTextColor={SLATE[500]}
             secureTextEntry
             autoCapitalize="none"
             editable={!saving}
@@ -501,7 +501,7 @@ export default function FeeManagementScreen({ homeRoute = '/staff/principal', ap
             value={configForm.webhookSecret}
             onChangeText={(webhookSecret) => setConfigForm((f) => ({ ...f, webhookSecret }))}
             placeholder="Webhook Secret"
-            placeholderTextColor={SLATE[400]}
+            placeholderTextColor={SLATE[500]}
             secureTextEntry
             autoCapitalize="none"
             editable={!saving}
@@ -537,7 +537,7 @@ export default function FeeManagementScreen({ homeRoute = '/staff/principal', ap
             accessibilityRole="button"
             accessibilityLabel="Add a fee structure"
           >
-            <Ionicons name="add" size={16} color="#ffffff" />
+            <Ionicons name="add" size={18} color="#ffffff" />
             <Text style={styles.addText}>New</Text>
           </Pressable>
         </View>
@@ -572,7 +572,7 @@ export default function FeeManagementScreen({ homeRoute = '/staff/principal', ap
                   accessibilityRole="button"
                   accessibilityLabel={`Edit ${s.className} structure`}
                 >
-                  <Ionicons name="create-outline" size={17} color={SLATE[600]} />
+                  <Ionicons name="create-outline" size={19} color={SLATE[600]} />
                 </Pressable>
                 <Pressable
                   onPress={() => confirmDeleteStructure(s)}
@@ -581,7 +581,7 @@ export default function FeeManagementScreen({ homeRoute = '/staff/principal', ap
                   accessibilityRole="button"
                   accessibilityLabel={`Delete ${s.className} structure`}
                 >
-                  <Ionicons name="trash-outline" size={17} color={FEEDBACK.errorText} />
+                  <Ionicons name="trash-outline" size={19} color={FEEDBACK.errorText} />
                 </Pressable>
               </View>
             </Card>
@@ -600,7 +600,7 @@ export default function FeeManagementScreen({ homeRoute = '/staff/principal', ap
           value={academicYear}
           onChangeText={setAcademicYear}
           placeholder="2026-27"
-          placeholderTextColor={SLATE[400]}
+          placeholderTextColor={SLATE[500]}
           autoCapitalize="none"
         />
         <Select
@@ -615,7 +615,7 @@ export default function FeeManagementScreen({ homeRoute = '/staff/principal', ap
           value={search}
           onChangeText={setSearch}
           placeholder="Student name, class or email"
-          placeholderTextColor={SLATE[400]}
+          placeholderTextColor={SLATE[500]}
           autoCapitalize="none"
         />
 
@@ -745,7 +745,7 @@ export default function FeeManagementScreen({ homeRoute = '/staff/principal', ap
           value={structureForm.academicYear}
           onChangeText={(v) => setStructureForm((p) => ({ ...p, academicYear: v }))}
           placeholder="2026-27"
-          placeholderTextColor={SLATE[400]}
+          placeholderTextColor={SLATE[500]}
           autoCapitalize="none"
           editable={!saving}
         />
@@ -756,7 +756,7 @@ export default function FeeManagementScreen({ homeRoute = '/staff/principal', ap
           value={structureForm.className}
           onChangeText={(v) => setStructureForm((p) => ({ ...p, className: v }))}
           placeholder="e.g. Class 9"
-          placeholderTextColor={SLATE[400]}
+          placeholderTextColor={SLATE[500]}
           editable={!saving}
         />
 
@@ -766,7 +766,7 @@ export default function FeeManagementScreen({ homeRoute = '/staff/principal', ap
           value={structureForm.totalAmount}
           onChangeText={(v) => setStructureForm((p) => ({ ...p, totalAmount: v }))}
           keyboardType="number-pad"
-          placeholderTextColor={SLATE[400]}
+          placeholderTextColor={SLATE[500]}
           editable={!saving}
         />
 
@@ -802,7 +802,7 @@ export default function FeeManagementScreen({ homeRoute = '/staff/principal', ap
           value={structureForm.dayOfMonth}
           onChangeText={(v) => setStructureForm((p) => ({ ...p, dayOfMonth: v }))}
           placeholder="1–28"
-          placeholderTextColor={SLATE[400]}
+          placeholderTextColor={SLATE[500]}
           keyboardType="number-pad"
           editable={!saving}
         />
@@ -822,7 +822,7 @@ export default function FeeManagementScreen({ homeRoute = '/staff/principal', ap
           value={structureForm.notes}
           onChangeText={(v) => setStructureForm((p) => ({ ...p, notes: v }))}
           placeholder="Optional"
-          placeholderTextColor={SLATE[400]}
+          placeholderTextColor={SLATE[500]}
           multiline
           numberOfLines={3}
           textAlignVertical="top"
@@ -928,7 +928,7 @@ export default function FeeManagementScreen({ homeRoute = '/staff/principal', ap
               value={offlineForm.installmentId}
               onChangeText={(installmentId) => setOfflineForm((p) => ({ ...p, installmentId }))}
               placeholder="Leave blank to apply to the balance"
-              placeholderTextColor={SLATE[400]}
+              placeholderTextColor={SLATE[500]}
               keyboardType="number-pad"
               editable={!saving}
             />
@@ -950,7 +950,7 @@ export default function FeeManagementScreen({ homeRoute = '/staff/principal', ap
               value={offlineForm.adminNotes}
               onChangeText={(adminNotes) => setOfflineForm((p) => ({ ...p, adminNotes }))}
               placeholder="Cheque number, receipt reference…"
-              placeholderTextColor={SLATE[400]}
+              placeholderTextColor={SLATE[500]}
               multiline
               numberOfLines={3}
               textAlignVertical="top"
@@ -969,24 +969,24 @@ const useStyles = makeStyles((p) => ({
   card: { marginBottom: SPACING.sm },
   cardHead: { flexDirection: 'row', alignItems: 'flex-start', gap: SPACING.sm },
   cardHeadText: { flex: 1 },
-  name: { fontSize: 15, fontWeight: '800', color: SLATE[800] },
-  sub: { fontSize: 12.5, color: SLATE[500], marginTop: 2 },
-  reason: { fontSize: 13, color: SLATE[600], lineHeight: 19, marginTop: 6 },
+  name: { fontSize: TYPE.heading, fontWeight: '800', color: SLATE[800] },
+  sub: { fontSize: TYPE.label, color: SLATE[500], marginTop: 2 },
+  reason: { fontSize: TYPE.body, color: SLATE[600], lineHeight: leading(TYPE.body), marginTop: 6 },
   sectionTitle: {
-    fontSize: 14,
+    fontSize: TYPE.heading,
     fontWeight: '800',
     color: SLATE[800],
     marginTop: SPACING.md,
     marginBottom: SPACING.sm,
   },
-  hint: { fontSize: 12, color: SLATE[500], lineHeight: 18, marginBottom: SPACING.sm },
+  hint: { fontSize: TYPE.label, color: SLATE[500], lineHeight: leading(TYPE.label), marginBottom: SPACING.sm },
   rowBetween: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     marginTop: SPACING.md,
   },
-  gross: { fontSize: 15, fontWeight: '800' },
+  gross: { fontSize: TYPE.heading, fontWeight: '800' },
 
   statusBox: {
     flexDirection: 'row',
@@ -999,12 +999,12 @@ const useStyles = makeStyles((p) => ({
   },
   statusMissing: { backgroundColor: FEEDBACK.warningBg },
   statusDot: { width: 8, height: 8, borderRadius: 4 },
-  statusText: { flex: 1, fontSize: 12.5, color: SLATE[700], lineHeight: 18 },
+  statusText: { flex: 1, fontSize: TYPE.label, color: SLATE[700], lineHeight: leading(TYPE.label) },
 
   figures: { flexDirection: 'row', gap: SPACING.sm, marginTop: SPACING.sm },
   figure: { flex: 1 },
-  figureLabel: { fontSize: 11.5, color: SLATE[500] },
-  figureValue: { fontSize: 13.5, fontWeight: '700', color: SLATE[800], marginTop: 2 },
+  figureLabel: { fontSize: TYPE.caption, color: SLATE[500] },
+  figureValue: { fontSize: TYPE.heading, fontWeight: '700', color: SLATE[800], marginTop: 2 },
 
   statGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: SPACING.sm },
   statCard: {
@@ -1015,8 +1015,8 @@ const useStyles = makeStyles((p) => ({
     borderLeftWidth: 3,
     borderLeftColor: p.primary,
   },
-  statLabel: { fontSize: 11.5, color: SLATE[500] },
-  statValue: { fontSize: 15, fontWeight: '800', color: SLATE[800], marginTop: 3 },
+  statLabel: { fontSize: TYPE.caption, color: SLATE[500] },
+  statValue: { fontSize: TYPE.heading, fontWeight: '800', color: SLATE[800], marginTop: 3 },
 
   structureActions: {
     flexDirection: 'row',
@@ -1031,7 +1031,7 @@ const useStyles = makeStyles((p) => ({
     alignItems: 'center',
     backgroundColor: p.tint,
   },
-  ghostText: { fontSize: 12.5, fontWeight: '700', color: p.primaryDark },
+  ghostText: { fontSize: TYPE.label, fontWeight: '700', color: p.primaryDark },
   iconBtn: {
     width: 34,
     height: 34,
@@ -1048,14 +1048,14 @@ const useStyles = makeStyles((p) => ({
     paddingVertical: 8,
     borderRadius: 10,
   },
-  addText: { color: '#ffffff', fontSize: 12.5, fontWeight: '700' },
+  addText: { color: '#ffffff', fontSize: TYPE.label, fontWeight: '700' },
   primaryBtn: {
     borderRadius: 12,
     paddingVertical: 13,
     alignItems: 'center',
     marginTop: SPACING.md,
   },
-  primaryText: { color: '#ffffff', fontSize: 14.5, fontWeight: '700' },
+  primaryText: { color: '#ffffff', fontSize: TYPE.heading, fontWeight: '700' },
   pressed: { opacity: 0.75 },
 
   studentRow: {
@@ -1067,7 +1067,7 @@ const useStyles = makeStyles((p) => ({
     borderBottomColor: SLATE[100],
   },
   studentText: { flex: 1 },
-  studentName: { fontSize: 14, fontWeight: '700', color: SLATE[800] },
+  studentName: { fontSize: TYPE.heading, fontWeight: '700', color: SLATE[800] },
   instRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1079,7 +1079,7 @@ const useStyles = makeStyles((p) => ({
   instRight: { alignItems: 'flex-end', gap: 4 },
 
   label: {
-    fontSize: 13,
+    fontSize: TYPE.body,
     fontWeight: '700',
     color: SLATE[700],
     marginTop: SPACING.md,
@@ -1091,7 +1091,7 @@ const useStyles = makeStyles((p) => ({
     borderRadius: 10,
     paddingHorizontal: 13,
     paddingVertical: 11,
-    fontSize: 14.5,
+    fontSize: TYPE.heading,
     color: SLATE[800],
     backgroundColor: '#ffffff',
   },
@@ -1102,10 +1102,10 @@ const useStyles = makeStyles((p) => ({
     borderRadius: 10,
     paddingHorizontal: 13,
     paddingVertical: 11,
-    fontSize: 14.5,
+    fontSize: TYPE.heading,
     color: SLATE[800],
     backgroundColor: '#ffffff',
   },
   sheetLoader: { marginVertical: SPACING.xl },
-  sheetError: { color: FEEDBACK.errorText, fontSize: 12.5, marginTop: SPACING.sm },
+  sheetError: { color: FEEDBACK.errorText, fontSize: TYPE.label, marginTop: SPACING.sm },
 }));

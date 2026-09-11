@@ -437,6 +437,21 @@ function assertions(menu, terms, keys, profileSvc, dashSvc, src) {
     bad('the terms sheet has autoFocus — an Android Modal with a focused input dismisses the keyboard');
   }
 
+
+  // ── A PARTNER IS NOT SCHOOL-BOUND ─────────────────────────────────────────
+  // BrandBar is shared with six school portals. The partner header must keep the 3C Edge mark in
+  // the LEAD position, which it does by passing no school props at all — the opt-in default. A
+  // crest here would attach a school to an organisation that belongs to none.
+  const partnerMenu = codeOnly(src.menuScreen);
+  if (/schoolLogoUrl/.test(partnerMenu)) {
+    bad('PartnerMenuScreen passes a school crest — a partner belongs to no single school');
+  }
+  if (/changePasswordRoute/.test(partnerMenu)) {
+    bad('PartnerMenuScreen still passes changePasswordRoute — BrandBar no longer accepts it');
+  }
+  if (!/<ChangePasswordRow route="\/partner\/change-password" \/>/.test(partnerMenu)) {
+    bad('PartnerMenuScreen has no Change Password row — the partner is stranded');
+  }
   return out;
 }
 
@@ -591,6 +606,16 @@ const MUTATIONS = [
   {
     name: 'autoFocus added inside the terms modal',
     src: (k, s) => (k === 'termsSheet' ? s.replace('<ScrollView', '<ScrollView autoFocus') : s),
+  },
+  {
+    name: 'the partner header is given a school crest',
+    src: (k, s) => (k === 'menuScreen'
+      ? s.replace('<BrandBar tone="light" />', '<BrandBar tone="light" schoolLogoUrl={x} />') : s),
+  },
+  {
+    name: 'the partner loses its only Change Password row',
+    src: (k, s) => (k === 'menuScreen'
+      ? s.replace('<ChangePasswordRow route="/partner/change-password" />', '') : s),
   },
 ];
 

@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Linking, Pressable, Text, View } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { DONE, FEEDBACK, INK, SPACING, TOUCH, TYPE } from '../../../constants/theme';
+import { DONE, FEEDBACK, INK, SLATE, SPACING, TOUCH, TYPE, leading } from '../../../constants/theme';
 import { usePalette } from '../../ui/PaletteContext';
 import { makeStyles } from '../../../utils/makeStyles';
 import { EmptyState, SegmentedTabs, useToast } from '../../ui';
@@ -286,7 +286,6 @@ export default function TeacherResourcesScreen() {
       toast={toast}
     >
       <SegmentedTabs
-        tone="dark"
         options={tabOptions}
         value={tab}
         onChange={(next) => {
@@ -301,7 +300,7 @@ export default function TeacherResourcesScreen() {
         <EmptyState icon="library-outline" title={t.noSubjects} message={t.noSubjectsBody} />
       ) : (
         <>
-          <StudentCard tone="dark">
+          <StudentCard>
             <StudentCardTitle>{t.subject}</StudentCardTitle>
             <View style={styles.chips}>
               {subjects.map((s) => {
@@ -322,11 +321,11 @@ export default function TeacherResourcesScreen() {
           </StudentCard>
 
           {tab === 'homework' && subject && upcoming.length > 0 ? (
-            <StudentCard tone="dark">
+            <StudentCard>
               <StudentCardTitle>{t.upcoming}</StudentCardTitle>
               {upcoming.slice(0, 5).map((hw) => (
                 <View key={hw.id} style={styles.dueRow}>
-                  <Ionicons name="time-outline" size={14} color={palette.primary} />
+                  <Ionicons name="time-outline" size={16} color={palette.primary} />
                   <Text style={styles.dueTitle} numberOfLines={1}>
                     {hw.title}
                   </Text>
@@ -338,15 +337,15 @@ export default function TeacherResourcesScreen() {
           ) : null}
 
           {!subject ? (
-            <StudentCard tone="dark">
+            <StudentCard>
               <StudentNote>{t.pickSubject}</StudentNote>
             </StudentCard>
           ) : notice ? (
-            <StudentCard tone="dark">
+            <StudentCard>
               <StudentNote>{notice}</StudentNote>
             </StudentCard>
           ) : (
-            <StudentCard tone="dark">
+            <StudentCard>
               <StudentCardTitle>{t.chapter}</StudentCardTitle>
               {chapters.map((ch) => {
                 const expanded = openChapter === ch.id;
@@ -361,7 +360,7 @@ export default function TeacherResourcesScreen() {
                     >
                       <Ionicons
                         name={expanded ? 'chevron-down' : 'chevron-forward'}
-                        size={15}
+                        size={17}
                         color={palette.primary}
                       />
                       <Text style={styles.rowText}>{ch.name}</Text>
@@ -396,7 +395,7 @@ export default function TeacherResourcesScreen() {
           )}
 
           {subject && !topic ? (
-            <StudentCard tone="dark">
+            <StudentCard>
               <StudentNote>{t.pickTopic}</StudentNote>
             </StudentCard>
           ) : null}
@@ -407,7 +406,7 @@ export default function TeacherResourcesScreen() {
                 <ActivityIndicator color={palette.primary} />
               </View>
             ) : items.length === 0 ? (
-              <StudentCard tone="dark">
+              <StudentCard>
                 <StudentNote>{t.noItems}</StudentNote>
               </StudentCard>
             ) : (
@@ -452,7 +451,7 @@ function ResourceCard({ resource, strings, onOpen }) {
   const url = resource.fileUrl || resource.linkUrl;
 
   return (
-    <StudentCard tone="dark">
+    <StudentCard>
       <Text style={styles.itemTitle}>{resource.title}</Text>
       {resource.description ? <Text style={styles.itemBody}>{resource.description}</Text> : null}
       <View style={styles.meta}>
@@ -468,7 +467,7 @@ function ResourceCard({ resource, strings, onOpen }) {
           style={({ pressed }) => [styles.action, pressed && styles.pressed]}
           accessibilityRole="button"
         >
-          <Ionicons name="open-outline" size={14} color={palette.onPrimary} />
+          <Ionicons name="open-outline" size={16} color={palette.onPrimary} />
           <Text style={styles.actionText}>{strings.open}</Text>
         </Pressable>
       ) : null}
@@ -494,7 +493,7 @@ function HomeworkCard({
   const url = homework.fileUrl || homework.linkUrl;
 
   return (
-    <StudentCard tone="dark">
+    <StudentCard>
       <View style={styles.itemHead}>
         <Text style={styles.itemTitle}>{homework.title}</Text>
         {turnedIn ? (
@@ -526,7 +525,7 @@ function HomeworkCard({
           style={({ pressed }) => [styles.ghost, pressed && styles.pressed]}
           accessibilityRole="button"
         >
-          <Ionicons name="document-attach-outline" size={14} color={palette.primary} />
+          <Ionicons name="document-attach-outline" size={16} color={palette.primary} />
           <Text style={styles.ghostText}>{strings.open}</Text>
         </Pressable>
       ) : null}
@@ -539,7 +538,7 @@ function HomeworkCard({
               style={({ pressed }) => [styles.ghost, pressed && styles.pressed]}
               accessibilityRole="button"
             >
-              <Ionicons name="cloud-done-outline" size={14} color={palette.primary} />
+              <Ionicons name="cloud-done-outline" size={16} color={palette.primary} />
               <Text style={styles.ghostText}>Your file</Text>
             </Pressable>
           ) : null}
@@ -560,13 +559,13 @@ function HomeworkCard({
         <>
           {pendingFile ? (
             <View style={styles.file}>
-              <Ionicons name="document-outline" size={15} color={palette.primary} />
+              <Ionicons name="document-outline" size={17} color={palette.primary} />
               <Text style={styles.fileName} numberOfLines={1}>
                 {pendingFile.name}
                 {pendingFile.size ? ` · ${formatFileSize(pendingFile.size)}` : ''}
               </Text>
               <Pressable onPress={onClearFile} hitSlop={8} accessibilityLabel={strings.removeFile}>
-                <Ionicons name="close-circle" size={17} color={palette.onDark} />
+                <Ionicons name="close-circle" size={19} color={SLATE[600]} />
               </Pressable>
             </View>
           ) : null}
@@ -578,7 +577,7 @@ function HomeworkCard({
               style={({ pressed }) => [styles.ghostBtn, pressed && styles.pressed]}
               accessibilityRole="button"
             >
-              <Ionicons name="attach-outline" size={15} color={palette.primary} />
+              <Ionicons name="attach-outline" size={17} color={palette.primary} />
               <Text style={styles.ghostText}>{pendingFile ? strings.change : strings.attach}</Text>
             </Pressable>
 
@@ -592,7 +591,7 @@ function HomeworkCard({
                 <ActivityIndicator size="small" color={palette.onPrimary} />
               ) : (
                 <>
-                  <Ionicons name="paper-plane-outline" size={14} color={palette.onPrimary} />
+                  <Ionicons name="paper-plane-outline" size={16} color={palette.onPrimary} />
                   <Text style={styles.actionText}>{strings.submit}</Text>
                 </>
               )}
@@ -605,7 +604,7 @@ function HomeworkCard({
 }
 
 const useStyles = makeStyles((p) => ({
-  intro: { fontSize: TYPE.label, color: p.onDark, lineHeight: 19, marginVertical: SPACING.md },
+  intro: { fontSize: TYPE.label, color: SLATE[600], lineHeight: leading(TYPE.label), marginVertical: SPACING.md },
   centre: { paddingVertical: SPACING.lg, alignItems: 'center' },
 
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
@@ -613,16 +612,16 @@ const useStyles = makeStyles((p) => ({
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 999,
-    backgroundColor: p.glassDarkRaised,
+    backgroundColor: SLATE[50],
     borderWidth: 1,
-    borderColor: p.glassDarkBorder,
+    borderColor: SLATE[200],
   },
   chipOn: { backgroundColor: p.primary, borderColor: p.primary },
-  chipText: { fontSize: TYPE.label, fontWeight: '600', color: '#ffffff' },
+  chipText: { fontSize: TYPE.label, fontWeight: '600', color: SLATE[700] },
   chipTextOn: { color: p.onPrimary, fontWeight: '800' },
 
   row: { flexDirection: 'row', alignItems: 'center', gap: 8, minHeight: TOUCH.min },
-  rowText: { flex: 1, fontSize: TYPE.body, fontWeight: '600', color: '#ffffff' },
+  rowText: { flex: 1, fontSize: TYPE.body, fontWeight: '600', color: SLATE[800] },
   topic: {
     minHeight: TOUCH.min,
     justifyContent: 'center',
@@ -630,22 +629,22 @@ const useStyles = makeStyles((p) => ({
     marginLeft: SPACING.lg,
     marginBottom: 5,
     borderRadius: 10,
-    backgroundColor: p.glassDarkRaised,
+    backgroundColor: SLATE[50],
   },
   topicOn: { backgroundColor: p.tint, borderWidth: 1, borderColor: p.primary },
-  topicText: { fontSize: TYPE.body, color: INK.dark.body },
+  topicText: { fontSize: TYPE.body, color: INK.light.body },
   topicTextOn: { color: p.primary, fontWeight: '700' },
 
   dueRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 6 },
-  dueTitle: { flex: 1, fontSize: TYPE.label, fontWeight: '600', color: '#ffffff' },
-  dueDate: { fontSize: TYPE.caption, color: p.onDark },
+  dueTitle: { flex: 1, fontSize: TYPE.label, fontWeight: '600', color: SLATE[800] },
+  dueDate: { fontSize: TYPE.caption, color: SLATE[600] },
   dueNote: { marginTop: 6 },
 
   itemHead: { flexDirection: 'row', alignItems: 'center', gap: SPACING.sm },
-  itemTitle: { flex: 1, fontSize: TYPE.heading, fontWeight: '700', color: '#ffffff' },
-  itemBody: { fontSize: TYPE.body, color: INK.dark.body, lineHeight: 19, marginTop: 4 },
+  itemTitle: { flex: 1, fontSize: TYPE.heading, fontWeight: '700', color: SLATE[800] },
+  itemBody: { fontSize: TYPE.body, color: INK.light.body, lineHeight: leading(TYPE.body), marginTop: 4 },
   meta: { flexDirection: 'row', flexWrap: 'wrap', gap: 4, marginTop: SPACING.sm },
-  metaText: { fontSize: TYPE.caption, color: p.onDark },
+  metaText: { fontSize: TYPE.caption, color: SLATE[600] },
 
   doneChip: {
     flexDirection: 'row',
@@ -665,9 +664,9 @@ const useStyles = makeStyles((p) => ({
     marginTop: SPACING.sm,
     padding: SPACING.sm,
     borderRadius: 12,
-    backgroundColor: p.glassDarkRaised,
+    backgroundColor: SLATE[50],
   },
-  fileName: { flex: 1, fontSize: TYPE.caption, color: '#ffffff' },
+  fileName: { flex: 1, fontSize: TYPE.caption, color: SLATE[600] },
 
   buttons: { flexDirection: 'row', gap: SPACING.sm, marginTop: SPACING.md },
   grow: { flex: 1 },
@@ -699,8 +698,8 @@ const useStyles = makeStyles((p) => ({
     paddingHorizontal: 14,
     borderRadius: 999,
     borderWidth: 1,
-    borderColor: p.glassDarkBorder,
-    backgroundColor: p.glassDarkRaised,
+    borderColor: SLATE[200],
+    backgroundColor: SLATE[50],
   },
   ghostText: { fontSize: TYPE.label, fontWeight: '700', color: p.primary },
 

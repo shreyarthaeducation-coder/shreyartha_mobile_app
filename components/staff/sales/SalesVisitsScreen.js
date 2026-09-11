@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Image, Pressable, ScrollView, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { WebView } from 'react-native-webview';
-import { FEEDBACK, SLATE, SPACING } from '../../../constants/theme';
+import { FEEDBACK, SLATE, SPACING, TYPE } from '../../../constants/theme';
 import {
   CalendarGrid,
   Card,
@@ -456,8 +456,16 @@ function CheckInSheet({ visible, prefill, onClose, onQueued, onError }) {
       setLocation(fix);
       if (fix.status === 'ok') {
         const resolved = await resolvePincode(fix.latitude, fix.longitude);
-        if (alive && resolved.pincode) {
-          setForm((f) => ({ ...f, pincode: resolved.pincode, resolvedAddress: resolved.address }));
+        // Each field on its own merit. This used to store BOTH only `if (resolved.pincode)`, so a
+        // reverse-geocode that produced a street address but no postal code — the normal shape of
+        // the answer outside a town — threw the address away, and the rep's visit went in with no
+        // record of where they had been beyond the raw coordinates.
+        if (alive && (resolved.pincode || resolved.address)) {
+          setForm((f) => ({
+            ...f,
+            ...(resolved.pincode ? { pincode: resolved.pincode } : {}),
+            ...(resolved.address ? { resolvedAddress: resolved.address } : {}),
+          }));
         }
         // Fetched here rather than at capture time so the thumbnail is already on disk by the
         // time the rep presses the shutter — and null whenever it is not, which is most of the
@@ -558,7 +566,7 @@ function CheckInSheet({ visible, prefill, onClose, onQueued, onError }) {
         </Text>
       ) : (
         <>
-          <LocationBanner location={location} />
+          <LocationBanner location={location} address={form.resolvedAddress} />
           <SchoolPicker school={school} onPress={() => setSearchOpen(true)} />
           <TextField
             label="Pincode"
@@ -684,22 +692,45 @@ function SchoolPicker({ school, onPress }) {
             <Text style={styles.pickerPlaceholder}>Search for the school…</Text>
           )}
         </View>
-        <Ionicons name="search" size={17} color={palette.primary} />
+        <Ionicons name="search" size={19} color={palette.primary} />
       </Pressable>
     </View>
   );
 }
 
-function LocationBanner({ location }) {
+/**
+ * What the rep is told about where they are.
+ *
+ * ── IT USED TO SHOW ONLY AN ACCURACY FIGURE ─────────────────────────────────
+ * "Location captured (±23 m)" and nothing else — no address, no coordinates. The address was
+ * already being resolved on the device and was already being burned into the check-in photograph,
+ * so the one place a rep could read where the app thought they were was by opening the picture
+ * afterwards. These are the same three facts the stamp prints, shown before the shutter instead of
+ * only after it — which is what makes a wrong fix correctable rather than discovered later.
+ */
+function LocationBanner({ location, address }) {
   const styles = useStyles();
   if (!location) {
     return <Text style={[styles.banner, styles.bannerInfo]}>Getting your location…</Text>;
   }
   if (location.status === 'ok') {
     return (
-      <Text style={[styles.banner, styles.bannerOk]}>
-        {`Location captured (±${Math.round(location.accuracy || 0)} m). It is recorded with the visit and cannot be changed later.`}
-      </Text>
+      <View style={[styles.banner, styles.bannerOk]}>
+        <Text style={styles.bannerOkText}>
+          {`Location captured (±${Math.round(location.accuracy || 0)} m). It is recorded with the visit and cannot be changed later.`}
+        </Text>
+        {/* Absent rather than a placeholder while the geocoder is still working, and absent for
+            good if it never answers — a coordinate pair is a fact, an invented address is not. */}
+        {address ? (
+          <Text style={styles.bannerAddress} numberOfLines={3}>
+            {address}
+          </Text>
+        ) : null}
+        {/* Six decimal places, matching the photo stamp, so the two can be compared at a glance. */}
+        <Text style={styles.bannerCoords}>
+          {`${Number(location.latitude).toFixed(6)}, ${Number(location.longitude).toFixed(6)}`}
+        </Text>
+      </View>
     );
   }
   return (
@@ -882,6 +913,25 @@ function VisitDetailSheet({ visit, leadLabel, onClose, onSaved, onError }) {
       <Text style={styles.meta}>Checked in {dateTime(visit.checkInAt)}</Text>
       {/* A work-from-home day has no school, so it has no pincode, nobody met and no reading. */}
       {!remote ? <Text style={styles.meta}>Pincode {visit.pincode || '—'}</Text> : null}
+
+      {/* WHERE THE VISIT ACTUALLY WAS.
+          `resolvedAddress` has been stored on every visit and returned by SalesVisitService.toMap
+          since the module was built, and was read by nothing — the only place a rep could see it
+          was inside the check-in photograph. The coordinates and accuracy were likewise reachable
+          only through the map embed. All three are facts about a record the rep cannot edit
+          afterwards, so they belong on the sheet that shows that record. */}
+      {!remote && visit.resolvedAddress ? (
+        <Text style={styles.detailAddress}>{visit.resolvedAddress}</Text>
+      ) : null}
+      {!remote && visit.latitude != null && visit.longitude != null ? (
+        <Text style={styles.detailCoords}>
+          {`${Number(visit.latitude).toFixed(6)}, ${Number(visit.longitude).toFixed(6)}`}
+          {visit.accuracyMetres != null
+            ? `  ·  ±${Math.round(visit.accuracyMetres)} m`
+            : ''}
+        </Text>
+      ) : null}
+
       {!remote && visit.metPersonName ? (
         <Text style={styles.meta}>
           {`Met ${visit.metPersonName}${visit.metPersonDesignation ? ` · ${visit.metPersonDesignation}` : ''}`}
@@ -927,14 +977,14 @@ const useStyles = makeStyles((p) => ({
     borderColor: SLATE[200],
     backgroundColor: '#ffffff',
   },
-  ghostBtnText: { fontWeight: '600', fontSize: 13 },
+  ghostBtnText: { fontWeight: '600', fontSize: TYPE.body },
   primaryBtn: { paddingHorizontal: SPACING.md, paddingVertical: 9, borderRadius: 10 },
-  primaryBtnText: { color: '#ffffff', fontWeight: '700', fontSize: 13 },
+  primaryBtnText: { color: '#ffffff', fontWeight: '700', fontSize: TYPE.body },
 
   legend: { flexDirection: 'row', flexWrap: 'wrap', gap: SPACING.md, marginTop: SPACING.sm },
   legendItem: { flexDirection: 'row', alignItems: 'center', gap: 5 },
   legendDot: { width: 9, height: 9, borderRadius: 5 },
-  legendText: { fontSize: 11.5, color: SLATE[500] },
+  legendText: { fontSize: TYPE.caption, color: SLATE[500] },
 
   visitRow: {
     flexDirection: 'row',
@@ -944,33 +994,62 @@ const useStyles = makeStyles((p) => ({
     borderBottomWidth: 1,
     borderBottomColor: SLATE[100],
   },
-  visitTitle: { fontSize: 14, fontWeight: '600', color: SLATE[800] },
-  meta: { fontSize: 12.5, color: SLATE[500], marginTop: 2 },
+  visitTitle: { fontSize: TYPE.heading, fontWeight: '600', color: SLATE[800] },
+  meta: { fontSize: TYPE.label, color: SLATE[500], marginTop: 2 },
+
+  // Darker and heavier than `meta`: on the detail sheet the address is the answer to "where was
+  // this", not a secondary label beside it.
+  detailAddress: { fontSize: TYPE.label, fontWeight: '700', color: SLATE[800], marginTop: 6 },
+  detailCoords: {
+    fontSize: TYPE.caption,
+    color: SLATE[500],
+    marginTop: 2,
+    fontVariant: ['tabular-nums'],
+  },
 
   banner: {
     borderRadius: 10,
     padding: SPACING.sm,
-    fontSize: 12.5,
+    fontSize: TYPE.label,
     marginBottom: SPACING.sm,
     overflow: 'hidden',
   },
   bannerInfo: { backgroundColor: p.tint, color: p.primaryDark },
-  bannerOk: { backgroundColor: FEEDBACK.successBg, color: FEEDBACK.successText },
-  bannerBad: { backgroundColor: FEEDBACK.errorBg, color: FEEDBACK.errorText },
+  bannerOk: { backgroundColor: FEEDBACK.successBg, color: FEEDBACK.successOnBg },
+  bannerBad: { backgroundColor: FEEDBACK.errorBg, color: FEEDBACK.errorOnBg },
+
+  // The OK banner is a View now, not a Text, because it carries three lines. `banner`'s own
+  // `fontSize`/`color` are inert on a View, so each line restates what it needs — and the ink is
+  // `successOnBg`, not `successText`: theme.js is explicit that the plain variants are tuned for
+  // white and drop to about 3:1 on their own tint, which fails at this size.
+  bannerOkText: { fontSize: TYPE.label, color: FEEDBACK.successOnBg },
+  bannerAddress: {
+    fontSize: TYPE.label,
+    fontWeight: '700',
+    color: FEEDBACK.successOnBg,
+    marginTop: 6,
+  },
+  // Monospaced so the digits line up with the same pair printed on the photo stamp.
+  bannerCoords: {
+    fontSize: TYPE.caption,
+    color: FEEDBACK.successOnBg,
+    marginTop: 2,
+    fontVariant: ['tabular-nums'],
+  },
 
   fieldLabel: {
-    fontSize: 12.5,
+    fontSize: TYPE.label,
     fontWeight: '600',
     color: SLATE[600],
     marginBottom: 6,
     marginTop: SPACING.sm,
   },
-  hint: { fontSize: 11.5, color: SLATE[400], marginTop: 4 },
+  hint: { fontSize: TYPE.caption, color: SLATE[500], marginTop: 4 },
 
   // ── Follow-up rail ────────────────────────────────────────────────────────
   railWrap: { marginBottom: SPACING.md },
   railTitle: {
-    fontSize: 12,
+    fontSize: TYPE.label,
     fontWeight: '700',
     color: SLATE[500],
     textTransform: 'uppercase',
@@ -986,8 +1065,8 @@ const useStyles = makeStyles((p) => ({
     borderColor: SLATE[200],
     padding: 12,
   },
-  railName: { fontSize: 14, fontWeight: '700', color: SLATE[800] },
-  railMeta: { fontSize: 11.5, color: SLATE[500], marginTop: 2 },
+  railName: { fontSize: TYPE.heading, fontWeight: '700', color: SLATE[800] },
+  railMeta: { fontSize: TYPE.caption, color: SLATE[500], marginTop: 2 },
   railChip: { marginTop: 6, alignSelf: 'flex-start' },
 
   // ── School picker (opens the search sheet) ────────────────────────────────
@@ -1004,9 +1083,9 @@ const useStyles = makeStyles((p) => ({
     paddingVertical: 11,
   },
   pickerText: { flex: 1 },
-  pickerName: { fontSize: 15, color: SLATE[900], fontWeight: '600' },
-  pickerMeta: { fontSize: 12, color: SLATE[500], marginTop: 2 },
-  pickerPlaceholder: { fontSize: 15, color: SLATE[400] },
+  pickerName: { fontSize: TYPE.heading, color: SLATE[900], fontWeight: '600' },
+  pickerMeta: { fontSize: TYPE.label, color: SLATE[500], marginTop: 2 },
+  pickerPlaceholder: { fontSize: TYPE.heading, color: SLATE[500] },
 
   ratingWrap: { marginBottom: SPACING.sm },
 
@@ -1027,13 +1106,13 @@ const useStyles = makeStyles((p) => ({
     backgroundColor: '#ffffff',
   },
   readingNum: {
-    fontSize: 12,
+    fontSize: TYPE.label,
     fontWeight: '700',
     color: SLATE[500],
     minWidth: 14,
     textAlign: 'center',
   },
-  readingLabel: { fontSize: 13, color: SLATE[600] },
+  readingLabel: { fontSize: TYPE.body, color: SLATE[600] },
   readingTextOn: { color: '#ffffff' },
 
   photoBtn: {
@@ -1044,7 +1123,7 @@ const useStyles = makeStyles((p) => ({
     paddingVertical: 11,
     alignItems: 'center',
   },
-  photoBtnText: { fontSize: 13, fontWeight: '600', color: p.link },
+  photoBtnText: { fontSize: TYPE.body, fontWeight: '600', color: p.link },
   stampWrap: { marginTop: SPACING.sm },
   photoPreview: {
     width: '100%',

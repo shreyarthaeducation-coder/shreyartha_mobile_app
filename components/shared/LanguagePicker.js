@@ -55,7 +55,7 @@ export default function LanguagePicker({ compact = false, tone = 'dark' }) {
   // stylesheet. `palette.onDark` exists only on the student palette; on parent and school it is
   // undefined, which React Native renders as its default BLACK on a light sheet — legible by luck
   // rather than by design, and invisible on the dark one if the tones were ever swapped.
-  const muted = light ? SLATE[400] : palette.onDark;
+  const muted = light ? SLATE[500] : palette.onDark;
 
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
@@ -93,7 +93,7 @@ export default function LanguagePicker({ compact = false, tone = 'dark' }) {
         accessibilityRole="button"
         accessibilityLabel={`Change language. Current language ${language?.englishName || 'English'}`}
       >
-        <Ionicons name="globe-outline" size={16} color={palette.primary} />
+        <Ionicons name="globe-outline" size={18} color={palette.primary} />
         {/* The label collapses to just the language name on a narrow bar, but the globe and the
             caret stay — they are what makes it read as a picker rather than a status line. */}
         {!compact ? (
@@ -105,7 +105,7 @@ export default function LanguagePicker({ compact = false, tone = 'dark' }) {
         {isTranslating ? (
           <ActivityIndicator size="small" color={palette.primary} />
         ) : (
-          <Ionicons name="chevron-down" size={14} color={palette.primary} />
+          <Ionicons name="chevron-down" size={16} color={palette.primary} />
         )}
       </Pressable>
 
@@ -120,7 +120,7 @@ export default function LanguagePicker({ compact = false, tone = 'dark' }) {
             </Text>
 
             <View style={[styles.searchRow, light && styles.searchRowLight]}>
-              <Ionicons name="search" size={16} color={muted} />
+              <Ionicons name="search" size={18} color={muted} />
               <TextInput
                 style={[styles.searchInput, light && styles.searchInputLight]}
                 value={query}
@@ -132,7 +132,7 @@ export default function LanguagePicker({ compact = false, tone = 'dark' }) {
               />
               {query ? (
                 <Pressable onPress={() => setQuery('')} hitSlop={8} accessibilityLabel="Clear search">
-                  <Ionicons name="close-circle" size={17} color={muted} />
+                  <Ionicons name="close-circle" size={19} color={muted} />
                 </Pressable>
               ) : null}
             </View>

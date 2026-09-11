@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { COLORS, SPACING, SHADOWS, FONTS } from '../../constants/theme';
+import { COLORS, FONTS, SHADOWS, SPACING, TYPE } from '../../constants/theme';
 
 export default function FeatureCard({ icon, title, description, backgroundColor, iconColor }) {
   return (
@@ -35,7 +35,7 @@ const styles = StyleSheet.create({
   },
   title: {
     ...FONTS.bold,
-    fontSize: 14,
+    fontSize: TYPE.body,
     marginBottom: SPACING.xs,
     color: COLORS.secondary,
   },

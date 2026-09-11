@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { DONE, FEEDBACK, QUIZ, SLATE, SPACING, TYPE } from '../../../constants/theme';
+import { DONE, FEEDBACK, QUIZ, SLATE, SPACING, TYPE, leading } from '../../../constants/theme';
 import { usePalette } from '../../ui/PaletteContext';
 import { makeStyles } from '../../../utils/makeStyles';
 import { EmptyState, GroupedBars, useToast } from '../../ui';
@@ -399,11 +399,11 @@ export default function PracticeZoneScreen() {
                 accessibilityHint={locked ? LEVEL_LOCK_HINTS[l.key] : undefined}
               >
                 {locked ? (
-                  <Ionicons name="lock-closed" size={12} color={palette.onDark} />
+                  <Ionicons name="lock-closed" size={12} color={SLATE[600]} />
                 ) : null}
                 <Text style={[styles.levelText, on && styles.levelTextOn]}>{l.label}</Text>
                 {done?.passed ? (
-                  <Ionicons name="checkmark-circle" size={13} color={on ? palette.onPrimary : DONE} />
+                  <Ionicons name="checkmark-circle" size={15} color={on ? palette.onPrimary : DONE} />
                 ) : null}
                 {done ? (
                   <Text style={[styles.levelScore, on && styles.levelTextOn]}>{done.score}%</Text>
@@ -422,7 +422,7 @@ export default function PracticeZoneScreen() {
             style={({ pressed }) => [styles.adaptiveBtn, pressed && styles.pressed]}
             accessibilityRole="button"
           >
-            <Ionicons name="flash-outline" size={16} color={palette.onPrimary} />
+            <Ionicons name="flash-outline" size={18} color={palette.onPrimary} />
             <Text style={styles.adaptiveText}>Take the adaptive assessment</Text>
           </Pressable>
         ) : null}
@@ -459,7 +459,7 @@ export default function PracticeZoneScreen() {
               <Text style={styles.subjectName}>{subject.name}</Text>
               <Ionicons
                 name={subjectOpen ? 'chevron-up' : 'chevron-down'}
-                size={16}
+                size={18}
                 color={palette.deep}
               />
             </Pressable>
@@ -476,7 +476,7 @@ export default function PracticeZoneScreen() {
                         accessibilityRole="button"
                       >
                         <Text style={styles.chapterName}>{chapter.name}</Text>
-                        <Ionicons name={chapterOpen ? 'remove' : 'add'} size={15} color={SLATE[500]} />
+                        <Ionicons name={chapterOpen ? 'remove' : 'add'} size={17} color={SLATE[500]} />
                       </Pressable>
                       {chapterOpen
                         ? topics.map((t) => {
@@ -494,7 +494,7 @@ export default function PracticeZoneScreen() {
                               >
                                 <Ionicons
                                   name={locked ? 'lock-closed' : 'barbell-outline'}
-                                  size={13}
+                                  size={15}
                                   color={locked ? SLATE[400] : palette.deep}
                                 />
                                 <Text style={styles.topicName}>{t.name}</Text>
@@ -534,7 +534,7 @@ export default function PracticeZoneScreen() {
           accessibilityRole="button"
           accessibilityLabel="Back"
         >
-          <Ionicons name="arrow-back" size={14} color={palette.onDark} />
+          <Ionicons name="arrow-back" size={16} color={SLATE[600]} />
           <Text style={styles.crumbText} numberOfLines={1}>
             {[topic.subjectName, topic.chapterName, topic.name].filter(Boolean).join(' › ')}
           </Text>
@@ -547,7 +547,8 @@ export default function PracticeZoneScreen() {
 }
 
 const useStyles = makeStyles((p) => ({
-  loader: { marginVertical: SPACING.xl },
+  loader: { marginVertical: SPACING.xl },
+
 
   crumb: {
     flexDirection: 'row',
@@ -556,12 +557,12 @@ const useStyles = makeStyles((p) => ({
     paddingVertical: 8,
     paddingHorizontal: 12,
     borderRadius: 999,
-    backgroundColor: p.glass,
+    backgroundColor: '#ffffff',
     borderWidth: 1,
-    borderColor: p.glassBorder,
+    borderColor: SLATE[200],
     marginBottom: SPACING.md,
   },
-  crumbText: { flex: 1, fontSize: TYPE.label, fontWeight: '600', color: p.onDark },
+  crumbText: { flex: 1, fontSize: TYPE.label, fontWeight: '600', color: SLATE[600] },
 
   rowHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
   subjectName: { flex: 1, fontSize: TYPE.heading, fontWeight: '700', color: SLATE[800] },
@@ -584,15 +585,15 @@ const useStyles = makeStyles((p) => ({
     paddingVertical: 8,
     paddingHorizontal: 15,
     borderRadius: 999,
-    backgroundColor: 'rgba(255,255,255,0.14)',
+    backgroundColor: SLATE[100],
     borderWidth: 1,
     borderColor: p.headerBorder,
   },
   levelOn: { backgroundColor: p.primary, borderColor: p.primary },
   levelLocked: { opacity: 0.5 },
-  levelText: { fontSize: TYPE.label, fontWeight: '600', color: p.onDark },
+  levelText: { fontSize: TYPE.label, fontWeight: '600', color: SLATE[600] },
   levelTextOn: { color: p.onPrimary },
-  levelScore: { fontSize: TYPE.caption, fontWeight: '800', color: p.onDark },
+  levelScore: { fontSize: TYPE.caption, fontWeight: '800', color: SLATE[600] },
 
   adaptiveBtn: {
     flexDirection: 'row',
@@ -622,16 +623,16 @@ const useStyles = makeStyles((p) => ({
   optionPicked: { backgroundColor: p.tint, borderColor: p.primary },
   optionCorrect: { backgroundColor: QUIZ.correctBg, borderColor: QUIZ.correctBorder },
   optionWrong: { backgroundColor: QUIZ.wrongBg, borderColor: QUIZ.wrongBorder },
-  optionKey: { fontSize: TYPE.label, fontWeight: '800', color: SLATE[500], width: 15 },
+  optionKey: { fontSize: TYPE.label, fontWeight: '800', color: SLATE[500], minWidth: 15 },
   optionBody: { flex: 1 },
-  optionText: { fontSize: TYPE.body, color: SLATE[700], lineHeight: 19 },
+  optionText: { fontSize: TYPE.body, color: SLATE[700], lineHeight: leading(TYPE.body) },
 
   scoreValue: { fontSize: TYPE.figure, fontWeight: '800', color: p.primaryDark, textAlign: 'center' },
-  scoreMax: { fontSize: TYPE.title, fontWeight: '600', color: SLATE[400] },
+  scoreMax: { fontSize: TYPE.title, fontWeight: '600', color: SLATE[500] },
   scorePct: { fontSize: TYPE.body, fontWeight: '700', color: SLATE[500], textAlign: 'center' },
   scorePass: { color: FEEDBACK.successText },
   remarkTitle: { fontSize: TYPE.body, fontWeight: '700', color: SLATE[800], marginTop: SPACING.sm },
-  remarkText: { fontSize: TYPE.label, color: SLATE[600], lineHeight: 19, marginTop: 3 },
+  remarkText: { fontSize: TYPE.label, color: SLATE[600], lineHeight: leading(TYPE.label), marginTop: 3 },
 
   bloom: { marginTop: SPACING.md },
   bloomName: { flex: 1, fontSize: TYPE.label, fontWeight: '700', color: SLATE[800] },
@@ -654,7 +655,7 @@ const useStyles = makeStyles((p) => ({
     marginTop: 4,
   },
   fill: { height: '100%', borderRadius: 4, backgroundColor: p.primaryDark },
-  bloomRemark: { fontSize: TYPE.caption, color: SLATE[500], lineHeight: 17, marginTop: 4 },
+  bloomRemark: { fontSize: TYPE.caption, color: SLATE[500], lineHeight: leading(TYPE.caption), marginTop: 4 },
 
   primary: {
     alignItems: 'center',

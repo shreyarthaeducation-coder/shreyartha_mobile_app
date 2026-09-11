@@ -1,7 +1,7 @@
 import { useCallback, useState } from 'react';
 import { ActivityIndicator, Pressable, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { FEEDBACK, RECORDING, SLATE, SPACING, TYPE } from '../../../constants/theme';
+import { FEEDBACK, RECORDING, SLATE, SPACING, TYPE, leading } from '../../../constants/theme';
 import { makeStyles } from '../../../utils/makeStyles';
 import { StudentCard, StudentCardTitle } from '../StudentCard';
 import useVoiceRecorder from '../../../hooks/useVoiceRecorder';
@@ -193,7 +193,7 @@ export default function RecordYourVoice({ topicId, referenceText, onSaved, showT
 }
 
 const useStyles = makeStyles((p) => ({
-  reference: { fontSize: TYPE.title, color: SLATE[800], lineHeight: 25 },
+  reference: { fontSize: TYPE.title, color: SLATE[800], lineHeight: leading(TYPE.title) },
 
   recordRow: { flexDirection: 'row', alignItems: 'center', gap: SPACING.md },
   recordBtn: {
@@ -208,11 +208,11 @@ const useStyles = makeStyles((p) => ({
   recordBtnOff: { backgroundColor: SLATE[400] },
   recordText: { flex: 1 },
   recordLabel: { fontSize: TYPE.heading, fontWeight: '700', color: SLATE[800] },
-  recordHint: { fontSize: TYPE.caption, color: SLATE[500], lineHeight: 17, marginTop: 2 },
-  error: { fontSize: TYPE.label, color: FEEDBACK.errorText, lineHeight: 18, marginTop: SPACING.sm },
+  recordHint: { fontSize: TYPE.caption, color: SLATE[500], lineHeight: leading(TYPE.caption), marginTop: 2 },
+  error: { fontSize: TYPE.label, color: FEEDBACK.errorText, lineHeight: leading(TYPE.label), marginTop: SPACING.sm },
 
   overall: { fontSize: TYPE.figure, fontWeight: '800', textAlign: 'center' },
-  overallMax: { fontSize: TYPE.title, fontWeight: '600', color: SLATE[400] },
+  overallMax: { fontSize: TYPE.title, fontWeight: '600', color: SLATE[500] },
   overallLabel: {
     fontSize: TYPE.caption,
     fontWeight: '700',
@@ -238,8 +238,8 @@ const useStyles = makeStyles((p) => ({
 
   wordWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
   word: { fontSize: TYPE.heading, fontWeight: '600' },
-  recognized: { fontSize: TYPE.heading, color: SLATE[700], lineHeight: 21 },
-  legend: { fontSize: TYPE.caption, color: SLATE[400], marginTop: SPACING.sm },
+  recognized: { fontSize: TYPE.heading, color: SLATE[700], lineHeight: leading(TYPE.heading) },
+  legend: { fontSize: TYPE.caption, color: SLATE[500], marginTop: SPACING.sm },
 
   pressed: { opacity: 0.78 },
 }));

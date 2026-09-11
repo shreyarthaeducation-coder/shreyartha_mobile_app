@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { Ionicons } from '@expo/vector-icons';
-import { SLATE, SPACING } from '../../constants/theme';
+import { SLATE, SPACING, TYPE } from '../../constants/theme';
 import { usePalette } from './PaletteContext';
 import { formatLongDate, parseLocalDateTime, toIsoDate, toLocalDateTimeString } from '../../utils/dates';
 
@@ -102,7 +102,7 @@ export default function DateTimeField({
           accessibilityRole="button"
           accessibilityLabel={`${label || 'Date'}: ${display}`}
         >
-          <Ionicons name="calendar-outline" size={17} color={SLATE[500]} />
+          <Ionicons name="calendar-outline" size={19} color={SLATE[500]} />
           <Text style={[styles.value, !current && styles.placeholder]} numberOfLines={1}>
             {display}
           </Text>
@@ -117,7 +117,7 @@ export default function DateTimeField({
             accessibilityRole="button"
             accessibilityLabel={`Clear ${label || 'date'}`}
           >
-            <Ionicons name="close" size={17} color={SLATE[500]} />
+            <Ionicons name="close" size={19} color={SLATE[500]} />
           </Pressable>
         ) : null}
       </View>
@@ -178,7 +178,7 @@ function timeLabel(date) {
 
 const styles = StyleSheet.create({
   wrap: { marginBottom: SPACING.md },
-  label: { fontSize: 13, fontWeight: '600', color: SLATE[700], marginBottom: 6 },
+  label: { fontSize: TYPE.body, fontWeight: '600', color: SLATE[700], marginBottom: 6 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   field: {
     flex: 1,
@@ -194,8 +194,8 @@ const styles = StyleSheet.create({
   },
   disabled: { opacity: 0.5 },
   pressed: { opacity: 0.75 },
-  value: { flex: 1, fontSize: 14.5, color: SLATE[900] },
-  placeholder: { color: SLATE[400] },
+  value: { flex: 1, fontSize: TYPE.heading, color: SLATE[900] },
+  placeholder: { color: SLATE[600] },
   clearBtn: {
     width: 38,
     height: 44,
@@ -204,7 +204,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     backgroundColor: SLATE[100],
   },
-  helper: { marginTop: 5, fontSize: 12, color: SLATE[500] },
+  helper: { marginTop: 5, fontSize: TYPE.label, color: SLATE[500] },
 
   iosWrap: { marginTop: SPACING.sm, backgroundColor: SLATE[50], borderRadius: 12 },
   iosActions: { flexDirection: 'row', gap: SPACING.sm, padding: SPACING.sm },
@@ -216,6 +216,6 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     backgroundColor: SLATE[200],
   },
-  iosCancel: { fontSize: 14, fontWeight: '700', color: SLATE[700] },
-  iosDone: { fontSize: 14, fontWeight: '700', color: '#ffffff' },
+  iosCancel: { fontSize: TYPE.heading, fontWeight: '700', color: SLATE[700] },
+  iosDone: { fontSize: TYPE.heading, fontWeight: '700', color: '#ffffff' },
 });

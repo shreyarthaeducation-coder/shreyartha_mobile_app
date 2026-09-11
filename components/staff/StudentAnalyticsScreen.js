@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useState } from 'react';
 import { ActivityIndicator, Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { PORTALS, SLATE, SPACING } from '../../constants/theme';
+import { PORTALS, SLATE, SPACING, TYPE, leading } from '../../constants/theme';
 import {
   Card,
   CardTitle,
@@ -286,7 +286,7 @@ export default function StudentAnalyticsScreen({ homeRoute = '/teacher' }) {
                         {count > 0 ? (
                           <Ionicons
                             name={open ? 'chevron-up' : 'chevron-down'}
-                            size={16}
+                            size={18}
                             color={SLATE[400]}
                           />
                         ) : null}
@@ -312,7 +312,7 @@ export default function StudentAnalyticsScreen({ homeRoute = '/teacher' }) {
                                   </Text>
                                 ) : null}
                               </View>
-                              <Ionicons name="add-circle-outline" size={18} color={PALETTE.primaryDark} />
+                              <Ionicons name="add-circle-outline" size={20} color={PALETTE.primaryDark} />
                             </Pressable>
                           ))
                         : null}
@@ -420,7 +420,7 @@ export default function StudentAnalyticsScreen({ homeRoute = '/teacher' }) {
                   style={({ pressed }) => [styles.fileBtn, pressed && styles.pressed]}
                   accessibilityRole="button"
                 >
-                  <Ionicons name="attach-outline" size={18} color={PALETTE.primaryDark} />
+                  <Ionicons name="attach-outline" size={20} color={PALETTE.primaryDark} />
                   <Text style={styles.fileText} numberOfLines={1}>
                     {form.file
                       ? `${form.file.name}${form.file.size ? ` · ${formatFileSize(form.file.size)}` : ''}`
@@ -454,14 +454,14 @@ const styles = StyleSheet.create({
     backgroundColor: '#ffffff',
     maxWidth: 200,
   },
-  studentChipText: { fontSize: 13, fontWeight: '600', color: SLATE[600] },
-  hint: { fontSize: 13, color: SLATE[500], textAlign: 'center', paddingVertical: SPACING.lg },
-  empty: { fontSize: 12.5, color: SLATE[400], fontStyle: 'italic' },
+  studentChipText: { fontSize: TYPE.body, fontWeight: '600', color: SLATE[600] },
+  hint: { fontSize: TYPE.body, color: SLATE[500], textAlign: 'center', paddingVertical: SPACING.lg },
+  empty: { fontSize: TYPE.label, color: SLATE[500], fontStyle: 'italic' },
 
   overview: { flexDirection: 'row', alignItems: 'center', gap: SPACING.md },
   overviewStats: { flex: 1, gap: SPACING.sm },
   ratingRow: {},
-  ratingNote: { fontSize: 11, color: SLATE[400], marginTop: 2 },
+  ratingNote: { fontSize: TYPE.caption, color: SLATE[500], marginTop: 2 },
 
   gapRow: {
     flexDirection: 'row',
@@ -472,9 +472,9 @@ const styles = StyleSheet.create({
     borderTopColor: SLATE[100],
   },
   gapDot: { width: 10, height: 10, borderRadius: 5 },
-  gapLabel: { flex: 1, fontSize: 14, fontWeight: '600', color: SLATE[700] },
+  gapLabel: { flex: 1, fontSize: TYPE.heading, fontWeight: '600', color: SLATE[700] },
   gapCount: { minWidth: 28, paddingHorizontal: 8, paddingVertical: 2, borderRadius: 999, alignItems: 'center' },
-  gapCountText: { fontSize: 12, fontWeight: '800' },
+  gapCountText: { fontSize: TYPE.label, fontWeight: '800' },
 
   topicRow: {
     flexDirection: 'row',
@@ -486,26 +486,26 @@ const styles = StyleSheet.create({
     borderTopColor: SLATE[100],
   },
   topicText: { flex: 1 },
-  topicName: { fontSize: 13, color: SLATE[700], fontWeight: '600' },
-  topicMeta: { fontSize: 11, color: SLATE[400], marginTop: 1 },
+  topicName: { fontSize: TYPE.body, color: SLATE[700], fontWeight: '600' },
+  topicMeta: { fontSize: TYPE.caption, color: SLATE[500], marginTop: 1 },
 
   remarkRow: { paddingVertical: 6, borderTopWidth: 1, borderTopColor: SLATE[100] },
-  remarkKey: { fontSize: 11, fontWeight: '700', color: SLATE[500], textTransform: 'uppercase' },
-  remarkText: { fontSize: 13, color: SLATE[700], marginTop: 2, lineHeight: 18 },
+  remarkKey: { fontSize: TYPE.caption, fontWeight: '700', color: SLATE[500], textTransform: 'uppercase' },
+  remarkText: { fontSize: TYPE.body, color: SLATE[700], marginTop: 2, lineHeight: leading(TYPE.body) },
 
   existing: { padding: SPACING.sm, borderRadius: 10, backgroundColor: SLATE[50], marginBottom: SPACING.md },
   existingTitle: {
-    fontSize: 11,
+    fontSize: TYPE.caption,
     fontWeight: '800',
     color: SLATE[500],
     textTransform: 'uppercase',
     letterSpacing: 0.4,
   },
   existingRow: { flexDirection: 'row', alignItems: 'center', gap: SPACING.sm, paddingVertical: 6 },
-  existingName: { flex: 1, fontSize: 13, color: SLATE[700], fontWeight: '600' },
-  existingType: { fontSize: 11, color: SLATE[500], fontWeight: '700' },
+  existingName: { flex: 1, fontSize: TYPE.body, color: SLATE[700], fontWeight: '600' },
+  existingType: { fontSize: TYPE.caption, color: SLATE[500], fontWeight: '700' },
 
-  fileLabel: { fontSize: 13, fontWeight: '600', color: SLATE[700], marginBottom: 6 },
+  fileLabel: { fontSize: TYPE.body, fontWeight: '600', color: SLATE[700], marginBottom: 6 },
   fileBtn: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -518,7 +518,7 @@ const styles = StyleSheet.create({
     paddingVertical: 13,
     marginBottom: SPACING.md,
   },
-  fileText: { flex: 1, fontSize: 14, color: SLATE[700] },
+  fileText: { flex: 1, fontSize: TYPE.body, color: SLATE[700] },
   multiline: { height: 76, textAlignVertical: 'top' },
 
   pressed: { opacity: 0.72 },

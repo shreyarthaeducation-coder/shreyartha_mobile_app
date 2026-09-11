@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { COLORS, SPACING, FONTS } from '../../constants/theme';
+import { COLORS, FONTS, SPACING, TYPE, leading } from '../../constants/theme';
 
 export default function SectionHeader({ title, subtitle }) {
   return (
@@ -19,14 +19,14 @@ const styles = StyleSheet.create({
   },
   title: {
     ...FONTS.title,
-    fontSize: 20,
+    fontSize: TYPE.headline,
     color: COLORS.secondary,
     marginBottom: SPACING.xs,
   },
   subtitle: {
     ...FONTS.subtitle,
-    fontSize: 14,
+    fontSize: TYPE.body,
     color: COLORS.textSecondary,
-    lineHeight: 20,
+    lineHeight: leading(TYPE.body),
   },
 });

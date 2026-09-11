@@ -11,7 +11,7 @@ import {
   View,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { SHADOWS, SLATE, SPACING } from '../../constants/theme';
+import { SHADOWS, SLATE, SPACING, TYPE } from '../../constants/theme';
 import { usePalette } from '../../components/ui/PaletteContext';
 import {
   Card,
@@ -314,7 +314,7 @@ export default function LiveClassesScreen({
             style={({ pressed }) => [styles.joinBtn, pressed && styles.pressed]}
             accessibilityRole="button"
           >
-            <Ionicons name="videocam" size={16} color="#ffffff" />
+            <Ionicons name="videocam" size={18} color="#ffffff" />
             <Text style={styles.joinText}>Join Google Meet</Text>
           </Pressable>
         ) : (
@@ -345,7 +345,7 @@ export default function LiveClassesScreen({
                 style={({ pressed }) => [styles.actionBtn, pressed && styles.pressed]}
                 accessibilityRole="button"
               >
-                <Ionicons name="paper-plane-outline" size={14} color={PALETTE.primaryDark} />
+                <Ionicons name="paper-plane-outline" size={16} color={PALETTE.primaryDark} />
                 <Text style={styles.actionText}>Notify</Text>
               </Pressable>
             ) : null}
@@ -427,7 +427,7 @@ export default function LiveClassesScreen({
                   style={({ pressed }) => [styles.joinBtn, pressed && styles.pressed]}
                   accessibilityRole="button"
                 >
-                  <Ionicons name="videocam" size={16} color="#ffffff" />
+                  <Ionicons name="videocam" size={18} color="#ffffff" />
                   <Text style={styles.joinText}>Join Google Meet</Text>
                 </Pressable>
               ) : (
@@ -497,7 +497,7 @@ export default function LiveClassesScreen({
                 ]}
                 accessibilityRole="button"
               >
-                <Ionicons name="chevron-back" size={16} color={SLATE[600]} />
+                <Ionicons name="chevron-back" size={18} color={SLATE[600]} />
               </Pressable>
               <Text style={styles.pagerText}>
                 Page {page + 1} of {totalPages}
@@ -512,7 +512,7 @@ export default function LiveClassesScreen({
                 ]}
                 accessibilityRole="button"
               >
-                <Ionicons name="chevron-forward" size={16} color={SLATE[600]} />
+                <Ionicons name="chevron-forward" size={18} color={SLATE[600]} />
               </Pressable>
             </View>
           ) : null
@@ -692,8 +692,8 @@ const useStyles = makeStyles((p) => ({
 
   sessionHead: { flexDirection: 'row', alignItems: 'flex-start', gap: SPACING.sm },
   sessionText: { flex: 1 },
-  sessionDate: { fontSize: 14.5, fontWeight: '700', color: SLATE[800] },
-  sessionMeta: { fontSize: 12, color: SLATE[500], marginTop: 2 },
+  sessionDate: { fontSize: TYPE.heading, fontWeight: '700', color: SLATE[800] },
+  sessionMeta: { fontSize: TYPE.label, color: SLATE[500], marginTop: 2 },
   sessionBusy: { marginTop: SPACING.sm },
   sessionActions: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: SPACING.sm },
   actionBtn: {
@@ -707,7 +707,7 @@ const useStyles = makeStyles((p) => ({
     borderColor: SLATE[200],
     backgroundColor: SLATE[50],
   },
-  actionText: { fontSize: 12.5, fontWeight: '700', color: p.primaryDark },
+  actionText: { fontSize: TYPE.label, fontWeight: '700', color: p.primaryDark },
 
   joinBtn: {
     flexDirection: 'row',
@@ -719,11 +719,11 @@ const useStyles = makeStyles((p) => ({
     borderRadius: 10,
     backgroundColor: p.primaryDark,
   },
-  joinText: { fontSize: 14, fontWeight: '700', color: '#ffffff' },
-  noLink: { fontSize: 12, color: SLATE[500], fontStyle: 'italic', marginTop: SPACING.sm },
+  joinText: { fontSize: TYPE.heading, fontWeight: '700', color: '#ffffff' },
+  noLink: { fontSize: TYPE.label, color: SLATE[500], fontStyle: 'italic', marginTop: SPACING.sm },
 
   pill: { paddingHorizontal: 9, paddingVertical: 3, borderRadius: 999 },
-  pillText: { fontSize: 11, fontWeight: '800' },
+  pillText: { fontSize: TYPE.caption, fontWeight: '800' },
 
   pager: {
     flexDirection: 'row',
@@ -741,11 +741,11 @@ const useStyles = makeStyles((p) => ({
     backgroundColor: SLATE[100],
   },
   pagerDisabled: { opacity: 0.4 },
-  pagerText: { fontSize: 13, fontWeight: '700', color: SLATE[600] },
+  pagerText: { fontSize: TYPE.body, fontWeight: '700', color: SLATE[600] },
 
   calendarDay: { marginBottom: SPACING.md },
   calendarDate: {
-    fontSize: 12,
+    fontSize: TYPE.label,
     fontWeight: '800',
     color: SLATE[500],
     textTransform: 'uppercase',
@@ -765,8 +765,8 @@ const useStyles = makeStyles((p) => ({
     marginBottom: 6,
     ...SHADOWS.sm,
   },
-  calendarTime: { fontSize: 13, fontWeight: '800', color: p.primaryDark, width: 70 },
-  calendarClass: { flex: 1, fontSize: 13, color: SLATE[700] },
+  calendarTime: { fontSize: TYPE.body, fontWeight: '800', color: p.primaryDark, minWidth: 70 },
+  calendarClass: { flex: 1, fontSize: TYPE.body, color: SLATE[700] },
 
   rosterHead: {
     flexDirection: 'row',
@@ -775,8 +775,8 @@ const useStyles = makeStyles((p) => ({
     marginTop: SPACING.sm,
     marginBottom: 6,
   },
-  rosterTitle: { fontSize: 13, fontWeight: '700', color: SLATE[700] },
-  rosterToggle: { fontSize: 12.5, fontWeight: '700', color: p.primaryDark },
+  rosterTitle: { fontSize: TYPE.body, fontWeight: '700', color: SLATE[700] },
+  rosterToggle: { fontSize: TYPE.label, fontWeight: '700', color: p.primaryDark },
   rosterRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -785,9 +785,9 @@ const useStyles = makeStyles((p) => ({
     borderBottomWidth: 1,
     borderBottomColor: SLATE[100],
   },
-  rosterName: { flex: 1, fontSize: 14, color: SLATE[800] },
-  rosterSection: { fontSize: 11.5, color: SLATE[500], fontWeight: '600' },
-  rosterEmpty: { fontSize: 12.5, color: SLATE[400], fontStyle: 'italic', paddingVertical: 8 },
+  rosterName: { flex: 1, fontSize: TYPE.body, color: SLATE[800] },
+  rosterSection: { fontSize: TYPE.caption, color: SLATE[500], fontWeight: '600' },
+  rosterEmpty: { fontSize: TYPE.label, color: SLATE[500], fontStyle: 'italic', paddingVertical: 8 },
 
   pressed: { opacity: 0.72 },
 }));

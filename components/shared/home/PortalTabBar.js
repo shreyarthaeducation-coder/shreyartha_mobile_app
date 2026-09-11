@@ -101,6 +101,7 @@ export const SHREYARTHA_TEACHER_TABS = [
  */
 export const COUNSELOR_TABS = [
   { key: 'home', label: 'Home', icon: 'home', iconOff: 'home-outline', route: '/staff/counselor' },
+  { key: 'counsellorReport', label: 'Reports', icon: 'document-text', iconOff: 'document-text-outline', route: '/staff/counselor/counsellor-report' },
   { key: 'support', label: 'Support', icon: 'headset', iconOff: 'headset-outline', route: '/staff/counselor/support' },
   { key: 'profile', label: 'Profile', icon: 'person', iconOff: 'person-outline', route: '/staff/counselor/profile' },
 ];
@@ -119,6 +120,7 @@ export const COUNSELOR_TABS = [
  */
 export const SHREYARTHA_COUNCELLOR_TABS = [
   { key: 'home', label: 'Home', icon: 'home', iconOff: 'home-outline', route: '/staff/shreyartha_councellor' },
+  { key: 'counsellorReport', label: 'Reports', icon: 'document-text', iconOff: 'document-text-outline', route: '/staff/shreyartha_councellor/counsellor-report' },
   { key: 'support', label: 'Support', icon: 'headset', iconOff: 'headset-outline', route: '/staff/shreyartha_councellor/support' },
   { key: 'profile', label: 'Profile', icon: 'person', iconOff: 'person-outline', route: '/staff/shreyartha_councellor/profile' },
 ];
@@ -156,7 +158,7 @@ export const PRINCIPAL_TABS = [
  */
 export const SALES_TABS = [
   { key: 'home', label: 'Home', icon: 'home', iconOff: 'home-outline', route: '/staff/sales' },
-  { key: 'visits', label: 'Visits', icon: 'location', iconOff: 'location-outline', route: '/staff/sales/sales-visits' },
+  { key: 'leads', label: 'Leads', icon: 'flag', iconOff: 'flag-outline', route: '/staff/sales/sales-leads' },
   { key: 'support', label: 'Support', icon: 'headset', iconOff: 'headset-outline', route: '/staff/sales/support' },
   { key: 'profile', label: 'Profile', icon: 'person', iconOff: 'person-outline', route: '/staff/sales/profile' },
 ];
@@ -176,6 +178,69 @@ export function staffTabsFor(roleKey) {
   return STAFF_TABS[String(roleKey || '').toLowerCase()] || [];
 }
 
+/**
+ * The raised centre button, per role. Absent = a plain four-tab bar, which is what the other four
+ * staff panels get.
+ *
+ * ══ THE FAB'S ROUTE MUST NOT BE IN THAT ROLE'S `tabs` ══════════════════════
+ * `isTabRoot(pathname, tabs)` is what decides whether the bar renders at all, and every screen it
+ * says yes to must pad itself by `TAB_BAR_HEIGHT + insets.bottom` or its last control sits under
+ * the bar. Adding a FAB destination to `tabs` would put the bar on a screen that never padded for
+ * it. So the sales FAB opens the Visits screen and Visits is NOT a tab — the FAB replaced it,
+ * which is the whole reason the design has one.
+ *
+ * ── SALES: THE MOCKUP'S "MEETINGS" TAB IS NOT HERE ──────────────────────────
+ * There is no meeting API a rep can call — `/api/school/staff-meetings` is SCHOOL_ADMIN or
+ * PRINCIPAL only. Support keeps the fourth slot because `support` is not a menu tile, so this bar
+ * is the help page's ONLY entry point; dropping it would strand the screen.
+ *
+ * ── COUNSELLORS: THE FAB OPENS THE FACE-TO-FACE ROOM ────────────────────────
+ * The mockup's centre button is Mark Visit; there is no counsellor visit backend at all. It opened
+ * the counselling-notes sheet as the nearest real action until the face-to-face room was ported,
+ * and now opens that — the room where a counsellor records a conversation, gets it transcribed and
+ * has the Griffin narrative drafted. That is the thing this role does several times a day, which
+ * is the test this slot has to pass.
+ *
+ * Their second tab is Reports rather than the mockup's "My Schools", for two reasons. My Schools
+ * exists only for the HQ portal (`/api/shreya01/counsellor/schools-classes`) and has no screen of
+ * its own — it feeds an identity row and the Live Counselling scope picker. And Counselling could
+ * not take that slot without colliding with the FAB, which already opens it.
+ */
+export const STAFF_FABS = {
+  sales: { label: 'Mark Visit', icon: 'add', route: '/staff/sales/sales-visits' },
+  counselor: { label: 'Face-to-Face', icon: 'add', route: '/staff/counselor/face-to-face' },
+  shreyartha_councellor: {
+    label: 'Face-to-Face',
+    icon: 'add',
+    route: '/staff/shreyartha_councellor/face-to-face',
+  },
+};
+
+/** The centre button for a staff role, or null. */
+export function staffFabFor(roleKey) {
+  return STAFF_FABS[String(roleKey || '').toLowerCase()] || null;
+}
+
+/**
+ * The teacher's centre button — self-attendance.
+ *
+ * Not in `STAFF_FABS` because the teacher is not one of the `app/staff/[role]` shells; it has its
+ * own group at `app/teacher`, and `staffFabFor` is keyed by the `[role]` URL segment which the
+ * teacher does not have. Same shape, so `PortalTabBar` takes it unchanged.
+ *
+ * ── WHY SELF-ATTENDANCE ─────────────────────────────────────────────────────
+ * It is the thing a teacher does every single morning, and it was two taps deep — Home → My
+ * Attendance → Self Attendance. That is the same test the sales and counsellor buttons pass.
+ *
+ * `/teacher/self-attendance` is NOT in `TEACHER_TABS`, so the rule above holds: the bar never
+ * appears on it, and the screen does not need to pad for one.
+ */
+export const TEACHER_FAB = {
+  label: 'Attendance',
+  icon: 'add',
+  route: '/teacher/self-attendance',
+};
+
 /** Bar height excluding the safe-area inset. The three root screens pad by this plus the inset. */
 export const TAB_BAR_HEIGHT = 62;
 
@@ -189,7 +254,7 @@ export function isTabRoot(pathname, tabs = []) {
   return tabs.some((t) => t.route === pathname);
 }
 
-export default function PortalTabBar({ tabs = [], tone = 'dark' }) {
+export default function PortalTabBar({ tabs = [], tone = 'dark', fab = null }) {
   const styles = useStyles();
   const palette = usePalette();
   const router = useRouter();
@@ -199,11 +264,70 @@ export default function PortalTabBar({ tabs = [], tone = 'dark' }) {
   const light = tone === 'light';
   // The inactive icon colour, like the labels, has no dark token to fall back on outside the
   // student palette — `palette.onDark` is undefined there and the icon would paint black.
-  const idleTint = light ? SLATE[400] : palette.onDark;
+  const idleTint = light ? SLATE[500] : palette.onDark;
+
+  // THE CENTRE SLOT.
+  //
+  // The sales and counsellor designs put the action their holder performs several times a day — a
+  // check-in, a session — on a raised circular button in the middle of the bar.
+  //
+  // ══ WHY TWO HALVES RATHER THAN A SPLICED SLOT ══════════════════════════════
+  // It used to be spliced into the tab row as one extra equal-flex slot. That centres the button
+  // only when the tab count is EVEN: with the counsellor's 4 tabs it is slot 3 of 5, dead centre;
+  // with the teacher's 3 it would be slot 3 of 4, at 62.5% — visibly right of centre and not the
+  // footer the teacher design asks for.
+  //
+  // So the row is now [left half | fab | right half] with each half `flex: 1` and the FAB slot a
+  // FIXED width. Two equal halves either side of a fixed centre puts the button at 50% for ANY tab
+  // count. With an even split this reproduces the old geometry exactly — 4 tabs, a 72px gap and a
+  // 360px bar give tab centres at 36/108 · 180 · 252/324, which is what five equal slots produced —
+  // so the counsellor and sales bars are unchanged. With an odd count the halves hold 2 and 1, which
+  // is the only asymmetry available once the button must be centred.
+  //
+  // Its route is deliberately NOT one of `tabs`: `isTabRoot` is what decides whether this bar
+  // renders at all, and a screen it returns true for must have padded itself by TAB_BAR_HEIGHT.
+  // Adding the FAB's destination to that list would put the bar on a screen that never did.
+  //
+  // With no FAB the flat row is rendered exactly as before — the halves would change tab widths on
+  // every panel that has no centre button.
+  const splitAt = Math.ceil(tabs.length / 2);
 
   return (
     <View style={[styles.bar, light && styles.barLight, { paddingBottom: insets.bottom || SPACING.sm }]}>
-      {tabs.map((tab) => {
+      {fab ? (
+        <>
+          <View style={styles.half}>{tabs.slice(0, splitAt).map(renderTab)}</View>
+
+          <View style={styles.fabSlot}>
+            <Pressable
+              onPress={() => router.push(fab.route)}
+              style={({ pressed }) => [
+                styles.fab,
+                { backgroundColor: palette.primary },
+                pressed && styles.pressed,
+              ]}
+              accessibilityRole="button"
+              accessibilityLabel={fab.label}
+            >
+              <Ionicons name={fab.icon || 'add'} size={26} color="#ffffff" />
+            </Pressable>
+            <Text style={[styles.label, light && styles.labelLight]} numberOfLines={1}>
+              {fab.label}
+            </Text>
+            {/* The same fixed-height placeholder the tabs carry, so the FAB's label sits on the
+                identical baseline as its neighbours' rather than 3px lower. */}
+            <View style={styles.marker} />
+          </View>
+
+          <View style={styles.half}>{tabs.slice(splitAt).map(renderTab)}</View>
+        </>
+      ) : (
+        tabs.map(renderTab)
+      )}
+    </View>
+  );
+
+  function renderTab(tab) {
         const active = pathname === tab.route;
         return (
           <Pressable
@@ -235,9 +359,7 @@ export default function PortalTabBar({ tabs = [], tone = 'dark' }) {
             <View style={[styles.marker, active && styles.markerActive]} />
           </Pressable>
         );
-      })}
-    </View>
-  );
+  }
 }
 
 const useStyles = makeStyles((p) => ({
@@ -277,5 +399,35 @@ const useStyles = makeStyles((p) => ({
   labelActive: { color: p.primary, fontWeight: '800' },
   marker: { height: 3, width: 26, borderRadius: 999, backgroundColor: 'transparent', marginTop: 2 },
   markerActive: { backgroundColor: p.primary },
+
+  // One side of a bar that has a centre button. Two of these, each `flex: 1`, either side of the
+  // fixed-width FAB slot — that is what puts the button at a true 50% for any tab count.
+  half: { flex: 1, flexDirection: 'row', alignItems: 'flex-end' },
+
+  // THE CENTRE SLOT. FIXED width, not `flex: 1`: a flexing centre would be pulled off 50% by
+  // whichever half held more tabs, which is the bug this replaced. 72 is the width one slot had in
+  // the old five-slot counsellor bar, so that bar's geometry is unchanged.
+  //
+  // A View rather than a Pressable — the circle inside it is the control, and making the whole slot
+  // tappable would put a hit area over the gaps between tabs.
+  fabSlot: { width: 72, alignItems: 'center', justifyContent: 'center', gap: 3, minHeight: TOUCH.min },
+  fab: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    alignItems: 'center',
+    justifyContent: 'center',
+    // Lifted above the bar's top edge, as the designs show. The bar is `position: absolute` with
+    // no `overflow: hidden`, so the circle can extend past it.
+    marginTop: -24,
+    borderWidth: 3,
+    borderColor: '#ffffff',
+    shadowColor: '#000',
+    shadowOpacity: 0.2,
+    shadowOffset: { width: 0, height: 3 },
+    shadowRadius: 8,
+    elevation: 6,
+  },
+
   pressed: { opacity: 0.7 },
 }));

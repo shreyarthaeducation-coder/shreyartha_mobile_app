@@ -223,7 +223,10 @@ console.log('\nTeacher verification gate — self-test:');
 function auditParentGate(layout, menu, login) {
   const problems = [];
 
-  if (!/UNVERIFIED_OK/.test(layout) || !/state\.verified/.test(layout)) {
+  // Asserted on the GATE itself. The bare `state.verified` this used to look for now also appears in
+  // the push-registration effect (which only registers a verified session), so deleting the real
+  // gate slipped past — the "layout gate is deleted" mutation went vacuous.
+  if (!/if \(!state\.verified && !UNVERIFIED_OK\.has\(pathname\)\)/.test(layout)) {
     problems.push('layout: no verification gate — twelve routes are ungated');
   } else {
     // The dashboard is what refreshes the flag; gating it strands a mid-session verification.

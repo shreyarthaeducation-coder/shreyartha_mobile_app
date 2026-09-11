@@ -1,7 +1,7 @@
 import { useCallback, useState } from 'react';
 import { ActivityIndicator, Pressable, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { SLATE, SPACING } from '../../constants/theme';
+import { SLATE, SPACING, TYPE, leading } from '../../constants/theme';
 import {
   DateTimeField,
   EmptyState,
@@ -271,12 +271,12 @@ const useStyles = makeStyles((p) => ({
     backgroundColor: '#ffffff',
   },
   cardTop: { flexDirection: 'row', alignItems: 'center', gap: SPACING.sm },
-  name: { flex: 1, fontSize: 14, fontWeight: '700', color: SLATE[800] },
-  subject: { fontSize: 13, fontWeight: '600', color: SLATE[700], marginTop: 3 },
-  preview: { fontSize: 12.5, color: SLATE[500], marginTop: 3, lineHeight: 18 },
+  name: { flex: 1, fontSize: TYPE.heading, fontWeight: '700', color: SLATE[800] },
+  subject: { fontSize: TYPE.body, fontWeight: '600', color: SLATE[700], marginTop: 3 },
+  preview: { fontSize: TYPE.label, color: SLATE[500], marginTop: 3, lineHeight: leading(TYPE.label) },
   cardMeta: { flexDirection: 'row', alignItems: 'center', gap: SPACING.sm, marginTop: 6 },
   mode: {
-    fontSize: 10.5,
+    fontSize: TYPE.micro,
     fontWeight: '700',
     color: p.primaryDark,
     backgroundColor: p.tint,
@@ -285,11 +285,11 @@ const useStyles = makeStyles((p) => ({
     borderRadius: 999,
     overflow: 'hidden',
   },
-  date: { fontSize: 11, color: SLATE[400] },
+  date: { fontSize: TYPE.caption, color: SLATE[500] },
 
   detailBlock: { marginBottom: SPACING.sm, gap: 2 },
-  detail: { fontSize: 12.5, color: SLATE[600] },
-  detailStrong: { fontSize: 12.5, fontWeight: '700', color: p.primaryDark, marginTop: 4 },
+  detail: { fontSize: TYPE.label, color: SLATE[600] },
+  detailStrong: { fontSize: TYPE.label, fontWeight: '700', color: p.primaryDark, marginTop: 4 },
   messageBlock: {
     backgroundColor: SLATE[50],
     borderRadius: 10,
@@ -297,14 +297,14 @@ const useStyles = makeStyles((p) => ({
     marginBottom: SPACING.md,
   },
   messageLabel: {
-    fontSize: 11,
+    fontSize: TYPE.caption,
     fontWeight: '700',
-    color: SLATE[400],
+    color: SLATE[500],
     textTransform: 'uppercase',
     letterSpacing: 0.4,
     marginBottom: 4,
   },
-  message: { fontSize: 13.5, lineHeight: 20, color: SLATE[700] },
+  message: { fontSize: TYPE.body, lineHeight: leading(TYPE.body), color: SLATE[700] },
   solutionInput: { height: 130, textAlignVertical: 'top' },
   noteInput: { height: 80, textAlignVertical: 'top' },
   pressed: { opacity: 0.75 },

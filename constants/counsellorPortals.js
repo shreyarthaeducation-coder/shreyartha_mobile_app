@@ -41,6 +41,20 @@ export const COUNSELLOR_PORTALS = {
     attendance: '/api/counselor/attendance',
     counselling: '/api/counselor/counselling',
     report: '/api/counselor/counsellor-report',
+    /**
+     * The face-to-face room and the counselling-sheet reports it writes.
+     *
+     * ── THESE ARE SIBLINGS, NEVER DERIVED FROM ONE ANOTHER ─────────────────
+     * `activityReports` already ends in `/activity-reports`; `f2f` is a SIBLING of it, not a child.
+     * And neither is a suffix of `report` — look at the Shreyartha column below, where `report` is
+     * `/api/shreya01/counsellor-report` while `activityReports` is
+     * `/api/shreya01/counsellor/activity-reports`: a different segment, not a longer path.
+     *
+     * Deriving one from another compiles, ships, and 404s at runtime. That has happened three
+     * separate times in this feature's history, which is why all four are written out in full.
+     */
+    f2f: '/api/counselor/f2f',
+    activityReports: '/api/counselor/activity-reports',
     /** Root for profile / available-classes / assign-class / class-assignment. */
     profile: '/api/counselor',
     scopeClasses: '/api/counselor/groups/classes',
@@ -61,6 +75,10 @@ export const COUNSELLOR_PORTALS = {
     attendance: '/api/shreya01/counsellor/attendance',
     counselling: '/api/shreya01/counsellor/counselling',
     report: '/api/shreya01/counsellor-report',
+    // Note `report` and `activityReports` differ by SEGMENT, not by suffix — see the note on the
+    // school-bound portal above. This pair is the clearest example of why nothing here is derived.
+    f2f: '/api/shreya01/counsellor/f2f',
+    activityReports: '/api/shreya01/counsellor/activity-reports',
     profile: null, // no profile DTO — the web page lists the school/class scope instead
     surveyIndices: '/api/shreya01/counsellor/survey/indices',
     /** Live Counselling reuses the Live Classes endpoints; only the scope source differs. */

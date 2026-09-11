@@ -189,6 +189,46 @@ function assertions(menu, svc, chat, src) {
   }
   if (!/route: '\/teacher\/support'/.test(tabBar)) bad('the footer has no Support tab');
 
+  // ── THE CENTRE (+) BUTTON — SELF-ATTENDANCE ───────────────────────────────
+  //
+  // Neither checker covered this before it was added: checkstaffdashboard's FAB rules only walk
+  // STAFF_TABS roles, and the teacher is not one of them (it has its own shell at app/teacher).
+  // So every rule the staff FABs are held to had to be restated here.
+  const layoutSrc = codeOnly(src.layout);
+  if (!/TEACHER_FAB/.test(tabBar)) {
+    bad('PortalTabBar exports no TEACHER_FAB — the teacher footer has no centre button');
+  }
+  if (!/fab=\{TEACHER_FAB\}/.test(layoutSrc)) {
+    bad('the teacher layout does not pass the FAB — the button is defined but never rendered');
+  }
+  // THE RULE: a FAB route must NOT also be a tab. `isTabRoot` decides whether the bar renders, and
+  // every screen it says yes to must self-pad by TAB_BAR_HEIGHT — a FAB destination in `tabs` puts
+  // the bar on a screen that never padded for it.
+  const fabRoute = (/TEACHER_FAB = \{[^}]*route: '([^']+)'/.exec(tabBar) || [])[1];
+  if (!fabRoute) bad('TEACHER_FAB declares no route');
+  else {
+    const teacherTabsBlock = (/TEACHER_TABS = \[([\s\S]*?)\];/.exec(tabBar) || [])[1] || '';
+    if (teacherTabsBlock.includes(`route: '${fabRoute}'`)) {
+      bad(`the teacher FAB route ${fabRoute} is ALSO a tab — the bar would cover an unpadded screen`);
+    }
+    const leaf = fabRoute.split('/').pop();
+    if (!routeNames().has(leaf)) {
+      bad(`the teacher FAB opens ${fabRoute}, which has no route file — an Unmatched page`);
+    }
+  }
+  // THE CENTRING. A spliced equal-flex slot only lands at 50% when the tab count is EVEN; the
+  // teacher has three tabs, so it would sit at 62.5%. Two flexed halves either side of a
+  // FIXED-width centre slot is what puts it at 50% for any count.
+  if (/const half = fab \? Math\.ceil/.test(tabBar)) {
+    bad('the FAB is spliced into the row again — with 3 teacher tabs it lands right of centre');
+  }
+  if (!/fabSlot: \{ width: \d+/.test(tabBar)) {
+    bad('the FAB slot flexes — whichever half holds more tabs would pull it off centre');
+  }
+  if (!/half: \{ flex: 1/.test(tabBar)) {
+    bad('the tab halves do not flex equally — the centre button would not be centred');
+  }
+
   // Mark Attendance is a STUDENT task and stays in Workspace; the hub is the teacher's own record.
   const workspaceKeys = menu.TEACHER_WORKSPACE_GROUPS.flatMap((g) => g.items).map((i) => i.key);
   if (!workspaceKeys.includes('attendance')) {
@@ -275,8 +315,28 @@ function assertions(menu, svc, chat, src) {
     bad('photoOf does not read the HR profile picture');
   }
   if (svc.photoOf({}) !== null) bad('photoOf invents a photo');
-  if (/schoolLogo/.test(service) || /schoolLogo/.test(home)) {
-    bad('schoolLogo is being used as the teacher\'s photo — it is the SCHOOL\'s crest');
+
+  // RETARGETED. This used to ban the STRING `schoolLogo` from the service and the home screen
+  // outright, as a proxy for "nobody is using the crest as a face". That proxy stopped being
+  // correct when the crest became the left-hand mark in the header — the field is now read on
+  // purpose, by `schoolLogoOf`, on every school-bound panel.
+  //
+  // So assert the property itself, by CALLING photoOf rather than grepping around it. The mutation
+  // this guards against — `hr?.profilePictureUrl || hr?.schoolLogo` — is still caught, and now the
+  // assertion says what it means.
+  if (svc.photoOf({ schoolLogo: 'https://x/crest.png' }) !== null) {
+    bad("photoOf reads schoolLogo — that is the SCHOOL's crest, not the person");
+  }
+  if (svc.photoOf({ profilePictureUrl: 'https://x/y.png', schoolLogo: 'https://x/crest.png' })
+      !== 'https://x/y.png') {
+    bad("photoOf prefers the school crest over the person's own photo");
+  }
+  // And the accessor that legitimately reads it stays honest in both directions.
+  if (svc.schoolLogoOf({ schoolLogo: 'https://x/crest.png' }) !== 'https://x/crest.png') {
+    bad('schoolLogoOf does not read schoolLogo — the header would show no school crest');
+  }
+  if (svc.schoolLogoOf({}) !== null || svc.schoolLogoOf({ schoolLogo: '   ' }) !== null) {
+    bad('schoolLogoOf invents a crest — a school with no logo must fall back to the 3C Edge mark');
   }
 
   // Both profile reads must be settled: they have different role sets.
@@ -353,6 +413,22 @@ function assertions(menu, svc, chat, src) {
     bad('the search destinations are retyped rather than read from TEACHER_MENU — they would drift from the menu');
   }
 
+
+  // ── THE SCHOOL CREST, AND THE PASSWORD ROW THAT REPLACED THE HEADER CHIP ──
+  // The teacher is school-bound, so its header leads with the school. And its support screen had
+  // NO password row at all before the header chip was removed, which would have left the whole
+  // teacher panel with no way to change a password.
+  const homeSrc = codeOnly(src.home);
+  const supportSrc = codeOnly(src.support);
+  if (!/schoolLogoUrl=\{schoolLogo\}/.test(homeSrc)) {
+    bad('TeacherHomeScreen does not pass its school crest to the brand bar');
+  }
+  if (/changePasswordRoute/.test(homeSrc)) {
+    bad('TeacherHomeScreen still passes changePasswordRoute — BrandBar no longer accepts it');
+  }
+  if (!/<ChangePasswordRow route="\/teacher\/change-password" \/>/.test(supportSrc)) {
+    bad('TeacherSupportScreen has no Change Password row — the teacher panel is stranded');
+  }
   return out;
 }
 
@@ -468,6 +544,50 @@ const MUTATIONS = [
   {
     name: 'the search destinations retyped instead of read from the menu',
     src: (k, s) => (k === 'searchService' ? s.replaceAll('TEACHER_MENU', 'HARDCODED') : s),
+  },
+  {
+    name: 'the teacher home stops passing its school crest',
+    src: (k, s) => (k === 'home'
+      ? s.replace('schoolLogoUrl={schoolLogo}', 'schoolLogoUrl={null}') : s),
+  },
+  {
+    name: 'the teacher loses its only Change Password row',
+    src: (k, s) => (k === 'support'
+      ? s.replace('<ChangePasswordRow route="/teacher/change-password" />', '') : s),
+  },
+  {
+    name: 'the teacher FAB is defined but never rendered',
+    src: (k, s) => (k === 'layout' ? s.replace('fab={TEACHER_FAB}', '') : s),
+  },
+  {
+    // The FAB pointed at a screen that is also a tab. The bar would then render over a screen that
+    // never padded for it, hiding its last control.
+    name: 'the teacher FAB route is also a tab',
+    src: (k, s) => (k === 'tabBar'
+      ? s.replace("  route: '/teacher/self-attendance',", "  route: '/teacher/profile',")
+      : s),
+  },
+  {
+    // The FAB pointed at a route with no wrapper file — an expo-router Unmatched page.
+    name: 'the teacher FAB opens a route with no file',
+    src: (k, s) => (k === 'tabBar'
+      ? s.replace("  route: '/teacher/self-attendance',", "  route: '/teacher/mark-attendance',")
+      : s),
+  },
+  {
+    // Back to the spliced slot: with three teacher tabs the button lands at 62.5%, not centre.
+    name: 'the FAB is spliced into the row again',
+    src: (k, s) => (k === 'tabBar'
+      ? s.replace('const splitAt = Math.ceil(tabs.length / 2);',
+                  'const half = fab ? Math.ceil(tabs.length / 2) : tabs.length;')
+      : s),
+  },
+  {
+    // A flexing centre slot is pulled off 50% by whichever half holds more tabs.
+    name: 'the FAB slot flexes instead of holding a fixed width',
+    src: (k, s) => (k === 'tabBar'
+      ? s.replace('fabSlot: { width: 72,', 'fabSlot: { flex: 1,')
+      : s),
   },
 ];
 

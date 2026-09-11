@@ -1,5 +1,5 @@
 import { Pressable, Text, View } from 'react-native';
-import { DONE, FEEDBACK, SLATE, SPACING, TYPE } from '../../../constants/theme';
+import { DONE, FEEDBACK, SLATE, SPACING, TYPE, leading } from '../../../constants/theme';
 import { makeStyles } from '../../../utils/makeStyles';
 import { StudentCard } from '../StudentCard';
 
@@ -157,16 +157,16 @@ const useStyles = makeStyles((p) => ({
     flexDirection: 'row',
     alignItems: 'center',
     gap: SPACING.md,
-    backgroundColor: p.glass,
+    backgroundColor: '#ffffff',
     borderWidth: 1,
-    borderColor: p.glassBorder,
+    borderColor: SLATE[200],
     borderRadius: 14,
     padding: SPACING.md,
     marginBottom: SPACING.md,
   },
   toolsText: { flex: 1 },
-  toolsTitle: { fontSize: TYPE.heading, fontWeight: '700', color: '#ffffff' },
-  toolsSub: { fontSize: TYPE.caption, color: p.onDark, lineHeight: 17, marginTop: 2 },
+  toolsTitle: { fontSize: TYPE.heading, fontWeight: '700', color: SLATE[800] },
+  toolsSub: { fontSize: TYPE.caption, color: SLATE[600], lineHeight: leading(TYPE.caption), marginTop: 2 },
   toolsCta: { fontSize: TYPE.label, fontWeight: '700', color: p.primary },
 
   locked: { opacity: 0.62 },
@@ -215,7 +215,7 @@ const useStyles = makeStyles((p) => ({
   },
   openText: { fontSize: TYPE.heading, fontWeight: '700', color: p.onPrimary },
   btnOff: { backgroundColor: SLATE[400] },
-  lockedNote: { fontSize: TYPE.label, color: SLATE[500], lineHeight: 18, marginTop: SPACING.sm },
+  lockedNote: { fontSize: TYPE.label, color: SLATE[500], lineHeight: leading(TYPE.label), marginTop: SPACING.sm },
 
   pressed: { opacity: 0.78 },
 }));
