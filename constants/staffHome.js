@@ -568,13 +568,18 @@ const PRINCIPAL = {
       key: 'school',
       label: 'School',
       icon: 'business-outline',
-      itemKeys: ['overview', 'staff', 'classes', 'students', 'linkedColleges'],
+      // `manageStudents` (the roster a school puts in) sits beside `students` (the queue of people
+      // who signed themselves up) on purpose — they are the two ways a child arrives, and a
+      // principal looking for one will look where the other is.
+      itemKeys: ['overview', 'staff', 'classes', 'manageStudents', 'students', 'linkedColleges'],
     },
     {
       key: 'academics',
       label: 'Academics',
       icon: 'school-outline',
-      itemKeys: ['reports', 'academicIqAliases', 'languageProAliases', 'codingProAliases'],
+      // Grading scales belong next to Test and Examination: they are what the marks recorded there
+      // are turned into.
+      itemKeys: ['reports', 'gradeManagement', 'academicIqAliases', 'languageProAliases', 'codingProAliases'],
     },
     {
       key: 'staffOps',

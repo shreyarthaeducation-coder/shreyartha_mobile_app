@@ -40,6 +40,8 @@ export { default as StaffAttendanceScreen } from './admin/StaffAttendanceScreen'
 export { default as EventManagementScreen } from './admin/EventManagementScreen';
 export { default as StaffEvaluationScreen } from './admin/StaffEvaluationScreen';
 export { default as ClassManagementScreen } from './admin/ClassManagementScreen';
+export { default as ManageStudentsScreen } from './admin/ManageStudentsScreen';
+export { default as GradeManagementScreen } from './admin/GradeManagementScreen';
 export { default as AdminExamsScreen } from './admin/AdminExamsScreen';
 export { default as AdminLeaveScreen } from './admin/AdminLeaveScreen';
 export { default as AdminPayrollScreen } from './admin/AdminPayrollScreen';

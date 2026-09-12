@@ -129,6 +129,11 @@ export const STAFF_ROLE_CONFIG = {
       { key: 'selfAttendance', label: 'Self Attendance', icon: 'time-outline', native: '/staff/principal/self-attendance' },
       { key: 'staff', label: 'Staff Management', icon: 'people-circle-outline', native: '/staff/principal/staff' },
       { key: 'classes', label: 'Class Management', icon: 'school-outline', native: '/staff/principal/classes' },
+      // The roster and the grading scales. Both sit on /api/school-admin and name PRINCIPAL in their
+      // own guard, so neither leans on the role hierarchy. They mirror the web sidebar's position —
+      // between Class Management and Test and Examination — which checkprincipal pins.
+      { key: 'manageStudents', label: 'Manage Students', icon: 'person-add-outline', native: '/staff/principal/manage-students' },
+      { key: 'gradeManagement', label: 'Grade Management', icon: 'ribbon-outline', native: '/staff/principal/grade-management' },
       // Deliberately NOT /reports: that route is the VP's teacher exam screen. The admin screen
       // owns exam records (create / edit / publish-to-parents), which a teacher cannot do.
       { key: 'reports', label: 'Test and Examination', icon: 'clipboard-outline', native: '/staff/principal/admin-reports' },

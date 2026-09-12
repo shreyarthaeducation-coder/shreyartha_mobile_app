@@ -209,6 +209,9 @@ export default function StaffRoleLayout() {
       <Stack.Screen name="events" />
       <Stack.Screen name="staff-evaluation" />
       <Stack.Screen name="classes" />
+      {/* The roster and the grading scales, both on /api/school-admin and Principal-only today. */}
+      <Stack.Screen name="manage-students" />
+      <Stack.Screen name="grade-management" />
       {/* `reports` is the VP's teacher exam screen; the principal's admin one is separate. */}
       <Stack.Screen name="admin-reports" />
       <Stack.Screen name="live-meeting" />

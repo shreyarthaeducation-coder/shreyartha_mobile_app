@@ -113,7 +113,12 @@ function assertions({ staffRoles, admin, theme }, sources) {
   // The web's key is `academicIQAliases`; ours is `academicIqAliases`. Keys are internal React
   // keys, never shown, so the casing difference is cosmetic — compared case-insensitively rather
   // than churning a shipped constant. Labels, which ARE shown, must match exactly.
-  const norm = (k) => String(k).toLowerCase();
+  // The two codebases spell keys differently — the app is camelCase throughout (`selfAttendance`),
+  // while the web sidebar is camelCase for its older items and kebab-case for its newer ones
+  // (`manage-students`). That is a naming convention, not a menu difference, so it is normalised
+  // away. What this comparison exists to catch — a missing item, an extra one, or a changed order —
+  // is unaffected, because only the separators are dropped and never a character of the name.
+  const norm = (k) => String(k).toLowerCase().replace(/[^a-z0-9]/g, '');
 
   // FIVE TILES DELIBERATELY GO BEYOND THE WEB SIDEBAR, and they are pinned to the END of the menu
   // so the mirror above them stays exact and reviewable.
