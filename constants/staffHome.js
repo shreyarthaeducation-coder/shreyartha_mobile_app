@@ -219,6 +219,32 @@ const SHREYARTHA_TEACHER = {
     'Marking student attendance lives in My Workspace, under Classroom. This page is your own record.',
 
   /**
+   * The photo-led header, which arrives WITH the rail below rather than on its own.
+   *
+   * `checkstaffdashboard` holds the two together — a descriptor with a rail and the labelled-rows
+   * header is half a design — and this panel took both at once when My Expenses became a quick
+   * action for every Shreyartha role. It also turns the notifications bell on, which this role can
+   * actually use: SHREYARTHA_TEACHER is named in StaffNotificationController's guard.
+   */
+  profileHeader: true,
+
+  /**
+   * The express lanes, matching the two other Shreyartha panels.
+   *
+   * Every card names a tile this panel already carries — a quick action is a shortcut, never a
+   * destination of its own, which is why `assertArrangementCovers` validates these without counting
+   * them as placements. My Expenses leads, because it is the one thing here that is time-bound:
+   * a trip not claimed on the day is a trip reconstructed from memory later.
+   */
+  quickActions: [
+    { key: 'myExpenses', label: 'My Expenses', blurb: 'Claim travel for the places you visited', icon: 'car', tint: 'teal', itemKey: 'expenses' },
+    { key: 'selfAttendance', label: 'Self Attendance', blurb: 'Mark yourself present today', icon: 'time', tint: 'violet', itemKey: 'selfAttendance' },
+    { key: 'markAttendance', label: 'Mark Attendance', blurb: "Take your class's attendance", icon: 'checkbox', tint: 'green', itemKey: 'attendance' },
+    { key: 'homework', label: 'Homework', blurb: 'Assign and review homework', icon: 'document-text', tint: 'blue', itemKey: 'homework' },
+    { key: 'myCalendar', label: 'My Calendar', blurb: 'Your schedule at a glance', icon: 'calendar', tint: 'amber', itemKey: 'myCalendar' },
+  ],
+
+  /**
    * THE ONLY ONE OF THE FOUR THAT GETS SHREYA.
    *
    * `TeacherShreyaController` is `hasAnyRole('TEACHER','SHREYARTHA_TEACHER')` and the service behind
@@ -465,6 +491,7 @@ const SHREYARTHA_COUNCELLOR = {
     { key: 'wellness', label: 'Wellness Groups', blurb: 'Wellbeing indices by student', icon: 'pulse', tint: 'blue', itemKey: 'groups' },
     { key: 'report', label: 'Counsellor Report', blurb: 'Write and publish reports', icon: 'document-text', tint: 'amber', itemKey: 'counsellorReport' },
     { key: 'queries', label: 'Queries', blurb: 'Student questions awaiting a reply', icon: 'help-circle', tint: 'rose', itemKey: 'queries' },
+    { key: 'myExpenses', label: 'My Expenses', blurb: 'Claim travel for the places you visited', icon: 'car', tint: 'teal', itemKey: 'expenses' },
   ],
 
   metrics: 'counsellor',
@@ -761,6 +788,7 @@ const SALES = {
     { key: 'myLead', label: 'My Lead', blurb: 'View and manage your leads', icon: 'people', tint: 'blue', itemKey: 'leads' },
     { key: 'myPerformance', label: 'My Sales Performance', blurb: 'Track your sales performance', icon: 'trending-up', tint: 'amber', itemKey: 'dashboard' },
     { key: 'mySchools', label: 'My Schools', blurb: 'Schools you are working', icon: 'business', tint: 'rose', itemKey: 'schools' },
+    { key: 'myExpenses', label: 'My Expenses', blurb: 'Claim travel for the places you visited', icon: 'car', tint: 'teal', itemKey: 'expenses' },
   ],
 
   /** Which metric block this panel renders. See StaffHomeScreen. */

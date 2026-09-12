@@ -339,13 +339,12 @@ export default function TravelExpensesScreen({ homeRoute = '/staff/sales' }) {
           )}
         </Pressable>
 
-        {/* With no rates set, the car/bike half is simply left out rather than announced — the
-            employee can do nothing about it, and submit() refuses a per-km leg with a message that
-            explains it at the moment it matters. The fare rule is true either way. */}
+        {/* HOW a trip is paid, never WHAT it pays. The per-km figures are deliberately absent:
+            they are the company's rate, not something the employee sets or can act on, and a rate
+            on screen invites arithmetic against a number they cannot change. `rates` is still read
+            by preview() to price the claim — it is simply never printed. */}
         <Text style={styles.rates}>
-          {rates?.set
-            ? `Car ${money(rates.carRatePerKm)}/km · Bike ${money(rates.bikeRatePerKm)}/km · Public transport: the fare you paid`
-            : 'Public transport: the fare you paid'}
+          Car and bike are paid by the kilometre. Public transport is the fare you paid.
         </Text>
       </Card>
 
@@ -511,11 +510,9 @@ export default function TravelExpensesScreen({ homeRoute = '/staff/sales' }) {
                   ) : (
                     <Text style={styles.body}>
                       {TRAVEL_MODES.find((m) => m.value === leg.mode)?.label || '—'}
-                      {leg.mode === 'PUBLIC_TRANSPORT'
-                        ? ` · fare ${money(leg.fareInr)}`
-                        : leg.ratePerKm != null
-                          ? ` · ${money(leg.ratePerKm)}/km`
-                          : ''}
+                      {/* The fare stays — the employee entered it themselves. The per-km rate
+                          does not, for the same reason it is absent from the header. */}
+                      {leg.mode === 'PUBLIC_TRANSPORT' ? ` · fare ${money(leg.fareInr)}` : ''}
                     </Text>
                   )}
 
