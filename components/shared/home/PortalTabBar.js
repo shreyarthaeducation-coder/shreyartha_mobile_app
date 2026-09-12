@@ -50,11 +50,23 @@ export const STUDENT_TABS = [
   { key: 'profile', label: 'Profile', icon: 'person', iconOff: 'person-outline', route: '/student/profile' },
 ];
 
-/** The teacher panel's three roots. */
+/**
+ * The teacher panel's four roots.
+ *
+ * Attendance replaced the centre (+) button. Self-attendance is the thing a teacher does every
+ * morning, so it earned a permanent slot rather than a floating one — and two controls to the same
+ * screen is worse than either alone.
+ *
+ * **A tab root must pad by `TAB_BAR_HEIGHT + insets.bottom`** or its last control sits under this
+ * bar. `/teacher/self-attendance` was a FAB destination precisely so it would not have to; now that
+ * it is a tab, `app/teacher/self-attendance.js` passes `bottomInset` to the shared screen. The other
+ * five shells that render `SelfAttendanceScreen` pass nothing and keep the default 0.
+ */
 export const TEACHER_TABS = [
   { key: 'home', label: 'Home', icon: 'home', iconOff: 'home-outline', route: '/teacher' },
-  { key: 'support', label: 'Support', icon: 'headset', iconOff: 'headset-outline', route: '/teacher/support' },
+  { key: 'attendance', label: 'Attendance', icon: 'checkbox', iconOff: 'checkbox-outline', route: '/teacher/self-attendance' },
   { key: 'profile', label: 'Profile', icon: 'person', iconOff: 'person-outline', route: '/teacher/profile' },
+  { key: 'support', label: 'Support', icon: 'headset', iconOff: 'headset-outline', route: '/teacher/support' },
 ];
 
 /**
@@ -221,25 +233,6 @@ export function staffFabFor(roleKey) {
   return STAFF_FABS[String(roleKey || '').toLowerCase()] || null;
 }
 
-/**
- * The teacher's centre button — self-attendance.
- *
- * Not in `STAFF_FABS` because the teacher is not one of the `app/staff/[role]` shells; it has its
- * own group at `app/teacher`, and `staffFabFor` is keyed by the `[role]` URL segment which the
- * teacher does not have. Same shape, so `PortalTabBar` takes it unchanged.
- *
- * ── WHY SELF-ATTENDANCE ─────────────────────────────────────────────────────
- * It is the thing a teacher does every single morning, and it was two taps deep — Home → My
- * Attendance → Self Attendance. That is the same test the sales and counsellor buttons pass.
- *
- * `/teacher/self-attendance` is NOT in `TEACHER_TABS`, so the rule above holds: the bar never
- * appears on it, and the screen does not need to pad for one.
- */
-export const TEACHER_FAB = {
-  label: 'Attendance',
-  icon: 'add',
-  route: '/teacher/self-attendance',
-};
 
 /** Bar height excluding the safe-area inset. The three root screens pad by this plus the inset. */
 export const TAB_BAR_HEIGHT = 62;

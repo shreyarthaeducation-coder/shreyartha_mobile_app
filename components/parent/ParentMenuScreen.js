@@ -431,7 +431,6 @@ export default function ParentMenuScreen() {
           accessibilityLabel="Log out"
         >
           <Ionicons name="log-out-outline" size={20} color={FEEDBACK.errorText} />
-          <Text style={styles.logoutText}>{t.logOut}</Text>
         </Pressable>
       </ScrollView>
 
@@ -500,19 +499,21 @@ const useStyles = makeStyles((p) => ({
   },
   tileLabel: { flex: 1, fontSize: TYPE.label, fontWeight: '600', color: SLATE[700] },
 
+  // Icon alone. A square target centred at the foot rather than a full-width bar: with no text to
+  // give it height, TOUCH.min has to be set on BOTH axes or 20px of glyph becomes the whole target.
+  // The name it lost lives on in accessibilityLabel, so the control is still announced.
   logout: {
-    flexDirection: 'row',
+    alignSelf: 'center',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: SPACING.sm,
-    minHeight: TOUCH.min,
-    borderRadius: 14,
+    width: TOUCH.min,
+    height: TOUCH.min,
+    borderRadius: TOUCH.min / 2,
     backgroundColor: FEEDBACK.errorBg,
     borderWidth: 1,
     borderColor: FEEDBACK.errorBorder,
     marginTop: SPACING.md,
   },
-  logoutText: { fontSize: TYPE.heading, fontWeight: '700', color: FEEDBACK.errorText },
 
   pressed: { opacity: 0.8 },
 }));

@@ -134,5 +134,60 @@ for (const p of dirs.flatMap((d) => walk(d))) {
     }
   }
 }
-console.log(bad === 0 ? '--- clean ---' : `--- ${bad} UNDECLARED ---`);
+// ── IMPORTED, BUT NEVER EXPORTED ────────────────────────────────────────────────────────────────
+// The check above asks "is this name in scope?". A name imported from a module that does not export
+// it IS in scope — bound to `undefined` — so it passes, and then dies at render.
+//
+// That is not hypothetical. `components/staff/home/StaffBanner.js` imported `RADIUS` from
+// constants/theme, which has never exported it, and used `RADIUS.lg` for a border radius. Metro's
+// CommonJS interop resolves the missing export to `undefined` instead of failing the build, so
+// `expo export` was clean, this checker was clean, and the Principal home — the one panel whose
+// descriptor renders that banner — crashed with "Cannot read property 'lg' of undefined" the first
+// time anybody opened it.
+//
+// Only constants/theme is checked. It is the module the whole app imports tokens from, it is edited
+// constantly, and a token that quietly becomes `undefined` is invisible until a screen renders.
+const THEME = path.join(ROOT, 'constants', 'theme.js');
+if (fs.existsSync(THEME)) {
+  const themeSrc = fs.readFileSync(THEME, 'utf8')
+    .replace(/^\s*\/\/.*$/gm, '')
+    .replace(/\/\*[\s\S]*?\*\//g, '');
+
+  const exported = new Set();
+  for (const m of themeSrc.matchAll(/^\s*export\s+(?:const|let|var|function|class)\s+([A-Za-z_$][\w$]*)/gm)) {
+    exported.add(m[1]);
+  }
+  for (const m of themeSrc.matchAll(/export\s*\{([^}]*)\}/g)) {
+    for (const tok of m[1].split(',')) {
+      // `export { a as b }` publishes b, which is the name an importer may ask for.
+      const n = tok.trim().split(/\s+as\s+/).pop().trim();
+      if (n) exported.add(n);
+    }
+  }
+
+  for (const p of dirs.flatMap((d) => walk(d))) {
+    if (path.resolve(p) === path.resolve(THEME)) continue;
+    const src = fs.readFileSync(p, 'utf8')
+      .replace(/^\s*\/\/.*$/gm, '')
+      .replace(/\/\*[\s\S]*?\*\//g, '');
+
+    // `[^{}]` and NOT `[\s\S]*?`: a lazy any-character group backtracks straight past an earlier
+    // import's closing brace when the path does not match, pairing `import { View, Text } from
+    // 'react-native'` with a LATER constants/theme import and reporting every react-native name as
+    // a missing theme export. Excluding braces makes each import statement its own match.
+    for (const m of src.matchAll(/import\s*\{([^{}]*)\}\s*from\s*['"]([^'"]*constants\/theme)['"]/g)) {
+      for (const tok of m[1].split(',')) {
+        // The name asked FOR is what must exist upstream — `import { X as Y }` needs X, not Y.
+        const wanted = tok.trim().split(/\s+as\s+/)[0].trim();
+        if (!wanted) continue;
+        if (!exported.has(wanted)) {
+          console.log(`NOT EXPORTED  ${wanted.padEnd(18)} ${path.relative(ROOT, p)}  (constants/theme has no such export)`);
+          bad++;
+        }
+      }
+    }
+  }
+}
+
+console.log(bad === 0 ? '--- clean ---' : `--- ${bad} PROBLEM(S) ---`);
 process.exit(bad === 0 ? 0 : 1);

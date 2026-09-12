@@ -50,6 +50,8 @@ const SRC = {
   home: 'components/staff/home/StaffHomeScreen.js',
   // Holds the shell's only route to change-password now that it has left the shared header.
   support: 'components/staff/home/StaffSupportScreen.js',
+  // Holds Log Out, which moved off the home screen.
+  profile: 'components/staff/StaffProfileScreen.js',
   layout: 'app/staff/[role]/_layout.js',
   tabBar: 'components/shared/home/PortalTabBar.js',
 };
@@ -357,8 +359,23 @@ async function assertions(mods, src) {
   if (!/hardwareBackPress/.test(homeCode)) {
     bad('StaffHomeScreen has no Android back override — Back unwinds into the panel instead of leaving it');
   }
-  if (!/confirmLogout/.test(homeCode)) {
-    bad('StaffHomeScreen has no confirmLogout — it ends the attendance session before clearing keys');
+  // LOG OUT MOVED OFF THE HOME SCREEN to the foot of the profile, as an icon alone.
+  //
+  // Retargeted rather than deleted: the rule being protected is that the control exists and calls
+  // `confirmLogout`, which ends the staff attendance session BEFORE clearing the keys — the ping is
+  // authenticated, so the order is not incidental. An assertion left pointing at StaffHomeScreen
+  // would pass while covering nothing, which this repo has done twice before.
+  if (/confirmLogout/.test(homeCode)) {
+    bad('StaffHomeScreen has a logout again — it belongs at the foot of the profile screen');
+  }
+  const profileCode = codeOnly(src.profile);
+  if (!/onPress=\{confirmLogout\}/.test(profileCode)) {
+    bad('StaffProfileScreen has no confirmLogout — the six shells and the teacher lose their way out');
+  }
+  // Icon only. The label it lost has to survive as an accessibilityLabel or the control is
+  // announced as an unnamed button.
+  if (!/accessibilityLabel="Log out"/.test(profileCode)) {
+    bad('the StaffProfileScreen logout icon has no accessibilityLabel — it is an unnamed button');
   }
   // CHANGE PASSWORD MOVED OUT OF THE HEADER.
   //

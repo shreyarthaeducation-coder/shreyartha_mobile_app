@@ -181,9 +181,10 @@ export default function StaffAuthScreen({ variant = 'school' }) {
       setUserType('school');
       router.replace(resolveDashboardRoute(role, verified));
     } catch (e) {
-      // Server messages are shown verbatim. Note a mistyped password currently surfaces
-      // "Server error. Please try again." — the backend controller catches BadCredentialsException
-      // in its generic handler and returns 500 instead of 401.
+      // Server messages are shown verbatim. A mistyped password now surfaces "Invalid email/mobile
+      // or password" — SchoolAuthController catches AuthenticationException and answers 401. It
+      // used to fall through to the generic handler as a 500 reading "Server error. Please try
+      // again.", which gave no reason to retype anything.
       setError(e?.message || 'Login failed. Please check your credentials.');
     } finally {
       setSubmitting(false);

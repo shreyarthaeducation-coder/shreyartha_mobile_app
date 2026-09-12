@@ -1,6 +1,6 @@
 import { Pressable, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { RADIUS, SLATE, SPACING, TOUCH, TYPE, leading } from '../../../constants/theme';
+import { SLATE, SPACING, TOUCH, TYPE, leading } from '../../../constants/theme';
 import { usePalette } from '../../ui/PaletteContext';
 import { makeStyles } from '../../../utils/makeStyles';
 
@@ -62,7 +62,7 @@ export default function StaffBanner({ title, subtitle, icon = 'sparkles', cta, o
 const useStyles = makeStyles((p) => ({
   wrap: {
     backgroundColor: p.tint,
-    borderRadius: RADIUS.lg,
+    borderRadius: 20,
     borderWidth: 1,
     borderColor: SLATE[200],
     padding: SPACING.md,
@@ -73,7 +73,7 @@ const useStyles = makeStyles((p) => ({
   icon: {
     width: 44,
     height: 44,
-    borderRadius: RADIUS.md,
+    borderRadius: 16,
     backgroundColor: p.primary,
     alignItems: 'center',
     justifyContent: 'center',
@@ -88,7 +88,7 @@ const useStyles = makeStyles((p) => ({
     gap: SPACING.xs,
     minHeight: TOUCH.min,
     paddingHorizontal: SPACING.md,
-    borderRadius: RADIUS.md,
+    borderRadius: 16,
     backgroundColor: p.primary,
   },
   ctaText: { fontSize: TYPE.label, fontWeight: '800', color: p.onPrimary },

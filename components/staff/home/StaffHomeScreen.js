@@ -4,7 +4,7 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Redirect, useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
-import { FEEDBACK, SLATE, SPACING, TOUCH, TYPE } from '../../../constants/theme';
+import { SLATE, SPACING, TYPE } from '../../../constants/theme';
 import { usePalette } from '../../ui/PaletteContext';
 import { makeStyles } from '../../../utils/makeStyles';
 import { useTranslations } from '../../../hooks/useTranslations';
@@ -23,7 +23,6 @@ import ShreyaChatSheet from '../ShreyaChatSheet';
 import { shreyaConfigFor } from './shreyaConfigs';
 import { TAB_BAR_HEIGHT } from '../../shared/home/PortalTabBar';
 import StaffBanner from './StaffBanner';
-import useStaffLogout from '../../../hooks/useStaffLogout';
 import { resolveStaffMenus } from '../../../constants/staffRoles';
 import { getStaffHome, heroRoute, itemsFor } from '../../../constants/staffHome';
 import {
@@ -104,7 +103,6 @@ const STRINGS = {
   pairCta: 'Open Live Classes',
   searchPlaceholder: 'Search sections, classes and more…',
   searchButton: 'Search',
-  logOut: 'Log Out',
 };
 
 /** Row-3 icons by source. A descriptor may override with its own `identityRow3.icon`. */
@@ -120,9 +118,6 @@ export default function StaffHomeScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const t = useTranslations(STRINGS);
-  // Fires the staff attendance end-ping BEFORE clearing the keys — that ordering is not incidental,
-  // the ping is authenticated. See hooks/useStaffLogout.js.
-  const { confirmLogout } = useStaffLogout();
 
   const { role } = useLocalSearchParams();
   const roleKey = String(role || '').toLowerCase();
@@ -639,16 +634,6 @@ export default function StaffHomeScreen() {
             onSearch={(q) => router.push({ pathname: `/staff/${roleKey}/search`, params: { q } })}
           />
         ) : null}
-
-        <Pressable
-          onPress={confirmLogout}
-          style={({ pressed }) => [styles.logout, pressed && styles.pressed]}
-          accessibilityRole="button"
-          accessibilityLabel={t.logOut}
-        >
-          <Ionicons name="log-out-outline" size={20} color={FEEDBACK.errorText} />
-          <Text style={styles.logoutText}>{t.logOut}</Text>
-        </Pressable>
       </ScrollView>
 
       {/* Mounted only while open, and structurally below the verification gate above — so an
@@ -771,20 +756,6 @@ const useStyles = makeStyles(() => ({
   // `alignItems: 'stretch'` is what makes the two cards equal height — without it each sizes to its
   // own content and the shorter one's CTA floats mid-card.
   supportPair: { flexDirection: 'row', alignItems: 'stretch', gap: SPACING.sm },
-
-  logout: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: SPACING.sm,
-    minHeight: TOUCH.min,
-    borderRadius: 14,
-    backgroundColor: FEEDBACK.errorBg,
-    borderWidth: 1,
-    borderColor: FEEDBACK.errorBorder,
-    marginTop: SPACING.md,
-  },
-  logoutText: { fontSize: TYPE.heading, fontWeight: '700', color: FEEDBACK.errorText },
 
   pressed: { opacity: 0.8 },
 }));

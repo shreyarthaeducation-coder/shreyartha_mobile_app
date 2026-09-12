@@ -99,10 +99,15 @@ const ASSERTIONS = [
     test: (s) => /usePortalLogout\(\{\s*loginRoute: '\/auth\/parent-login',\s*beforeLogout: unregisterParentPush,\s*\}\)/.test(s.menu),
   },
   {
-    name: 'the app config carries the notifications plugin and the new versionCode',
+    name: 'the app config carries the notifications plugin and a shippable versionCode',
     test: (s) => {
       const cfg = JSON.parse(s.appJson).expo;
-      return cfg.plugins.includes('expo-notifications') && cfg.android.versionCode === 15;
+      // `>= 15`, not `=== 15`. Push needs a NEW store build — versionCode 14 and earlier carry no
+      // push code and there is no OTA channel — so the rule is that the build is at or after the
+      // one that introduced it. Freezing the exact number made this assertion fail on the next
+      // release bump, which teaches whoever hits it to edit the checker to match the code: the
+      // habit that turns a suite into decoration.
+      return cfg.plugins.includes('expo-notifications') && cfg.android.versionCode >= 15;
     },
   },
   {
@@ -127,7 +132,9 @@ const MUTATIONS = [
   ['a tapped push goes nowhere', 'layout', "router.push('/parent/notifications'))", "router.push('/parent'))"],
   ['the route dropped from the stack', 'layout', '<Stack.Screen name="notifications" />', ''],
   ['logout forgets to unregister', 'menu', '    beforeLogout: unregisterParentPush,\n', ''],
-  ['the release not bumped', 'appJson', '"versionCode": 15,', '"versionCode": 14,'],
+  // Anchored on the KEY, not on a number: pinning "versionCode": 15 made this mutation inert the
+  // moment the release was bumped, and an inert mutation reports green while proving nothing.
+  ['the release not bumped past the push build', 'appJson', /"versionCode":\s*\d+/, '"versionCode": 14'],
   ['google-services.json made unconditional', 'appConfig', 'if (fs.existsSync(googleServices)) {', 'if (true) {'],
 ];
 
@@ -149,7 +156,11 @@ if (failing.length) {
 
 let problems = 0;
 for (const [name, key, from, to] of MUTATIONS) {
-  if (!sources[key].includes(from)) {
+  // `from` may be a string or a RegExp. A regex anchor is what lets a mutation survive a value that
+  // legitimately changes — the versionCode moves every release, and a string anchor holding last
+  // release's number goes inert the moment it is bumped.
+  const present = from instanceof RegExp ? from.test(sources[key]) : sources[key].includes(from);
+  if (!present) {
     console.error(`  ✗ could not plant "${name}" — that mutation is inert and proves nothing`);
     problems += 1;
     continue;

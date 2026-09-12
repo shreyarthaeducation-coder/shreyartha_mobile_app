@@ -6,7 +6,6 @@ import { PORTALS } from '../../constants/theme';
 import { api } from '../../services/apiService';
 import { getStaffRoleConfig } from '../../constants/staffRoles';
 import PortalTabBar, {
-  TEACHER_FAB,
   TEACHER_TABS,
   isTabRoot,
 } from '../../components/shared/home/PortalTabBar';
@@ -124,7 +123,7 @@ export default function TeacherLayout() {
       {/* tone="light" like the teacher's BrandBar: this panel resolves to PORTALS.school, which
           defines none of the dark-glass tokens the bar's default styles read. */}
       {isTabRoot(pathname, TEACHER_TABS)
-      ? <PortalTabBar tabs={TEACHER_TABS} tone="light" fab={TEACHER_FAB} />
+      ? <PortalTabBar tabs={TEACHER_TABS} tone="light" />
       : null}
     </View>
   );

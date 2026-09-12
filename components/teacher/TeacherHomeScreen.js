@@ -4,7 +4,7 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Redirect, useFocusEffect, useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
-import { FEEDBACK, GRADIENT, SLATE, SPACING, TOUCH, TYPE } from '../../constants/theme';
+import { GRADIENT, SLATE, SPACING, TYPE } from '../../constants/theme';
 import { usePalette } from '../ui/PaletteContext';
 import { makeStyles } from '../../utils/makeStyles';
 import { useTranslations } from '../../hooks/useTranslations';
@@ -17,7 +17,6 @@ import AssistantCard from '../shared/home/AssistantCard';
 import SearchEntry from '../shared/home/SearchEntry';
 import { TAB_BAR_HEIGHT } from '../shared/home/PortalTabBar';
 import ShreyaChatSheet from '../staff/ShreyaChatSheet';
-import useStaffLogout from '../../hooks/useStaffLogout';
 import {
   loadTeacherIdentity,
   photoOf,
@@ -89,7 +88,6 @@ const STRINGS = {
   liveCta: 'Open Live Classes',
   searchPlaceholder: 'Search resources, tools, students and more…',
   searchButton: 'Search',
-  logOut: 'Log Out',
 };
 
 const SHREYA_AVATAR = require('../../assets/images/Chatbot.png');
@@ -104,9 +102,6 @@ export default function TeacherHomeScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const t = useTranslations(STRINGS);
-  // Fires the staff attendance end-ping BEFORE clearing the keys — that ordering is not incidental,
-  // the ping is authenticated. See hooks/useStaffLogout.js.
-  const { confirmLogout } = useStaffLogout();
 
   const [identity, setIdentity] = useState({ profile: null, hr: null });
   // Above the verification early-return further down, because it is a hook. `schoolLogo` has always
@@ -344,16 +339,6 @@ export default function TeacherHomeScreen() {
           buttonLabel={t.searchButton}
           onSearch={(q) => router.push({ pathname: '/teacher/search', params: { q } })}
         />
-
-        <Pressable
-          onPress={confirmLogout}
-          style={({ pressed }) => [styles.logout, pressed && styles.pressed]}
-          accessibilityRole="button"
-          accessibilityLabel="Log out"
-        >
-          <Ionicons name="log-out-outline" size={20} color={FEEDBACK.errorText} />
-          <Text style={styles.logoutText}>{t.logOut}</Text>
-        </Pressable>
       </ScrollView>
 
       {/* Mounted only while open, and structurally below the pending-verification redirect above —
@@ -374,20 +359,6 @@ const useStyles = makeStyles(() => ({
   // own content and the shorter one's CTA floats mid-card, which is the exact failure the column
   // layout's blurb floor exists to prevent.
   supportPair: { flexDirection: 'row', alignItems: 'stretch', gap: SPACING.sm },
-
-  logout: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: SPACING.sm,
-    minHeight: TOUCH.min,
-    borderRadius: 14,
-    backgroundColor: FEEDBACK.errorBg,
-    borderWidth: 1,
-    borderColor: FEEDBACK.errorBorder,
-    marginTop: SPACING.md,
-  },
-  logoutText: { fontSize: TYPE.heading, fontWeight: '700', color: FEEDBACK.errorText },
 
   pressed: { opacity: 0.8 },
 }));

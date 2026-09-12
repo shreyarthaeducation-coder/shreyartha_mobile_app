@@ -44,6 +44,8 @@ const SRC = {
   layout: 'app/teacher/_layout.js',
   index: 'app/teacher/index.js',
   profileRoute: 'app/teacher/profile.js',
+  selfAttendanceRoute: 'app/teacher/self-attendance.js',
+  selfAttendance: 'components/staff/SelfAttendanceScreen.js',
   staffMenu: 'components/staff/StaffMenuScreen.js',
   tabBar: 'components/shared/home/PortalTabBar.js',
   keys: 'constants/storageKeys.js',
@@ -189,38 +191,54 @@ function assertions(menu, svc, chat, src) {
   }
   if (!/route: '\/teacher\/support'/.test(tabBar)) bad('the footer has no Support tab');
 
-  // ── THE CENTRE (+) BUTTON — SELF-ATTENDANCE ───────────────────────────────
+  // ── ATTENDANCE REPLACED THE CENTRE (+) BUTTON ─────────────────────────────
   //
-  // Neither checker covered this before it was added: checkstaffdashboard's FAB rules only walk
-  // STAFF_TABS roles, and the teacher is not one of them (it has its own shell at app/teacher).
-  // So every rule the staff FABs are held to had to be restated here.
+  // Self-attendance used to hang off a floating (+). It is the second of four tabs now, so the FAB
+  // is gone: two controls to one screen is worse than either alone.
+  //
+  // THE RULE THE OLD FAB ASSERTIONS WERE REALLY PROTECTING, restated where it now lives rather than
+  // deleted with them. The old one read "a FAB route must NOT also be a tab", and it existed because
+  // `isTabRoot` decides whether the bar renders and EVERY screen it says yes to must pad by
+  // TAB_BAR_HEIGHT or its last control sits underneath. Self-attendance is exactly such a screen
+  // now, so the padding itself is what gets asserted.
   const layoutSrc = codeOnly(src.layout);
-  if (!/TEACHER_FAB/.test(tabBar)) {
-    bad('PortalTabBar exports no TEACHER_FAB — the teacher footer has no centre button');
+  if (/TEACHER_FAB/.test(tabBar) || /fab=\{/.test(layoutSrc)) {
+    bad('the teacher footer has a centre button again — Attendance is a tab now, not a FAB');
   }
-  if (!/fab=\{TEACHER_FAB\}/.test(layoutSrc)) {
-    bad('the teacher layout does not pass the FAB — the button is defined but never rendered');
+  const teacherTabsBlock = (/TEACHER_TABS = \[([\s\S]*?)\];/.exec(tabBar) || [])[1] || '';
+  const tabRoutes = [...teacherTabsBlock.matchAll(/route: '([^']+)'/g)].map((m) => m[1]);
+  if (tabRoutes.length !== 4) {
+    bad(`TEACHER_TABS has ${tabRoutes.length} tabs, expected 4 (home, attendance, profile, support)`);
   }
-  // THE RULE: a FAB route must NOT also be a tab. `isTabRoot` decides whether the bar renders, and
-  // every screen it says yes to must self-pad by TAB_BAR_HEIGHT — a FAB destination in `tabs` puts
-  // the bar on a screen that never padded for it.
-  const fabRoute = (/TEACHER_FAB = \{[^}]*route: '([^']+)'/.exec(tabBar) || [])[1];
-  if (!fabRoute) bad('TEACHER_FAB declares no route');
-  else {
-    const teacherTabsBlock = (/TEACHER_TABS = \[([\s\S]*?)\];/.exec(tabBar) || [])[1] || '';
-    if (teacherTabsBlock.includes(`route: '${fabRoute}'`)) {
-      bad(`the teacher FAB route ${fabRoute} is ALSO a tab — the bar would cover an unpadded screen`);
-    }
-    const leaf = fabRoute.split('/').pop();
+  if (!/route: '\/teacher\/self-attendance'/.test(teacherTabsBlock)) {
+    bad('the footer has no Attendance tab — self-attendance lost its one-tap entry');
+  }
+  for (const r of tabRoutes) {
+    // '/teacher' is index.js; every other tab is its own leaf file.
+    const leaf = r === '/teacher' ? 'index' : r.split('/').pop();
     if (!routeNames().has(leaf)) {
-      bad(`the teacher FAB opens ${fabRoute}, which has no route file — an Unmatched page`);
+      bad(`the teacher tab ${r} has no route file — it would render an Unmatched page`);
     }
   }
-  // THE CENTRING. A spliced equal-flex slot only lands at 50% when the tab count is EVEN; the
-  // teacher has three tabs, so it would sit at 62.5%. Two flexed halves either side of a
-  // FIXED-width centre slot is what puts it at 50% for any count.
+  // THE PADDING, which is the whole reason self-attendance was kept off the tab list before.
+  // `SelfAttendanceScreen` is shared with the five app/staff/[role] shells, which reach it from a
+  // menu with no bar over it — so the inset is passed by the TEACHER ROUTE and defaults to 0
+  // everywhere else. Hardcoding it inside the shared screen would pad five panels that have nothing
+  // to clear.
+  const selfAttRoute = codeOnly(src.selfAttendanceRoute);
+  if (!/bottomInset=\{TAB_BAR_HEIGHT/.test(selfAttRoute)) {
+    bad('app/teacher/self-attendance.js passes no bottomInset — the footer would cover its last control');
+  }
+  if (!/bottomInset = 0/.test(codeOnly(src.selfAttendance))) {
+    bad('SelfAttendanceScreen has no bottomInset default of 0 — the five menu-reached shells would pad for a bar they do not show');
+  }
+  // THE CENTRING. Kept here even though the teacher no longer has a FAB: sales, counselor and
+  // shreyartha_councellor still do, and these are the ONLY assertions anywhere that guard the shared
+  // bar's geometry. A spliced equal-flex slot only lands at 50% when the tab count is EVEN, so two
+  // flexed halves either side of a FIXED-width centre slot is what centres it for any count.
+  // They belong in checkstaffdashboard; they are here because that is where they were written.
   if (/const half = fab \? Math\.ceil/.test(tabBar)) {
-    bad('the FAB is spliced into the row again — with 3 teacher tabs it lands right of centre');
+    bad('the FAB is spliced into the row again — it lands off centre for an odd tab count');
   }
   if (!/fabSlot: \{ width: \d+/.test(tabBar)) {
     bad('the FAB slot flexes — whichever half holds more tabs would pull it off centre');
@@ -556,22 +574,32 @@ const MUTATIONS = [
       ? s.replace('<ChangePasswordRow route="/teacher/change-password" />', '') : s),
   },
   {
-    name: 'the teacher FAB is defined but never rendered',
-    src: (k, s) => (k === 'layout' ? s.replace('fab={TEACHER_FAB}', '') : s),
-  },
-  {
-    // The FAB pointed at a screen that is also a tab. The bar would then render over a screen that
-    // never padded for it, hiding its last control.
-    name: 'the teacher FAB route is also a tab',
-    src: (k, s) => (k === 'tabBar'
-      ? s.replace("  route: '/teacher/self-attendance',", "  route: '/teacher/profile',")
+    // The centre button returns alongside the Attendance tab — two controls to one screen.
+    name: 'the centre (+) button comes back',
+    src: (k, s) => (k === 'layout'
+      ? s.replace('tabs={TEACHER_TABS} tone="light"', 'tabs={TEACHER_TABS} tone="light" fab={SOMETHING}')
       : s),
   },
   {
-    // The FAB pointed at a route with no wrapper file — an expo-router Unmatched page.
-    name: 'the teacher FAB opens a route with no file',
+    // A tab pointing at a route with no wrapper file — an expo-router Unmatched page.
+    name: 'a teacher tab opens a route with no file',
     src: (k, s) => (k === 'tabBar'
-      ? s.replace("  route: '/teacher/self-attendance',", "  route: '/teacher/mark-attendance',")
+      ? s.replace("route: '/teacher/self-attendance' }", "route: '/teacher/mark-attendance' }")
+      : s),
+  },
+  {
+    // THE REGRESSION THE OLD FAB RULES EXISTED TO PREVENT, now reachable directly: self-attendance
+    // is a tab root, so the bar renders over it. Drop its inset and the last control is underneath.
+    name: 'the self-attendance tab stops padding for the footer',
+    src: (k, s) => (k === 'selfAttendanceRoute'
+      ? s.replace('bottomInset={TAB_BAR_HEIGHT + (insets.bottom || 8)}', '')
+      : s),
+  },
+  {
+    // Hardcoding the teacher's inset inside the SHARED screen pads five panels that show no bar.
+    name: 'the shared screen loses its bottomInset default',
+    src: (k, s) => (k === 'selfAttendance'
+      ? s.replace("bottomInset = 0", "bottomInset = 120")
       : s),
   },
   {

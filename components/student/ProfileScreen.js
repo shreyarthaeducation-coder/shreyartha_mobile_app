@@ -357,7 +357,6 @@ export default function ProfileScreen() {
         accessibilityLabel="Log out"
       >
         <Ionicons name="log-out-outline" size={20} color={FEEDBACK.errorText} />
-        <Text style={styles.logoutText}>Log Out</Text>
       </Pressable>
 
       {/* Clears the footer, which the layout paints over this screen. */}
@@ -367,19 +366,21 @@ export default function ProfileScreen() {
 }
 
 const useStyles = makeStyles((p) => ({
+  // Icon alone. A square target centred at the foot rather than a full-width bar: with no text to
+  // give it height, TOUCH.min has to be set on BOTH axes or 20px of glyph becomes the whole target.
+  // The name it lost lives on in accessibilityLabel, so the control is still announced.
   logout: {
-    flexDirection: 'row',
+    alignSelf: 'center',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: SPACING.sm,
-    minHeight: TOUCH.min,
-    borderRadius: 14,
+    width: TOUCH.min,
+    height: TOUCH.min,
+    borderRadius: TOUCH.min / 2,
     backgroundColor: FEEDBACK.errorBg,
     borderWidth: 1,
     borderColor: FEEDBACK.errorBorder,
     marginTop: SPACING.sm,
   },
-  logoutText: { fontSize: TYPE.heading, fontWeight: '700', color: FEEDBACK.errorText },
 
   identity: { flexDirection: 'row', alignItems: 'center', gap: SPACING.md },
   avatar: {

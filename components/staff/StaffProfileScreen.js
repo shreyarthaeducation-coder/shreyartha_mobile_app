@@ -11,7 +11,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
-import { FEEDBACK, SHADOWS, SLATE, SPACING, TYPE } from '../../constants/theme';
+import { FEEDBACK, SHADOWS, SLATE, SPACING, TOUCH, TYPE } from '../../constants/theme';
 import { STAFF_PHOTO_KEY } from '../../constants/storageKeys';
 import { usePalette } from '../../components/ui/PaletteContext';
 import { api } from '../../services/apiService';
@@ -258,13 +258,25 @@ export default function StaffProfileScreen({
           ) : tab === 'hr' ? (
             <HrTab showToast={showToast} />
           ) : (
-            <DetailsTab
-              profile={profile}
-              assignedClasses={assignedClasses}
-              confirmLogout={confirmLogout}
-              loggingOut={loggingOut}
-            />
+            <DetailsTab profile={profile} assignedClasses={assignedClasses} />
           )}
+
+          {/* Below every tab, not inside one. It used to live in DetailsTab, which meant the only
+              way out of the app was invisible while any other tab was open. Icon alone: the label
+              moves to accessibilityLabel so the control is still named for a screen reader. */}
+          <Pressable
+            onPress={confirmLogout}
+            disabled={loggingOut}
+            style={({ pressed }) => [styles.logoutRow, pressed && styles.logoutRowPressed]}
+            accessibilityRole="button"
+            accessibilityLabel="Log out"
+          >
+            {loggingOut ? (
+              <ActivityIndicator size="small" color={FEEDBACK.errorText} />
+            ) : (
+              <Ionicons name="log-out-outline" size={22} color={FEEDBACK.errorText} />
+            )}
+          </Pressable>
         </ScrollView>
       )}
 
@@ -274,7 +286,7 @@ export default function StaffProfileScreen({
 }
 
 /** The original read-only profile — every staff shell still sees exactly this and nothing else. */
-function DetailsTab({ profile, assignedClasses, confirmLogout, loggingOut }) {
+function DetailsTab({ profile, assignedClasses }) {
   const styles = useStyles();
   const PALETTE = usePalette();
   return (
@@ -315,20 +327,6 @@ function DetailsTab({ profile, assignedClasses, confirmLogout, loggingOut }) {
               ))}
             </View>
           ) : null}
-
-          <Pressable
-            onPress={confirmLogout}
-            disabled={loggingOut}
-            style={({ pressed }) => [styles.logoutRow, pressed && styles.logoutRowPressed]}
-            accessibilityRole="button"
-          >
-            {loggingOut ? (
-              <ActivityIndicator size="small" color={FEEDBACK.errorText} />
-            ) : (
-              <Ionicons name="log-out-outline" size={19} color={FEEDBACK.errorText} />
-            )}
-            <Text style={styles.logoutText}>Log Out</Text>
-          </Pressable>
     </>
   );
 }
@@ -409,18 +407,20 @@ const useStyles = makeStyles((p) => ({
   rowValue: { fontSize: TYPE.heading, color: SLATE[800], marginTop: 1 },
   classRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 7 },
   classText: { flex: 1, fontSize: TYPE.body, color: SLATE[700] },
+  // Icon alone, so it is a square tap target centred at the foot rather than a full-width bar.
+  // TOUCH.min on both axes: an icon-only control has no text to give it height, and 22px of glyph
+  // is not a 44px target.
   logoutRow: {
-    flexDirection: 'row',
+    alignSelf: 'center',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 8,
+    width: TOUCH.min,
+    height: TOUCH.min,
     marginTop: SPACING.lg,
-    paddingVertical: 14,
-    borderRadius: 12,
+    borderRadius: TOUCH.min / 2,
     borderWidth: 1,
     borderColor: FEEDBACK.errorBorder,
     backgroundColor: FEEDBACK.errorBg,
   },
   logoutRowPressed: { opacity: 0.75 },
-  logoutText: { fontSize: TYPE.heading, fontWeight: '700', color: FEEDBACK.errorText },
 }));

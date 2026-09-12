@@ -28,7 +28,7 @@
     },
     "android": {
       "package": "com.the3cedgeai.app",
-      "versionCode": 15,
+      "versionCode": 16,
       "softwareKeyboardLayoutMode": "pan",
       "splash": {
         "image": "./assets/images/The3CEdge.png",

@@ -76,7 +76,7 @@ function LegendItem({ color, label, hollow }) {
   );
 }
 
-export default function SelfAttendanceScreen({ homeRoute = '/teacher' }) {
+export default function SelfAttendanceScreen({ homeRoute = '/teacher', bottomInset = 0 }) {
   const styles = useStyles();
   const PALETTE = usePalette();
   const now = new Date();
@@ -246,6 +246,10 @@ export default function SelfAttendanceScreen({ homeRoute = '/teacher' }) {
 
   return (
     <ScreenScaffold
+      // 0 for the five `app/staff/[role]` shells, which reach this screen from a menu and have no
+      // bar over it. The teacher passes a real value because this is one of its tab roots, and a
+      // tab root that does not pad puts its last control under the bar.
+      contentStyle={bottomInset ? { paddingBottom: bottomInset } : null}
       title="Self Attendance"
       fallbackRoute={homeRoute}
       loading={loading}
