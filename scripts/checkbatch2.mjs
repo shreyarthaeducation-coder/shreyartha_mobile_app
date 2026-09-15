@@ -101,13 +101,6 @@ async function loadRules(mutate) {
   return import(`${pathToFileURL(file).href}?t=${Math.random()}`);
 }
 
-/** The website's own remark bands, read from source so ours can be compared to them. */
-function webRemarks() {
-  const src = read(path.join(WEB, 'student', 'platform', 'MyAnalytics', 'MyAnalytics.js'));
-  return [...src.matchAll(/return "((?:Exceptional|Excellent|Very Good|Good Progress|Keep Improving|Keep Practising)[^"]*)"/g)]
-    .map((m) => m[1]);
-}
-
 function assertions(A, R, src) {
   const out = [];
   const bad = (m) => out.push(m);
@@ -193,14 +186,29 @@ function assertions(A, R, src) {
     bad("the server's precomputed bottom-three is ignored when no exam is selected");
   }
 
-  // The remark bands, compared with the WEBSITE's own source.
-  const web = webRemarks();
-  if (web.length < 6) bad(`could not read the web's remark bands (found ${web.length}) — check this assertion`);
-  else {
-    const ours = [96, 92, 87, 82, 75, 10].map(A.getProgressRemark);
-    ours.forEach((s, i) => {
-      if (!web.includes(s)) bad(`remark band ${i} is not one of the website's strings: "${s}"`);
-    });
+  // The Rank Predictor (Sept 2026). Bands and remarks live ONLY on the server (MockRankPredictor) —
+  // they used to be copy-pasted into four files. The client just picks the right block.
+  const tabRank = A.rankOf(
+    { predictedRank: 'Top 100', mockTestsAttempted: 9 },
+    { predictedRank: 'Top 25,000', rankRemark: 'r', mockAveragePercent: 72, mockTestsAttempted: 2 },
+  );
+  if (tabRank.predictedRank !== 'Top 25,000' || tabRank.mockTestsAttempted !== 2) {
+    bad("rankOf does not prefer the selected exam tab's own rank block");
+  }
+  if (A.rankOf({ predictedRank: 'Top 100' }, null).predictedRank !== 'Top 100') {
+    bad('rankOf ignores the all-exams rank block when no exam is selected');
+  }
+  // null means "no mock attempted" and renders the prompt — never a made-up band.
+  if (A.rankOf({}, null).predictedRank !== null) bad('a missing prediction became a value instead of null');
+  if (A.clampPercent(-12.5) !== 0 || A.clampPercent(140) !== 100 || A.clampPercent(42) !== 42) {
+    bad('clampPercent does not bound ProgressBar values to 0–100 (negative marking drew no bar)');
+  }
+  if (/getProgressRemark/.test(body)) {
+    bad('AnalyticsBody computes a remark client-side again — the rank remark comes from the server');
+  }
+  if (!/rankOf\(competitive, selectedTab\)/.test(body)) bad('AnalyticsBody does not render the server rank block');
+  if (/\[selectedExam\]\?\.mockTestSubjects/.test(body) || !/\[selectedExam\]\?\.mockTests \|\| \[\]/.test(body)) {
+    bad('the mock paper grid reads `mockTestSubjects` again — that endpoint returns a flat `mockTests`, so the grid is empty');
   }
   // Compared against the LITERAL grey, not against mockStatusStyle('GREY') — an unknown status and
   // 'GREY' both fall to `default`, so comparing them to each other stays true however that branch
@@ -358,14 +366,11 @@ const MUTATIONS = [
   { name: 'GREY mocks counted as attempted', analytics: (s) => s.replace(".filter((m) => m.status !== 'GREY' && m.scorePercent != null)", '.filter((m) => m.scorePercent != null)') },
   { name: 'a null progress figure coerced to 0', analytics: (s) => s.replace('return ce?.myProgressPercent ?? null;', 'return ce?.myProgressPercent ?? 0;') },
   { name: 'the weak mocks sorted descending', analytics: (s) => s.replace('(a.scorePercent || 0) - (b.scorePercent || 0)', '(b.scorePercent || 0) - (a.scorePercent || 0)') },
-  {
-    // `replaceAll`, and targeting the sentence rather than the fragment. `Top 1,000` also appears
-    // in the doc comment that warns about the comma, and `.replace` takes the FIRST occurrence —
-    // so the first version of this mutation edited the comment and left the code untouched. Same
-    // family as checkspeech's stale mutation: never pin to text that occurs elsewhere.
-    name: 'a remark band reworded',
-    analytics: (s) => s.replaceAll('towards a Top 1,000 rank', 'towards a Top 1000 rank'),
-  },
+  { name: 'rankOf reading only the all-exams block', analytics: (s) => s.replace('const src = selectedTab || ce || {};', 'const src = ce || {};') },
+  { name: 'a missing prediction coerced to the lowest band', analytics: (s) => s.replace('predictedRank: src.predictedRank ?? null,', "predictedRank: src.predictedRank ?? 'Beyond 1,00,000',") },
+  { name: 'the ProgressBar clamp removed', analytics: (s) => s.replace('Math.max(0, Math.min(100, Number(value) || 0))', 'Number(value) || 0') },
+  { name: 'the rank remark computed client-side again', src: (k, s) => (k === 'body' ? s.replace('const ceRank = rankOf(competitive, selectedTab);', 'const ceRank = getProgressRemark(ceProgress);') : s) },
+  { name: 'THE BUG: the mock paper grid reading mockTestSubjects', src: (k, s) => (k === 'body' ? s.replace('mockTests[selectedExam]?.mockTests || []', 'mockTests[selectedExam]?.mockTestSubjects || []') : s) },
   { name: 'an unknown mock status no longer GREY', analytics: (s) => s.replace("    default:\n      return { bg: '#f5f5f5', border: '#bdbdbd', fg: '#616161' };", "    default:\n      return { bg: '#e8f5e9', border: '#4caf50', fg: '#2e7d32' };") },
   { name: 'the gap templates retyped instead of derived', analytics: (s) => s.replace('export const GAP_LEVELS = REFLECTION_OPTIONS.map((o) => ({', 'export const GAP_LEVELS = [].map((o) => ({') },
   { name: 'covered winning over reflected', analytics: (s) => s.replace("  if (topic?.reflectedByStudent) return '✅';\n  if (topic?.coveredByTeacher) return '📖';", "  if (topic?.coveredByTeacher) return '📖';\n  if (topic?.reflectedByStudent) return '✅';") },
@@ -413,7 +418,7 @@ console.log('\nBatch 2:');
   if (problems.length === 0) {
     ok('the syllabus percent reads `overallCompletionPercent`; 0% survives the fallback');
     ok('both star ladders are computed client-side and differ');
-    ok("competitive derivations match the web, remark bands byte-identical to the site's source");
+    ok('competitive derivations match the web; the rank block is server-computed and the mock grid reads `mockTests`');
     ok('the gap templates come from REFLECTION_OPTIONS, one copy only');
     ok('the parent keeps every prop AND gets a hidden-node filter for the new trees');
     ok('the lock spares exactly email and mobile; Academic IQ posts uppercase YES/NO');

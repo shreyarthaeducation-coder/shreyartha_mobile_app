@@ -129,15 +129,28 @@ export function weakMocksOf(ce, selectedTab) {
   return ce?.bottomThreeMockTests || [];
 }
 
-/** Verbatim from the web. Note the comma in "Top 1,000" and the British "Practising". */
-export function getProgressRemark(pct) {
-  if (pct >= 95) return 'Exceptional! You are on track for a Top 100 rank in India.';
-  if (pct >= 90) return 'Excellent! Keep pushing towards a Top 1,000 rank in India.';
-  if (pct >= 85) return 'Very Good! With consistent practice, you can achieve an even higher rank.';
-  if (pct >= 80) return 'Good Progress! Focus on accuracy and regular revision to improve further.';
-  if (pct >= 70) return 'Keep Improving! More practice will help you unlock your full potential.';
-  return 'Keep Practising! Consistent effort will show results soon.';
+/**
+ * A 0–100 bar value: negative marking can push an average below 0. `ProgressBar` clamps too; this
+ * keeps the intent explicit at the call site (the web's width style had no such guard and drew nothing).
+ */
+export const clampPercent = (value) => Math.max(0, Math.min(100, Number(value) || 0));
+
+/**
+ * Rank Predictor — computed on the SERVER (MockRankPredictor) from the mock-test average, best attempt
+ * per paper; the selected exam tab carries its own block, the top level the all-exams one. A null
+ * `predictedRank` means no mock test has been attempted yet.
+ */
+export function rankOf(ce, selectedTab) {
+  const src = selectedTab || ce || {};
+  return {
+    predictedRank: src.predictedRank ?? null,
+    rankRemark: src.rankRemark ?? null,
+    mockAveragePercent: src.mockAveragePercent ?? null,
+    mockTestsAttempted: src.mockTestsAttempted ?? 0,
+  };
 }
+
+export const NO_RANK_REMARK = 'Attempt a mock test to see your predicted rank.';
 
 /** Shown when there is no progress figure at all. */
 export const NO_PROGRESS_REMARK =

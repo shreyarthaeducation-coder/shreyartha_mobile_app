@@ -17,6 +17,9 @@ import { COLORS, SHADOWS, SLATE, SPACING, TYPE, leading } from "../../constants/
 import { loginGroup } from "../../constants/authPortals";
 import SearchBar from "../components/SearchBar";
 import { api } from "../../services/apiService";
+import { Ionicons } from "@expo/vector-icons";
+
+const WHATSAPP_URL = "https://wa.me/917044768386";
 
 const { width } = Dimensions.get("window");
 const CARD_WIDTH = (width - SPACING.lg * 2 - SPACING.sm) / 2;
@@ -236,7 +239,7 @@ export default function LandingScreen() {
       setContactForm({ name: "", email: "", phone: "", message: "" });
     } catch {
       setContactError(
-        "Failed to send message. Please try again or email us directly at info@the3cedge.com.",
+        "Failed to send message. Please try again or email us directly at info@the3cedge.in.",
       );
     } finally {
       setContactLoading(false);
@@ -520,12 +523,21 @@ export default function LandingScreen() {
           <View style={styles.contactInfoRow}>
             <View style={styles.contactInfoItem}>
               <Text style={styles.contactInfoIcon}>📧</Text>
-              <Text style={styles.contactInfoText}>info@the3cedge.com</Text>
+              <Text style={styles.contactInfoText}>info@the3cedge.in</Text>
             </View>
             <View style={styles.contactInfoItem}>
               <Text style={styles.contactInfoIcon}>📞</Text>
               <Text style={styles.contactInfoText}>+91 98765 43210</Text>
             </View>
+            <TouchableOpacity
+              style={styles.contactInfoItem}
+              onPress={() => Linking.openURL(WHATSAPP_URL)}
+              accessibilityRole="link"
+              accessibilityLabel="Chat with us on WhatsApp, +91 70447 68386"
+            >
+              <Ionicons name="logo-whatsapp" size={22} color="#25D366" style={styles.contactInfoIcon} />
+              <Text style={styles.contactInfoText}>WhatsApp: +91 70447 68386</Text>
+            </TouchableOpacity>
             <View style={styles.contactInfoItem}>
               <Text style={styles.contactInfoIcon}>📍</Text>
               <Text style={styles.contactInfoText}>New Delhi, India</Text>
@@ -731,9 +743,16 @@ export default function LandingScreen() {
                 Contact
               </Text>
               <Text style={styles.footerContactText}>
-                📧 info@the3cedge.com
+                📧 info@the3cedge.in
               </Text>
               <Text style={styles.footerContactText}>📞 +91 98765 43210</Text>
+              <Text
+                style={styles.footerContactText}
+                onPress={() => Linking.openURL(WHATSAPP_URL)}
+                accessibilityRole="link"
+              >
+                <Ionicons name="logo-whatsapp" size={14} color="#25D366" /> +91 70447 68386
+              </Text>
               <Text style={styles.footerContactText}>📍 New Delhi, India</Text>
             </View>
           </View>

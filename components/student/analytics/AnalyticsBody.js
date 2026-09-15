@@ -8,16 +8,17 @@ import { ProgressBar } from '../../ui';
 import PsychometricSummary from '../psychometric/PsychometricSummary';
 import {
   GAP_LEVELS,
-  NO_PROGRESS_REMARK,
+  NO_RANK_REMARK,
   PENDING_REFLECTION,
   REFLECTION_BADGE,
+  clampPercent,
   completedPercentOf,
-  getProgressRemark,
   mockStatusStyle,
   progressPercent,
   progressPercentOf,
   progressStars,
   progressTopicIcon,
+  rankOf,
   statusStyle,
   syllabusPercent,
   syllabusStars,
@@ -254,6 +255,7 @@ export default function AnalyticsBody({
   const cePct = completedPercentOf(competitive, selectedTab);
   const ceProgress = progressPercentOf(competitive, selectedTab);
   const weakMocks = weakMocksOf(competitive, selectedTab);
+  const ceRank = rankOf(competitive, selectedTab);
 
   const pickExam = (exam) => {
     // Selecting filters the whole section AND expands its papers; re-tapping clears both, which is
@@ -554,14 +556,33 @@ export default function AnalyticsBody({
 
             <ProgressBar value={cePct} label="Completed" showValue style={styles.bar} />
             <ProgressBar
-              value={ceProgress ?? 0}
+              value={clampPercent(ceProgress)}
               label="My Progress"
               showValue={ceProgress != null}
               style={styles.bar}
             />
-            <Text style={styles.remark}>
-              {ceProgress != null ? getProgressRemark(ceProgress) : NO_PROGRESS_REMARK}
-            </Text>
+
+            {/* Rank Predictor — server-computed from the mock-test average (best attempt per paper). */}
+            <View style={styles.rankBox}>
+              <Text style={styles.rankTitle}>
+                {selectedTab ? `Rank Predictor — ${selectedTab.examName}` : 'Rank Predictor'}
+              </Text>
+              {ceRank.predictedRank ? (
+                <>
+                  <Text style={styles.rankValue}>Probable Rank: {ceRank.predictedRank}</Text>
+                  <Text style={styles.remark}>
+                    Mock test average: {ceRank.mockAveragePercent}% across {ceRank.mockTestsAttempted} mock
+                    test{ceRank.mockTestsAttempted === 1 ? '' : 's'}
+                  </Text>
+                  {ceRank.rankRemark ? <Text style={styles.rankRemark}>{ceRank.rankRemark}</Text> : null}
+                  <Text style={styles.rankNote}>
+                    Indicative — based on your mock test average, not an official rank.
+                  </Text>
+                </>
+              ) : (
+                <Text style={styles.remark}>{NO_RANK_REMARK}</Text>
+              )}
+            </View>
 
             {weakMocks.length > 0 ? (
               <View style={styles.weakBox}>
@@ -590,8 +611,9 @@ export default function AnalyticsBody({
                   <Text style={styles.body}>Could not load mock tests for this exam.</Text>
                 ) : (
                   <View style={styles.paperGrid}>
-                    {(mockTests[selectedExam]?.mockTestSubjects || [])
-                      .flatMap((s) => s.mockTests || [])
+                    {/* The entrance-exam endpoint returns a FLAT `mockTests` list — reading
+                        `mockTestSubjects` here left this grid permanently empty. */}
+                    {(mockTests[selectedExam]?.mockTests || [])
                       .map((mt) => {
                         const c = mockStatusStyle(mt.status);
                         return (
@@ -878,6 +900,31 @@ const useStyles = makeStyles((p) => ({
   },
   showing: { fontSize: TYPE.label, fontWeight: '700', color: SLATE[700] },
   remark: { fontSize: TYPE.label, color: SLATE[600], lineHeight: leading(TYPE.label), marginTop: 4 },
+
+  rankBox: {
+    backgroundColor: '#eef2ff',
+    borderWidth: 1,
+    borderColor: '#c7d2fe',
+    borderRadius: 10,
+    padding: SPACING.sm,
+    marginTop: SPACING.sm,
+  },
+  rankTitle: {
+    fontSize: TYPE.caption,
+    fontWeight: '800',
+    color: '#3730a3',
+    textTransform: 'uppercase',
+    marginBottom: 4,
+  },
+  rankValue: { fontSize: TYPE.body, fontWeight: '800', color: '#312e81', lineHeight: leading(TYPE.body) },
+  rankRemark: {
+    fontSize: TYPE.label,
+    fontWeight: '600',
+    color: '#1e1b4b',
+    lineHeight: leading(TYPE.label),
+    marginTop: 6,
+  },
+  rankNote: { fontSize: TYPE.caption, color: SLATE[600], lineHeight: leading(TYPE.caption), marginTop: 4 },
 
   weakBox: {
     backgroundColor: '#fff5f5',
