@@ -288,12 +288,15 @@ function assertions({ staffRoles, vp, scope, home }, sources) {
   // six staff shells lived inside StaffMenuScreen — covering the home screen and none of the other
   // thirty-seven routes registered in this layout.
   //
-  // It matters most for the two SHREYARTHA roles. The school-bound roles are protected server-side
-  // by a role SWAP (a pending VP literally holds ROLE_UNVERIFIED_VICE_PRINCIPAL, so every
-  // @PreAuthorize refuses them). There is no ROLE_UNVERIFIED_SHREYARTHA_* at all — signup sets
-  // verified=true and un-verifying flips a boolean the server never reads. So for those two roles
-  // THIS CLIENT GATE IS THE ONLY GATE, and losing it hands out a fully working panel rather than
-  // an empty one.
+  // EVERY staff role is now protected server-side by a role SWAP: a pending VP holds
+  // ROLE_UNVERIFIED_VICE_PRINCIPAL and a pending Shreyartha teacher holds
+  // ROLE_UNVERIFIED_SHREYARTHA_TEACHER, so every @PreAuthorize refuses both.
+  //
+  // That was NOT true before Sept 2026, and this comment used to say so. The SHREYARTHA_* roles had
+  // no unverified twin — signup set verified=true and un-verifying flipped a boolean the server
+  // never read — so for those roles THIS CLIENT GATE WAS THE ONLY GATE. The twins exist now, which
+  // demotes this gate from last line of defence to routing convenience. It still earns its keep:
+  // without it a pending employee is shown a panel whose every call 403s at them.
   if (!/schoolUserVerified/.test(layout)) {
     bad('_layout.js does not read schoolUserVerified — the staff group has no verification gate');
   }

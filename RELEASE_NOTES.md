@@ -5,9 +5,10 @@
 The release where the student panel reached parity with the website, the partner panel went fully
 native, and signup / password-reset were audited end to end for all eight roles.
 
-> **⚠️ THIS RELEASE REQUIRES A NEW SERVER ENV VAR.** `SHREYARTHA_SIGNUP_CODE` must be set in
-> `backendmain/.env` before deploying, or Shreyartha staff signup stops working entirely. That is
-> deliberate — see [Signup and password reset](#signup-and-password-reset).
+> **⚠️ SUPERSEDED — THAT ENV VAR NO LONGER EXISTS.** This release originally required
+> `SHREYARTHA_SIGNUP_CODE` to be set in `backendmain/.env`. A later change deleted
+> `/api/shreyartha/auth/signup` outright and moved Shreyartha staff onto the ordinary signup +
+> admin-approval flow, so nothing reads that variable any more. **Do not set it.**
 
 > **Not device-tested.** Everything below builds clean and passes the checker suite, but no part of
 > this release has been run on a physical device. The device matrix at the end of this document is
@@ -152,9 +153,13 @@ server, so nothing here was visible from the app's code alone.
 
 - **Anyone on the internet could create a verified Shreyartha admin account.**
   `POST /api/shreyartha/auth/signup` is public and marked the account active immediately, and that
-  role implies `SCHOOL_ADMIN`. It now requires a shared secret — `SHREYARTHA_SIGNUP_CODE` — and
-  **refuses every signup when that is unset**, so an unconfigured server fails closed rather than
-  open. Both the app and the website ask for the code when a Shreyartha role is selected.
+  role implies `SCHOOL_ADMIN`. It was gated behind a shared secret — `SHREYARTHA_SIGNUP_CODE` —
+  which **refused every signup when unset**, so an unconfigured server failed closed rather than
+  open.
+  **[SUPERSEDED — see "Shreyartha staff now sign up and wait for approval" below.]** The secret is
+  gone: that endpoint was deleted and the three Shreyartha roles now register through the ordinary
+  staff signup and wait for an admin, like every other role. Do not set
+  `SHREYARTHA_SIGNUP_CODE` — nothing reads it.
 - **Password reset by phone silently did nothing for many users.** Every signup stored the number
   exactly as typed while the reset lookup searched for bare digits, so anyone who registered as
   "+91 98765 43210" could never recover their account — and the "a reset link has been sent"
@@ -209,10 +214,11 @@ moment it deploys. **Deploy them together**, and confirm on the website afterwar
 
 ### Required before deploying
 
-**Set `SHREYARTHA_SIGNUP_CODE` in `backendmain/.env`.** Without it, `/api/shreyartha/auth/signup`
-refuses every request — by design, so a server that was never configured cannot keep handing out
-admin-level staff accounts to anyone who asks. Share the value with whoever onboards Shreyartha
-staff; both the app and the website now prompt for it.
+~~**Set `SHREYARTHA_SIGNUP_CODE` in `backendmain/.env`.**~~ **No longer required — do not set it.**
+This instruction applied to release 2.0.0 only. `/api/shreyartha/auth/signup` has since been
+deleted and nothing reads that variable; Shreyartha staff now sign up through the ordinary staff
+signup and wait for an admin to approve them. See "Shreyartha staff now sign up and wait for
+approval" below.
 
 ### Migration
 

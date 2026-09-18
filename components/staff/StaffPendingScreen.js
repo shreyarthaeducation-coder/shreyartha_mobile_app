@@ -15,10 +15,19 @@ import { makeStyles } from '../../utils/makeStyles';
  *
  * There is no "refresh" action on purpose: `verified` only comes back on a fresh login response,
  * so logging in again is the honest way to pick up the change.
+ *
+ * `approver` names who actually does the approving, because it is not the same person for everyone:
+ * a partner school's staff wait on their own school administrator, while Shreyartha HQ staff and
+ * sales reps wait on the Shreyartha admin team. The caller decides — see
+ * app/staff/[role]/pending-verification.js.
  */
 
 
-export default function StaffPendingScreen({ roleLabel = 'Staff', unlocks = [] }) {
+export default function StaffPendingScreen({
+  roleLabel = 'Staff',
+  unlocks = [],
+  approver = 'the school administrator',
+}) {
   const styles = useStyles();
   const PALETTE = usePalette();
   const { confirmLogout, loggingOut } = useStaffLogout();
@@ -33,7 +42,7 @@ export default function StaffPendingScreen({ roleLabel = 'Staff', unlocks = [] }
 
           <Text style={styles.title}>Account Pending Verification</Text>
           <Text style={styles.text}>
-            Your {roleLabel} account is currently pending verification by the school administrator.
+            Your {roleLabel} account is currently pending verification by {approver}.
           </Text>
 
           {unlocks.length > 0 ? (
@@ -51,7 +60,7 @@ export default function StaffPendingScreen({ roleLabel = 'Staff', unlocks = [] }
           ) : null}
 
           <Text style={styles.note}>
-            Log in again once your administrator has verified your account.
+            Log in again once {approver} has verified your account.
           </Text>
 
           <PrimaryButton

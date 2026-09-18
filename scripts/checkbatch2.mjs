@@ -29,6 +29,8 @@ const SRC = {
   analyticsConst: 'constants/analytics.js',
   rules: 'constants/profileRules.js',
   body: 'components/student/analytics/AnalyticsBody.js',
+  rankCard: 'components/student/RankPredictor.js',
+  ceScreen: 'components/student/academiciq/CompetitiveExamScreen.js',
   parent: 'components/parent/AcademicProgressScreen.js',
   studentScreen: 'components/student/AnalyticsScreen.js',
   studentSvc: 'services/student/analyticsService.js',
@@ -207,6 +209,32 @@ function assertions(A, R, src) {
     bad('AnalyticsBody computes a remark client-side again — the rank remark comes from the server');
   }
   if (!/rankOf\(competitive, selectedTab\)/.test(body)) bad('AnalyticsBody does not render the server rank block');
+
+  // THE CARD IS SHARED, AND IT HAS TWO CALL SITES.
+  //
+  // The website renders RankPredictorCard in three places — My Analytics, the Mock Test page and
+  // the post-submit result screen. Mobile rendered it inline on My Analytics alone, so a student
+  // who opened Competitive Exam → Mock Test saw a bare list of paper names and no predicted rank.
+  // Both mobile surfaces now render the one component. There is deliberately no third assertion:
+  // the result screen has no mobile twin because the app has no mock-test RUNNER yet.
+  const rankCard = codeOnly(src.rankCard);
+  const ceScreen = codeOnly(src.ceScreen);
+  if (!/<RankPredictor/.test(body)) bad('My Analytics no longer renders the shared RankPredictor card');
+  if (!/<RankPredictor/.test(ceScreen)) {
+    bad('the Competitive Exam Mock Test section does not render the Rank Predictor — the website shows it there');
+  }
+  if (!/fetchMockTestsForExam/.test(ceScreen)) {
+    bad('the Mock Test section never reads /mocktest/entrance-exam/{id}, so it has no rank block or status counts to show');
+  }
+  // The bands, the rank labels and the remark belong to the SERVER (MockRankPredictor). Retyping
+  // one on the client is the drift this arrangement exists to prevent — it is how the website ended
+  // up with four copies of the same ladder.
+  if (/Top 1,00,000|Beyond 1,00,000|Top 25,000|Top 5,000/.test(rankCard + ceScreen + body)) {
+    bad('a rank band label is hardcoded on the client — MockRankPredictor owns those strings');
+  }
+  if (/predictedRank\s*(\?\?|\|\|)\s*['"]/.test(rankCard)) {
+    bad('RankPredictor invents a rank when the server sent none — null must render the prompt instead');
+  }
   if (/\[selectedExam\]\?\.mockTestSubjects/.test(body) || !/\[selectedExam\]\?\.mockTests \|\| \[\]/.test(body)) {
     bad('the mock paper grid reads `mockTestSubjects` again — that endpoint returns a flat `mockTests`, so the grid is empty');
   }
@@ -370,6 +398,11 @@ const MUTATIONS = [
   { name: 'a missing prediction coerced to the lowest band', analytics: (s) => s.replace('predictedRank: src.predictedRank ?? null,', "predictedRank: src.predictedRank ?? 'Beyond 1,00,000',") },
   { name: 'the ProgressBar clamp removed', analytics: (s) => s.replace('Math.max(0, Math.min(100, Number(value) || 0))', 'Number(value) || 0') },
   { name: 'the rank remark computed client-side again', src: (k, s) => (k === 'body' ? s.replace('const ceRank = rankOf(competitive, selectedTab);', 'const ceRank = getProgressRemark(ceProgress);') : s) },
+  { name: 'THE GAP: the Mock Test section losing the Rank Predictor', src: (k, s) => (k === 'ceScreen' ? s.replaceAll('<RankPredictor', '<NoRankHere') : s) },
+  { name: 'the Mock Test section no longer reading the rank endpoint', src: (k, s) => (k === 'ceScreen' ? s.replaceAll('fetchMockTestsForExam', 'noSuchFetch') : s) },
+  { name: 'My Analytics losing the shared rank card', src: (k, s) => (k === 'body' ? s.replaceAll('<RankPredictor', '<NoRankHere') : s) },
+  { name: 'a rank band retyped on the client', src: (k, s) => (k === 'rankCard' ? s.replace('  const attempted =', "  const FALLBACK_BAND = 'Top 25,000';\n  const attempted =") : s) },
+  { name: 'RankPredictor inventing a rank the server never sent', src: (k, s) => (k === 'rankCard' ? s.replace('  predictedRank,\n', "  predictedRank = predictedRank ?? 'Top 100',\n") : s) },
   { name: 'THE BUG: the mock paper grid reading mockTestSubjects', src: (k, s) => (k === 'body' ? s.replace('mockTests[selectedExam]?.mockTests || []', 'mockTests[selectedExam]?.mockTestSubjects || []') : s) },
   { name: 'an unknown mock status no longer GREY', analytics: (s) => s.replace("    default:\n      return { bg: '#f5f5f5', border: '#bdbdbd', fg: '#616161' };", "    default:\n      return { bg: '#e8f5e9', border: '#4caf50', fg: '#2e7d32' };") },
   { name: 'the gap templates retyped instead of derived', analytics: (s) => s.replace('export const GAP_LEVELS = REFLECTION_OPTIONS.map((o) => ({', 'export const GAP_LEVELS = [].map((o) => ({') },

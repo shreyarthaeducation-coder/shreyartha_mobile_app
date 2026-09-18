@@ -9,6 +9,7 @@ import { EmptyState, useToast } from '../../ui';
 import RichText from '../../RichText';
 import StudentScaffold from '../StudentScaffold';
 import { StudentCard, StudentCardTitle, StudentNote } from '../StudentCard';
+import RankPredictor from '../RankPredictor';
 import { SOURCES } from '../../../services/student/doubtService';
 import AiActionBar from '../ai/AiActionBar';
 import LimitedAccessNote from '../LimitedAccessNote';
@@ -22,6 +23,7 @@ import {
   adaptiveEngine,
   fetchCategories,
   fetchMockTestPapers,
+  fetchMockTestsForExam,
   fetchMyExam,
   fetchPracticeQuestions,
   fetchSubjectTree,
@@ -61,6 +63,11 @@ export default function CompetitiveExamScreen() {
   const [examName, setExamName] = useState('');
   const [subjects, setSubjects] = useState([]);
   const [papers, setPapers] = useState([]);
+  // The Mock Test section's header: the status counts AND the server's rank block, both from
+  // /mocktest/entrance-exam/{id} — the same single read the website's Mock Test page makes, and the
+  // same rank block My Analytics renders. The path parameter is an entrance-exam SUBJECT id, which
+  // is exactly the `subExam.id` this screen already holds (see getMockTestsByEntranceExam).
+  const [mockSummary, setMockSummary] = useState(null);
   const [loading, setLoading] = useState(true);
   const [treeLoading, setTreeLoading] = useState(false);
   const [error, setError] = useState('');
@@ -136,6 +143,13 @@ export default function CompetitiveExamScreen() {
     fetchMockTestPapers(exam.id)
       .then(setPapers)
       .catch(() => setPapers([]));
+    // Same rule for the counts and the rank block. An exam the student has no attempts on answers
+    // 404 here, which is an ordinary outcome rather than an error worth surfacing — the section
+    // simply renders without its header.
+    setMockSummary(null);
+    fetchMockTestsForExam(exam.id)
+      .then(setMockSummary)
+      .catch(() => setMockSummary(null));
   }
 
   const openTopic = async (t, subjectName, chapterName) => {
@@ -377,26 +391,61 @@ export default function CompetitiveExamScreen() {
     );
   };
 
-  const renderMockTest = () =>
-    gate.limited ? (
-      <LimitedAccessNote />
-    ) : papers.length === 0 ? (
-      <StudentCard>
-        <StudentNote>No mock test papers have been published for this exam yet.</StudentNote>
-      </StudentCard>
-    ) : (
-      papers.map((paper) => (
-        <StudentCard key={paper.id}>
-          <View style={styles.rowHead}>
-            <Text style={styles.paperName}>{paper.name || paper.title}</Text>
-            <Ionicons name="chevron-forward" size={17} color={palette.deep} />
-          </View>
-          {paper.durationMinutes ? (
-            <Text style={styles.paperMeta}>{paper.durationMinutes} minutes</Text>
-          ) : null}
-        </StudentCard>
-      ))
+  const renderMockTest = () => {
+    if (gate.limited) return <LimitedAccessNote />;
+
+    return (
+      <>
+        {/* The website's Mock Test page puts the status counts and the Rank Predictor ABOVE the
+            paper list (CompetitiveExamMockTest.js), and until now mobile showed the predicted rank
+            only on My Analytics. Same endpoint, same server-computed block, same card. */}
+        {mockSummary ? (
+          <StudentCard>
+            <StudentCardTitle>{examName || subExam?.name || 'Mock Tests'}</StudentCardTitle>
+            <View style={styles.summaryRow}>
+              <Text style={styles.summaryItem}>
+                Total: {mockSummary.totalMockTests ?? papers.length}
+              </Text>
+              <Text style={[styles.summaryItem, styles.summaryPass]}>
+                ● Passed: {mockSummary.greenCount ?? 0}
+              </Text>
+              <Text style={[styles.summaryItem, styles.summaryFail]}>
+                ● Failed: {mockSummary.redCount ?? 0}
+              </Text>
+              <Text style={[styles.summaryItem, styles.summaryGrey]}>
+                ● Unattempted: {mockSummary.greyCount ?? 0}
+              </Text>
+            </View>
+            <RankPredictor
+              title={`Rank Predictor — ${examName || subExam?.name || 'this exam'}`}
+              predictedRank={mockSummary.predictedRank}
+              rankRemark={mockSummary.rankRemark}
+              mockAveragePercent={mockSummary.mockAveragePercent}
+              mockTestsAttempted={mockSummary.mockTestsAttempted}
+            />
+          </StudentCard>
+        ) : null}
+
+        {papers.length === 0 ? (
+          <StudentCard>
+            <StudentNote>No mock test papers have been published for this exam yet.</StudentNote>
+          </StudentCard>
+        ) : (
+          papers.map((paper) => (
+            <StudentCard key={paper.id}>
+              <View style={styles.rowHead}>
+                <Text style={styles.paperName}>{paper.name || paper.title}</Text>
+                <Ionicons name="chevron-forward" size={17} color={palette.deep} />
+              </View>
+              {paper.durationMinutes ? (
+                <Text style={styles.paperMeta}>{paper.durationMinutes} minutes</Text>
+              ) : null}
+            </StudentCard>
+          ))
+        )}
+      </>
     );
+  };
 
   /* ── Screen ──────────────────────────────────────────────────────────── */
 
@@ -571,6 +620,7 @@ export default function CompetitiveExamScreen() {
       setSubExam(null);
       setSubjects([]);
       setPapers([]);
+      setMockSummary(null);
     }
   };
 
@@ -704,6 +754,12 @@ const useStyles = makeStyles((p) => ({
 
   paperName: { flex: 1, fontSize: TYPE.heading, fontWeight: '700', color: SLATE[800] },
   paperMeta: { fontSize: TYPE.caption, color: SLATE[500], marginTop: 3 },
+
+  summaryRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: SPACING.sm },
+  summaryItem: { fontSize: TYPE.label, fontWeight: '600', color: SLATE[600] },
+  summaryPass: { color: '#2e7d32' },
+  summaryFail: { color: '#c62828' },
+  summaryGrey: { color: SLATE[500] },
 
   mediaBtn: {
     flexDirection: 'row',
