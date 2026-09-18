@@ -24,7 +24,6 @@ import {
   loginSchool,
   lookupSchoolCode,
   signupSchool,
-  signupShreyartha,
 } from '../../services/authService';
 import { resolveDashboardRoute, storeSchoolSession } from '../../services/schoolSession';
 import { startStaffAttendanceSession } from '../../services/staffAttendanceService';
@@ -80,15 +79,16 @@ export default function StaffAuthScreen({ variant = 'school' }) {
   // Guards a second submit slipping through before `submitting` has re-rendered.
   const inFlight = useRef(false);
 
-  // Two questions that used to share one answer, and no longer do:
-  //   needsSignupCode — only the SHREYARTHA_* roles, whose endpoint activates instantly
-  //   pinnedToShreya01 — those three AND sales, none of which type a school code
+  // One question now, where there were two. Its sibling `needsSignupCode` singled out the
+  // SHREYARTHA_* roles, whose separate endpoint activated an account on the spot; that endpoint is
+  // gone and every employee role signs up and waits for an admin, so only the school code differs.
   //
-  // Both still read the ROLE rather than the variant. They agree with `config.roles` today, and
-  // they are not the same question: these are about the account being created, not about which
-  // URL the form is behind.
-  const needsSignupCode = requiresSignupCode(signup.userType);
+  // Still reads the ROLE rather than the variant: this is about the account being created, not
+  // about which URL the form is behind.
   const pinnedToShreya01 = isShreyarthaRole(signup.userType);
+  // A separate question from the school-code pin above, even though the two agree on every role
+  // that exists today — see requiresSignupCode.
+  const needsSignupCode = requiresSignupCode(signup.userType);
 
   // Deep links and the post-session-expiry redirect both arrive with no history to pop.
   const handleBack = useCallback(() => {
@@ -236,13 +236,10 @@ export default function StaffAuthScreen({ variant = 'school' }) {
       setError('Please enter your School Code.');
       return;
     }
-    // The Shreyartha endpoint activates the account immediately (verified = true, and
-    // SHREYARTHA_ADMIN implies SCHOOL_ADMIN), so the server gates it on a shared secret.
     if (needsSignupCode && !signup.signupCode.trim()) {
-      setError('Please enter the Shreyartha staff signup code.');
+      setError('Please enter the Shreyartha signup code.');
       return;
     }
-
     inFlight.current = true;
     setSubmitting(true);
     setError('');
@@ -254,17 +251,14 @@ export default function StaffAuthScreen({ variant = 'school' }) {
         userType: signup.userType,
         password: signup.password,
       };
-      // Three ways, not two. SALES is pinned to SHREYA01 like the Shreyartha roles, but it
-      // registers through the ORDINARY school endpoint so it lands unverified and waits for an
-      // admin — signupShreyartha would activate it on the spot and has no SALES arm anyway.
-      const res = needsSignupCode
-        ? await signupShreyartha({ ...payload, signupCode: signup.signupCode.trim() })
-        : await signupSchool({
-            ...payload,
-            schoolCode: pinnedToShreya01
-              ? SHREYARTHA_SCHOOL_CODE
-              : signup.schoolCode.trim(),
-          });
+      // One way now. Every staff role registers through the school endpoint and waits for an admin;
+      // the only branch left is whether the school code was typed or is pinned to SHREYA01. The
+      // server refuses an employee role under any other code, so the pin is load-bearing.
+      const res = await signupSchool({
+        ...payload,
+        schoolCode: pinnedToShreya01 ? SHREYARTHA_SCHOOL_CODE : signup.schoolCode.trim(),
+        signupCode: needsSignupCode ? signup.signupCode.trim() : undefined,
+      });
 
       setSignup(emptySignup(config.defaultRole));
       setSchoolLookup({ status: 'idle', name: '' });
@@ -473,7 +467,12 @@ export default function StaffAuthScreen({ variant = 'school' }) {
             options={config.roles}
             onChange={(value) => {
               setError('');
-              setSignup((p) => ({ ...p, userType: value }));
+              setSignup((p) => ({
+                ...p,
+                userType: value,
+                // Never carry a typed code onto a role that does not use one.
+                signupCode: requiresSignupCode(value) ? p.signupCode : '',
+              }));
               // Shreyartha roles don't use a school code — drop any stale lookup result.
               if (isShreyarthaRole(value)) setSchoolLookup({ status: 'idle', name: '' });
             }}
@@ -499,20 +498,26 @@ export default function StaffAuthScreen({ variant = 'school' }) {
             />
           )}
 
-          {/* Shown only for Shreyartha roles: that endpoint skips admin verification, so the
-              server requires a shared secret before it will mint the account. */}
+          {/* Shown for every Shreyartha employee role — see requiresSignupCode. Masked like the
+              web's input, with the toggle this app uses everywhere else for secrets. */}
           {needsSignupCode && (
             <PasswordField
               palette={PALETTE}
               label="Shreyartha Signup Code"
               required
-              placeholder="Provided by your administrator"
+              placeholder="Provided by Shreyartha"
               value={signup.signupCode}
               onChangeText={(v) => {
                 setError('');
                 setSignup((p) => ({ ...p, signupCode: v }));
               }}
               textContentType="none"
+              helper={
+                <Text style={styles.helperNote}>
+                  Shreyartha staff accounts are active immediately, so this code is required. Ask
+                  your administrator if you do not have one.
+                </Text>
+              }
             />
           )}
 
@@ -615,10 +620,9 @@ function emptySignup(defaultRole) {
     email: '',
     mobile: '',
     schoolCode: '',
+    signupCode: '',
     userType: defaultRole,
     password: '',
-    // Only sent for the SHREYARTHA_* roles — see handleSignup.
-    signupCode: '',
     terms: false,
   };
 }
@@ -647,5 +651,6 @@ const styles = StyleSheet.create({
   helperChecking: { fontSize: TYPE.label, color: SLATE[500] },
   helperValid: { fontSize: TYPE.label, color: FEEDBACK.successText, fontWeight: '600' },
   helperInvalid: { fontSize: TYPE.label, color: FEEDBACK.errorText, fontWeight: '600' },
+  helperNote: { fontSize: TYPE.label, color: SLATE[500], lineHeight: TYPE.label * 1.4 },
   backToLogin: { marginTop: SPACING.sm },
 });

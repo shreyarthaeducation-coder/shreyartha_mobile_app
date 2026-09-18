@@ -13,8 +13,10 @@
  * mobile app follows.
  *
  * The split is by DOOR, not by any property of the role — SALES sits with the Shreyartha roles
- * because a rep is Shreyartha staff, even though it signs up through the ordinary school endpoint.
- * See `requiresSignupCode` below, which is the predicate that actually decides that.
+ * because a rep is Shreyartha staff. Every role in both lists signs up through the same endpoint;
+ * what differs is that a partner school's staff type their school code and wait for their admin,
+ * while a Shreyartha employee is pinned to SHREYA01 (`isShreyarthaRole`), types the shared signup
+ * code (`requiresSignupCode`) and is active immediately.
  */
 
 /** The five roles that belong to a partner school. Door: /auth/school-login. */
@@ -29,9 +31,12 @@ export const SCHOOL_ROLES = [
 /**
  * The four Shreyartha (SHREYA01) roles. Door: /auth/employee-login.
  *
- * Field sales registers here like anyone else and waits for a platform admin to approve — which is
- * why it belongs in this picker even though its backend role is ROLE_SHREYARTHA_SALES and its
+ * Field sales registers here like anyone else — with the shared Shreyartha code, and active on
+ * submission since 18 Sept 2026 — even though its backend role is ROLE_SHREYARTHA_SALES and its
  * stored `userType` is the short `SALES`.
+ *
+ * HR is deliberately absent: it is a website-only portal today, so an HR account created here would
+ * log in to nothing. Add it to this list the day the HR portal has app screens.
  */
 export const EMPLOYEE_ROLES = [
   { value: 'SHREYARTHA_ADMIN', label: 'Shreyartha Admin' },
@@ -111,15 +116,18 @@ export function variantAdmits(variantKey, userType) {
  * `SALES` — chosen so the panel reads "Sales" rather than "Shreyartha Sales" throughout, and so
  * its route is `/staff/sales`.
  *
- * ── DO NOT USE THIS TO PICK A SIGNUP ENDPOINT ───────────────────────────────
- * It used to serve both purposes, and the two have since diverged: SALES is pinned to SHREYA01
- * (so it belongs here) but signs up through the ordinary school endpoint and waits for approval
- * (so it does NOT belong in the signup-code branch). Reusing this predicate there would show a
- * sales applicant the Shreyartha Signup Code field and post them to
- * `/api/shreyartha/auth/signup` — which activates accounts immediately and has no SALES arm, so
- * it would 400. {@link requiresSignupCode} is the predicate for that decision.
+ * ── THERE IS ONLY ONE SIGNUP ENDPOINT NOW ───────────────────────────────────
+ * This predicate once had a sibling, `requiresSignupCode`, which picked between two signup
+ * endpoints: the three SHREYARTHA_* roles posted to an auto-verifying `/api/shreyartha/auth/signup`
+ * gated by a shared secret, while SALES took the ordinary approval route. The two predicates had to
+ * disagree about SALES, and confusing them showed a sales applicant a signup-code field and a 400.
  *
- * ── AND DO NOT REPLACE IT WITH "IS IT IN EMPLOYEE_ROLES" ────────────────────
+ * The endpoint is still gone (Sept 2026): every staff role signs up at `/api/school/auth/signup`.
+ * The predicate came back on 18 Sept as {@link requiresSignupCode}, because the three SHREYARTHA_*
+ * roles are once again activated by the shared code rather than by an admin. THIS one still asks
+ * only about the school code, and still answers true for SALES.
+ *
+ * ── DO NOT REPLACE IT WITH "IS IT IN EMPLOYEE_ROLES" ────────────────────────
  * The two agree today, and they are not the same question. This one asks about the school code;
  * EMPLOYEE_ROLES asks which door the form is behind. Collapsing them would make the school-code
  * field's visibility depend on the URL rather than on the role that was picked.
@@ -129,21 +137,34 @@ export const isShreyarthaRole = (userType) => {
   return value.startsWith('SHREYARTHA_') || value === 'SALES';
 };
 
-/**
- * Does signing up as this role demand the shared Shreyartha signup code?
- *
- * True only for the three `SHREYARTHA_*` roles, whose signup endpoint activates the account on
- * the spot and is therefore gated by a secret. Everyone else — school staff and SALES alike —
- * registers unverified and is gated by admin approval instead.
- *
- * Deliberately the prefix test alone, with no SALES arm. See the warning on
- * {@link isShreyarthaRole}.
- */
-export const requiresSignupCode = (userType) =>
-  String(userType || '').toUpperCase().startsWith('SHREYARTHA_');
-
 /** The school code every Shreyartha role is pinned to. */
 export const SHREYARTHA_SCHOOL_CODE = 'SHREYA01';
+
+/**
+ * Does this role type the shared Shreyartha signup code?
+ *
+ * True for every Shreyartha employee role — the three SHREYARTHA_* ones and, since 18 Sept 2026,
+ * SALES and HR. All of them are active the moment the code matches; the code is what stands in for
+ * an admin's approval, so a role that skipped it would be created unguarded.
+ *
+ * ── STILL A SEPARATE FUNCTION FROM `isShreyarthaRole` ───────────────────────
+ * They agree on every role that exists today, and they are still different questions: that one asks
+ * which school code to send, this one asks whether a code field appears and whether the account
+ * works on submission. They disagreed for SALES until today and could disagree again — the moment a
+ * role is added that belongs to SHREYA01 but should be approved by a person, this is the only place
+ * that has to change. Collapsing them would hide that.
+ */
+export const requiresSignupCode = (userType) => {
+  const value = String(userType || '').toUpperCase();
+  return (
+    value === 'SHREYARTHA_ADMIN' ||
+    value === 'SHREYARTHA_COUNCELLOR' ||
+    value === 'SHREYARTHA_COUNSELLOR' ||
+    value === 'SHREYARTHA_TEACHER' ||
+    value === 'SALES' ||
+    value === 'HR'
+  );
+};
 
 /**
  * The app's login entry points, in the website's two groups.

@@ -110,6 +110,10 @@ function loadSources(mutate) {
     loginSelect: path.join(APP, 'app', 'auth', 'login-select.js'),
     landing: path.join(APP, 'app', '(tabs)', 'index.js'),
     staffAuth: path.join(APP, 'components', 'auth', 'StaffAuthScreen.js'),
+    // The signup transport. Read here so section 7 can assert that the deleted
+    // /api/shreyartha/auth endpoint has not crept back in. An assertion against a file this map
+    // does not load would be vacuous — the exact failure mode this checker exists to prevent.
+    authSvc: path.join(APP, 'services', 'authService.js'),
   };
   const out = {};
   for (const [key, file] of Object.entries(files)) {
@@ -212,21 +216,57 @@ function assertions({ staffRoles, home, theme, authPortals }, sources) {
   const keys = Object.values(theme.PORTALS).map((p) => p.key);
   if (new Set(keys).size !== keys.length) bad('PORTALS keys are not unique');
 
-  // ── 7. The two predicates that must disagree about SALES ──────────────────
+  // ── 7. ONE signup endpoint, and no shared secret ──────────────────────────
   //
-  // They used to be one function serving two purposes. SALES is pinned to SHREYA01 (so
-  // isShreyarthaRole must say yes) but registers through the ordinary school endpoint and waits
-  // for approval (so requiresSignupCode must say no). Collapsing them back together would show a
-  // sales applicant the Shreyartha Signup Code field and post them to an endpoint with no SALES
-  // arm — a 400 that reads as a backend bug.
+  // This section used to assert that TWO predicates DISAGREED about SALES: `requiresSignupCode`
+  // picked the auto-verifying /api/shreyartha/auth/signup for the three SHREYARTHA_* roles, while
+  // `isShreyarthaRole` picked the school code. Confusing them showed a sales applicant a
+  // signup-code field and posted them to an endpoint that had no SALES arm.
+  //
+  // Sept 2026 deleted that endpoint and that predicate; 18 Sept 2026 brought the shared code back
+  // on the ONE remaining endpoint, covering every Shreyartha employee (SALES included), each active
+  // on submission. So two things must hold: the code reaches the server for every employee-door
+  // role — a role that skipped it would be created with nothing in front of it — and no SECOND
+  // signup door reappears.
   if (!authPortals.isShreyarthaRole('SALES')) {
     bad('isShreyarthaRole("SALES") is false — the session would not pin to SHREYA01');
   }
-  if (authPortals.requiresSignupCode('SALES')) {
-    bad('requiresSignupCode("SALES") is true — signup would demand the Shreyartha code and use the wrong endpoint');
+  for (const hq of ['SHREYARTHA_ADMIN', 'SHREYARTHA_COUNCELLOR', 'SHREYARTHA_TEACHER']) {
+    if (!authPortals.isShreyarthaRole(hq)) {
+      bad(`isShreyarthaRole("${hq}") is false — its signup would send a typed school code instead of SHREYA01`);
+    }
   }
-  if (!authPortals.requiresSignupCode('SHREYARTHA_ADMIN')) {
-    bad('requiresSignupCode("SHREYARTHA_ADMIN") is false — that signup would lose its shared-secret gate');
+  if (typeof authPortals.requiresSignupCode !== 'function') {
+    bad('requiresSignupCode is gone — nothing would send the Shreyartha signup code, and HQ signup would be ungated');
+  } else {
+    for (const role of authPortals.EMPLOYEE_ROLES.map((r) => r.value)) {
+      if (!authPortals.requiresSignupCode(role)) {
+        bad(`requiresSignupCode("${role}") is false — that employee could register with no code at all`);
+      }
+    }
+    for (const role of authPortals.SCHOOL_ROLES.map((r) => r.value)) {
+      if (authPortals.requiresSignupCode(role)) {
+        bad(`requiresSignupCode("${role}") is true — a partner school's staff would be asked for the HQ code`);
+      }
+    }
+  }
+  const staffAuthSrc = stripComments(sources.staffAuth || '');
+  const authSvcSrc = stripComments(sources.authSvc || '');
+  // Guard the guards: an unreadable file would make all four checks below silently pass.
+  if (!staffAuthSrc || !authSvcSrc) {
+    bad('StaffAuthScreen or authService could not be read — the signup assertions would be vacuous');
+  }
+  if (/signupShreyartha/.test(staffAuthSrc)) {
+    bad('StaffAuthScreen calls signupShreyartha — that second endpoint is still deleted');
+  }
+  if (!/signupCode/.test(staffAuthSrc)) {
+    bad('StaffAuthScreen sends no signupCode — the employee roles it offers would all be refused');
+  }
+  if (!/signupSchool\(/.test(staffAuthSrc)) {
+    bad('StaffAuthScreen no longer calls signupSchool — every staff role registers through it');
+  }
+  if (/shreyartha\/auth/.test(authSvcSrc)) {
+    bad('authService still posts to /api/shreyartha/auth — that endpoint was deleted');
   }
   // RETARGETED when the nine-role list split into two doors. SALES moved from SCHOOL_ROLES to
   // EMPLOYEE_ROLES (/auth/employee-login) — it is Shreyartha staff, not a partner school's.
@@ -451,7 +491,13 @@ function assertions({ staffRoles, home, theme, authPortals }, sources) {
   const webApi = sources.webApi || '';
   const salesApiBlock = webApi.slice(
     webApi.indexOf('export const salesApi'),
-    webApi.indexOf('export const adminSalesApi'),
+    // To the NEXT export, not adminSalesApi: exports have since been added between the two
+    // (adminHrApi), and their /api/admin/... paths were being swept into this assertion.
+    (() => {
+      const from = webApi.indexOf('export const salesApi');
+      const next = webApi.indexOf('export const ', from + 1);
+      return next < 0 ? webApi.length : next;
+    })(),
   );
   if (!salesApiBlock) {
     bad('no salesApi block found in the website ApiServices.js');
@@ -669,23 +715,42 @@ const MUTATIONS = [
     expect: /isShreyarthaRole\("SALES"\) is false/,
   },
   {
-    name: 'requiresSignupCode collapses back into isShreyarthaRole',
-    // The regression this predicate pair exists to prevent: the signup branch reverting to the
-    // pin predicate, which says yes to SALES. One line, swapped — no multi-line literal and no
-    // regex literal, both of which have broken this file already.
-    constants: (n, s) =>
-      n === 'authPortals.js'
-        ? s.replace("  String(userType || '').toUpperCase().startsWith('SHREYARTHA_');", '  isShreyarthaRole(userType);')
-        : s,
-    expect: /requiresSignupCode\("SALES"\) is true/,
+    // The regression this replaced: SALES dropping out of the gate, which is how it read until
+    // 18 Sept 2026 — a rep would then be created with no code in front of them.
+    name: 'requiresSignupCode stops covering SALES',
+    constants: (n, src) =>
+      n === 'authPortals.js' ? src.replace("    value === 'SALES' ||", '') : src,
+    expect: /requiresSignupCode\("SALES"\) is false/,
   },
   {
-    name: 'the Shreyartha signup loses its shared-secret gate',
+    name: 'the signup screen stops sending the code',
+    sources: (k, src) => (k === 'staffAuth' ? src.split('signupCode').join('someOtherField') : src),
+    expect: /StaffAuthScreen sends no signupCode/,
+  },
+  {
+    name: 'the staff signup screen posts to the deleted Shreyartha endpoint again',
+    sources: (k, s) =>
+      k === 'staffAuth'
+        ? s.replace('const res = await signupSchool({', 'const res = await signupShreyartha({')
+        : s,
+    expect: /StaffAuthScreen calls signupShreyartha/,
+  },
+  {
+    name: 'authService regains the deleted Shreyartha signup transport',
+    sources: (k, s) =>
+      k === 'authSvc'
+        ? s.replace("postJson('/api/school/auth/signup'", "postJson('/api/shreyartha/auth/signup'")
+        : s,
+    expect: /authService still posts to \/api\/shreyartha\/auth/,
+  },
+  {
+    // An HQ role that stops pinning to SHREYA01 would send a blank school code and be refused.
+    name: 'an HQ role stops pinning to SHREYA01',
     constants: (n, s) =>
       n === 'authPortals.js'
-        ? s.replace("  String(userType || '').toUpperCase().startsWith('SHREYARTHA_');", '  false;')
+        ? s.replace("value.startsWith('SHREYARTHA_') || value === 'SALES'", "value === 'SALES'")
         : s,
-    expect: /requiresSignupCode\("SHREYARTHA_ADMIN"\) is false/,
+    expect: /isShreyarthaRole\("SHREYARTHA_ADMIN"\) is false/,
   },
   {
     name: 'SALES drops out of the mobile signup picker',

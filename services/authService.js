@@ -84,12 +84,29 @@ export const signupPartner = ({ fullName, email, mobile, password, termsAccepted
   });
 
 /**
- * School-staff registration. Two endpoints, mirroring the web:
- *  - regular school roles carry a schoolCode and land unverified, pending admin approval;
- *  - SHREYARTHA_* roles use their own endpoint, send no schoolCode, and are auto-verified.
+ * Staff registration — ONE endpoint for every role, school-bound and Shreyartha HQ alike.
+ *
+ * Two things vary by role:
+ *  - `schoolCode`: a partner school's staff type theirs; the five employee roles are pinned to
+ *    SHREYA01 by the caller, and the server refuses an employee role under any other code;
+ *  - `signupCode`: sent ONLY by the three SHREYARTHA_* roles (see `requiresSignupCode`). Those
+ *    accounts are active immediately once it matches; everyone else — SALES and HR included — lands
+ *    unverified and waits for an admin.
+ *
+ * There used to be a second endpoint here, `signupShreyartha`, which took the same shared code but
+ * sent no schoolCode. It was deleted in Sept 2026; the code it carried now rides on this one.
+ *
  * Payload field names match frontendmain/src/School/SchoolAuth.js handleSignupSubmit.
  */
-export const signupSchool = ({ fullName, email, mobile, userType, password, schoolCode }) =>
+export const signupSchool = ({
+  fullName,
+  email,
+  mobile,
+  userType,
+  password,
+  schoolCode,
+  signupCode,
+}) =>
   postJson('/api/school/auth/signup', {
     fullName,
     email,
@@ -97,14 +114,9 @@ export const signupSchool = ({ fullName, email, mobile, userType, password, scho
     userType,
     password,
     schoolCode,
-  });
-
-// `signupCode` is required: this endpoint is permitAll and activates the account immediately
-// (verified = true, and SHREYARTHA_ADMIN implies SCHOOL_ADMIN), so the server checks it against
-// app.shreyartha.signup-code. Omitting it here would silently strip the field and fail validation.
-export const signupShreyartha = ({ fullName, email, mobile, userType, password, signupCode }) =>
-  postJson('/api/shreyartha/auth/signup', {
-    fullName, email, mobile, userType, password, signupCode,
+    // Omitted rather than sent empty for the roles that do not use it, so the server's "ignored for
+    // this role" path and "missing for this role" error stay distinguishable.
+    ...(signupCode ? { signupCode } : {}),
   });
 
 /**
