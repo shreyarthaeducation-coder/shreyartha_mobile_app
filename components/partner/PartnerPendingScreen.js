@@ -32,7 +32,7 @@ export default function PartnerPendingScreen() {
   const palette = usePalette();
   // Bare `logout` only clears storage — it does not navigate, so the user stayed put on a
   // signed-out screen. See hooks/usePortalLogout.js.
-  const { confirmLogout } = usePortalLogout({ loginRoute: '/auth/partner-login' });
+  const { confirmLogout } = usePortalLogout({ loginRoute: '/auth/sign-in' });
 
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'left', 'right']}>

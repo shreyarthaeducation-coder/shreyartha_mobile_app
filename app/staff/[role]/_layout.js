@@ -113,7 +113,7 @@ export default function StaffRoleLayout() {
     };
   }, [roleKey]);
 
-  if (!config) return <Redirect href="/auth/school-login" />;
+  if (!config) return <Redirect href="/auth/sign-in" />;
 
   // Each panel wears its own web accent — counsellors purple, principal red, vice principal
   // orange, everyone else the staff teal. `staffPalette` falls back to teal for any unlisted role,
@@ -130,13 +130,13 @@ export default function StaffRoleLayout() {
     );
   }
 
-  if (!state.token) return <Redirect href="/auth/school-login" />;
+  if (!state.token) return <Redirect href="/auth/sign-in" />;
   if (state.storedRole && state.storedRole !== roleKey) {
     if (state.storedRole === 'teacher') return <Redirect href="/teacher" />;
     if (getStaffRoleConfig(state.storedRole)) {
       return <Redirect href={`/staff/${state.storedRole}`} />;
     }
-    return <Redirect href="/auth/school-login" />;
+    return <Redirect href="/auth/sign-in" />;
   }
 
   // See the docblock. The pending screen is in this group, so exempting it is what stops the

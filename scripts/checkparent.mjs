@@ -795,7 +795,7 @@ const MUTATIONS = [
   },
   {
     name: 'a sign-up style key deleted (renders unstyled, build stays green)',
-    src: (k, s) => (k === 'parentLogin' ? s.replace('  tabRow: {', '  tabRowGone: {') : s),
+    src: (k, s) => (k === 'parentLogin' ? s.replace('  signInRow: {', '  signInRowGone: {') : s),
   },
 
   /* ── P7, the Shreya chatbot ─────────────────────────────────────────────── */

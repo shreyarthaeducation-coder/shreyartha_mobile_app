@@ -96,7 +96,7 @@ const ASSERTIONS = [
   },
   {
     name: 'logout unregisters the phone before the keys are wiped',
-    test: (s) => /usePortalLogout\(\{\s*loginRoute: '\/auth\/parent-login',\s*beforeLogout: unregisterParentPush,\s*\}\)/.test(s.menu),
+    test: (s) => /usePortalLogout\(\{\s*loginRoute: '\/auth\/sign-in',\s*beforeLogout: unregisterParentPush,\s*\}\)/.test(s.menu),
   },
   {
     name: 'the app config carries the notifications plugin and a shippable versionCode',

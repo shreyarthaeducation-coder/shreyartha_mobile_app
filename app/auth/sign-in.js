@@ -27,8 +27,8 @@ const PALETTE = PORTALS.school;
  * Registering still differs per role (a parent links a child, a teacher needs a school code, a
  * partner accepts terms), so the per-role screens are untouched and reached from "Register" below.
  *
- * Shreyartha's own staff keep their own door — deliberately, because school teachers signing up as
- * Shreyartha teachers was a real problem.
+ * Shreyartha's own staff keep their own door, reached from the landing's Employee button — this
+ * screen deliberately does not advertise it.
  */
 export default function SignInScreen() {
   const router = useRouter();
@@ -98,14 +98,6 @@ export default function SignInScreen() {
       title="Welcome back"
       subtitle="One sign-in for students, parents, school staff and partners."
       onBack={() => (router.canGoBack() ? router.back() : router.replace('/'))}
-      footer={
-        <Text style={styles.footerText}>
-          Shreyartha employee?{' '}
-          <Text style={styles.footerLink} onPress={() => router.replace('/auth/employee-login')}>
-            Sign in here
-          </Text>
-        </Text>
-      }
     >
       <Banner message={error} variant="error" />
       <Banner message={notice} variant="success" />
@@ -242,13 +234,4 @@ const styles = StyleSheet.create({
   },
   registerIcon: { fontSize: 16, lineHeight: 20 },
   pressed: { opacity: 0.75 },
-  footerText: {
-    fontSize: TYPE.label,
-    color: SLATE[500],
-    textAlign: 'center',
-  },
-  footerLink: {
-    fontWeight: '700',
-    color: PALETTE.link,
-  },
 });

@@ -1,6 +1,4 @@
 import {
-  AccessibilityInfo,
-  Animated,
   View,
   Text,
   Image,
@@ -18,6 +16,7 @@ import { useRouter } from "expo-router";
 import { COLORS, SHADOWS, SLATE, SPACING, TYPE, leading } from "../../constants/theme";
 import { loginGroup } from "../../constants/authPortals";
 import SearchBar from "../components/SearchBar";
+import PulsingCta from "../../components/shared/PulsingCta";
 import { api } from "../../services/apiService";
 import { Ionicons } from "@expo/vector-icons";
 
@@ -86,73 +85,15 @@ const GENERAL_CHOICES = [
 export default function LandingScreen() {
   const router = useRouter();
 
-  /**
-   * "Get Started" pulses, to keep drawing the eye to it.
-   *
-   * React Native's built-in Animated, deliberately — a native animation library would be a new
-   * dependency, and a new native module forces a store release in an app that has no OTA channel
-   * and bumps versionCode by hand.
-   *
-   * It is a gentle 1 → 1.045 breath rather than an on/off blink: a hard blink reads as *broken*
-   * rather than *inviting*, and it costs nothing to be the kinder one. `useNativeDriver` keeps it
-   * off the JS thread, so a busy landing page cannot make it stutter.
-   *
-   * IT STOPS FOR REDUCE MOTION. A control that moves forever is a WCAG 2.2 "Pause, Stop, Hide"
-   * problem and a genuine difficulty for vestibular disorders, so the OS setting is honoured —
-   * including when it is toggled while the app is open.
-   */
-  const pulse = useRef(new Animated.Value(1)).current;
-  useEffect(() => {
-    let loop;
-    let cancelled = false;
-
-    const start = () => {
-      loop = Animated.loop(
-        Animated.sequence([
-          Animated.timing(pulse, {
-            toValue: 1.045,
-            duration: 780,
-            useNativeDriver: true,
-          }),
-          Animated.timing(pulse, {
-            toValue: 1,
-            duration: 780,
-            useNativeDriver: true,
-          }),
-        ]),
-      );
-      loop.start();
-    };
-
-    const stop = () => {
-      loop?.stop();
-      loop = null;
-      // Back to its real size, or the button is left mid-breath at 1.045.
-      pulse.setValue(1);
-    };
-
-    const apply = (reduceMotion) => {
-      if (cancelled) return;
-      stop();
-      if (!reduceMotion) start();
-    };
-
-    AccessibilityInfo.isReduceMotionEnabled().then(apply).catch(() => apply(false));
-    const sub = AccessibilityInfo.addEventListener("reduceMotionChanged", apply);
-
-    return () => {
-      cancelled = true;
-      stop();
-      sub?.remove?.();
-    };
-  }, [pulse]);
-  // WHICH DOOR is open, not merely whether one is — 'employee' | 'general' | null.
+  // Learn More scrolls here — the app's match for the website's #features.
+  const scrollRef = useRef(null);
+  const featuresY = useRef(0);
+  // Whether the Get Started popup is open — 'general' | null.
   //
-  // The two controls now open different lists, matching the website: the top-right button is the
-  // Shreyartha employee door alone, and "Get Started" / "Sign Up Now" open the customer-facing
-  // group. Previously one modal listed BOTH groups and "Get Started" opened no picker at all — it
-  // hard-navigated to the student login, so a parent or a partner tapping the app's single biggest
-  // button landed on the wrong form.
+  // Only "Get Started" / "Sign Up Now" open it now, with its two answers: sign in, or register. The
+  // Employee button goes straight to its portal — the popup used to hold exactly one choice for it.
+  // Still read through loginGroup() rather than a local literal, so its label cannot drift from the
+  // shared definition.
   const [loginGroupKey, setLoginGroupKey] = useState(null);
   const openGroup = loginGroupKey ? loginGroup(loginGroupKey) : null;
   const [pendingLoginRoute, setPendingLoginRoute] = useState(null);
@@ -333,6 +274,7 @@ export default function LandingScreen() {
   return (
     <View style={{ flex: 1 }}>
       <ScrollView
+        ref={scrollRef}
         style={styles.container}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
@@ -350,9 +292,12 @@ export default function LandingScreen() {
           </View>
           {/* EMPLOYEE ONLY. Web parity: LandingPage.js mounts `variant="employee"` here, with the
               note "Shreyartha-bound staff only. Everyone else enters via the hero Get Started". */}
+          {/* Straight to the Employee Portal. This used to open a popup holding exactly one choice —
+              one tap too many for the only thing the button does. */}
           <TouchableOpacity
             style={styles.loginBtn}
-            onPress={() => setLoginGroupKey("employee")}
+            activeOpacity={0.75}
+            onPress={() => router.push("/auth/employee-login")}
             accessibilityRole="button"
             accessibilityLabel="Employee login"
           >
@@ -363,8 +308,7 @@ export default function LandingScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* ONE modal, whichever door was tapped. `openGroup` carries its own label, so a group can
-            never be rendered under the other group's heading. */}
+        {/* The Get Started popup. `openGroup` carries its own label from the shared definition. */}
         <Modal
           visible={!!openGroup}
           transparent
@@ -382,12 +326,8 @@ export default function LandingScreen() {
                   Signing in is one gate — /auth/sign-in takes an email or mobile and the server
                   resolves the portal — so this offers the only two answers that matter. The role
                   list survives one step behind "Register", because signing UP genuinely differs
-                  per role. The employee door is unchanged: it is a single option and goes
-                  straight through. */}
-              {(openGroup?.key === "general"
-                ? GENERAL_CHOICES
-                : openGroup?.options || []
-              ).map((opt, idx, shown) => (
+                  per role. The employee door never comes here: it goes straight to its portal. */}
+              {GENERAL_CHOICES.map((opt, idx, shown) => (
                 <TouchableOpacity
                   key={opt.key}
                   style={[
@@ -404,7 +344,6 @@ export default function LandingScreen() {
                   <View style={styles.loginDropdownItemBody}>
                     <Text style={styles.loginDropdownItemText}>
                       {opt.icon} {opt.label}
-                      {openGroup?.key === "general" ? "" : " Login"}
                     </Text>
                     {!!opt.sublabel && (
                       <Text style={styles.loginDropdownItemSub}>{opt.sublabel}</Text>
@@ -448,26 +387,24 @@ export default function LandingScreen() {
             WEF, and IIT & IIM Alumni.
           </Text>
           <View style={styles.heroButtons}>
-            {/* The general door, as a popup — NOT a jump to the student login. This button is the
-                app's largest, and a parent or partner tapping it used to land on a student form.
-                It pulses to draw the eye; see `pulse` above for why gently and why it can stop. */}
-            <Animated.View style={{ transform: [{ scale: pulse }] }}>
-              <TouchableOpacity
-                style={styles.ctaButton}
-                activeOpacity={0.75}
-                onPress={() => setLoginGroupKey("general")}
-                accessibilityRole="button"
-                accessibilityLabel="Get started, sign in or register"
-              >
-                <Text style={styles.ctaButtonText}>Get Started</Text>
-              </TouchableOpacity>
-            </Animated.View>
+            {/* Get Started + Learn More — the website's hero pair. Get Started opens the sign-in /
+                register choice and flashes on the website's beat; see components/shared/PulsingCta. */}
+            <PulsingCta
+              label="Get Started"
+              onPress={() => setLoginGroupKey("general")}
+              accessibilityLabel="Get started, sign in or register"
+              buttonStyle={styles.ctaButton}
+              textStyle={styles.ctaButtonText}
+              ringColor="rgba(255, 255, 255, 0.85)"
+            />
             <TouchableOpacity
               style={styles.ctaSecondary}
               activeOpacity={0.75}
-              onPress={() => router.push("/auth/sign-in")}
+              onPress={() => scrollRef.current?.scrollTo({ y: featuresY.current, animated: true })}
+              accessibilityRole="button"
+              accessibilityLabel="Learn more about the platform"
             >
-              <Text style={styles.ctaSecondaryText}>Login</Text>
+              <Text style={styles.ctaSecondaryText}>Learn More</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -484,7 +421,12 @@ export default function LandingScreen() {
         </View>
 
         {/* ── FEATURES — 2-column grid ── */}
-        <View style={styles.section}>
+        <View
+          style={styles.section}
+          onLayout={(e) => {
+            featuresY.current = e.nativeEvent.layout.y;
+          }}
+        >
           <Text style={styles.sectionEyebrow}>OUR PLATFORM</Text>
           <Text style={styles.sectionTitle}>Why Choose Shreyartha?</Text>
           <Text style={styles.sectionSubtitle}>
@@ -602,20 +544,15 @@ export default function LandingScreen() {
           </Text>
           <View style={styles.ctaBannerButtons}>
             {/* Same door as the hero — the web mounts the identical variant="general" modal here. */}
-            <TouchableOpacity
-              style={styles.ctaSectionButton}
+            <PulsingCta
+              label="Sign Up Now"
               onPress={() => setLoginGroupKey("general")}
-              accessibilityRole="button"
-              accessibilityLabel="Sign up, choose a login"
-            >
-              <Text style={styles.ctaSectionButtonText}>Sign Up Now</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.ctaSectionSecondary}
-              onPress={() => router.push("/auth/login-select")}
-            >
-              <Text style={styles.ctaSectionSecondaryText}>Login</Text>
-            </TouchableOpacity>
+              accessibilityLabel="Sign up, sign in or register"
+              buttonStyle={styles.ctaSectionButton}
+              textStyle={styles.ctaSectionButtonText}
+              ringColor="rgba(255, 255, 255, 0.9)"
+              sheenColor="rgba(212, 0, 74, 0.22)"
+            />
           </View>
         </View>
 
@@ -829,18 +766,10 @@ export default function LandingScreen() {
               <Text style={styles.footerColTitle}>Quick Links</Text>
               {[
                 { label: "Home", action: () => router.replace("/(tabs)") },
-                {
-                  label: "Student Login",
-                  action: () => router.push("/auth/student-login"),
-                },
-                {
-                  label: "School Staff",
-                  action: () => router.push("/auth/school-login"),
-                },
-                {
-                  label: "Parent Portal",
-                  action: () => router.push("/auth/parent-login"),
-                },
+                // One gate signs everyone in, so three per-role "login" links would all land in the
+                // same place — and the role screens are sign-up only now.
+                { label: "Sign In", action: () => router.push("/auth/sign-in") },
+                { label: "Register", action: () => router.push("/auth/login-select") },
               ].map((l, idx) => (
                 <TouchableOpacity key={idx} onPress={l.action}>
                   <Text style={styles.footerLink}>{l.label}</Text>
@@ -1275,19 +1204,6 @@ const styles = StyleSheet.create({
     fontSize: TYPE.heading,
     fontWeight: "700",
   },
-  ctaSectionSecondary: {
-    borderWidth: 2,
-    borderColor: "rgba(255,255,255,0.7)",
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    borderRadius: 32,
-  },
-  ctaSectionSecondaryText: {
-    color: COLORS.white,
-    fontSize: TYPE.heading,
-    fontWeight: "600",
-  },
-
   // ── Contact Info ──
   contactInfoRow: { marginBottom: SPACING.lg },
   contactInfoItem: {

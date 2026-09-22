@@ -13,21 +13,18 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useAuth } from '../../context/AuthContext';
-import { ALL_AUTH_KEYS } from '../../constants/storageKeys';
-import { loginStudent, lookupInstitutionCode, signupStudent } from '../../services/authService';
+import { lookupInstitutionCode, signupStudent } from '../../services/authService';
 import { SLATE, TYPE, leading } from '../../constants/theme';
 
 /**
- * Student login and sign-up.
+ * Student sign-up.
  *
- * Mirrors `frontendmain/src/student/StudentAuth.js`, which is one page with a Login/Sign Up tab
- * pair — sign-up was missing here entirely, so a new student had no way in from the app.
+ * Sign-up only: students sign in at /auth/sign-in with every other school-bound role. The route
+ * keeps its old name so existing links still resolve. Mirrors
+ * `frontendmain/src/student/StudentAuth.js`, which is sign-up only for the same reason.
  *
- * ANDROID KEYBOARD: both forms stay mounted for the life of the screen and nothing unmounts on
- * focus. Switching tab swaps which one renders, but that only happens on an explicit tap, never
- * while a field is focused.
+ * ANDROID KEYBOARD: the form stays mounted for the life of the screen and nothing unmounts on
+ * focus.
  */
 
 const STUDENT_TYPES = [
@@ -46,15 +43,11 @@ const EMPTY_SIGNUP = {
 
 export default function StudentLoginScreen() {
   const router = useRouter();
-  const { setUserType } = useAuth();
 
-  const [tab, setTab] = useState('login'); // login | signup
+  // SIGN-UP ONLY. Students sign in at /auth/sign-in — one gate for every school-bound role, which
+  // also owns forgot-password. This screen registers a new student and nothing else; the session
+  // writes it used to carry now live in services/portalSession.js.
 
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
 
   const [studentType, setStudentType] = useState('SCHOOL');
   const [signup, setSignup] = useState(EMPTY_SIGNUP);
@@ -72,52 +65,6 @@ export default function StudentLoginScreen() {
     setSignupError('');
     setNotice('');
     setSignup((prev) => ({ ...prev, [key]: value }));
-  };
-
-  const handleLogin = async () => {
-    const trimEmail = email.trim();
-    if (!trimEmail || !password) {
-      setError('Please enter your email and password.');
-      return;
-    }
-    setError('');
-    setLoading(true);
-    try {
-      const data = await loginStudent(trimEmail, password);
-      const token = data.token;
-      if (!token) throw new Error('Authentication failed. Please try again.');
-
-      // ── CLEAR WHOEVER WAS HERE BEFORE, FIRST ────────────────────────────────
-      // A login used to write its eight keys ON TOP of whatever was already stored. Nothing else
-      // clears them: `AuthContext.logout` and `apiService.clearAuthAndRedirect` only run on an
-      // explicit log out or a 401, so a session that ended by force-closing the app persisted
-      // indefinitely. On a shared device — a staffroom tablet, a family phone — that left the
-      // previous person's JWT, name, email, school code and cached photo in storage under the new
-      // person's session, and each panel's route guard admits on the PRESENCE of its own token, so
-      // `/teacher` would open the previous teacher's panel without asking for a password.
-      //
-      // Runs AFTER the token is in hand, never before: clearing on submit would log a student out
-      // of a working session just because they mistyped their password.
-      await AsyncStorage.multiRemove(ALL_AUTH_KEYS);
-
-      await AsyncStorage.multiSet([
-        ['studentToken', token],
-        ['userToken', token],
-        ['accessToken', token],
-        ['token', token],
-        ['studentLoggedIn', 'true'],
-        ['studentRole', data.roles?.[0] || 'STUDENT'],
-        ['userType', 'student'],
-        ['userData', JSON.stringify({ id: data.id, email: data.email, roles: data.roles })],
-      ]);
-
-      setUserType('student');
-      router.replace('/student/');
-    } catch (e) {
-      setError(e.message || 'Login failed. Please check your credentials.');
-    } finally {
-      setLoading(false);
-    }
   };
 
   /** Runs on blur, like the web's `handleSchoolCodeBlur`. "none" means no institution. */
@@ -174,84 +121,16 @@ export default function StudentLoginScreen() {
         code: signup.code,
         password: signup.password,
       });
-      // Land on Login with the server's message, as the web does — the account is not signed in.
-      setNotice(res?.message || res?.data?.message || 'Signup successful! Please login.');
-      setEmail(signupEmail);
+      // Stay here with the server's message; the "Sign in" link below goes to the gate.
+      setNotice(res?.message || res?.data?.message || 'Signup successful! You can now sign in.');
       setSignup({ ...EMPTY_SIGNUP });
       setInstitution({ loading: false, name: '', error: '' });
-      setTab('login');
     } catch (e) {
       setSignupError(e?.message || 'Server error. Please try again.');
     } finally {
       setSignupBusy(false);
     }
   };
-
-  const renderLogin = () => (
-    <>
-      {error ? (
-        <View style={styles.errorBox}>
-          <Text style={styles.errorText}>{error}</Text>
-        </View>
-      ) : null}
-
-      <Text style={styles.label}>Email Address</Text>
-      <TextInput
-        style={styles.input}
-        value={email}
-        onChangeText={setEmail}
-        placeholder="Enter your email"
-        placeholderTextColor={SLATE[500]}
-        keyboardType="email-address"
-        autoCapitalize="none"
-        autoCorrect={false}
-        returnKeyType="next"
-        editable={!loading}
-      />
-
-      <Text style={styles.label}>Password</Text>
-      <View style={styles.passwordRow}>
-        <TextInput
-          style={[styles.input, styles.passwordInput]}
-          value={password}
-          onChangeText={setPassword}
-          placeholder="Enter your password"
-          placeholderTextColor={SLATE[500]}
-          secureTextEntry={!showPassword}
-          // These three matter ONLY once the eye toggle is tapped. While `secureTextEntry` is true
-          // Android suppresses autocapitalise and autocorrect on its own; the moment the password is
-          // revealed the field becomes ordinary text and RN's default `autoCapitalize="sentences"`
-          // takes over, so the next character typed is silently capitalised and the login fails with
-          // a password the student can see is right. `components/auth/PasswordField` — which every
-          // other login funnels through — has always set all three.
-          autoCapitalize="none"
-          autoCorrect={false}
-          textContentType="password"
-          returnKeyType="done"
-          onSubmitEditing={handleLogin}
-          editable={!loading}
-        />
-        <TouchableOpacity style={styles.eyeBtn} onPress={() => setShowPassword(!showPassword)}>
-          <Text style={styles.eyeText}>{showPassword ? '🙈' : '👁️'}</Text>
-        </TouchableOpacity>
-      </View>
-
-      <TouchableOpacity
-        style={styles.forgotLink}
-        onPress={() => router.push('/auth/forgot-password?type=student')}
-      >
-        <Text style={styles.forgotText}>Forgot Password?</Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity
-        style={[styles.loginBtn, loading && styles.loginBtnDisabled]}
-        onPress={handleLogin}
-        disabled={loading}
-      >
-        {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.loginBtnText}>Login</Text>}
-      </TouchableOpacity>
-    </>
-  );
 
   const renderSignup = () => (
     <>
@@ -420,44 +299,25 @@ export default function StudentLoginScreen() {
           </View>
 
           <View style={styles.card}>
-            <View style={styles.tabRow}>
-              {[
-                { key: 'login', label: 'Login' },
-                { key: 'signup', label: 'Sign Up' },
-              ].map((t) => {
-                const on = tab === t.key;
-                return (
-                  <TouchableOpacity
-                    key={t.key}
-                    onPress={() => {
-                      setTab(t.key);
-                      setError('');
-                      setSignupError('');
-                    }}
-                    style={[styles.tab, on && styles.tabOn]}
-                    accessibilityRole="tab"
-                    accessibilityState={{ selected: on }}
-                  >
-                    <Text style={[styles.tabText, on && styles.tabTextOn]}>{t.label}</Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
+            <Text style={styles.cardTitle}>Create your student account</Text>
 
-            <Text style={styles.cardSubtitle}>
-              {tab === 'login'
-                ? 'Access your learning dashboard'
-                : 'Create your student account'}
-            </Text>
-
-            {/* The signup confirmation lands here, on the Login tab, where the student now is. */}
-            {notice && tab === 'login' ? (
+            {notice ? (
               <View style={styles.noticeBox}>
                 <Text style={styles.noticeText}>{notice}</Text>
               </View>
             ) : null}
 
-            {tab === 'login' ? renderLogin() : renderSignup()}
+            {renderSignup()}
+
+            <TouchableOpacity
+              style={styles.signInRow}
+              onPress={() => router.replace('/auth/sign-in')}
+              accessibilityRole="button"
+            >
+              <Text style={styles.signInText}>
+                Already have an account? <Text style={styles.signInLink}>Sign in</Text>
+              </Text>
+            </TouchableOpacity>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -492,18 +352,7 @@ const styles = StyleSheet.create({
     elevation: 10,
   },
 
-  tabRow: {
-    flexDirection: 'row',
-    backgroundColor: '#f3f4f6',
-    borderRadius: 12,
-    padding: 4,
-    marginBottom: 14,
-  },
-  tab: { flex: 1, alignItems: 'center', paddingVertical: 10, borderRadius: 9 },
-  tabOn: { backgroundColor: '#b0003a' },
-  tabText: { fontSize: TYPE.heading, fontWeight: '700', color: '#6b7280' },
-  tabTextOn: { color: '#fff' },
-
+  cardTitle: { fontSize: TYPE.title, fontWeight: '800', color: '#1a1a2e', marginBottom: 12 },
   cardSubtitle: { fontSize: TYPE.body, color: '#64748b', marginBottom: 12 },
   errorBox: {
     backgroundColor: '#fef2f2',
@@ -581,8 +430,6 @@ const styles = StyleSheet.create({
   checkboxTick: { color: '#fff', fontSize: 13, fontWeight: '800' },
   termsText: { flex: 1, fontSize: TYPE.label, color: '#4b5563', lineHeight: leading(TYPE.label) },
 
-  forgotLink: { alignSelf: 'flex-end', marginTop: 10, marginBottom: 22 },
-  forgotText: { fontSize: TYPE.body, color: '#b0003a', fontWeight: '600' },
   loginBtn: {
     backgroundColor: '#b0003a',
     borderRadius: 14,
@@ -596,4 +443,7 @@ const styles = StyleSheet.create({
   },
   loginBtnDisabled: { opacity: 0.7 },
   loginBtnText: { color: '#fff', fontSize: TYPE.heading, fontWeight: '700', letterSpacing: 0.3 },
+  signInRow: { marginTop: 16, alignItems: 'center', paddingVertical: 6 },
+  signInText: { fontSize: TYPE.body, color: '#64748b' },
+  signInLink: { fontWeight: '800', color: '#b0003a' },
 });

@@ -43,10 +43,8 @@ const clearAuthAndRedirect = async () => {
     if (redirectingAfterAuthError) return;
     redirectingAfterAuthError = true;
 
-    let userType = null;
     let hadToken = false;
     try {
-      userType = await AsyncStorage.getItem("userType");
       // A 401 with no stored token means the user is already logged out — almost certainly
       // sitting on a login screen (a background fetch fired without credentials). Redirecting
       // "to login" would replace the login screen they are typing on, dropping the keyboard.
@@ -61,7 +59,7 @@ const clearAuthAndRedirect = async () => {
       const stored = await AsyncStorage.multiGet(tokenKeys);
       hadToken = stored.some(([, value]) => !!value);
     } catch {
-      userType = null;
+      // Treat as no token: never redirect a user who may be typing on a sign-in screen.
     }
 
     try {
@@ -72,13 +70,8 @@ const clearAuthAndRedirect = async () => {
     } catch {
       // Ignore storage clear failures; we still want to force a login redirect.
     } finally {
-      const authRouteByUserType = {
-        school: "/auth/school-login",
-        parent: "/auth/parent-login",
-        partner: "/auth/partner-login",
-      };
-      const targetRoute =
-        authRouteByUserType[userType] || "/auth/student-login";
+      // Every school-bound role signs in at the one gate now; the per-role screens are sign-up only.
+      const targetRoute = "/auth/sign-in";
       if (hadToken) {
         try {
           router.replace(targetRoute);

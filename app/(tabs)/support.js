@@ -342,7 +342,7 @@ export default function SupportScreen() {
     if (type === 'done') {
       return (
         <View style={styles.doneButtons}>
-          <TouchableOpacity style={styles.doneBtn} onPress={() => { closeChat(); router.push('/auth/student-login'); }}>
+          <TouchableOpacity style={styles.doneBtn} onPress={() => { closeChat(); router.push('/auth/sign-in'); }}>
             <Text style={styles.doneBtnText}>Login</Text>
           </TouchableOpacity>
           <TouchableOpacity style={[styles.doneBtn, styles.doneBtnSecondary]} onPress={() => { closeChat(); router.push('/auth/login-select'); }}>

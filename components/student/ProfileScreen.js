@@ -63,7 +63,7 @@ export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
   // Bare `logout` only clears storage — it does not navigate, so the user stayed put on a
   // signed-out screen. See hooks/usePortalLogout.js.
-  const { confirmLogout } = usePortalLogout({ loginRoute: '/auth/student-login' });
+  const { confirmLogout } = usePortalLogout({ loginRoute: '/auth/sign-in' });
 
   /**
    * `?tab=career` opens straight on that tab.

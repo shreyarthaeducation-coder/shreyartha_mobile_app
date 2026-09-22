@@ -70,7 +70,7 @@ export default function StudentLayout() {
     );
   }
 
-  if (!state.token) return <Redirect href="/auth/student-login" />;
+  if (!state.token) return <Redirect href="/auth/sign-in" />;
 
   return (
     <PaletteProvider palette={PALETTE}>

@@ -54,7 +54,7 @@ export default function PartnerLayout() {
     );
   }
 
-  if (!state.token) return <Redirect href="/auth/partner-login" />;
+  if (!state.token) return <Redirect href="/auth/sign-in" />;
 
   return (
     <PaletteProvider palette={PALETTE}>

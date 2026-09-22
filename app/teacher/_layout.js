@@ -68,13 +68,13 @@ export default function TeacherLayout() {
     );
   }
 
-  if (!state.token) return <Redirect href="/auth/school-login" />;
+  if (!state.token) return <Redirect href="/auth/sign-in" />;
   // A non-teacher who somehow reaches this group belongs in their own native shell.
   if (state.role && state.role !== 'teacher') {
     return getStaffRoleConfig(state.role) ? (
       <Redirect href={`/staff/${state.role}`} />
     ) : (
-      <Redirect href="/auth/school-login" />
+      <Redirect href="/auth/sign-in" />
     );
   }
   // THE VERIFICATION GATE, which this file's docblock has always claimed and never performed.

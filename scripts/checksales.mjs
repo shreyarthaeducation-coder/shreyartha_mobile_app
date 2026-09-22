@@ -361,7 +361,9 @@ function assertions({ staffRoles, home, theme, authPortals }, sources) {
   if (/LOGIN_GROUPS\.map/.test(landingText)) {
     bad('the landing renders BOTH login groups in one menu — the top-right door is employee-only');
   }
-  if (!/setLoginGroupKey\("employee"\)/.test(landingText)) {
+  // The Employee button goes STRAIGHT to the employee door — the one-item popup it used to open
+  // was removed, so no group key is involved any more.
+  if (!/router\.push\(\s*["']\/auth\/employee-login["']\s*\)/.test(landingText)) {
     bad('the landing top-right button does not open the employee door');
   }
   // BOTH customer CTAs — the hero "Get Started" and the footer banner's "Sign Up Now". Counting
@@ -905,7 +907,7 @@ const MUTATIONS = [
     // entire reason the self-test exists.
     name: 'the landing shows both login groups in one menu',
     sources: (k, s) => (k === 'landing'
-      ? s.replace(/\{\(openGroup\?\.key[\s\S]*?\)\.map\(/, '{LOGIN_GROUPS.map(')
+      ? s.replace('{GENERAL_CHOICES.map(', '{LOGIN_GROUPS.map(')
       : s),
     expect: /renders BOTH login groups/,
   },
@@ -931,7 +933,7 @@ const MUTATIONS = [
     // The top-right door pointed at the customer group.
     name: 'the top-right button opens the general door instead of employee',
     sources: (k, s) => (k === 'landing'
-      ? s.replace('setLoginGroupKey("employee")', 'setLoginGroupKey("general")')
+      ? s.replace('router.push("/auth/employee-login")', 'setLoginGroupKey("general")')
       : s),
     expect: /top-right button does not open the employee door/,
   },

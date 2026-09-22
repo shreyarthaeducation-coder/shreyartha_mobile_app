@@ -25,7 +25,7 @@ import { createPortalApi } from './portalApi';
 export const parentApi = createPortalApi({
   name: 'Parent',
   tokenKey: 'parentUserToken',
-  loginRoute: '/auth/parent-login',
+  loginRoute: '/auth/sign-in',
 });
 
 export default parentApi;

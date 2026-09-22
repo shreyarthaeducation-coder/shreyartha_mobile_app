@@ -13,10 +13,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useAuth } from '../../context/AuthContext';
-import { ALL_AUTH_KEYS } from '../../constants/storageKeys';
-import { loginParent, signupParent } from '../../services/authService';
+import { signupParent } from '../../services/authService';
 import { SLATE, TYPE, leading } from '../../constants/theme';
 
 const EMPTY_SIGNUP = {
@@ -30,16 +27,9 @@ const EMPTY_SIGNUP = {
 
 export default function ParentLoginScreen() {
   const router = useRouter();
-  const { setUserType } = useAuth();
-  const [emailOrMobile, setEmailOrMobile] = useState('');
-  const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
 
   // login | signup. Mirrors app/auth/student-login.js, which is the shipped precedent for adding a
   // sign-up tab to one of these hand-rolled login screens.
-  const [tab, setTab] = useState('login');
   const [signup, setSignup] = useState(EMPTY_SIGNUP);
   const [signupBusy, setSignupBusy] = useState(false);
   const [signupError, setSignupError] = useState('');
@@ -47,62 +37,9 @@ export default function ParentLoginScreen() {
 
   const patchSignup = (next) => setSignup((prev) => ({ ...prev, ...next }));
 
-  const handleLogin = async () => {
-    const trimInput = emailOrMobile.trim();
-    if (!trimInput || !password) {
-      setError('Please enter your email/mobile and password.');
-      return;
-    }
-    setError('');
-    setLoading(true);
-    try {
-      const res = await loginParent(trimInput, password);
-      if (!res.success || !res.data?.token) {
-        throw new Error(res.message || 'Login failed. Please try again.');
-      }
-      const { data } = res;
-
-      // Drop whoever was signed in before writing this session. Nothing else does: logout and the
-      // 401 handler are the only two clears, so a session ended by force-closing the app used to
-      // survive under the next person's login — and every panel's guard admits on the mere presence
-      // of its own token. See app/auth/student-login.js for the full note. After the token is in
-      // hand, never before, so a mistyped password cannot end a working session.
-      await AsyncStorage.multiRemove(ALL_AUTH_KEYS);
-
-      await AsyncStorage.multiSet([
-        ['parentUserToken', data.token],
-        ['parentLoggedIn', 'true'],
-        // FAIL CLOSED. This read `data.verified === false ? 'false' : 'true'`, so anything that was
-        // not literally `false` — null, undefined, a missing field — stored the parent as VERIFIED.
-        // `services/schoolSession.js` carries a note about that exact expression: the school login
-        // had it, and it let an unverified teacher past the pending-verification gate. It is correct
-        // today only because `ParentUser.verified` is `@Column(nullable = false)` with a Java-side
-        // default, so `ParentUserResponse.verified` is always a real boolean — a property of the
-        // schema, not of this line. `=== true` does not depend on that.
-        ['parentUserVerified', data.verified === true ? 'true' : 'false'],
-        ['parentUserName', data.fullName || ''],
-        // THE ONLY SOURCE OF THE PARENT'S EMAIL ANYWHERE. There is no `GET /api/parent/me` — the
-        // account controller serves exactly one endpoint, change-password — so `ParentUserResponse`
-        // from this login is the sole place `email` is ever returned. Not storing it here means the
-        // dashboard's "Email ID" row can never be filled at all.
-        //
-        // `ParentFeatureScreen` has read this key since the WebView port and it has always resolved
-        // to '' because nothing wrote it. It is in ALL_AUTH_KEYS, so it dies with the session.
-        ['parentUserEmail', data.email || ''],
-        ['linkedStudentName', data.studentName || ''],
-        ['linkedStudentEmail', data.studentEmail || ''],
-        ['userType', 'parent'],
-        ['userData', JSON.stringify(data)],
-      ]);
-
-      setUserType('parent');
-      router.replace('/parent');
-    } catch (e) {
-      setError(e.message || 'Login failed. Please check your credentials.');
-    } finally {
-      setLoading(false);
-    }
-  };
+  // SIGN-UP ONLY. Parents sign in at /auth/sign-in — one gate for every school-bound
+  // role, which also owns forgot-password. The session writes this screen used to carry now live in
+  // services/portalSession.js.
 
   const handleSignup = async () => {
     const fullName = signup.fullName.trim();
@@ -139,12 +76,9 @@ export default function ParentLoginScreen() {
         studentMobileOrEmail: child,
         password: signup.password,
       });
-      // NO TOKEN COMES BACK — the account waits for admin verification. So return the user to the
-      // Login tab with the server's message rather than trying to enter the panel.
+      // NO TOKEN COMES BACK — the account waits for admin verification. The message stays on
+      // screen beside the "Sign in" link, for once it has been approved.
       setSignup(EMPTY_SIGNUP);
-      setEmailOrMobile(email);
-      setTab('login');
-      setError('');
       setSignupNotice(
         res?.message || 'Signup successful! Your account will be verified soon.',
       );
@@ -184,41 +118,18 @@ export default function ParentLoginScreen() {
           </View>
 
           <View style={styles.card}>
-            <View style={styles.tabRow}>
-              {['login', 'signup'].map((key) => (
-                <TouchableOpacity
-                  key={key}
-                  onPress={() => {
-                    setTab(key);
-                    setError('');
-                    setSignupError('');
-                  }}
-                  style={[styles.tabBtn, tab === key && styles.tabBtnActive]}
-                >
-                  <Text style={[styles.tabText, tab === key && styles.tabTextActive]}>
-                    {key === 'login' ? 'Login' : 'Sign Up'}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-
-            <Text style={styles.cardTitle}>
-              {tab === 'login' ? 'Parent Login' : 'Create a Parent Account'}
-            </Text>
+            <Text style={styles.cardTitle}>Create a Parent Account</Text>
             <Text style={styles.cardSubtitle}>
-              {tab === 'login'
-                ? "Monitor your child's progress"
-                : 'We will link your account to your child once an admin verifies it'}
+              We will link your account to your child once an admin verifies it
             </Text>
 
-            {/* The signup success notice lands on the LOGIN tab, because signup issues no token. */}
-            {tab === 'login' && signupNotice ? (
+            {signupNotice ? (
               <View style={styles.noticeBox}>
                 <Text style={styles.noticeText}>{signupNotice}</Text>
               </View>
             ) : null}
 
-            {tab === 'signup' ? (
+            {(
               <>
                 {signupError ? (
                   <View style={styles.errorBox}>
@@ -312,69 +223,17 @@ export default function ParentLoginScreen() {
                   )}
                 </TouchableOpacity>
               </>
-            ) : (
-              <>
-            {error ? (
-              <View style={styles.errorBox}>
-                <Text style={styles.errorText}>{error}</Text>
-              </View>
-            ) : null}
-
-            <Text style={styles.label}>Email or Mobile Number</Text>
-            <TextInput
-              style={styles.input}
-              value={emailOrMobile}
-              onChangeText={setEmailOrMobile}
-              placeholder="Enter email or mobile"
-              placeholderTextColor={SLATE[500]}
-              keyboardType="email-address"
-              autoCapitalize="none"
-              autoCorrect={false}
-              returnKeyType="next"
-              editable={!loading}
-            />
-
-            <Text style={styles.label}>Password</Text>
-            <View style={styles.passwordRow}>
-              <TextInput
-                style={[styles.input, styles.passwordInput]}
-                value={password}
-                onChangeText={setPassword}
-                placeholder="Enter your password"
-                placeholderTextColor={SLATE[500]}
-                secureTextEntry={!showPassword}
-                returnKeyType="done"
-                onSubmitEditing={handleLogin}
-                editable={!loading}
-              />
-              <TouchableOpacity
-                style={styles.eyeBtn}
-                onPress={() => setShowPassword(!showPassword)}
-              >
-                <Text style={styles.eyeText}>{showPassword ? '🙈' : '👁️'}</Text>
-              </TouchableOpacity>
-            </View>
-
-            <TouchableOpacity
-              style={styles.forgotLink}
-              onPress={() => router.push('/auth/forgot-password?type=parent')}
-            >
-              <Text style={styles.forgotText}>Forgot Password?</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[styles.loginBtn, loading && styles.loginBtnDisabled]}
-              onPress={handleLogin}
-              disabled={loading}
-            >
-              {loading ? (
-                <ActivityIndicator color="#fff" />
-              ) : (
-                <Text style={styles.loginBtnText}>Login</Text>
-              )}
-            </TouchableOpacity>
-              </>
             )}
+
+            <TouchableOpacity
+              style={styles.signInRow}
+              onPress={() => router.replace('/auth/sign-in')}
+              accessibilityRole="button"
+            >
+              <Text style={styles.signInText}>
+                Already have an account? <Text style={styles.signInLink}>Sign in</Text>
+              </Text>
+            </TouchableOpacity>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -414,25 +273,6 @@ const styles = StyleSheet.create({
   // The accent matches the screen's existing `loginBtn` (#b0003a) rather than the web's purple:
   // this file already paints a dark #1a1a2e ground with a crimson primary, and changing that
   // wholesale is a design pass, not a sign-up feature.
-  tabRow: {
-    flexDirection: 'row',
-    backgroundColor: '#f1f5f9',
-    borderRadius: 12,
-    padding: 4,
-    gap: 4,
-    marginBottom: 18,
-  },
-  tabBtn: { flex: 1, paddingVertical: 9, borderRadius: 9, alignItems: 'center' },
-  tabBtnActive: {
-    backgroundColor: '#ffffff',
-    shadowColor: '#000',
-    shadowOpacity: 0.08,
-    shadowOffset: { width: 0, height: 1 },
-    shadowRadius: 2,
-    elevation: 1,
-  },
-  tabText: { fontSize: TYPE.heading, fontWeight: '700', color: '#64748b' },
-  tabTextActive: { color: '#b0003a' },
 
   noticeBox: {
     backgroundColor: '#f0fdf4',
@@ -493,8 +333,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   eyeText: { fontSize: 18 },
-  forgotLink: { alignSelf: 'flex-end', marginTop: 10, marginBottom: 22 },
-  forgotText: { fontSize: TYPE.body, color: '#b0003a', fontWeight: '600' },
   loginBtn: {
     backgroundColor: '#b0003a',
     borderRadius: 14,
@@ -508,4 +346,7 @@ const styles = StyleSheet.create({
   },
   loginBtnDisabled: { opacity: 0.7 },
   loginBtnText: { color: '#fff', fontSize: TYPE.heading, fontWeight: '700', letterSpacing: 0.3 },
+  signInRow: { marginTop: 16, alignItems: 'center', paddingVertical: 6 },
+  signInText: { fontSize: TYPE.body, color: '#64748b' },
+  signInLink: { fontWeight: '800', color: '#b0003a' },
 });

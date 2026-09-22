@@ -116,7 +116,7 @@ export default function StaffFeatureScreen({
   const handleNavChange = async (navUrl) => {
     if (navUrl.includes('/schoollogin')) {
       await logout();
-      router.replace('/auth/school-login');
+      router.replace('/auth/sign-in');
     }
   };
 

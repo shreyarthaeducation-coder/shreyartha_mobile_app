@@ -28,6 +28,8 @@ const ROUTES = path.join(APP, 'app', 'partner');
 const SRC = {
   authService: 'services/authService.js',
   partnerLogin: 'app/auth/partner-login.js',
+  // The session writes. partner-login.js is sign-up only; the gate hands the response here.
+  session: 'services/portalSession.js',
   menuScreen: 'components/partner/PartnerMenuScreen.js',
   pendingScreen: 'components/partner/PartnerPendingScreen.js',
   termsSheet: 'components/partner/PartnerTermsSheet.js',
@@ -292,8 +294,9 @@ function assertions(menu, terms, keys, profileSvc, dashSvc, src) {
   // ── 5. THE LOGOUT LEAK ────────────────────────────────────────────────────
   // Login writes `partnerUserType`; this list only ever cleared `partnerType`, so one partner's
   // MASTER/NORMAL tier survived logout into the next partner's session.
+  // The writes live in portalSession.js; `login` (the sign-up form) is still checked below.
   const login = codeOnly(src.partnerLogin);
-  const written = [...login.matchAll(/\['(partner[A-Za-z]+)',/g)].map((m) => m[1]);
+  const written = [...codeOnly(src.session).matchAll(/\['(partner[A-Za-z]+)',/g)].map((m) => m[1]);
   if (!written.includes('partnerUserType')) {
     bad('the partner login no longer writes partnerUserType — the web reads that spelling');
   }
@@ -525,7 +528,7 @@ const MUTATIONS = [
   {
     name: 'the login writing a session key nothing clears',
     src: (k, s) =>
-      k === 'partnerLogin' ? s.replace("['partnerCode',", "['partnerTier', data.partnerType || ''],\n        ['partnerCode',") : s,
+      k === 'session' ? s.replace("['partnerCode',", "['partnerTier', data.partnerType || ''],\n        ['partnerCode',") : s,
   },
   {
     name: 'signupPartner omitting termsAccepted (copying the parent shortcut)',

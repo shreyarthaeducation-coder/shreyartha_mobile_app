@@ -32,7 +32,7 @@ import { isShreyarthaRole } from '../constants/authPortals';
  * @returns {{ logoutNow: () => Promise<void>, confirmLogout: () => void, loggingOut: boolean }}
  */
 export default function useStaffLogout() {
-  const [loginRoute, setLoginRoute] = useState('/auth/school-login');
+  const [loginRoute, setLoginRoute] = useState('/auth/sign-in');
 
   useEffect(() => {
     let active = true;

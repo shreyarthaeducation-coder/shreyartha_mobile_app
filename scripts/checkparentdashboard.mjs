@@ -42,7 +42,9 @@ const SRC = {
   comingSoon: 'components/shared/ComingSoon.js',
   searchService: 'services/parent/searchService.js',
   searchScreen: 'components/parent/ParentSearchScreen.js',
-  login: 'app/auth/parent-login.js',
+  // Where the parent session is written. parent-login.js is sign-up only now; the sign-in gate
+  // hands its response to portalSession.js, which is the only place parentUserEmail is stored.
+  login: 'services/portalSession.js',
   layout: 'app/parent/_layout.js',
   fees: 'components/parent/FeesScreen.js',
 };

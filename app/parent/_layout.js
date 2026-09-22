@@ -106,7 +106,7 @@ export default function ParentLayout() {
     );
   }
 
-  if (!state.token) return <Redirect href="/auth/parent-login" />;
+  if (!state.token) return <Redirect href="/auth/sign-in" />;
 
   if (!state.verified && !UNVERIFIED_OK.has(pathname)) {
     return <Redirect href="/parent/pending-verification" />;

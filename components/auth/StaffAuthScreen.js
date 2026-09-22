@@ -60,8 +60,14 @@ export default function StaffAuthScreen({ variant = 'school' }) {
   const router = useRouter();
   const { setUserType } = useAuth();
 
+  // THE SCHOOL DOOR IS SIGN-UP ONLY. School staff sign in at /auth/sign-in with everyone else; this
+  // screen is where they register. The EMPLOYEE door is different — it is still how Shreyartha's own
+  // staff sign in — so it keeps its three views exactly as they were. One component serves both,
+  // hence a guard rather than a deletion.
+  const signupOnly = config.key === 'school';
+
   // One card, three views — tabs are hidden while the forgot view is showing (web parity).
-  const [view, setView] = useState('login');
+  const [view, setView] = useState(signupOnly ? 'signup' : 'login');
 
   // Survives view switches: signup sets it, then flips to the login view where it is shown.
   const [successBanner, setSuccessBanner] = useState('');
@@ -110,14 +116,15 @@ export default function StaffAuthScreen({ variant = 'school' }) {
   // signup isn't lost to a stray back press.
   useEffect(() => {
     const sub = BackHandler.addEventListener('hardwareBackPress', () => {
-      if (view !== 'login') {
+      // The sign-up-only door has no login view to step back to — back leaves the screen.
+      if (!signupOnly && view !== 'login') {
         goToView('login');
         return true;
       }
       return false;
     });
     return () => sub.remove();
-  }, [view, goToView]);
+  }, [view, goToView, signupOnly]);
 
   // ── Login ────────────────────────────────────────────────────────────────
   const handleLogin = async () => {
@@ -262,7 +269,9 @@ export default function StaffAuthScreen({ variant = 'school' }) {
 
       setSignup(emptySignup(config.defaultRole));
       setSchoolLookup({ status: 'idle', name: '' });
-      setView('login');
+      // Only the employee door has a login view to return to; the school door keeps the message on
+      // screen beside its "Sign in" link.
+      if (!signupOnly) setView('login');
       setError('');
       setSuccessBanner(
         res?.message ??
@@ -344,7 +353,7 @@ export default function StaffAuthScreen({ variant = 'school' }) {
       subtitle={titles.subtitle}
       onBack={handleBack}
     >
-      {view !== 'forgot' && (
+      {!signupOnly && view !== 'forgot' && (
         <TabSwitch
           palette={PALETTE}
           activeKey={view}
@@ -358,7 +367,9 @@ export default function StaffAuthScreen({ variant = 'school' }) {
       )}
 
       <Banner variant="error" message={error} />
-      {view === 'login' ? <Banner variant="success" message={successBanner} /> : null}
+      {view === 'login' || signupOnly ? (
+        <Banner variant="success" message={successBanner} />
+      ) : null}
 
       {/* ── LOGIN ── */}
       {view === 'login' && (
@@ -553,7 +564,15 @@ export default function StaffAuthScreen({ variant = 'school' }) {
 
           <View style={styles.footerRow}>
             <Text style={styles.footerText}>Already have an account? </Text>
-            <LinkButton label="Login" onPress={() => goToView('login')} color={PALETTE.link} />
+            {signupOnly ? (
+              <LinkButton
+                label="Sign in"
+                onPress={() => router.replace('/auth/sign-in')}
+                color={PALETTE.link}
+              />
+            ) : (
+              <LinkButton label="Login" onPress={() => goToView('login')} color={PALETTE.link} />
+            )}
           </View>
         </>
       )}

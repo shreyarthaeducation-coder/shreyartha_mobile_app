@@ -130,7 +130,7 @@ const handleExpiry = async () => {
       // Still redirect even if storage misbehaves.
     }
     try {
-      router.replace('/auth/student-login');
+      router.replace('/auth/sign-in');
     } catch {
       // Router may not be mounted yet.
     }

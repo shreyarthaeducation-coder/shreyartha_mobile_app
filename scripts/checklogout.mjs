@@ -44,16 +44,18 @@ const read = (p) => fs.readFileSync(path.join(APP, p), 'utf8').replace(/\r\n/g, 
  * through useStaffLogout below.
  */
 const LOGOUT_SCREENS = [
-  ['components/partner/PartnerMenuScreen.js', '/auth/partner-login'],
-  ['components/partner/PartnerPendingScreen.js', '/auth/partner-login'],
-  ['components/parent/ParentMenuScreen.js', '/auth/parent-login'],
-  ['components/parent/ParentPendingScreen.js', '/auth/parent-login'],
+  // All five land on the sign-in gate: the role screens are sign-up only, so a signed-out
+  // parent sent to /auth/parent-login would face a registration form.
+  ['components/partner/PartnerMenuScreen.js', '/auth/sign-in'],
+  ['components/partner/PartnerPendingScreen.js', '/auth/sign-in'],
+  ['components/parent/ParentMenuScreen.js', '/auth/sign-in'],
+  ['components/parent/ParentPendingScreen.js', '/auth/sign-in'],
   // MOVED from StudentHome.js by the dashboard redesign. The design's brand bar has no room for a
   // logout icon and its footer has exactly three tabs, so Log Out is a row at the bottom of the
   // Profile screen — which is itself one of those three tabs, so it stays one tap away. Retargeted
   // rather than left naming StudentHome: an assertion pointing at a file that no longer has the
   // control passes while covering nothing, which has happened twice in this repo already.
-  ['components/student/ProfileScreen.js', '/auth/student-login'],
+  ['components/student/ProfileScreen.js', '/auth/sign-in'],
 ];
 
 const PORTAL_HOOK = 'hooks/usePortalLogout.js';
@@ -168,10 +170,10 @@ const MUTATIONS = [
         : s,
   },
   {
-    name: 'the partner portal is pointed at the student login',
+    name: 'the partner portal is pointed back at its (now sign-up only) role screen',
     mutate: (p, s) =>
       p === 'components/partner/PartnerMenuScreen.js'
-        ? s.replace("loginRoute: '/auth/partner-login'", "loginRoute: '/auth/student-login'")
+        ? s.replace("loginRoute: '/auth/sign-in'", "loginRoute: '/auth/partner-login'")
         : s,
   },
   {

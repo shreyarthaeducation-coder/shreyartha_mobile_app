@@ -25,7 +25,7 @@ import { useAuth } from '../context/AuthContext';
  * state — the navigation is in a `finally`.
  *
  * @param {object}   options
- * @param {string}   options.loginRoute    where to land, e.g. '/auth/partner-login'
+ * @param {string}   options.loginRoute    where to land, e.g. '/auth/sign-in'
  * @param {Function} [options.beforeLogout] awaited before the keys are cleared; failures are
  *                                          swallowed so they cannot block the logout
  * @returns {{ logoutNow: () => Promise<void>, confirmLogout: () => void, loggingOut: boolean }}

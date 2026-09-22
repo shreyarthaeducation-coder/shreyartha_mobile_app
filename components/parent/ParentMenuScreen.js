@@ -130,7 +130,7 @@ export default function ParentMenuScreen() {
   const t = useTranslations(STRINGS);
   // Unregister this phone from push BEFORE the keys go — the call needs the session it is ending.
   const { confirmLogout } = usePortalLogout({
-    loginRoute: '/auth/parent-login',
+    loginRoute: '/auth/sign-in',
     beforeLogout: unregisterParentPush,
   });
 

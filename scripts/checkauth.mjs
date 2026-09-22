@@ -34,15 +34,33 @@ const APP = path.resolve(HERE, '..');
 /**
  * Where each role's session is written.
  *
- * School is the odd one out: its login delegates to `storeSchoolSession()`, so that service is the
- * seam, not the screen. Checking the screen instead would report a false failure forever.
+ * Student, parent and partner sign in at the single gate (app/auth/sign-in.js), which hands the
+ * response to `services/portalSession.js` — one file, one `case` per portal. Their old screens are
+ * sign-up only and write no session at all.
+ *
+ * `scope` IS LOAD-BEARING. `audit()` locates the clear, the guard and the write by first match. Run
+ * over a file holding three portals, the parent and partner checks would find the STUDENT case's
+ * clear and guard and pass without ever looking at their own code — the exact way a checker goes
+ * vacuous. So each seam is audited inside its own `case '…':` block only. The self-test below
+ * deletes the PARENT and PARTNER clears specifically, to prove that.
+ *
+ * School delegates to `storeSchoolSession()`, so that service is its seam.
  */
 const SEAMS = [
-  { role: 'student', file: 'app/auth/student-login.js', writes: "'studentToken'" },
-  { role: 'parent', file: 'app/auth/parent-login.js', writes: "'parentUserToken'" },
-  { role: 'partner', file: 'app/auth/partner-login.js', writes: "'partnerUserToken'" },
+  { role: 'student', file: 'services/portalSession.js', scope: "case 'STUDENT':", writes: "'studentToken'" },
+  { role: 'parent', file: 'services/portalSession.js', scope: "case 'PARENT':", writes: "'parentUserToken'" },
+  { role: 'partner', file: 'services/portalSession.js', scope: "case 'PARTNER':", writes: "'partnerUserToken'" },
   { role: 'school', file: 'services/schoolSession.js', writes: "'schoolUserToken'" },
 ];
+
+/** The text of one `case 'X':` block — from its label to the next case or default. */
+function caseBlock(src, label) {
+  const start = src.indexOf(label);
+  if (start < 0) return '';
+  const rest = src.slice(start + label.length);
+  const next = rest.search(/\n\s*(case '|default:)/);
+  return label + (next < 0 ? rest : rest.slice(0, next));
+}
 
 const read = (p) => fs.readFileSync(path.join(APP, p), 'utf8').replace(/\r\n/g, '\n');
 
@@ -66,13 +84,19 @@ const fail = (m) => {
  * Assert one seam. Returns a list of human-readable problems so the same function can be run
  * against a deliberately broken copy in the self-test.
  */
-function audit(src, seam) {
+function audit(file, seam) {
   const problems = [];
 
+  // The import is a property of the FILE; everything else is judged inside the seam's own block.
+  const src = seam.scope ? caseBlock(file, seam.scope) : file;
+  if (seam.scope && !src) {
+    problems.push(`has no ${seam.scope} block — this seam has moved, retarget the checker`);
+    return problems;
+  }
   const clear = src.indexOf('multiRemove(ALL_AUTH_KEYS)');
   const write = src.indexOf(seam.writes);
 
-  if (!/import\s*\{[^}]*\bALL_AUTH_KEYS\b[^}]*\}\s*from/.test(src)) {
+  if (!/import\s*\{[^}]*\bALL_AUTH_KEYS\b[^}]*\}\s*from/.test(file)) {
     problems.push('ALL_AUTH_KEYS is not imported');
   }
   if (clear < 0) {
@@ -87,7 +111,11 @@ function audit(src, seam) {
 
   // The clear must sit downstream of the token check, not at the top of the handler. Every seam
   // guards on a falsy token first; the clear belongs below that guard.
-  const guard = Math.max(src.indexOf('if (!token)'), src.indexOf('!res.data?.token'));
+  const guard = Math.max(
+    src.indexOf('if (!token)'),
+    src.indexOf('!res.data?.token'),
+    src.indexOf('!data?.token'),
+  );
   if (clear >= 0 && guard >= 0 && clear < guard) {
     problems.push('clears BEFORE the credentials are known good — a typo would end a working session');
   }
@@ -98,28 +126,44 @@ function audit(src, seam) {
 /* ── Self-test: three planted breaks, each must be caught ────────────────── */
 console.log('Self-test (each planted break must be caught):');
 {
-  const src = read('app/auth/student-login.js');
-  const seam = SEAMS[0];
+  const src = read('services/portalSession.js');
+  const CLEAR = 'await AsyncStorage.multiRemove(ALL_AUTH_KEYS);\n';
 
-  if (audit(src, seam).length) {
-    fail('the pristine student login does not pass — fix the code or the checker before trusting it');
+  for (const seam of SEAMS.slice(0, 3)) {
+    if (audit(src, seam).length) {
+      fail(`the pristine ${seam.role} session does not pass — fix the code or the checker before trusting it`);
+    }
   }
 
+  // Replace the Nth occurrence — the three cases each carry an identical clear line.
+  const nth = (s, needle, n, repl) => {
+    let at = -1;
+    for (let i = 0; i <= n; i += 1) {
+      at = s.indexOf(needle, at + 1);
+      if (at < 0) return s;
+    }
+    return s.slice(0, at) + repl + s.slice(at + needle.length);
+  };
+
   const mutations = [
+    { name: 'the student clear is deleted', seam: SEAMS[0], apply: (s) => nth(s, CLEAR, 0, '') },
+    // THE SCOPING PROOF. With the other two clears still in the file, an unscoped audit would find
+    // one of them and pass. Only a per-case audit notices this portal's own clear is gone.
+    { name: 'the PARENT clear is deleted (scoping must catch it)', seam: SEAMS[1], apply: (s) => nth(s, CLEAR, 1, '') },
+    { name: 'the PARTNER clear is deleted (scoping must catch it)', seam: SEAMS[2], apply: (s) => nth(s, CLEAR, 2, '') },
     {
-      name: 'the clear is deleted',
-      apply: (s) => s.replace('await AsyncStorage.multiRemove(ALL_AUTH_KEYS);\n', ''),
-    },
-    {
-      name: 'the clear is moved after the write',
+      name: 'the student clear is moved after the write',
+      seam: SEAMS[0],
       apply: (s) =>
-        s
-          .replace('await AsyncStorage.multiRemove(ALL_AUTH_KEYS);\n', '')
-          .replace("router.replace('/student/');", "await AsyncStorage.multiRemove(ALL_AUTH_KEYS);\n      router.replace('/student/');"),
+        nth(s, CLEAR, 0, '').replace(
+          "      return { route: '/student/', userType: 'student' };",
+          "      await AsyncStorage.multiRemove(ALL_AUTH_KEYS);\n      return { route: '/student/', userType: 'student' };",
+        ),
     },
     {
       name: 'the import is dropped',
-      apply: (s) => s.replace("import { ALL_AUTH_KEYS } from '../../constants/storageKeys';\n", ''),
+      seam: SEAMS[0],
+      apply: (s) => s.replace("import { ALL_AUTH_KEYS } from '../constants/storageKeys';\n", ''),
     },
   ];
 
@@ -127,7 +171,7 @@ console.log('Self-test (each planted break must be caught):');
     const broken = m.apply(src);
     if (broken === src) {
       fail(`could not plant "${m.name}" — that mutation is inert and proves nothing`);
-    } else if (!audit(broken, seam).length) {
+    } else if (!audit(broken, m.seam).length) {
       fail(`"${m.name}" slipped past — the assertion is vacuous`);
     } else {
       console.log(`  ✓ caught: ${m.name}`);
@@ -265,7 +309,8 @@ console.log('\nParent verification gate — self-test:');
 {
   const layout = read('app/parent/_layout.js');
   const menu = read('components/parent/ParentMenuScreen.js');
-  const login = read('app/auth/parent-login.js');
+  // The PARENT case only — the partner case in the same file keeps a different default.
+  const login = caseBlock(read('services/portalSession.js'), "case 'PARENT':");
 
   const muts = [
     {

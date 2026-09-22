@@ -23,7 +23,7 @@ import { createPortalApi } from './portalApi';
 export const partnerApi = createPortalApi({
   name: 'Partner',
   tokenKey: 'partnerUserToken',
-  loginRoute: '/auth/partner-login',
+  loginRoute: '/auth/sign-in',
 });
 
 export default partnerApi;

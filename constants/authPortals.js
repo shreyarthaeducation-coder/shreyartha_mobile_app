@@ -83,7 +83,9 @@ export const AUTH_VARIANTS = {
     signupSubtitle: 'Register as an employee',
     otherPrompt: 'Teach or work at a partner school?',
     otherLabel: 'school staff',
-    otherRoute: '/auth/school-login',
+    // The gate, not /auth/school-login: that screen is sign-up only now, and partner-school staff
+    // sign in at /auth/sign-in with every other school-bound role. Matches the website.
+    otherRoute: '/auth/sign-in',
   },
 };
 

@@ -13,10 +13,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useAuth } from '../../context/AuthContext';
-import { ALL_AUTH_KEYS } from '../../constants/storageKeys';
-import { loginPartner, signupPartner } from '../../services/authService';
+import { signupPartner } from '../../services/authService';
 import { PORTALS, SLATE, TYPE, leading } from '../../constants/theme';
 import { PaletteProvider } from '../../components/ui/PaletteContext';
 import PartnerTermsSheet from '../../components/partner/PartnerTermsSheet';
@@ -40,14 +37,7 @@ const EMPTY_SIGNUP = { fullName: '', email: '', mobile: '', password: '', terms:
 
 export default function PartnerLoginScreen() {
   const router = useRouter();
-  const { setUserType } = useAuth();
-  const [tab, setTab] = useState('login');
 
-  const [emailOrMobile, setEmailOrMobile] = useState('');
-  const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
 
   const [signup, setSignup] = useState(EMPTY_SIGNUP);
   const [signupBusy, setSignupBusy] = useState(false);
@@ -57,47 +47,9 @@ export default function PartnerLoginScreen() {
 
   const patchSignup = (patch) => setSignup((prev) => ({ ...prev, ...patch }));
 
-  const handleLogin = async () => {
-    const trimInput = emailOrMobile.trim();
-    if (!trimInput || !password) {
-      setError('Please enter your email/mobile and password.');
-      return;
-    }
-    setError('');
-    setLoading(true);
-    try {
-      const res = await loginPartner(trimInput, password);
-      if (!res.success || !res.data?.token) {
-        throw new Error(res.message || 'Login failed. Please try again.');
-      }
-      const { data } = res;
-
-      // Drop whoever was signed in before writing this session — see app/auth/student-login.js for
-      // the full note. After the token is in hand, never before.
-      await AsyncStorage.multiRemove(ALL_AUTH_KEYS);
-
-      await AsyncStorage.multiSet([
-        ['partnerUserToken', data.token],
-        ['partnerLoggedIn', 'true'],
-        ['partnerUserVerified', data.verified === false ? 'false' : 'true'],
-        // `partnerUserType`, matching the web's spelling. It is now also in ALL_AUTH_KEYS — it was
-        // not, so one partner's tier used to survive logout into the next partner's session.
-        ['partnerUserType', data.partnerType || ''],
-        ['partnerUserName', data.fullName || ''],
-        ['partnerUserEmail', data.email || ''],
-        ['partnerCode', data.partnerCode || ''],
-        ['userType', 'partner'],
-        ['userData', JSON.stringify(data)],
-      ]);
-
-      setUserType('partner');
-      router.replace('/dashboard/partner');
-    } catch (e) {
-      setError(e.message || 'Login failed. Please check your credentials.');
-    } finally {
-      setLoading(false);
-    }
-  };
+  // SIGN-UP ONLY. Partners sign in at /auth/sign-in — one gate for every school-bound
+  // role, which also owns forgot-password. The session writes this screen used to carry now live in
+  // services/portalSession.js.
 
   const handleSignup = async () => {
     const fullName = signup.fullName.trim();
@@ -136,12 +88,9 @@ export default function PartnerLoginScreen() {
         password: signup.password,
         termsAccepted: true,
       });
-      // NO TOKEN COMES BACK — the account waits for admin verification, and an unverified partner
-      // is granted no endpoint at all. Return to the Login tab with the server's message.
+      // NO TOKEN COMES BACK — the account waits for admin verification. The message stays on
+      // screen beside the "Sign in" link, for once it has been approved.
       setSignup(EMPTY_SIGNUP);
-      setEmailOrMobile(email);
-      setTab('login');
-      setError('');
       setSignupNotice(
         res?.message || 'Signup successful! Your account will be verified soon.',
       );
@@ -181,41 +130,18 @@ export default function PartnerLoginScreen() {
           </View>
 
           <View style={styles.card}>
-            <View style={styles.tabRow}>
-              {['login', 'signup'].map((key) => (
-                <TouchableOpacity
-                  key={key}
-                  onPress={() => {
-                    setTab(key);
-                    setError('');
-                    setSignupError('');
-                  }}
-                  style={[styles.tabBtn, tab === key && styles.tabBtnActive]}
-                >
-                  <Text style={[styles.tabText, tab === key && styles.tabTextActive]}>
-                    {key === 'login' ? 'Login' : 'Sign Up'}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-
-            <Text style={styles.cardTitle}>
-              {tab === 'login' ? 'Partner Login' : 'Become a Partner'}
-            </Text>
+            <Text style={styles.cardTitle}>Become a Partner</Text>
             <Text style={styles.cardSubtitle}>
-              {tab === 'login'
-                ? 'Schools & coaching center partners'
-                : 'Your account is activated once an admin verifies it'}
+              Your account is activated once an admin verifies it
             </Text>
 
-            {/* The signup success notice lands on the LOGIN tab, because signup issues no token. */}
-            {tab === 'login' && signupNotice ? (
+            {signupNotice ? (
               <View style={styles.noticeBox}>
                 <Text style={styles.noticeText}>{signupNotice}</Text>
               </View>
             ) : null}
 
-            {tab === 'signup' ? (
+            {(
               <>
                 {signupError ? (
                   <View style={styles.errorBox}>
@@ -301,69 +227,17 @@ export default function PartnerLoginScreen() {
                   )}
                 </TouchableOpacity>
               </>
-            ) : (
-              <>
-                {error ? (
-                  <View style={styles.errorBox}>
-                    <Text style={styles.errorText}>{error}</Text>
-                  </View>
-                ) : null}
-
-                <Text style={styles.label}>Email or Mobile Number</Text>
-                <TextInput
-                  style={styles.input}
-                  value={emailOrMobile}
-                  onChangeText={setEmailOrMobile}
-                  placeholder="Enter email or mobile"
-                  placeholderTextColor={SLATE[500]}
-                  keyboardType="email-address"
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                  returnKeyType="next"
-                  editable={!loading}
-                />
-
-                <Text style={styles.label}>Password</Text>
-                <View style={styles.passwordRow}>
-                  <TextInput
-                    style={[styles.input, styles.passwordInput]}
-                    value={password}
-                    onChangeText={setPassword}
-                    placeholder="Enter your password"
-                    placeholderTextColor={SLATE[500]}
-                    secureTextEntry={!showPassword}
-                    returnKeyType="done"
-                    onSubmitEditing={handleLogin}
-                    editable={!loading}
-                  />
-                  <TouchableOpacity
-                    style={styles.eyeBtn}
-                    onPress={() => setShowPassword(!showPassword)}
-                  >
-                    <Text style={styles.eyeText}>{showPassword ? '🙈' : '👁️'}</Text>
-                  </TouchableOpacity>
-                </View>
-
-                <TouchableOpacity
-                  style={styles.forgotLink}
-                  onPress={() => router.push('/auth/forgot-password?type=partner')}
-                >
-                  <Text style={styles.forgotText}>Forgot Password?</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={[styles.loginBtn, loading && styles.loginBtnDisabled]}
-                  onPress={handleLogin}
-                  disabled={loading}
-                >
-                  {loading ? (
-                    <ActivityIndicator color="#fff" />
-                  ) : (
-                    <Text style={styles.loginBtnText}>Login</Text>
-                  )}
-                </TouchableOpacity>
-              </>
             )}
+
+            <TouchableOpacity
+              style={styles.signInRow}
+              onPress={() => router.replace('/auth/sign-in')}
+              accessibilityRole="button"
+            >
+              <Text style={styles.signInText}>
+                Already have an account? <Text style={styles.signInLink}>Sign in</Text>
+              </Text>
+            </TouchableOpacity>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -411,25 +285,6 @@ const styles = StyleSheet.create({
   // The accent matches this screen's existing `loginBtn` (#b0003a) rather than the portal purple:
   // the ground is already dark #1a1a2e with a crimson primary, and restyling that wholesale is a
   // design pass, not a sign-up feature. Same call the parent sign-up made.
-  tabRow: {
-    flexDirection: 'row',
-    backgroundColor: '#f1f5f9',
-    borderRadius: 12,
-    padding: 4,
-    gap: 4,
-    marginBottom: 18,
-  },
-  tabBtn: { flex: 1, paddingVertical: 9, borderRadius: 9, alignItems: 'center' },
-  tabBtnActive: {
-    backgroundColor: '#ffffff',
-    shadowColor: '#000',
-    shadowOpacity: 0.08,
-    shadowOffset: { width: 0, height: 1 },
-    shadowRadius: 2,
-    elevation: 1,
-  },
-  tabText: { fontSize: TYPE.heading, fontWeight: '700', color: '#64748b' },
-  tabTextActive: { color: '#b0003a' },
 
   noticeBox: {
     backgroundColor: '#f0fdf4',
@@ -495,8 +350,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   eyeText: { fontSize: 18 },
-  forgotLink: { alignSelf: 'flex-end', marginTop: 10, marginBottom: 22 },
-  forgotText: { fontSize: TYPE.body, color: '#b0003a', fontWeight: '600' },
   loginBtn: {
     backgroundColor: '#b0003a',
     borderRadius: 14,
@@ -510,4 +363,7 @@ const styles = StyleSheet.create({
   },
   loginBtnDisabled: { opacity: 0.7 },
   loginBtnText: { color: '#fff', fontSize: TYPE.heading, fontWeight: '700', letterSpacing: 0.3 },
+  signInRow: { marginTop: 16, alignItems: 'center', paddingVertical: 6 },
+  signInText: { fontSize: TYPE.body, color: '#64748b' },
+  signInLink: { fontWeight: '800', color: '#b0003a' },
 });
