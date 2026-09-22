@@ -92,9 +92,14 @@ export function updateMeetingStatus(apiBase, meetingId, status) {
   return staffApi.put(`${apiBase}/${meetingId}/status`, { status });
 }
 
-/** Returns `{ emailsSent, whatsappSent }` — the counts are the only confirmation there is. */
-export function notifyAttendees(apiBase, meetingId) {
-  return staffApi.post(`${apiBase}/${meetingId}/notify`, {});
+/**
+ * Returns `{ emailsSent, whatsappSent }` — the counts are the only confirmation there is.
+ *
+ * `senderEmail` is the organiser's own mail id, typed at send time: blind-copied to them and recorded
+ * in the admin panel's outbound log, never shown to the attendees.
+ */
+export function notifyAttendees(apiBase, meetingId, senderEmail) {
+  return staffApi.post(`${apiBase}/${meetingId}/notify`, { senderEmail });
 }
 
 /** First and last day of a month, as the calendar endpoint's inclusive bounds. */

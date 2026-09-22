@@ -12,6 +12,7 @@ import {
   ScreenScaffold,
   SegmentedTabs,
   Select,
+  SenderEmailSheet,
   StatusChip,
   TextField,
   useToast,
@@ -76,6 +77,8 @@ export default function StaffMeetingScreen({ homeRoute, apiBase, bottomInset = 0
   const [picked, setPicked] = useState([]);
   const [saving, setSaving] = useState(false);
   const [busyId, setBusyId] = useState(null);
+  // Meeting awaiting the organiser's own mail id before its invites go out.
+  const [notifyMeeting, setNotifyMeeting] = useState(null);
 
   const query = useMemo(() => ({ page, status }), [page, status]);
   const listFetcher = useCallback(
@@ -161,10 +164,16 @@ export default function StaffMeetingScreen({ homeRoute, apiBase, bottomInset = 0
     }
   };
 
-  const notify = async (meeting) => {
+  // The organiser types their own mail id; the attendees never see it (the invite goes out From the
+  // company mailbox) but it is blind-copied to them and recorded in the admin panel's outbound log.
+  const notify = (meeting) => setNotifyMeeting(meeting);
+
+  const doNotify = async (senderEmail) => {
+    const meeting = notifyMeeting;
+    setNotifyMeeting(null);
     setBusyId(meeting.meetingId);
     try {
-      const res = await notifyAttendees(apiBase, meeting.meetingId);
+      const res = await notifyAttendees(apiBase, meeting.meetingId, senderEmail);
       showToast(
         `Sent ${res?.emailsSent ?? 0} emails and ${res?.whatsappSent ?? 0} WhatsApp messages.`,
         'success',
@@ -360,6 +369,16 @@ export default function StaffMeetingScreen({ homeRoute, apiBase, bottomInset = 0
           <Ionicons name="add" size={26} color="#ffffff" />
         </Pressable>
       ) : null}
+
+      <SenderEmailSheet
+        visible={!!notifyMeeting}
+        title="Notify attendees"
+        subtitle={notifyMeeting?.title}
+        note="Every attendee with an email address is sent the Meet link, from the company mailbox."
+        submitLabel="Notify"
+        onClose={() => setNotifyMeeting(null)}
+        onSubmit={doNotify}
+      />
 
       <FormSheet
         visible={sheetOpen}

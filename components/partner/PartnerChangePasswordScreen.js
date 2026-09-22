@@ -93,7 +93,12 @@ export default function PartnerChangePasswordScreen() {
         {email ? (
           <View style={styles.address}>
             <Text style={styles.addressLabel}>Sending to</Text>
-            <Text style={styles.addressValue}>{email}</Text>
+            {/* Clamped and ellipsised in the middle. This had no numberOfLines at all and drew
+                the address at TYPE.heading bold — the largest email rendering in the app, and the
+                one most likely to wrap. */}
+            <Text style={styles.addressValue} numberOfLines={1} ellipsizeMode="middle">
+              {email}
+            </Text>
           </View>
         ) : (
           <Text style={styles.note}>
@@ -137,6 +142,6 @@ const useStyles = makeStyles((p) => ({
     marginBottom: SPACING.md,
   },
   addressLabel: { fontSize: TYPE.caption, color: SLATE[500] },
-  addressValue: { fontSize: TYPE.heading, fontWeight: '700', color: SLATE[800], marginTop: 2 },
+  addressValue: { fontSize: TYPE.body, fontWeight: '700', color: SLATE[800], marginTop: 2 },
   note: { fontSize: TYPE.body, color: SLATE[500], lineHeight: leading(TYPE.body), marginBottom: SPACING.md },
 }));

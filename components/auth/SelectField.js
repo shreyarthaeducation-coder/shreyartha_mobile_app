@@ -103,7 +103,8 @@ export default function SelectField({
 
 const styles = StyleSheet.create({
   wrap: { marginBottom: SPACING.md },
-  label: { fontSize: TYPE.body, fontWeight: '600', color: SLATE[700], marginBottom: 6 },
+  // Matches FormField's label exactly — the two sit in the same column on staff signup.
+  label: { fontSize: TYPE.label, fontWeight: '700', color: SLATE[800], marginBottom: 6 },
   required: { color: '#e74c3c' },
   field: {
     flexDirection: 'row',
@@ -115,7 +116,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 13,
   },
-  value: { fontSize: TYPE.heading, color: SLATE[900] },
+  value: { fontSize: TYPE.body, color: SLATE[900] },
   placeholder: { color: SLATE[600] },
   error: { marginTop: 5, fontSize: TYPE.label, color: FEEDBACK.errorText, fontWeight: '500' },
   backdrop: {
@@ -156,5 +157,5 @@ const styles = StyleSheet.create({
     borderTopColor: SLATE[100],
   },
   optionPressed: { backgroundColor: SLATE[50] },
-  optionText: { fontSize: TYPE.heading, color: SLATE[700] },
+  optionText: { fontSize: TYPE.body, color: SLATE[700] },
 });

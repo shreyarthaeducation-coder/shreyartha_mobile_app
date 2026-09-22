@@ -29,6 +29,26 @@ const postJson = async (endpoint, body) => {
 export const loginStudent = (email, password) =>
   postJson('/api/auth/login', { email, password });
 
+/**
+ * THE SINGLE SIGN-IN GATE.
+ *
+ * One identifier — email or mobile — and a password, for every school-bound role. The server
+ * resolves which portal owns the account and answers `{ portal, data }`, where `data` is that
+ * role's own login payload, identical to what the per-role endpoints above return. So
+ * `services/portalSession.js` can store it with the same writes those screens already use.
+ *
+ * The per-role endpoints stay: they are what the signup screens post to, and the fallback.
+ */
+export const signIn = (identifier, password) =>
+  postJson('/api/auth/sign-in', { identifier, password });
+
+/**
+ * Forgot-password from the gate, which does not know the caller's portal — the server resolves it
+ * from the identifier. Answers 200 whether or not an account exists, by design.
+ */
+export const requestResetAny = (emailOrPhone) =>
+  postJson('/api/auth/forgot-password-any', { emailOrPhone });
+
 export const loginSchool = (emailOrMobile, password) =>
   postJson('/api/school/auth/login', { emailOrMobile, password });
 

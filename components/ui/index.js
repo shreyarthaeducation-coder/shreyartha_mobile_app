@@ -26,6 +26,8 @@ export { default as SchoolClassPicker, EMPTY_SCHOOL_SCOPE } from './SchoolClassP
 export { default as SegmentedTabs } from './SegmentedTabs';
 export { default as ChipMultiSelect } from './ChipMultiSelect';
 export { default as FormSheet } from './FormSheet';
+// Asks the sender for their own mail id before any staff-triggered email leaves the app.
+export { default as SenderEmailSheet, isSenderEmail } from './SenderEmailSheet';
 export { default as DateTimeField } from './DateTimeField';
 export {
   ProgressBar,

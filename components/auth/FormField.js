@@ -62,10 +62,17 @@ export default FormField;
 
 const styles = StyleSheet.create({
   wrap: { marginBottom: SPACING.md },
+  // THE LABEL IS SMALLER THAN THE VALUE, NOT LARGER.
+  //
+  // This was label 16 / input 18 — inverted. Every field came out ~58px tall and the label read
+  // quieter than the text it described, which is what made the auth cards feel oversized and
+  // misaligned. One rung down plus a heavier weight and a darker slate is smaller, bolder and
+  // higher-contrast at once. The TYPE scale itself is untouched: it was deliberately raised after
+  // a "text everywhere is hard to read" report, and checkdesign asserts a floor of 11.5.
   label: {
-    fontSize: TYPE.body,
-    fontWeight: '600',
-    color: SLATE[700],
+    fontSize: TYPE.label,
+    fontWeight: '700',
+    color: SLATE[800],
     marginBottom: 6,
   },
   // FEEDBACK.errorText, not its own red. This asterisk and the error message below it sat on the
@@ -81,8 +88,8 @@ const styles = StyleSheet.create({
   },
   input: {
     flex: 1,
-    paddingVertical: 13,
-    fontSize: TYPE.heading,
+    paddingVertical: 12,
+    fontSize: TYPE.body,
     color: SLATE[900],
   },
   error: {

@@ -70,8 +70,10 @@ export function submitSolution({ streamKey, id, solutionProvided }) {
  * **Only valid when `preferredMode` is VIDEO** — the server rejects anything else, so the action
  * is hidden rather than offered and then refused.
  *
- * @param {{ meetLink?, scheduledAt?, durationMinutes?, message? }} payload
+ * @param {{ meetLink?, scheduledAt?, durationMinutes?, message?, senderEmail? }} payload
  *        `scheduledAt` is a bare LocalDateTime string (`yyyy-MM-ddTHH:mm:ss`), no zone suffix.
+ *        `senderEmail` is the counsellor's own mail id, typed at send time: blind-copied to them and
+ *        recorded in the admin panel's outbound log, never shown to the student.
  */
 export function sendMeetLink({ streamKey, id, ...payload }) {
   return staffApi.post(`${BASE}/${getStream(streamKey).path}/${id}/send-meet-link`, payload);

@@ -22,6 +22,7 @@ import {
   ScreenScaffold,
   SegmentedTabs,
   Select,
+  SenderEmailSheet,
   useToast,
 } from '../ui';
 import useStaffResource from '../../hooks/useStaffResource';
@@ -103,6 +104,8 @@ export default function LiveClassesScreen({
   const [page, setPage] = useState(0);
   const [statusFilter, setStatusFilter] = useState('');
   const [busySession, setBusySession] = useState(null);
+  // Session awaiting the teacher's own mail id before its notifications go out.
+  const [notifySession, setNotifySession] = useState(null);
 
   const [month, setMonth] = useState(() => {
     const now = new Date();
@@ -208,10 +211,16 @@ export default function LiveClassesScreen({
     }
   };
 
-  const notify = async (session) => {
+  // The teacher types their own mail id; the students never see it (the mail goes out From the
+  // company mailbox) but it is blind-copied to them and recorded in the admin panel's outbound log.
+  const notify = (session) => setNotifySession(session);
+
+  const doNotify = async (senderEmail) => {
+    const session = notifySession;
+    setNotifySession(null);
     setBusySession(session.sessionId);
     try {
-      const res = await notifyStudents(session.sessionId);
+      const res = await notifyStudents(session.sessionId, senderEmail);
       showToast(
         `Sent ${res?.emailsSent ?? 0} email(s) and ${res?.whatsappSent ?? 0} WhatsApp message(s).`,
         'success',
@@ -573,6 +582,16 @@ export default function LiveClassesScreen({
       </View>
 
       {renderBody()}
+
+      <SenderEmailSheet
+        visible={!!notifySession}
+        title="Notify students"
+        subtitle={notifySession?.className}
+        note="Every student on this session with an email address is sent the Meet link, from the company mailbox."
+        submitLabel="Notify"
+        onClose={() => setNotifySession(null)}
+        onSubmit={doNotify}
+      />
 
       <FormSheet
         visible={sheetOpen}

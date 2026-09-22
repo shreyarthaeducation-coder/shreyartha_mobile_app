@@ -44,6 +44,7 @@ const styles = StyleSheet.create({
     borderRadius: 9,
     alignItems: 'center',
   },
-  label: { fontSize: TYPE.heading, fontWeight: '600', color: SLATE[600] },
+  // Smaller and heavier: at 18/600 the two tabs competed with the card title above them.
+  label: { fontSize: TYPE.body, fontWeight: '700', color: SLATE[600] },
   labelActive: { color: '#ffffff' },
 });

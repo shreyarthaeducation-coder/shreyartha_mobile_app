@@ -37,6 +37,12 @@ const ROOTS = [
   'app/parent',
   'app/partner',
   'app/teacher',
+  // Added with the login rework. These were NOT covered, which meant a typo'd `styles.x` in the
+  // auth kit or the landing — exactly the files being restyled — was a silent no-op that rendered
+  // as nothing and that no checker in the repo would see.
+  'components/auth',
+  'app/auth',
+  'app/(tabs)',
 ];
 
 function walk(dir, out = []) {

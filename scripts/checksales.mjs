@@ -90,6 +90,8 @@ function loadSources(mutate) {
     storageKeys: path.join(APP, 'constants', 'storageKeys.js'),
     location: path.join(APP, 'utils', 'salesLocation.js'),
     visitsScreen: path.join(APP, 'components', 'staff', 'sales', 'SalesVisitsScreen.js'),
+    dealsScreen: path.join(APP, 'components', 'staff', 'sales', 'SalesDealsScreen.js'),
+    webDeals: path.join(WEB, 'src', 'Sales', 'platform', 'SalesDeals.js'),
     stampView: path.join(APP, 'components', 'staff', 'sales', 'SalesPhotoStamp.js'),
     stampUtil: path.join(APP, 'utils', 'salesPhotoStamp.js'),
     controller: path.join(
@@ -338,10 +340,22 @@ function assertions({ staffRoles, home, theme, authPortals }, sources) {
   // surface. It no longer does: the employee door is reached from the landing's top-right control
   // alone, which is the website's arrangement too (only the landing mounts `variant="employee"`).
   // The picker is linked from the landing's "Login" buttons and the chatbot, all customer paths.
+  const landingTextForChoices = () => stripComments(sources.landing || '');
   const loginSelectText = stripComments(sources.loginSelect || '');
   if (!/LOGIN_GROUPS\s*\.filter\([\s\S]{0,80}?!==\s*["']employee["']/.test(loginSelectText)) {
     bad('the full-screen picker no longer filters out the employee door — it is customer-facing');
   }
+  // "Get Started" offers the sign-in gate and the register picker — NOT a list of role doors.
+  // Signing in resolves the portal from the credentials; only signing up still needs the role.
+  if (!/GENERAL_CHOICES/.test(landingTextForChoices())
+      || !/\/auth\/sign-in/.test(landingTextForChoices())) {
+    bad('the landing does not offer the sign-in gate behind Get Started');
+  }
+  // Every card in the register picker must land on the signup tab.
+  if (!/\?tab=signup/.test(stripComments(sources.loginSelect || ''))) {
+    bad('the register picker does not open the signup tab — it would show a login form instead');
+  }
+
   // The landing must show ONE door per control, never both at once.
   const landingText = stripComments(sources.landing || '');
   if (/LOGIN_GROUPS\.map/.test(landingText)) {
@@ -630,6 +644,36 @@ function assertions({ staffRoles, home, theme, authPortals }, sources) {
     bad('SalesController has no staticmap endpoint for the stamp thumbnail');
   }
 
+  // ── 15. A deal filed on the phone records everything the web one does ─────
+  //
+  // The two forms post to the same endpoint, and the server treats an absent key as "leave it" but
+  // an explicit null as "clear it". A field the phone simply does not send is therefore not a
+  // cosmetic gap: editing a web-filed deal on a phone silently erased its payment date for months.
+  // Everything downstream of a sale — the invoice, what the school is told it owes — reads these.
+  const dealsScreen = stripComments(sources.dealsScreen || '');
+  const webDeals = stripComments(sources.webDeals || '');
+  if (!sources.dealsScreen) {
+    bad('SalesDealsScreen.js is missing — the deal form assertions below are testing nothing');
+  } else {
+    for (const field of ['paymentMethod', 'paymentReference', 'paymentDate']) {
+      if (!new RegExp(`${field}[,:]`).test(dealsScreen)) {
+        bad(`the mobile deal form does not carry ${field} — the web form does, and the same row is `
+          + 'edited from both');
+      }
+    }
+    if (!/paymentDate:\s*paymentDate\s*\?/.test(dealsScreen)) {
+      bad('the mobile deal payload does not send paymentDate — editing a web-filed deal would clear it');
+    }
+    if (!/mode="date"/.test(dealsScreen)) {
+      bad('the mobile deal form has no date picker, so paymentDate can never be set on a phone');
+    }
+  }
+  // The method is what decides a proforma from a tax invoice downstream, and the server refuses a
+  // submit without it. Both clients must say so where it is typed, not one screen later.
+  if (sources.webDeals && !/Pick the method of payment/.test(webDeals)) {
+    bad('the website deal form does not validate the method of payment before saving');
+  }
+
   return out;
 }
 
@@ -641,6 +685,23 @@ function assertions({ staffRoles, home, theme, authPortals }, sources) {
 // ─────────────────────────────────────────────────────────────────────────────
 
 const MUTATIONS = [
+  {
+    name: 'the mobile deal form stops sending paymentDate',
+    sources: (k, s) =>
+      k === 'dealsScreen' ? s.replace(/paymentDate: paymentDate \? [^,]+,/, '') : s,
+    expect: /does not send paymentDate/,
+  },
+  {
+    name: 'the mobile deal date picker is removed',
+    sources: (k, s) => (k === 'dealsScreen' ? s.split('mode="date"').join('mode="datetime"') : s),
+    expect: /no date picker/,
+  },
+  {
+    name: 'the website deal form stops validating the method of payment',
+    sources: (k, s) =>
+      k === 'webDeals' ? s.split('Pick the method of payment').join('Pick something') : s,
+    expect: /does not validate the method of payment/,
+  },
   {
     name: 'role config removed',
     constants: (n, s) => (n === 'staffRoles.js' ? s.replace(/\n  sales: \{/, '\n  salesXX: {') : s),
@@ -837,11 +898,34 @@ const MUTATIONS = [
   {
     // Both groups back in one menu — the top-right button would offer the customer doors again,
     // which is the exact web-parity break this change fixed.
+    //
+    // RE-ANCHORED when "Get Started" became sign-in-or-register: the old anchor
+    // `{(openGroup?.options || []).map(` no longer exists, so this mutation silently stopped
+    // mutating anything and the assertion went vacuous. The self-test caught it — which is the
+    // entire reason the self-test exists.
     name: 'the landing shows both login groups in one menu',
     sources: (k, s) => (k === 'landing'
-      ? s.replace('{(openGroup?.options || []).map(', '{LOGIN_GROUPS.map(')
+      ? s.replace(/\{\(openGroup\?\.key[\s\S]*?\)\.map\(/, '{LOGIN_GROUPS.map(')
       : s),
     expect: /renders BOTH login groups/,
+  },
+  {
+    // "Get Started" going back to a role list. The whole point of the gate is that signing in
+    // never asks which of four doors you are.
+    name: 'the general door offers role doors again instead of sign-in/register',
+    sources: (k, s) => (k === 'landing' ? s.replace(/GENERAL_CHOICES/g, 'LOCAL_CHOICES') : s),
+    expect: /does not offer the sign-in gate/,
+  },
+  {
+    // The register picker dropping ?tab=signup — every card would open a login form nobody needs.
+    // Anchored on the TEMPLATE LITERAL, not the bare string: `?tab=signup` also appears in the
+    // comment above it, and mutating the comment mutates nothing at all. This repo has shipped
+    // that exact vacuous mutation before.
+    name: 'the register picker stops asking for the signup tab',
+    sources: (k, s) => (k === 'loginSelect'
+      ? s.replace('`${opt.route}?tab=signup`', 'opt.route')
+      : s),
+    expect: /does not open the signup tab/,
   },
   {
     // The top-right door pointed at the customer group.

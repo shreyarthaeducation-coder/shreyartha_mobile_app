@@ -59,6 +59,8 @@ export default function RootLayout() {
             <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
 
             {/* Auth screens */}
+            {/* The single sign-in gate. login-select is now the REGISTER picker behind it. */}
+            <Stack.Screen name="auth/sign-in" />
             <Stack.Screen name="auth/login-select" />
             <Stack.Screen name="auth/student-login" />
             <Stack.Screen

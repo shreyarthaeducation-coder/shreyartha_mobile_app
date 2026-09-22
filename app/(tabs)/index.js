@@ -1,4 +1,6 @@
 import {
+  AccessibilityInfo,
+  Animated,
   View,
   Text,
   Image,
@@ -11,7 +13,7 @@ import {
   TextInput,
   ActivityIndicator,
 } from "react-native";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "expo-router";
 import { COLORS, SHADOWS, SLATE, SPACING, TYPE, leading } from "../../constants/theme";
 import { loginGroup } from "../../constants/authPortals";
@@ -60,8 +62,90 @@ const ICON_COLOR = [
   "#4527A0",
 ];
 
+/**
+ * What "Get Started" offers now. Signing in is one gate for every school-bound role; registering
+ * still needs the role, so it goes to the picker that has always held it.
+ */
+const GENERAL_CHOICES = [
+  {
+    key: "sign-in",
+    icon: "🔑",
+    label: "Sign in",
+    sublabel: "Already have an account",
+    route: "/auth/sign-in",
+  },
+  {
+    key: "register",
+    icon: "✨",
+    label: "Register",
+    sublabel: "New here — student, parent, school staff or partner",
+    route: "/auth/login-select",
+  },
+];
+
 export default function LandingScreen() {
   const router = useRouter();
+
+  /**
+   * "Get Started" pulses, to keep drawing the eye to it.
+   *
+   * React Native's built-in Animated, deliberately — a native animation library would be a new
+   * dependency, and a new native module forces a store release in an app that has no OTA channel
+   * and bumps versionCode by hand.
+   *
+   * It is a gentle 1 → 1.045 breath rather than an on/off blink: a hard blink reads as *broken*
+   * rather than *inviting*, and it costs nothing to be the kinder one. `useNativeDriver` keeps it
+   * off the JS thread, so a busy landing page cannot make it stutter.
+   *
+   * IT STOPS FOR REDUCE MOTION. A control that moves forever is a WCAG 2.2 "Pause, Stop, Hide"
+   * problem and a genuine difficulty for vestibular disorders, so the OS setting is honoured —
+   * including when it is toggled while the app is open.
+   */
+  const pulse = useRef(new Animated.Value(1)).current;
+  useEffect(() => {
+    let loop;
+    let cancelled = false;
+
+    const start = () => {
+      loop = Animated.loop(
+        Animated.sequence([
+          Animated.timing(pulse, {
+            toValue: 1.045,
+            duration: 780,
+            useNativeDriver: true,
+          }),
+          Animated.timing(pulse, {
+            toValue: 1,
+            duration: 780,
+            useNativeDriver: true,
+          }),
+        ]),
+      );
+      loop.start();
+    };
+
+    const stop = () => {
+      loop?.stop();
+      loop = null;
+      // Back to its real size, or the button is left mid-breath at 1.045.
+      pulse.setValue(1);
+    };
+
+    const apply = (reduceMotion) => {
+      if (cancelled) return;
+      stop();
+      if (!reduceMotion) start();
+    };
+
+    AccessibilityInfo.isReduceMotionEnabled().then(apply).catch(() => apply(false));
+    const sub = AccessibilityInfo.addEventListener("reduceMotionChanged", apply);
+
+    return () => {
+      cancelled = true;
+      stop();
+      sub?.remove?.();
+    };
+  }, [pulse]);
   // WHICH DOOR is open, not merely whether one is — 'employee' | 'general' | null.
   //
   // The two controls now open different lists, matching the website: the top-right button is the
@@ -272,7 +356,10 @@ export default function LandingScreen() {
             accessibilityRole="button"
             accessibilityLabel="Employee login"
           >
-            <Text style={styles.loginBtnText}>🔒 Employee ▼</Text>
+            {/* Was "Employee" with a lock and a caret at TYPE.body/700 and 18px side
+                padding — ~146dp on a row it shares with a 250px logo, which is what
+                crowded the header. Two glyphs dropped, one rung down the scale. */}
+            <Text style={styles.loginBtnText}>Employee</Text>
           </TouchableOpacity>
         </View>
 
@@ -291,22 +378,38 @@ export default function LandingScreen() {
           >
             <View style={styles.loginDropdown} accessibilityRole="menu">
               <Text style={styles.loginDropdownTitle}>{openGroup?.label}</Text>
-              {(openGroup?.options || []).map((opt, idx) => (
+              {/* THE GENERAL DOOR NO LONGER ASKS WHICH ROLE YOU ARE.
+                  Signing in is one gate — /auth/sign-in takes an email or mobile and the server
+                  resolves the portal — so this offers the only two answers that matter. The role
+                  list survives one step behind "Register", because signing UP genuinely differs
+                  per role. The employee door is unchanged: it is a single option and goes
+                  straight through. */}
+              {(openGroup?.key === "general"
+                ? GENERAL_CHOICES
+                : openGroup?.options || []
+              ).map((opt, idx, shown) => (
                 <TouchableOpacity
                   key={opt.key}
                   style={[
                     styles.loginDropdownItem,
-                    idx === (openGroup?.options.length || 0) - 1 && { borderBottomWidth: 0 },
+                    idx === shown.length - 1 && { borderBottomWidth: 0 },
                   ]}
+                  activeOpacity={0.75}
                   accessibilityRole="menuitem"
                   onPress={() => {
                     setPendingLoginRoute(opt.route);
                     setLoginGroupKey(null);
                   }}
                 >
-                  <Text style={styles.loginDropdownItemText}>
-                    {opt.icon} {opt.label} Login
-                  </Text>
+                  <View style={styles.loginDropdownItemBody}>
+                    <Text style={styles.loginDropdownItemText}>
+                      {opt.icon} {opt.label}
+                      {openGroup?.key === "general" ? "" : " Login"}
+                    </Text>
+                    {!!opt.sublabel && (
+                      <Text style={styles.loginDropdownItemSub}>{opt.sublabel}</Text>
+                    )}
+                  </View>
                   <Text style={{ color: COLORS.primary, fontSize: TYPE.title }}>›</Text>
                 </TouchableOpacity>
               ))}
@@ -346,18 +449,23 @@ export default function LandingScreen() {
           </Text>
           <View style={styles.heroButtons}>
             {/* The general door, as a popup — NOT a jump to the student login. This button is the
-                app's largest, and a parent or partner tapping it used to land on a student form. */}
-            <TouchableOpacity
-              style={styles.ctaButton}
-              onPress={() => setLoginGroupKey("general")}
-              accessibilityRole="button"
-              accessibilityLabel="Get started, choose a login"
-            >
-              <Text style={styles.ctaButtonText}>Get Started</Text>
-            </TouchableOpacity>
+                app's largest, and a parent or partner tapping it used to land on a student form.
+                It pulses to draw the eye; see `pulse` above for why gently and why it can stop. */}
+            <Animated.View style={{ transform: [{ scale: pulse }] }}>
+              <TouchableOpacity
+                style={styles.ctaButton}
+                activeOpacity={0.75}
+                onPress={() => setLoginGroupKey("general")}
+                accessibilityRole="button"
+                accessibilityLabel="Get started, sign in or register"
+              >
+                <Text style={styles.ctaButtonText}>Get Started</Text>
+              </TouchableOpacity>
+            </Animated.View>
             <TouchableOpacity
               style={styles.ctaSecondary}
-              onPress={() => router.push("/auth/login-select")}
+              activeOpacity={0.75}
+              onPress={() => router.push("/auth/sign-in")}
             >
               <Text style={styles.ctaSecondaryText}>Login</Text>
             </TouchableOpacity>
@@ -799,11 +907,17 @@ const styles = StyleSheet.create({
   },
   loginBtn: {
     backgroundColor: COLORS.primary,
-    paddingVertical: 10,
-    paddingHorizontal: 18,
+    paddingVertical: 7,
+    paddingHorizontal: 13,
     borderRadius: 32,
   },
-  loginBtnText: { color: COLORS.white, fontWeight: "700", fontSize: TYPE.body },
+  // Smaller, but heavier and on the full-strength primary — smaller must not mean quieter.
+  loginBtnText: {
+    color: COLORS.white,
+    fontWeight: "800",
+    fontSize: TYPE.label,
+    letterSpacing: 0.2,
+  },
 
   // Login Modal
   loginModalOverlay: {
@@ -854,6 +968,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     borderBottomWidth: 1,
     borderBottomColor: "#f0f0f0",
+  },
+  loginDropdownItemBody: { flex: 1, paddingRight: SPACING.sm },
+  loginDropdownItemSub: {
+    fontSize: TYPE.caption,
+    lineHeight: leading(TYPE.caption),
+    color: SLATE[500],
+    marginTop: 2,
   },
   loginDropdownItemText: {
     fontSize: TYPE.heading,

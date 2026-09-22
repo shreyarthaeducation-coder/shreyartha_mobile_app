@@ -5,6 +5,7 @@ import * as Sharing from 'expo-sharing';
 import { SLATE, SPACING, TYPE } from '../../../constants/theme';
 import {
   Card,
+  DateTimeField,
   EmptyState,
   FormSheet,
   ScreenScaffold,
@@ -221,6 +222,9 @@ function DealSheet({ editing, schools, products, onClose, onSaved, onError }) {
   const [schoolId, setSchoolId] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('');
   const [paymentReference, setPaymentReference] = useState('');
+  // The web form has always had this. Without it here, editing a web-filed deal on a phone wiped
+  // the date the rep had set — the payload simply omitted it and the server took that as "clear".
+  const [paymentDate, setPaymentDate] = useState(null);
   const [remarks, setRemarks] = useState('');
   const [items, setItems] = useState([blankItem()]);
   const [saving, setSaving] = useState(false);
@@ -231,6 +235,8 @@ function DealSheet({ editing, schools, products, onClose, onSaved, onError }) {
     setSchoolId(deal?.schoolId ? String(deal.schoolId) : '');
     setPaymentMethod(deal?.paymentMethod || '');
     setPaymentReference(deal?.paymentReference || '');
+    // Stored as a bare date; DateTimeField speaks LocalDateTime.
+    setPaymentDate(deal?.paymentDate ? `${String(deal.paymentDate).slice(0, 10)}T00:00:00` : null);
     setRemarks(deal?.remarks || '');
     setItems(
       deal?.items?.length
@@ -296,6 +302,8 @@ function DealSheet({ editing, schools, products, onClose, onSaved, onError }) {
         schoolId,
         paymentMethod: paymentMethod || null,
         paymentReference,
+        // DateTimeField hands back a full LocalDateTime; the column is a bare date.
+        paymentDate: paymentDate ? paymentDate.slice(0, 10) : null,
         remarks,
         items: payloadItems,
       };
@@ -333,6 +341,14 @@ function DealSheet({ editing, schools, products, onClose, onSaved, onError }) {
         value={paymentReference}
         onChangeText={setPaymentReference}
         placeholder="Cheque no., UTR, txn id…"
+      />
+      <DateTimeField
+        label="Payment date"
+        mode="date"
+        value={paymentDate}
+        onChange={setPaymentDate}
+        clearable
+        placeholder="Not set"
       />
 
       {items.map((it, index) => {

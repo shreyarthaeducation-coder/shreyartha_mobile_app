@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Image, Pressable, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { FEEDBACK, SLATE, SPACING, TYPE, leading } from '../../../constants/theme';
@@ -51,6 +52,9 @@ export default function IdentityCard({
   const styles = useStyles();
   const palette = usePalette();
   const light = tone === 'light';
+  // Which row, if any, the viewer has tapped open. One at a time: two expanded addresses would
+  // reflow the card more than the wrapping this replaced.
+  const [expandedRow, setExpandedRow] = useState(null);
 
   const t = strings || {};
   const ROWS = rows;
@@ -148,13 +152,22 @@ export default function IdentityCard({
                 <Text style={[styles.rowLabel, light && styles.rowLabelLight]} numberOfLines={2}>
                   {row.label}
                 </Text>
+                {/* ONE LINE, ELLIPSIS IN THE MIDDLE, TAP TO EXPAND.
+                    This was numberOfLines={2} — literally an instruction to wrap, and an email is
+                    the value that takes it: the column gets roughly 150dp after a 45%-capped label
+                    and the icon tile, while a 24-character address at label size needs about 180.
+                    Middle rather than tail, so the domain survives the truncation — "which
+                    account is this?" is usually answered by what comes after the @. */}
                 <Text
                   style={[
                     styles.rowValue,
                     light && styles.rowValueLight,
                     !value && styles.rowValueEmpty,
                   ]}
-                  numberOfLines={2}
+                  numberOfLines={expandedRow === row.key ? 0 : 1}
+                  ellipsizeMode="middle"
+                  onPress={() => setExpandedRow((k) => (k === row.key ? null : row.key))}
+                  suppressHighlighting
                 >
                   {value || t.notSet || 'Not set'}
                 </Text>

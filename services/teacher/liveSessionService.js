@@ -103,9 +103,16 @@ export function updateSessionStatus(sessionId, status) {
   return staffApi.put(`/api/shreya01/live-sessions/${sessionId}/status`, { status });
 }
 
-/** Emails + WhatsApp to the attendees. 400s when the session has no Meet link. */
-export function notifyStudents(sessionId) {
-  return staffApi.post(`/api/shreya01/live-sessions/${sessionId}/notify-students`, {});
+/**
+ * Emails + WhatsApp to the attendees. 400s when the session has no Meet link.
+ *
+ * `senderEmail` is the teacher's own mail id, typed at send time. The students never see it — the
+ * mail goes out From the company mailbox — but it is blind-copied to the teacher and recorded in the
+ * admin panel's outbound log. The server still accepts a send without it, because older installs of
+ * this app cannot be updated over the air; send it anyway so that can be tightened.
+ */
+export function notifyStudents(sessionId, senderEmail) {
+  return staffApi.post(`/api/shreya01/live-sessions/${sessionId}/notify-students`, { senderEmail });
 }
 
 /**

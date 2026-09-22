@@ -45,8 +45,10 @@ export default function LoginSelectScreen() {
           style={styles.headerLogo}
           resizeMode="contain"
         />
-        <Text style={styles.headerTitle}>Welcome Back</Text>
-        <Text style={styles.headerSubtitle}>Select your role to continue</Text>
+        <Text style={styles.headerTitle}>Create an account</Text>
+        <Text style={styles.headerSubtitle}>
+          Pick what you are — signing up differs for each
+        </Text>
       </View>
 
       {/* Customer-facing doors only — see the docblock on why `employee` is filtered out here. */}
@@ -58,14 +60,17 @@ export default function LoginSelectScreen() {
                 under "Select your role to continue" reads as noise. Kept conditional rather than
                 deleted so a second customer group would bring its heading back. */}
             {shown.length > 1 && <Text style={styles.groupLabel}>{group.label}</Text>}
+            {/* ?tab=signup — this screen is the REGISTER picker now. Signing in no longer asks
+                which role you are; /auth/sign-in resolves it from the credentials. Each page still
+                carries its own login tab, so a deep link keeps working. */}
             {group.options.map((opt) => (
               <TouchableOpacity
                 key={opt.key}
                 style={[styles.option, SHADOWS.md]}
-                onPress={() => router.push(opt.route)}
+                onPress={() => router.push(`${opt.route}?tab=signup`)}
                 activeOpacity={0.75}
                 accessibilityRole="button"
-                accessibilityLabel={`${opt.label} login`}
+                accessibilityLabel={`Register as ${opt.label}`}
               >
                 <View style={[styles.optionIconBg, { backgroundColor: opt.color }]}>
                   <Text style={styles.optionIcon}>{opt.icon}</Text>
@@ -81,6 +86,16 @@ export default function LoginSelectScreen() {
             ))}
           </View>
         ))}
+        <TouchableOpacity
+          style={styles.signInLink}
+          activeOpacity={0.75}
+          onPress={() => router.replace("/auth/sign-in")}
+          accessibilityRole="button"
+        >
+          <Text style={styles.signInLinkText}>
+            Already have an account? <Text style={styles.signInLinkStrong}>Sign in</Text>
+          </Text>
+        </TouchableOpacity>
       </View>
     </View>
   );
@@ -173,4 +188,7 @@ const styles = StyleSheet.create({
   optionLabel: { fontSize: TYPE.title, fontWeight: "700", marginBottom: 2 },
   optionSublabel: { fontSize: TYPE.label, color: COLORS.textSecondary, lineHeight: leading(TYPE.label) },
   arrow: { fontSize: 26, marginLeft: 8 },
+  signInLink: { marginTop: SPACING.md, alignItems: "center", paddingVertical: SPACING.sm },
+  signInLinkText: { fontSize: TYPE.body, color: COLORS.textSecondary },
+  signInLinkStrong: { fontWeight: "800", color: COLORS.primary },
 });

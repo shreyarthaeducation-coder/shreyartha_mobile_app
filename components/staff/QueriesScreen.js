@@ -10,6 +10,7 @@ import {
   SegmentedTabs,
   StatusChip,
   TextField,
+  isSenderEmail,
   useToast,
 } from '../ui';
 import useStaffResource from '../../hooks/useStaffResource';
@@ -79,7 +80,8 @@ export default function QueriesScreen({ homeRoute = '/staff/shreyartha_councello
   };
 
   const openMeet = () => {
-    setMeetForm({ meetLink: '', scheduledAt: null, durationMinutes: '30', message: '' });
+    // senderEmail starts blank on every open: it is typed each time, never carried over.
+    setMeetForm({ meetLink: '', scheduledAt: null, durationMinutes: '30', message: '', senderEmail: '' });
     setMeetOpen(true);
   };
 
@@ -93,6 +95,7 @@ export default function QueriesScreen({ homeRoute = '/staff/shreyartha_councello
         scheduledAt: meetForm.scheduledAt || undefined,
         durationMinutes: Number(meetForm.durationMinutes) || undefined,
         message: meetForm.message || undefined,
+        senderEmail: meetForm.senderEmail.trim(),
       });
       showToast(res?.message || 'Meet link sent.', 'success');
       setMeetOpen(false);
@@ -221,6 +224,7 @@ export default function QueriesScreen({ homeRoute = '/staff/shreyartha_councello
         onClose={() => setMeetOpen(false)}
         onSubmit={submitMeet}
         submitting={sendingMeet}
+        submitDisabled={!isSenderEmail(meetForm?.senderEmail)}
         submitLabel="Send"
       >
         {meetForm ? (
@@ -252,6 +256,23 @@ export default function QueriesScreen({ homeRoute = '/staff/shreyartha_councello
               onChangeText={(v) => setMeetForm((f) => ({ ...f, message: v }))}
               multiline
               inputStyle={styles.noteInput}
+            />
+            {/* Typed on every send, never prefilled: this is what the admin panel records the send
+                against. The student never sees it — the mail comes from the company mailbox. */}
+            <TextField
+              label="Your email id"
+              value={meetForm.senderEmail}
+              onChangeText={(v) => setMeetForm((f) => ({ ...f, senderEmail: v }))}
+              keyboardType="email-address"
+              autoCapitalize="none"
+              autoCorrect={false}
+              placeholder="you@example.com"
+              required
+              helper={
+                <Text style={styles.senderHint}>
+                  Recorded against this send and blind-copied to you. The student never sees it.
+                </Text>
+              }
             />
           </>
         ) : null}
@@ -307,5 +328,6 @@ const useStyles = makeStyles((p) => ({
   message: { fontSize: TYPE.body, lineHeight: leading(TYPE.body), color: SLATE[700] },
   solutionInput: { height: 130, textAlignVertical: 'top' },
   noteInput: { height: 80, textAlignVertical: 'top' },
+  senderHint: { fontSize: TYPE.label, lineHeight: 19, color: SLATE[600] },
   pressed: { opacity: 0.75 },
 }));
