@@ -33,6 +33,8 @@ const SRC = {
   detailPanel: 'components/student/languagepro/PhonemeDetailPanel.js',
   soundStudio: 'components/student/languagepro/SoundStudio.js',
   recorder: 'hooks/useVoiceRecorder.js',
+  speakButton: 'components/student/ai/ShreyaSpeakButton.js',
+  ttsClient: 'services/shared/ttsClient.js',
 };
 
 const JAVA_SRC = {
@@ -232,6 +234,35 @@ function assertions(service, catalog, langs, src, java) {
     }
   }
 
+  // ── 4b. READ-ALOUD REACHED THREE MORE PANELS ──────────────────────────────
+  // /tts is authenticated, so a role missing from this guard is a 403 for a whole panel — silent
+  // in every build, visible only as a button that never speaks.
+  const ttsRoles = rolesIn(java.translate, '@PostMapping("/tts")');
+  for (const role of ['PARENT', 'TEACHER', 'PARTNER']) {
+    if (ttsRoles && !ttsRoles.has(role)) {
+      bad(`/api/v1/translate/tts refuses ${role} — read-aloud 403s for that whole panel`);
+    }
+  }
+
+  // Those panels are not student screens: studentApi does not read their tokens, and it signs the
+  // user OUT on a 401/403. Read-aloud must therefore go through the neutral client.
+  const button = codeOnly(src.speakButton);
+  if (!/client/.test(button)) {
+    bad('ShreyaSpeakButton takes no `client`, so non-student panels cannot pass their own token');
+  }
+  const ttsClient = codeOnly(src.ttsClient);
+  if (/multiRemove|router\.replace/.test(ttsClient)) {
+    bad('the read-aloud client clears storage or navigates — a refused clip would sign someone out');
+  }
+  if (!/parentUserToken/.test(ttsClient) || !/schoolUserToken/.test(ttsClient)) {
+    bad('the read-aloud client does not read the parent/school tokens — those panels send none');
+  }
+
+  // It must SPEAK the chosen language, not just render it. Mobile shipped English-only once.
+  if (!/translateBatch\(/.test(button)) {
+    bad('ShreyaSpeakButton no longer translates before speaking — every panel is back to English');
+  }
+
   // ── 5. referenceText is a form field, not a document part ─────────────────
   if (/@RequestPart\(\s*value\s*=\s*"referenceText"/.test(java.speech)) {
     bad('referenceText is back on @RequestPart — RN sends it with no Content-Type, risking a 415');
@@ -352,7 +383,7 @@ const MUTATIONS = [
     java: (k, s) =>
       k === 'translate'
         ? s.replace(
-            "@PostMapping(\"/tts\")\n    @PreAuthorize(\"hasRole('FREE_STUDENT') or hasRole('SCHOOL_STUDENT') or hasRole('PREMIUM_STUDENT') or hasRole('COLLEGE_STUDENT') or hasRole('FREE_COLLEGE_STUDENT')\")",
+            "@PostMapping(\"/tts\")\n    @PreAuthorize(\"hasRole('FREE_STUDENT') or hasRole('SCHOOL_STUDENT') or hasRole('PREMIUM_STUDENT') or hasRole('COLLEGE_STUDENT') or hasRole('FREE_COLLEGE_STUDENT') or hasRole('PARENT') or hasRole('TEACHER') or hasRole('PARTNER')\")",
             "@PostMapping(\"/tts\")\n    @PreAuthorize(\"hasRole('FREE_STUDENT') or hasRole('SCHOOL_STUDENT') or hasRole('PREMIUM_STUDENT')\")",
           )
         : s,
@@ -366,6 +397,31 @@ const MUTATIONS = [
             "or hasRole('PREMIUM_STUDENT')\")\n    public ResponseEntity<?> assess",
           )
         : s,
+  },
+  {
+    name: 'the three new panels refused by /tts again',
+    java: (k, s) =>
+      k === 'translate'
+        ? s.replace(
+            " or hasRole('PARENT') or hasRole('TEACHER') or hasRole('PARTNER')\")",
+            "\")",
+          )
+        : s,
+  },
+  {
+    name: 'read-aloud goes back to speaking English only',
+    src: (k, s) => (k === 'speakButton' ? s.replace(/translateBatch\(/g, 'noTranslate(') : s),
+  },
+  {
+    name: 'the read-aloud client signs people out on a refusal',
+    src: (k, s) =>
+      k === 'ttsClient'
+        ? s.replace('const TIMEOUT_MS', "router.replace('/auth/sign-in');\nconst TIMEOUT_MS")
+        : s,
+  },
+  {
+    name: 'the read-aloud client stops reading the non-student tokens',
+    src: (k, s) => (k === 'ttsClient' ? s.replace(/'parentUserToken',/g, '') : s),
   },
   {
     name: 'referenceText moved back to @RequestPart (the 415 risk)',

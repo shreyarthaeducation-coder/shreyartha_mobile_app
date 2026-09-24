@@ -33,7 +33,7 @@ export default function TeacherWorkspaceScreen() {
   const t = useTranslations(STRINGS);
 
   return (
-    <ScreenScaffold title={t.title} fallbackRoute="/teacher">
+    <ScreenScaffold title={t.title} fallbackRoute="/teacher" readAloud={`${t.title}. ${t.intro}`}>
       <Text style={styles.intro}>{t.intro}</Text>
 
       {TEACHER_WORKSPACE_GROUPS.map((group) => (

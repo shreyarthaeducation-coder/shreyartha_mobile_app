@@ -269,10 +269,20 @@ async function assertions(svcPack, ral, src, java, web) {
       bad(`${SRC[key]} has no Shreya Speak button`);
     }
   }
-  // The understanding test must pass the RAW four-element array, not the pre-filtered optionsOf().
+  // The understanding test must pass the RAW four-element array.
+  //
+  // RETARGETED when the shared ExamRunner landed. The old trap was `optionsOf()`, a local helper
+  // that filtered blanks and so re-lettered the options. That helper is gone; the same mistake is
+  // now one keystroke away in a different disguise — `question.options` on the normalized model is
+  // ALSO pre-filtered, while `question.raw.optionA…optionD` is not. Reading the filtered list aloud
+  // would say "B" for what the screen shows as "C" whenever an option is blank.
   const u = codeOnly(src.understanding);
-  if (/buildQuestionReadAloudText\([^)]*optionsOf/.test(u)) {
-    bad('UnderstandingTest reads aloud from optionsOf(), which re-letters after filtering blanks');
+  if (/buildQuestionReadAloudText\([^)]*optionsOf/.test(u)
+      || /buildQuestionReadAloudText\([^)]*question\.options/.test(u)) {
+    bad('UnderstandingTest reads aloud from the pre-filtered options, which re-letters them');
+  }
+  if (!/buildQuestionReadAloudText\(question\.raw\.questionText/.test(u)) {
+    bad('UnderstandingTest no longer reads aloud from the raw question at all');
   }
   // Jyora's sheet must only mount a WebView when the field is present.
   const sheet = codeOnly(src.sheet);
@@ -372,12 +382,12 @@ const MUTATIONS = [
     src: (k, s) => (k === 'practice' ? s.replace('<MoreLikeThisButton', '<MoreLikeThisButtonGone') : s),
   },
   {
-    name: 'the understanding test reading aloud from the re-lettered optionsOf()',
+    name: 'the understanding test reading aloud from the pre-filtered options',
     src: (k, s) =>
       k === 'understanding'
         ? s.replace(
-            /text=\{buildQuestionReadAloudText\(q\.questionText, \[\s*q\.optionA,\s*q\.optionB,\s*q\.optionC,\s*q\.optionD,\s*\]\)\}/,
-            'text={buildQuestionReadAloudText(q.questionText, optionsOf(q).map((o) => o[1]))}',
+            /text=\{buildQuestionReadAloudText\(question\.raw\.questionText, \[[\s\S]*?\]\)\}/,
+            'text={buildQuestionReadAloudText(question.options.map((o) => o.html))}',
           )
         : s,
   },

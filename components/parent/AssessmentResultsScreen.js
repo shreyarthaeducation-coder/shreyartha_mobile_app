@@ -44,6 +44,20 @@ export default function AssessmentResultsScreen() {
   const psychFailed = !!data?.psychometric?.error;
   const percent = psychometricPercent(psych);
 
+  // The words the read-aloud button speaks — the same ones the cards below render. There is no DOM
+  // on a phone to read them out of, so the screen states them.
+  const spokenSummary = [
+    'My Personal Statement.',
+    statement || 'No personal statement added yet.',
+    psychFailed
+      ? 'The psychometric assessment could not be loaded right now.'
+      : [
+          psych?.chapterName,
+          `${psych?.completedCount || 0} of ${psych?.totalTopics || 0} topics completed`,
+          psych?.hasCompletedAssessment ? 'Assessment completed.' : 'Assessment not completed yet.',
+        ].filter(Boolean).join('. '),
+  ].join(' ');
+
   return (
     <ScreenScaffold
       title="Assessment Results"
@@ -53,6 +67,7 @@ export default function AssessmentResultsScreen() {
       onRetry={reload}
       refreshing={refreshing}
       onRefresh={refresh}
+      readAloud={spokenSummary}
     >
       <Card style={styles.card}>
         <CardTitle>My Personal Statement</CardTitle>

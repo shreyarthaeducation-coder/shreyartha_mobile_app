@@ -87,6 +87,15 @@ export default function AcademicProgressScreen() {
 
   const subjects = visible(hidden, 'SUBJECT', profile?.subjects, (s) => s.subjectId);
 
+  // Spoken summary: the subject list, which is the part of this screen a parent is most likely to
+  // want in their own language. The analytics below are charts, which do not read aloud usefully.
+  const spoken = subjects.length
+    ? `Selected chapters and topics. ${subjects
+        .map((s) => s.subjectName)
+        .filter(Boolean)
+        .join(', ')}.`
+    : 'No chapters or topics selected in the Academic IQ profile yet.';
+
   return (
     <ScreenScaffold
       title="Academic Progress"
@@ -99,6 +108,7 @@ export default function AcademicProgressScreen() {
         setRefreshing(true);
         load();
       }}
+      readAloud={spoken}
     >
       {/* ── Part A: selected chapters and topics ─────────────────────────── */}
       <Card>

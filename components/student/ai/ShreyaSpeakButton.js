@@ -5,6 +5,7 @@ import { FEEDBACK, SPACING, TOUCH, TYPE, leading } from '../../../constants/them
 import { usePalette } from '../../ui/PaletteContext';
 import { makeStyles } from '../../../utils/makeStyles';
 import useShreyaVoice from '../../../hooks/useShreyaVoice';
+import { useLanguage } from '../../../context/LanguageContext';
 import htmlToText from '../../../utils/htmlToText';
 
 /**
@@ -24,19 +25,30 @@ import htmlToText from '../../../utils/htmlToText';
  * it would add a disabled state that can never be reached. (What really happens for the 11 Indian
  * languages without a native Google voice is that TTS falls back to a Hindi voice.)
  *
- * Also not ported yet: the web translates the text into the student's selected UI language before
- * synthesising. Mobile reads in **English** for now — a deliberate, user-approved staging, because
- * mobile's LanguageContext exposes only `translateBatch` and the TTS spine is proven at `en`.
+ * ── IT READS IN THE SELECTED LANGUAGE ────────────────────────────────────────
+ * The text is translated through `/api/v1/translate/batch` (public, no token) before being spoken,
+ * the way the web does it. Mobile shipped English-only at first; this is the step that was missing.
+ * Only 12 of the 22 languages have a native Google voice — the rest are spoken by a Hindi voice,
+ * which the server reports as `voiceFallback` and the notice below says out loud, because audio in
+ * the wrong accent with no explanation reads as a bug.
  *
  * ── ONLY ONE CLIP AT A TIME ──────────────────────────────────────────────────
  * Guaranteed by `utils/audioController`, which `useShreyaVoice` registers with. With this button on
  * seven screens that is not optional — see that file's header.
  */
 
-export default function ShreyaSpeakButton({ text, label = 'Shreya Speak', compact = false, style }) {
+export default function ShreyaSpeakButton({
+  text,
+  label = 'Shreya Speak',
+  compact = false,
+  style,
+  // Non-student panels pass services/shared/ttsClient; students leave it undefined.
+  client,
+}) {
   const styles = useStyles();
   const palette = usePalette();
-  const voice = useShreyaVoice();
+  const { language, translateBatch } = useLanguage();
+  const voice = useShreyaVoice({ language, client });
 
   const [loading, setLoading] = useState(false);
   const [notice, setNotice] = useState('');
@@ -58,13 +70,25 @@ export default function ShreyaSpeakButton({ text, label = 'Shreya Speak', compac
 
     setLoading(true);
     try {
+      // Say it in the language the screen is being read in. `translateBatch` returns the original
+      // strings unchanged for English and on any failure, so a translation outage degrades to
+      // English audio rather than to silence.
+      let spoken = plain;
+      if (language && language !== 'en') {
+        try {
+          const [translated] = await translateBatch([plain], language);
+          if (translated && translated.trim()) spoken = translated;
+        } catch {
+          // Fall through and speak the English — better than nothing coming out.
+        }
+      }
       // Resolves when the clip FINISHES, so the button returns to idle on its own.
-      await speak(plain);
+      await speak(spoken);
     } finally {
       setLoading(false);
     }
     return undefined;
-  }, [text, speaking, paused, speak, pause, resume]);
+  }, [text, speaking, paused, speak, pause, resume, language, translateBatch]);
 
   const showStop = speaking || paused;
 

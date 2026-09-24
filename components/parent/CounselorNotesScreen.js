@@ -26,6 +26,16 @@ export default function CounselorNotesScreen() {
 
   const notes = data || [];
 
+  // What the read-aloud button says. Assembled here because there is no DOM to scrape: the words
+  // spoken are exactly the words rendered below.
+  const spoken = notes
+    .map((note) => [
+      note.counselorName || 'Counsellor',
+      formatLongDate(note.sessionDate || note.createdAt),
+      note.counselorNotes,
+    ].filter(Boolean).join('. '))
+    .join('\n\n');
+
   return (
     <ScreenScaffold
       title="Counselor Notes"
@@ -35,6 +45,7 @@ export default function CounselorNotesScreen() {
       onRetry={reload}
       refreshing={refreshing}
       onRefresh={refresh}
+      readAloud={spoken}
     >
       {notes.length === 0 ? (
         <EmptyState

@@ -266,6 +266,8 @@ export default function HrTab({ showToast }) {
         {[
           ['Employee code', profile?.employeeCode],
           ['Date of joining', profile?.dateOfJoining],
+          ['Job location', profile?.jobLocation],
+          ['Band', profile?.band],
           ['Probation ends', profile?.probationEndDate],
           ['Status', profile?.employmentStatus],
         ].map(([label, value]) => (

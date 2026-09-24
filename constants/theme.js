@@ -190,6 +190,11 @@ export const PORTALS = {
     inputBg: '#ffffff',
     inputBorder: SLATE[200],
     inputFocus: '#1f6f8f',
+    // Ink for a label or icon sitting on a tinted chip — the darkest shade of this portal's blue.
+    // Added when Shreya Speak reached the teacher panel: that button paints its label and icons with
+    // `deep`, and a palette without it yields `undefined`, which React Native renders as BLACK on a
+    // transparent chip with no warning of any kind. 10.2:1 on white.
+    deep: '#154360',
   },
   /**
    * The student PLATFORM (post-login), from frontendmain/src/styles/student-platform.css and

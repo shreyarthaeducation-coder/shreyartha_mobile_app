@@ -107,6 +107,19 @@ export function submitMockTest(mockTestId, body) {
   return studentApi.post(`/api/student/competitiveexam/mocktest/${mockTestId}/submit`, body);
 }
 
+/**
+ * The Bloom's and skill breakdown of one attempt, built from the answers the server stored.
+ *
+ * Returns empty lists for an attempt taken before that trail existed, which is why the caller keeps
+ * its own computation as a fallback rather than treating an empty response as an error.
+ */
+export function fetchMockTestAnalysis(attemptId, signal) {
+  return studentApi.get(
+    `/api/student/competitiveexam/mocktest/attempts/${attemptId}/analysis`,
+    { signal },
+  );
+}
+
 /** The mock-test list for a whole entrance exam — the separate mock-test screen's only read. */
 export function fetchMockTestsForExam(entranceExamId, signal) {
   return studentApi.get(

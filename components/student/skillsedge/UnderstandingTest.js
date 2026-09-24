@@ -16,6 +16,9 @@ import {
   scoreUnderstanding,
 } from '../../../services/student/understandingScoring';
 import { fetchUnderstandingQuestions } from '../../../services/student/skillsEdgeService';
+import ExamRunner from '../testrunner/ExamRunner';
+import { fromLettered } from '../../../utils/questionModel';
+import shuffleArray from '../../../utils/shuffle';
 
 /**
  * Test Your Understanding, for one Skills Edge module.
@@ -34,21 +37,13 @@ import { fetchUnderstandingQuestions } from '../../../services/student/skillsEdg
  * Skills Edge's endpoint so its existing caller is unchanged.
  */
 
-/**
- * Options arrive as four discrete fields (`optionA`…`optionD`), not an array, and each is **HTML**
- * — the web renders them through RichTextViewer, so a question with a formula or a list would come
- * out as raw tags in a plain <Text>. Empty ones are omitted, so a two-option question shows two.
- *
- * `correctAnswer` is the LETTER ("A"), not the option text.
+/*
+ * Options arrive as four discrete fields (`optionA`…`optionD`), not an array, and each is HTML.
+ * `utils/questionModel.js` does that unpacking now — `fromLettered` drops the blank ones and keeps
+ * `correctAnswer` as the LETTER it is. The local `optionsOf` helper this file used to carry went
+ * with it; what survives is the rule in the read-aloud call below, which must keep using the RAW
+ * four so a blank option still consumes its letter.
  */
-function optionsOf(q) {
-  return [
-    ['A', q.optionA],
-    ['B', q.optionB],
-    ['C', q.optionC],
-    ['D', q.optionD],
-  ].filter(([, text]) => text != null && String(text).trim() !== '');
-}
 
 /**
  * `topicName` / `subjectName` / `chapterName` are for "✨ More like this" only — the generator sends
@@ -71,14 +66,19 @@ export default function UnderstandingTest({
   const [loading, setLoading] = useState(true);
   const [answers, setAnswers] = useState({});
   const [result, setResult] = useState(null);
+  /** Questions flagged to come back to. Per attempt, exactly like the answers. */
+  const [markedForRetry, setMarkedForRetry] = useState(new Set());
 
   const load = useCallback(async () => {
     setLoading(true);
     setAnswers({});
     setResult(null);
+    setMarkedForRetry(new Set());
     try {
       const loader = loadQuestions || fetchUnderstandingQuestions;
-      setQuestions(await loader(moduleId));
+      // Shuffled, like the web: `questionOrder` is per-module, so an unshuffled list hands every
+      // student the same paper in the same sequence.
+      setQuestions(shuffleArray(await loader(moduleId)));
     } catch {
       setQuestions([]);
     } finally {
@@ -116,6 +116,9 @@ export default function UnderstandingTest({
   }
 
   const submitted = !!result;
+  // LETTERED shape (optionA…optionD, graded by letter). Scoring still reads the raw questions, so
+  // the marks are identical to before the shared runner existed.
+  const runnerQuestions = questions.map(fromLettered);
   // Only levels that actually carry questions — showing six bars when the module tests two would
   // read as four zero scores rather than four absences.
   const usedLevels = submitted
@@ -173,85 +176,54 @@ export default function UnderstandingTest({
         </>
       ) : null}
 
-      {questions.map((q, index) => {
-        const chosen = answers[q.id];
-        return (
-          <StudentCard key={q.id}>
-            <View style={styles.qHead}>
-              <Text style={styles.qNum}>Question {index + 1}</Text>
-              {q.bloomsLevel ? <Text style={styles.qLevel}>{q.bloomsLevel}</Text> : null}
-              <ShreyaSpeakButton
-                compact
-                // The RAW four-element array, NOT optionsOf(q). The web passes
-                // [optionA, optionB, optionC, optionD] so a blank option still consumes its letter
-                // — matching the on-screen lettering. optionsOf pre-filters and would re-letter.
-                text={buildQuestionReadAloudText(q.questionText, [
-                  q.optionA,
-                  q.optionB,
-                  q.optionC,
-                  q.optionD,
-                ])}
-              />
-            </View>
-
+      <ExamRunner
+        questions={runnerQuestions}
+        answers={answers}
+        onAnswer={(questionId, key) => setAnswers((prev) => ({ ...prev, [questionId]: key }))}
+        marked={markedForRetry}
+        onToggleMark={(questionId) =>
+          setMarkedForRetry((previous) => {
+            const next = new Set(previous);
+            if (next.has(questionId)) next.delete(questionId);
+            else next.add(questionId);
+            return next;
+          })
+        }
+        submitted={submitted}
+        onSubmit={submit}
+        renderQuestionSlot={(question) => (
+          <View style={styles.qActions}>
+            <ShreyaSpeakButton
+              compact
+              // The RAW four-element array, NOT optionsOf(q). The web passes
+              // [optionA, optionB, optionC, optionD] so a blank option still consumes its letter
+              // — matching the on-screen lettering. optionsOf pre-filters and would re-letter.
+              text={buildQuestionReadAloudText(question.raw.questionText, [
+                question.raw.optionA,
+                question.raw.optionB,
+                question.raw.optionC,
+                question.raw.optionD,
+              ])}
+            />
             <MoreLikeThisButton
-              questionContext={questionContextFromLettered(q)}
+              questionContext={questionContextFromLettered(question.raw)}
               topicName={topicName}
               subjectName={subjectName}
               chapterName={chapterName}
             />
+          </View>
+        )}
+      />
 
-            <RichText html={q.questionText} />
-
-            {optionsOf(q).map(([key, text]) => {
-              const picked = chosen === key;
-              const correct = submitted && key === q.correctAnswer;
-              const wrong = submitted && picked && key !== q.correctAnswer;
-              return (
-                <Pressable
-                  key={key}
-                  onPress={() => !submitted && setAnswers((prev) => ({ ...prev, [q.id]: key }))}
-                  disabled={submitted}
-                  style={({ pressed }) => [
-                    styles.option,
-                    picked && styles.optionPicked,
-                    correct && styles.optionCorrect,
-                    wrong && styles.optionWrong,
-                    pressed && styles.pressed,
-                  ]}
-                  accessibilityRole="button"
-                  accessibilityState={{ selected: picked, disabled: submitted }}
-                >
-                  <Text style={[styles.optionKey, (correct || wrong) && styles.optionKeyOn]}>
-                    {key}
-                  </Text>
-                  <View style={styles.optionBody}>
-                    <RichText html={String(text)} textStyle={styles.optionText} />
-                  </View>
-                  {correct ? <Text style={styles.mark}>✓</Text> : null}
-                  {wrong ? <Text style={styles.mark}>✗</Text> : null}
-                </Pressable>
-              );
-            })}
-
-            {/* The hint is NOT gated on submission — the web shows it while answering. */}
-            {q.hint ? (
-              <View style={styles.explain}>
-                <Text style={styles.explainLabel}>Hint</Text>
-                <RichText html={q.hint} />
-              </View>
-            ) : null}
-          </StudentCard>
-        );
-      })}
-
-      <Pressable
-        onPress={submitted ? load : submit}
-        style={({ pressed }) => [styles.primary, pressed && styles.pressed]}
-        accessibilityRole="button"
-      >
-        <Text style={styles.primaryText}>{submitted ? 'Try Again' : 'Submit Test'}</Text>
-      </Pressable>
+      {submitted ? (
+        <Pressable
+          onPress={load}
+          style={({ pressed }) => [styles.primary, pressed && styles.pressed]}
+          accessibilityRole="button"
+        >
+          <Text style={styles.primaryText}>Try Again</Text>
+        </Pressable>
+      ) : null}
     </>
   );
 }
@@ -285,6 +257,7 @@ const useStyles = makeStyles((p) => ({
   bloomStatus: { fontSize: TYPE.caption, fontWeight: '700', color: p.deep, marginTop: 5 },
   bloomRemark: { fontSize: TYPE.label, color: SLATE[600], lineHeight: leading(TYPE.label), marginTop: 2 },
 
+  qActions: { flexDirection: 'row', alignItems: 'center', gap: SPACING.xs },
   qHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   qNum: { fontSize: TYPE.caption, fontWeight: '800', color: p.deep },
   qLevel: {

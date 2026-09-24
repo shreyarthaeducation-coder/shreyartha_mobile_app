@@ -110,11 +110,17 @@ const cacheKey = (text, language, gender) => {
  * Cached on disk: Shreya repeats prompts across a chapter, and re-synthesising each time costs a
  * round trip and a Google TTS call for audio the device already has.
  */
-export async function synthesizeToFile(text, { language = TTS_LANGUAGE, gender = 'female' } = {}) {
+export async function synthesizeToFile(
+  text,
+  { language = TTS_LANGUAGE, gender = 'female', client = studentApi } = {},
+) {
   if (!text || !text.trim()) return null;
   await ensureTtsDir();
 
-  const res = await studentApi.post('/api/v1/translate/tts', { text, language, gender });
+  // `client` exists because read-aloud is no longer student-only. A parent, teacher or partner
+  // screen passes services/shared/ttsClient, which sends THEIR token and — unlike studentApi —
+  // never logs anyone out when the voice service refuses. Students keep studentApi by default.
+  const res = await client.post('/api/v1/translate/tts', { text, language, gender });
   if (!res?.audioContent) throw new Error('The voice service returned no audio.');
 
   // `audioFormat` is a container name ("MP3"), not an extension — lowercase it and default sanely.

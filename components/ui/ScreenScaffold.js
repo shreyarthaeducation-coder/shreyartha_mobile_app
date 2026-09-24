@@ -7,6 +7,9 @@ import { usePalette } from './PaletteContext';
 // and those import this kit — going through it would close an import cycle.
 import StaffHeader from '../staff/StaffHeader';
 import Toast from './Toast';
+// By path, for the same reason as StaffHeader above: the student barrel pulls in screens.
+import ShreyaSpeakButton from '../student/ai/ShreyaSpeakButton';
+import ttsClient from '../../services/shared/ttsClient';
 
 /**
  * The frame every native staff sub-screen shares: teal safe area, back-bar header, and the
@@ -22,6 +25,10 @@ import Toast from './Toast';
  *   scroll               — false when the child owns its own scrolling (FlatList, SectionList)
  *   toast                — { message, tone } from useToast()
  *   contentStyle         — extra padding/layout for the scroll content
+ *   readAloud            — text for a "Shreya Speak" button above the content, in whichever of the
+ *                          22 languages the panel is set to. The web reads the page out of the DOM;
+ *                          React Native has no DOM, so each screen hands over the words it is
+ *                          showing. Omit it and nothing is rendered, which is every other caller.
  */
 
 function ErrorBlock({ message, onRetry, palette }) {
@@ -47,6 +54,20 @@ function ErrorBlock({ message, onRetry, palette }) {
   );
 }
 
+/**
+ * `ttsClient` rather than the student transport: this renders in the parent, partner and teacher
+ * panels, whose tokens `studentApi` does not read — and whose users must not be signed out because
+ * a voice service refused.
+ */
+function ReadAloud({ text }) {
+  if (!text || !text.trim()) return null;
+  return (
+    <View style={styles.readAloud}>
+      <ShreyaSpeakButton text={text} client={ttsClient} compact />
+    </View>
+  );
+}
+
 export default function ScreenScaffold({
   title,
   fallbackRoute,
@@ -64,6 +85,7 @@ export default function ScreenScaffold({
   // must land there rather than at the top. Every other caller omits it and is unchanged.
   scrollRef,
   palette: paletteProp,
+  readAloud = '',
   children,
 }) {
   const contextPalette = usePalette();
@@ -97,6 +119,7 @@ export default function ScreenScaffold({
         }
       >
         {notice ? <Text style={styles.notice}>{notice}</Text> : null}
+        <ReadAloud text={readAloud} />
         {children}
       </ScrollView>
     );
@@ -104,6 +127,7 @@ export default function ScreenScaffold({
     body = (
       <View style={styles.flex}>
         {notice ? <Text style={styles.notice}>{notice}</Text> : null}
+        <ReadAloud text={readAloud} />
         {children}
       </View>
     );
@@ -147,6 +171,7 @@ const styles = StyleSheet.create({
   },
   retryPressed: { opacity: 0.8 },
   retryText: { color: '#ffffff', fontWeight: '700', fontSize: TYPE.heading },
+  readAloud: { alignItems: 'flex-start', marginBottom: SPACING.sm },
   notice: {
     fontSize: TYPE.body,
     color: SLATE[500],

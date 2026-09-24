@@ -30,7 +30,10 @@ import { registerActiveAudio, releaseActiveAudio } from '../utils/audioControlle
  * caller waits for the line to end before advancing. The `finally` block therefore must not unload
  * on pause; it only runs once the promise settles.
  */
-export default function useShreyaVoice({ language = TTS_LANGUAGE, gender = 'female' } = {}) {
+export default function useShreyaVoice({ language = TTS_LANGUAGE, gender = 'female', client } = {}) {
+  // `client` is the transport. Students leave it undefined and speechService uses studentApi;
+  // parent, teacher and partner screens pass services/shared/ttsClient, which carries THEIR
+  // token and never tears a session down when the voice service says no.
   const [speaking, setSpeaking] = useState(false);
   const [paused, setPaused] = useState(false);
   /** The last failure, so a screen can surface it. Cleared when a line speaks successfully. */
@@ -115,7 +118,7 @@ export default function useShreyaVoice({ language = TTS_LANGUAGE, gender = 'fema
       setError('');
 
       try {
-        const uri = await synthesizeToFile(text, { language, gender });
+        const uri = await synthesizeToFile(text, { language, gender, client });
         if (!uri || epochRef.current !== epoch) return;
 
         await unload();
@@ -156,16 +159,16 @@ export default function useShreyaVoice({ language = TTS_LANGUAGE, gender = 'fema
         }
       }
     },
-    [language, gender, unload],
+    [language, gender, unload, client],
   );
 
   /** Warm the cache for a line we are about to need. Failures are irrelevant. */
   const prefetch = useCallback(
     (text) => {
       if (!text || !text.trim()) return;
-      synthesizeToFile(text, { language, gender }).catch(() => {});
+      synthesizeToFile(text, { language, gender, client }).catch(() => {});
     },
-    [language, gender],
+    [language, gender, client],
   );
 
   return { speak, stop, pause, resume, prefetch, speaking, paused, error };

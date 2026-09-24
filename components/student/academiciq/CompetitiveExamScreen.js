@@ -10,6 +10,7 @@ import RichText from '../../RichText';
 import StudentScaffold from '../StudentScaffold';
 import { StudentCard, StudentCardTitle, StudentNote } from '../StudentCard';
 import RankPredictor from '../RankPredictor';
+import MockTestRunner from './MockTestRunner';
 import { SOURCES } from '../../../services/student/doubtService';
 import AiActionBar from '../ai/AiActionBar';
 import LimitedAccessNote from '../LimitedAccessNote';
@@ -68,6 +69,9 @@ export default function CompetitiveExamScreen() {
   // same rank block My Analytics renders. The path parameter is an entrance-exam SUBJECT id, which
   // is exactly the `subExam.id` this screen already holds (see getMockTestsByEntranceExam).
   const [mockSummary, setMockSummary] = useState(null);
+  // The paper being taken. Until this existed, every paper card had a chevron and no
+  // onPress — the list looked tappable and did nothing.
+  const [activePaper, setActivePaper] = useState(null);
   const [loading, setLoading] = useState(true);
   const [treeLoading, setTreeLoading] = useState(false);
   const [error, setError] = useState('');
@@ -394,6 +398,17 @@ export default function CompetitiveExamScreen() {
   const renderMockTest = () => {
     if (gate.limited) return <LimitedAccessNote />;
 
+    // Taking a paper replaces the list, the way the website's runner does.
+    if (activePaper) {
+      return (
+        <MockTestRunner
+          paper={activePaper}
+          onBack={() => setActivePaper(null)}
+          showToast={showToast}
+        />
+      );
+    }
+
     return (
       <>
         {/* The website's Mock Test page puts the status counts and the Rank Predictor ABOVE the
@@ -432,15 +447,23 @@ export default function CompetitiveExamScreen() {
           </StudentCard>
         ) : (
           papers.map((paper) => (
-            <StudentCard key={paper.id}>
-              <View style={styles.rowHead}>
-                <Text style={styles.paperName}>{paper.name || paper.title}</Text>
-                <Ionicons name="chevron-forward" size={17} color={palette.deep} />
-              </View>
-              {paper.durationMinutes ? (
-                <Text style={styles.paperMeta}>{paper.durationMinutes} minutes</Text>
-              ) : null}
-            </StudentCard>
+            <Pressable
+              key={paper.id}
+              onPress={() => setActivePaper(paper)}
+              style={({ pressed }) => [pressed && styles.pressed]}
+              accessibilityRole="button"
+              accessibilityLabel={`Take mock test: ${paper.name || paper.title}`}
+            >
+              <StudentCard>
+                <View style={styles.rowHead}>
+                  <Text style={styles.paperName}>{paper.name || paper.title}</Text>
+                  <Ionicons name="chevron-forward" size={17} color={palette.deep} />
+                </View>
+                {paper.durationMinutes ? (
+                  <Text style={styles.paperMeta}>{paper.durationMinutes} minutes</Text>
+                ) : null}
+              </StudentCard>
+            </Pressable>
           ))
         )}
       </>

@@ -115,6 +115,13 @@ export default function PartnerOverviewScreen({ homeRoute = '/partner' }) {
   const schools = profile?.linkedSchoolCodes || [];
   const isMaster = String(profile?.partnerType || '').toUpperCase() === 'MASTER';
 
+  // What read-aloud says: the headline numbers, which is the part of this screen worth hearing in
+  // one's own language. The month bars below do not read aloud usefully.
+  const spoken = totals
+    ? `Dashboard. Revenue ${formatRupees(totals.revenue)}. Collected ${formatRupees(totals.collected)}. `
+      + `Subscriptions ${totals.active}. Linked schools ${schools.length}.`
+    : 'Dashboard. Your earnings summary is not available right now.';
+
   return (
     <ScreenScaffold
       title="Dashboard"
@@ -122,6 +129,7 @@ export default function PartnerOverviewScreen({ homeRoute = '/partner' }) {
       loading={loading}
       error={error}
       notice={notice}
+      readAloud={spoken}
       onRetry={() => load('load')}
       refreshing={refreshing}
       onRefresh={() => load('refresh')}

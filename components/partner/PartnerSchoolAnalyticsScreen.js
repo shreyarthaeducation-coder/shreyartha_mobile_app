@@ -94,6 +94,10 @@ export default function PartnerSchoolAnalyticsScreen({ homeRoute = '/partner' })
     return 'swap-vertical';
   };
 
+  // The two summary figures this screen leads with, spoken in the selected language.
+  const spoken = `School Analytics. ${rowsRaw.length} students. `
+    + `Total paid ${formatRupees(totalPaid(rowsRaw))}.`;
+
   const SORTS = [
     ['studentName', 'Name'],
     ['currentClass', 'Class'],
@@ -111,6 +115,7 @@ export default function PartnerSchoolAnalyticsScreen({ homeRoute = '/partner' })
       onRetry={() => (code ? loadStudents(code, 'load') : loadProfile())}
       refreshing={refreshing}
       onRefresh={() => loadStudents(code, 'refresh')}
+      readAloud={spoken}
     >
       {codes.length === 0 && !loading ? (
         <EmptyState

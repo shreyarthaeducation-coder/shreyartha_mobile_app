@@ -10,6 +10,8 @@ import StudentScaffold from '../StudentScaffold';
 import { StudentCard, StudentCardTitle, StudentNote } from '../StudentCard';
 import LimitedAccessNote from '../LimitedAccessNote';
 import AdaptiveRunner from './AdaptiveRunner';
+import ExamRunner from '../testrunner/ExamRunner';
+import { asKeys, fromIndexed } from '../../../utils/questionModel';
 import ShreyaSpeakButton from '../ai/ShreyaSpeakButton';
 import MoreLikeThisButton from '../ai/MoreLikeThisButton';
 import useStudentAccess from '../../../hooks/useStudentAccess';
@@ -81,6 +83,8 @@ export default function PracticeZoneScreen() {
   const [level, setLevel] = useState('basic');
   const [answers, setAnswers] = useState({});
   const [score, setScore] = useState(null);
+  /** Questions flagged to come back to. Per attempt, exactly like the answers. */
+  const [markedForRetry, setMarkedForRetry] = useState(new Set());
 
   const [adaptiveOpen, setAdaptiveOpen] = useState(false);
   const [availability, setAvailability] = useState(null);
@@ -277,6 +281,7 @@ export default function PracticeZoneScreen() {
               onPress={() => {
                 setAnswers({});
                 setScore(null);
+                setMarkedForRetry(new Set());
               }}
               style={({ pressed }) => [styles.secondary, pressed && styles.pressed]}
               accessibilityRole="button"
@@ -286,66 +291,44 @@ export default function PracticeZoneScreen() {
           </StudentCard>
         ) : null}
 
-        {levelQuestions.map((q, index) => (
-          <StudentCard key={q.id}>
-            <View style={styles.qHead}>
-              <Text style={styles.qNum}>Question {index + 1}</Text>
+        {/* INDEXED shape: `options[]` graded by position, NOT the lettered columns the
+            understanding tests use. Answers are held as NUMBERS here, so they are stringified in
+            and converted back out — the scoring below is untouched. */}
+        <ExamRunner
+          questions={levelQuestions.map(fromIndexed)}
+          answers={asKeys(answers)}
+          onAnswer={(questionId, key) => setAnswers((prev) => ({ ...prev, [questionId]: Number(key) }))}
+          marked={markedForRetry}
+          onToggleMark={(questionId) =>
+            setMarkedForRetry((previous) => {
+              const next = new Set(previous);
+              if (next.has(questionId)) next.delete(questionId);
+              else next.add(questionId);
+              return next;
+            })
+          }
+          submitted={!!score}
+          onSubmit={submit}
+          submitLabel="Check my answers"
+          renderQuestionSlot={(question) => (
+            <View style={styles.qActions}>
               <ShreyaSpeakButton
                 compact
                 // Stem plus every option, so a student hears the whole question.
-                text={buildQuestionReadAloudText(q.questionText, q.options)}
+                text={buildQuestionReadAloudText(question.raw.questionText, question.raw.options)}
+              />
+              {/* Practice Zone's questions are INDEXED; the generator wants letters.
+                  `questionContextFromIndexed` is the same conversion the web does inline. */}
+              <MoreLikeThisButton
+                questionContext={questionContextFromIndexed(question.raw)}
+                topicName={topic.name}
+                subjectName={topic.subjectName}
+                chapterName={topic.chapterName}
               />
             </View>
+          )}
+        />
 
-            {/* Practice Zone's questions are INDEXED (`options[]` + `correctOptionIndex`); the
-                generator wants letters. `questionContextFromIndexed` is the same conversion the web
-                does inline at three call sites. */}
-            <MoreLikeThisButton
-              questionContext={questionContextFromIndexed(q)}
-              topicName={topic.name}
-              subjectName={topic.subjectName}
-              chapterName={topic.chapterName}
-            />
-
-            <RichText html={q.questionText} />
-            {(q.options || []).map((text, i) => {
-              const picked = answers[q.id] === i;
-              const isCorrect = score && q.correctOptionIndex === i;
-              const isWrong = score && picked && q.correctOptionIndex !== i;
-              return (
-                <Pressable
-                  key={i}
-                  onPress={() => !score && setAnswers((prev) => ({ ...prev, [q.id]: i }))}
-                  disabled={!!score}
-                  style={({ pressed }) => [
-                    styles.option,
-                    picked && styles.optionPicked,
-                    isCorrect && styles.optionCorrect,
-                    isWrong && styles.optionWrong,
-                    pressed && styles.pressed,
-                  ]}
-                  accessibilityRole="button"
-                  accessibilityState={{ selected: picked, disabled: !!score }}
-                >
-                  <Text style={styles.optionKey}>{String.fromCharCode(65 + i)}</Text>
-                  <View style={styles.optionBody}>
-                    <RichText html={String(text)} textStyle={styles.optionText} />
-                  </View>
-                </Pressable>
-              );
-            })}
-          </StudentCard>
-        ))}
-
-        {!score ? (
-          <Pressable
-            onPress={submit}
-            style={({ pressed }) => [styles.primary, pressed && styles.pressed]}
-            accessibilityRole="button"
-          >
-            <Text style={styles.primaryText}>Check my answers</Text>
-          </Pressable>
-        ) : null}
       </>
     );
   };
@@ -607,6 +590,7 @@ const useStyles = makeStyles((p) => ({
   },
   adaptiveText: { fontSize: TYPE.body, fontWeight: '700', color: '#ffffff' },
 
+  qActions: { flexDirection: 'row', alignItems: 'center', gap: SPACING.xs },
   qHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 6 },
   qNum: { fontSize: TYPE.caption, fontWeight: '800', color: p.deep },
   option: {
