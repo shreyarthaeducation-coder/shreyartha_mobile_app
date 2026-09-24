@@ -1,6 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Platform } from 'react-native';
-import { Audio } from 'expo-av';
+import {
+  AudioQuality,
+  IOSOutputFormat,
+  requestRecordingPermissionsAsync,
+  setAudioModeAsync,
+  useAudioRecorder,
+} from 'expo-audio';
 import { stopActiveAudio } from '../utils/audioController';
 
 /**
@@ -10,14 +16,21 @@ import { stopActiveAudio } from '../utils/audioController';
  * for the same reason the three adaptive engines share `useAdaptiveSession`: permission handling
  * and the audio format are easy to get subtly wrong, and three copies means three chances to drift.
  *
+ * ── WHY expo-audio AND NOT expo-av ───────────────────────────────────────────
+ * `expo-av` is gone from Expo Go as of SDK 57: importing it throws
+ * "Cannot find native module 'ExponentAV'" before any screen renders. `expo-audio` is its
+ * replacement, and the API is different enough that this is a rewrite rather than a rename —
+ * there is no prepare/unload lifecycle, the recorder is a stable object owned by the hook, and
+ * the Android format and encoder are plain strings instead of enums.
+ *
  * ── THE FORMAT IS NOT A DETAIL ───────────────────────────────────────────────
  * The recording is forwarded to Azure by `POST /api/v1/speech/assess`, and Azure's REST short-audio
  * endpoint accepts a specific set of codecs: **WAV/PCM, OGG-OPUS, WEBM-OPUS, MP3, FLAC, ALAW,
  * MULAW, AMR-NB and AMR-WB**.
  *
- * `expo-av`'s HIGH_QUALITY preset produces **AAC in an .m4a container**, which is NOT on that list.
- * Using the preset would look completely reasonable and fail at Azure. So each platform is pinned
- * to something Azure actually takes:
+ * The HIGH_QUALITY preset produces **AAC in an .m4a container**, which is NOT on that list. Using
+ * it would look completely reasonable and fail at Azure. So each platform is pinned to something
+ * Azure actually takes:
  *
  *   iOS      Linear PCM in a .wav  — real WAV, the format Azure is happiest with
  *   Android  AMR-WB (.amr)         — 16 kHz wideband; the only Azure-accepted codec Android's
@@ -33,19 +46,24 @@ const SAMPLE_RATE = 16000; // Azure assesses at 16 kHz; recording higher just ge
 
 const RECORDING_OPTIONS = {
   isMeteringEnabled: true,
+  extension: Platform.OS === 'android' ? '.amr' : '.wav',
+  sampleRate: SAMPLE_RATE,
+  numberOfChannels: 1,
+  bitRate: Platform.OS === 'android' ? 23850 : 256000,
   android: {
     extension: '.amr',
-    // AMR_WB on both: the container and the encoder have to agree or Android silently falls back.
-    outputFormat: Audio.AndroidOutputFormat.AMR_WB,
-    audioEncoder: Audio.AndroidAudioEncoder.AMR_WB,
+    // 'amrwb' (container) and 'amr_wb' (encoder) have to agree or Android silently falls back.
+    // These are STRINGS in expo-audio; expo-av used AndroidOutputFormat/AndroidAudioEncoder enums.
+    outputFormat: 'amrwb',
+    audioEncoder: 'amr_wb',
     sampleRate: SAMPLE_RATE,
     numberOfChannels: 1,
     bitRate: 23850, // AMR-WB's top mode; anything lower audibly degrades consonants.
   },
   ios: {
     extension: '.wav',
-    outputFormat: Audio.IOSOutputFormat.LINEARPCM,
-    audioQuality: Audio.IOSAudioQuality.HIGH,
+    outputFormat: IOSOutputFormat.LINEARPCM,
+    audioQuality: AudioQuality.HIGH,
     sampleRate: SAMPLE_RATE,
     numberOfChannels: 1,
     bitRate: 256000,
@@ -70,24 +88,16 @@ const currentExtension = () =>
 export const MAX_RECORDING_SECONDS = 55;
 
 /* ── THE MODULE-LEVEL MIC LOCK ─────────────────────────────────────────────────
- * `expo-av` allows exactly ONE prepared `Audio.Recording` per app, enforced natively. A second
- * `prepareToRecordAsync()` while any recorder is still prepared throws
- *   "Only one Recording object can be prepared at a time"
- * and the take is lost.
+ * There is one microphone, and two hook instances can live on one screen:
+ * `ShreyaChapterScreen` mounts `useFreeSpeech` for answers and `useVoiceRecorder` for reading, and
+ * neither toggle knows about the other. Under expo-av that collision threw
+ * "Only one Recording object can be prepared at a time" and the take was lost; under expo-audio the
+ * second recorder simply produces nothing useful, which is worse because it is silent.
  *
- * A `recorderRef` guard cannot prevent this, because the ref is per hook INSTANCE and the
- * constraint is per PROCESS. Three real paths hit it:
- *
- *   1. `ShreyaChapterScreen` mounts TWO recorders in one component (`useFreeSpeech` for answers,
- *      `useVoiceRecorder` for reading). Neither toggle checks the other's state.
- *   2. `stop()` used to null its ref BEFORE awaiting `stopAndUnloadAsync()`, so a fast re-tap
- *      passed the guard while the old object was still prepared.
- *   3. Unmount cleanup cannot `await`, so navigating away mid-recording and immediately opening
- *      another voice surface raced the unload.
- *
- * So the lock lives at module scope, where the native constraint does. `releaseChain` is a promise
- * that always resolves and is replaced by every teardown; anyone about to prepare awaits it first.
- * `owner` names the holder purely so a genuine double-start is reported honestly instead of
+ * A ref guard cannot prevent this, because the ref is per hook INSTANCE and the microphone is per
+ * PROCESS. So the lock lives at module scope, where the constraint does. `releaseChain` is a
+ * promise that always resolves and is replaced by every teardown; anyone about to record awaits it
+ * first. `owner` names the holder purely so a genuine double-start is reported honestly instead of
  * deadlocking behind a lock nobody will release. */
 let releaseChain = Promise.resolve();
 let owner = null;
@@ -95,7 +105,7 @@ let owner = null;
 let nextOwnerId = 1;
 const newOwnerId = () => `rec-${nextOwnerId++}`;
 
-/** Queue a teardown. Never rejects, so one failed unload cannot wedge every later recording. */
+/** Queue a teardown. Never rejects, so one failed stop cannot wedge every later recording. */
 function queueRelease(fn) {
   releaseChain = releaseChain.then(fn, fn).catch(() => {});
   return releaseChain;
@@ -126,14 +136,27 @@ export default function useVoiceRecorder({ maxSeconds = MAX_RECORDING_SECONDS } 
    */
   const [lastRecording, setLastRecording] = useState(null);
 
-  const recorderRef = useRef(null);
-  const stopTimerRef = useRef(null);
   const aliveRef = useRef(true);
+  const stopTimerRef = useRef(null);
+  // Whether THIS instance is the one currently recording. The recorder object itself is owned by
+  // expo-audio and outlives a single take, so it cannot serve as the "am I recording" flag.
+  const activeRef = useRef(false);
   // Lets the auto-stop timeout call the CURRENT stop rather than the one captured when `start` ran.
   const stopRef = useRef(null);
   // This instance's identity for the module-level mic lock. Stable across renders.
   const idRef = useRef(null);
   if (idRef.current === null) idRef.current = newOwnerId();
+
+  // One recorder per hook instance, created and owned by expo-audio. The status listener is how
+  // the elapsed time reaches the screen; expo-av used setOnRecordingStatusUpdate for this.
+  const recorder = useAudioRecorder(RECORDING_OPTIONS, (status) => {
+    if (!aliveRef.current || !activeRef.current) return;
+    if (status?.isFinished) return;
+    const ms = typeof status?.durationMillis === 'number'
+      ? status.durationMillis
+      : Math.round((recorder?.currentTime || 0) * 1000);
+    if (ms >= 0) setDurationMs(ms);
+  });
 
   useEffect(() => {
     aliveRef.current = true;
@@ -141,31 +164,33 @@ export default function useVoiceRecorder({ maxSeconds = MAX_RECORDING_SECONDS } 
       aliveRef.current = false;
       if (stopTimerRef.current) clearTimeout(stopTimerRef.current);
       // Leaving mid-recording must release the mic, or the next screen cannot record at all.
-      // Cleanup cannot await, so the unload is pushed onto the shared chain instead: the next
+      // Cleanup cannot await, so the stop is pushed onto the shared chain instead: the next
       // `start()` anywhere in the app waits on it rather than racing it.
-      const rec = recorderRef.current;
+      const wasActive = activeRef.current;
       const id = idRef.current;
-      recorderRef.current = null;
-      if (rec) {
+      activeRef.current = false;
+      if (wasActive) {
         queueRelease(async () => {
-          await rec.stopAndUnloadAsync().catch(() => {});
+          await recorder.stop().catch(() => {});
           releaseMic(id);
         });
       } else {
         releaseMic(id);
       }
     };
+    // `recorder` is stable for the life of this hook instance.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const ensurePermission = useCallback(async () => {
-    const { granted } = await Audio.requestPermissionsAsync();
+    const { granted } = await requestRecordingPermissionsAsync();
     setPermission(granted ? 'granted' : 'denied');
     return granted;
   }, []);
 
   const start = useCallback(async () => {
     setError('');
-    if (recorderRef.current) return false; // already recording — ignore the second tap
+    if (activeRef.current) return false; // already recording — ignore the second tap
 
     if (!(await ensurePermission())) {
       setError('Microphone access is needed to record. You can enable it in Settings.');
@@ -178,7 +203,7 @@ export default function useVoiceRecorder({ maxSeconds = MAX_RECORDING_SECONDS } 
     await stopActiveAudio();
 
     try {
-      // Wait for any other surface's recorder to finish unloading before constructing ours.
+      // Wait for any other surface's recorder to finish stopping before we start.
       // This is what makes two recorders in one component (ShreyaChapterScreen) safe.
       await acquireMic(idRef.current);
     } catch (e) {
@@ -188,38 +213,32 @@ export default function useVoiceRecorder({ maxSeconds = MAX_RECORDING_SECONDS } 
 
     try {
       // Without this, iOS records at a whisper and Android may route to the earpiece.
-      await Audio.setAudioModeAsync({
-        allowsRecordingIOS: true,
-        playsInSilentModeIOS: true,
-      });
+      // expo-audio renamed both fields: allowsRecordingIOS → allowsRecording,
+      // playsInSilentModeIOS → playsInSilentMode.
+      await setAudioModeAsync({ allowsRecording: true, playsInSilentMode: true });
 
-      const rec = new Audio.Recording();
-      await rec.prepareToRecordAsync(RECORDING_OPTIONS);
-      rec.setOnRecordingStatusUpdate((status) => {
-        if (!aliveRef.current) return;
-        if (status.isRecording) setDurationMs(status.durationMillis || 0);
-      });
-      rec.setProgressUpdateInterval(200);
-      await rec.startAsync();
+      await recorder.prepareToRecordAsync(RECORDING_OPTIONS);
+      recorder.record();
 
-      recorderRef.current = rec;
+      activeRef.current = true;
       setRecording(true);
       setDurationMs(0);
 
       // A hard stop, so a student who forgets never produces audio Azure will refuse.
       stopTimerRef.current = setTimeout(() => {
-        if (recorderRef.current) stopRef.current?.();
+        if (activeRef.current) stopRef.current?.();
       }, maxSeconds * 1000);
       return true;
     } catch (e) {
-      recorderRef.current = null;
+      activeRef.current = false;
       setRecording(false);
       setError(e?.message || 'Could not start recording.');
-      // A failed prepare still leaves us holding the lock; not releasing it would make the very
-      // next attempt fail with "another recording is in progress" and never recover.
+      // A failed start still leaves us holding the lock; not releasing it would make the very next
+      // attempt fail with "another recording is in progress" and never recover.
       releaseMic(idRef.current);
       return false;
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ensurePermission, maxSeconds]);
 
   /**
@@ -231,23 +250,22 @@ export default function useVoiceRecorder({ maxSeconds = MAX_RECORDING_SECONDS } 
       clearTimeout(stopTimerRef.current);
       stopTimerRef.current = null;
     }
-    const rec = recorderRef.current;
+    if (!activeRef.current) return null;
     setRecording(false);
-    if (!rec) return null;
 
     try {
-      // The ref is cleared only AFTER the unload resolves, and through the shared chain, so a fast
-      // re-tap (or the other recorder on this screen) waits rather than preparing over a recorder
-      // that is still live. Clearing it first is what silently lost takes before.
+      // Released through the shared chain, so a fast re-tap (or the other recorder on this screen)
+      // waits rather than starting over a recorder that is still running.
       await queueRelease(async () => {
-        await rec.stopAndUnloadAsync();
-        recorderRef.current = null;
+        await recorder.stop();
+        activeRef.current = false;
         releaseMic(idRef.current);
       });
       // Hand the audio session back so playback (Shreya's voice) is not stuck in record mode.
-      await Audio.setAudioModeAsync({ allowsRecordingIOS: false, playsInSilentModeIOS: true });
+      await setAudioModeAsync({ allowsRecording: false, playsInSilentMode: true });
 
-      const uri = rec.getURI();
+      // `uri` is a property in expo-audio; expo-av had getURI().
+      const uri = recorder.uri;
       if (!uri) {
         setError('The recording could not be saved.');
         return null;
@@ -261,11 +279,12 @@ export default function useVoiceRecorder({ maxSeconds = MAX_RECORDING_SECONDS } 
       setLastRecording(take);
       return take;
     } catch (e) {
-      recorderRef.current = null;
+      activeRef.current = false;
       releaseMic(idRef.current);
       setError(e?.message || 'Could not finish the recording.');
       return null;
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [durationMs]);
 
   // Keep the auto-stop pointed at the latest `stop`.
@@ -277,19 +296,18 @@ export default function useVoiceRecorder({ maxSeconds = MAX_RECORDING_SECONDS } 
       clearTimeout(stopTimerRef.current);
       stopTimerRef.current = null;
     }
-    const rec = recorderRef.current;
+    const wasActive = activeRef.current;
     setRecording(false);
     setDurationMs(0);
     setLastRecording(null);
-    // Same ordering rule as stop(): release through the chain, clear the ref after the unload.
+    // Same ordering rule as stop(): release through the chain, clear the flag after the stop.
     await queueRelease(async () => {
-      if (rec) await rec.stopAndUnloadAsync().catch(() => {});
-      recorderRef.current = null;
+      if (wasActive) await recorder.stop().catch(() => {});
+      activeRef.current = false;
       releaseMic(idRef.current);
     });
-    await Audio.setAudioModeAsync({ allowsRecordingIOS: false, playsInSilentModeIOS: true }).catch(
-      () => {},
-    );
+    await setAudioModeAsync({ allowsRecording: false, playsInSilentMode: true }).catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return {

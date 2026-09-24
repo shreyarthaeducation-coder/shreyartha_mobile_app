@@ -9,7 +9,7 @@ import MouthDiagram from '../phonetics/MouthDiagram';
 import useVoiceRecorder from '../../../hooks/useVoiceRecorder';
 import { assessPronunciation, synthesizeToFile } from '../../../services/student/speechService';
 import { findById } from '../../../constants/phonemeCatalog';
-import { Audio } from 'expo-av';
+import { createAudioPlayer } from 'expo-audio';
 
 /**
  * One sound, opened from the Sound Studio chart: the mouth, how to make it, example words to hear,
@@ -50,10 +50,16 @@ export default function PhonemeDetailPanel({ phoneme, onClose, showToast }) {
       try {
         const uri = await synthesizeToFile(text);
         if (!uri) throw new Error('No audio came back for that word.');
-        const { sound } = await Audio.Sound.createAsync({ uri }, { shouldPlay: true });
-        sound.setOnPlaybackStatusUpdate((status) => {
-          if (status.didJustFinish) sound.unloadAsync().catch(() => {});
+        // expo-audio, not expo-av: expo-av's native module is gone from Expo Go as of SDK 57.
+        // The player is freed on the finish event, or it leaks one native player per word tapped.
+        const player = createAudioPlayer({ uri });
+        const subscription = player.addListener('playbackStatusUpdate', (status) => {
+          if (status?.didJustFinish) {
+            subscription?.remove?.();
+            player.remove();
+          }
         });
+        player.play();
       } catch (e) {
         showToast?.(e?.message || 'That word could not be played.', 'error');
       } finally {

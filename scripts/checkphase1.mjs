@@ -464,13 +464,16 @@ function assertions(pz, coding, src, java) {
     bad('a failed prepare never releases the lock — every later recording would be refused');
   }
 
-  // THE ORDERING BUG: the ref must be cleared AFTER the unload resolves, not before.
+  // THE ORDERING BUG: the "am I recording" flag must be cleared AFTER the stop resolves.
+  // RETARGETED for expo-audio (SDK 57): there is no prepare/unload lifecycle and no recorder
+  // object to null — the recorder belongs to the hook for its whole life — so the flag that a fast
+  // re-tap reads is `activeRef`, and `recorder.stop()` is what it must not run ahead of.
   const stopBody = fnBody(rec, 'const stop = useCallback');
-  const unloadAt = stopBody.indexOf('stopAndUnloadAsync');
-  const clearAt = stopBody.indexOf('recorderRef.current = null');
-  if (unloadAt < 0) bad('stop() no longer unloads the recorder');
+  const unloadAt = stopBody.indexOf('recorder.stop()');
+  const clearAt = stopBody.indexOf('activeRef.current = false');
+  if (unloadAt < 0) bad('stop() no longer stops the recorder');
   else if (clearAt >= 0 && clearAt < unloadAt) {
-    bad('stop() clears recorderRef BEFORE awaiting the unload — a fast re-tap prepares over a live recorder');
+    bad('stop() clears activeRef BEFORE awaiting the stop — a fast re-tap records over a live take');
   }
   if (!/queueRelease\(/.test(stopBody)) bad('stop() does not release through the shared chain');
 
@@ -610,19 +613,24 @@ const MUTATIONS = [
       k === 'recorder' ? s.replace('await acquireMic(idRef.current);', '// moved below') : s,
   },
   {
-    name: 'a failed prepare leaking the lock forever',
+    // These three were retargeted when the recorder moved from expo-av to expo-audio (SDK 57):
+    // there is no prepare/unload lifecycle and no recorder object to null any more, so the thing a
+    // fast re-tap reads is `activeRef` and the teardown is `recorder.stop()`. Written as regexes so
+    // no newline escapes are involved — a `\n` written into these strings by a generator has
+    // silently become a real line break here before, which breaks the file rather than the rule.
+    name: 'a failed start leaking the lock forever',
     src: (k, s) =>
       k === 'recorder'
-        ? s.replace('      releaseMic(idRef.current);\n      return false;\n    }\n  }, [ensurePermission, maxSeconds]);', '      return false;\n    }\n  }, [ensurePermission, maxSeconds]);')
+        ? s.replace(/ {6}releaseMic\(idRef\.current\);\r?\n( {6}return false;)/, '$1')
         : s,
   },
   {
-    name: 'THE ORDERING BUG: stop() clearing the ref before the unload',
+    name: 'THE ORDERING BUG: stop() clearing the flag before the stop',
     src: (k, s) =>
       k === 'recorder'
         ? s.replace(
-            '    const rec = recorderRef.current;\n    setRecording(false);\n    if (!rec) return null;',
-            '    const rec = recorderRef.current;\n    recorderRef.current = null;\n    setRecording(false);\n    if (!rec) return null;',
+            /( {4}if \(!activeRef\.current\) return null;\r?\n)( {4}setRecording\(false\);)/,
+            '$1    activeRef.current = false;\n$2',
           )
         : s,
   },
@@ -631,8 +639,8 @@ const MUTATIONS = [
     src: (k, s) =>
       k === 'recorder'
         ? s.replace(
-            '        queueRelease(async () => {\n          await rec.stopAndUnloadAsync().catch(() => {});\n          releaseMic(id);\n        });',
-            '        rec.stopAndUnloadAsync().catch(() => {});',
+            /queueRelease\(async \(\) => \{\r?\n\s*await recorder\.stop\(\)\.catch\(\(\) => \{\}\);\r?\n\s*releaseMic\(id\);\r?\n\s*\}\);/,
+            'recorder.stop().catch(() => {});',
           )
         : s,
   },

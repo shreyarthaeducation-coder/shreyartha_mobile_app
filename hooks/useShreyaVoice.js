@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Audio } from 'expo-av';
+import { createAudioPlayer } from 'expo-audio';
 import { TTS_LANGUAGE, synthesizeToFile } from '../services/student/speechService';
 import { registerActiveAudio, releaseActiveAudio } from '../utils/audioController';
 
@@ -7,8 +7,14 @@ import { registerActiveAudio, releaseActiveAudio } from '../utils/audioControlle
  * Shreya's speaking voice.
  *
  * This half never needed the Azure SDK — the web already goes through our own TTS endpoint and
- * plays the result, so the port is `new Audio(url)` → `expo-av`, with the base64 written to a cache
- * file first (see `synthesizeToFile`).
+ * plays the result, so the port is `new Audio(url)` → a native player, with the base64 written to a
+ * cache file first (see `synthesizeToFile`).
+ *
+ * **It runs on `expo-audio`, not `expo-av`.** expo-av's native module is absent from Expo Go as of
+ * SDK 57 — importing it throws "Cannot find native module 'ExponentAV'" before a single screen
+ * renders, which is how the whole app died on a phone. The player here is an object with
+ * `play()` / `pause()` / `remove()` and a `playbackStatusUpdate` listener, rather than expo-av's
+ * `Audio.Sound` with its `*Async` methods.
  *
  * **`stop()` before opening the microphone is not optional.** `useVoiceRecorder` puts the audio
  * session into record mode; a prompt still playing will fight it, and on Android the recording can
@@ -39,14 +45,32 @@ export default function useShreyaVoice({ language = TTS_LANGUAGE, gender = 'fema
   /** The last failure, so a screen can surface it. Cleared when a line speaks successfully. */
   const [error, setError] = useState('');
   const soundRef = useRef(null);
+  // The playbackStatusUpdate subscription belonging to the current player.
+  const subscriptionRef = useRef(null);
   // Bumped on every stop and on unmount, so a slow synthesis cannot start playing into a screen
   // that has moved on — or over a recording that has since begun.
   const epochRef = useRef(0);
 
   const unload = useCallback(async () => {
-    const sound = soundRef.current;
+    const player = soundRef.current;
     soundRef.current = null;
-    if (sound) await sound.unloadAsync().catch(() => {});
+    const subscription = subscriptionRef.current;
+    subscriptionRef.current = null;
+    // These two swallow deliberately, and say so with a statement rather than an empty block:
+    // this file's rule is that a failure to SPEAK is never silent, and neither of these is that.
+    // Detaching a listener from an already-removed player, or removing a player twice, has nothing
+    // to recover from and nothing to tell the student.
+    try {
+      subscription?.remove?.();
+    } catch (detachError) {
+      void detachError;
+    }
+    try {
+      // `remove()` frees the native player. There is no async unload in expo-audio.
+      player?.remove?.();
+    } catch (removeError) {
+      void removeError;
+    }
   }, []);
 
   // A stable identity for the module-scope controller, so it can stop THIS instance from anywhere.
@@ -87,10 +111,10 @@ export default function useShreyaVoice({ language = TTS_LANGUAGE, gender = 'fema
    * that hid the wrong TTS language code for a whole phase.
    */
   const pause = useCallback(async () => {
-    const sound = soundRef.current;
-    if (!sound) return;
+    const player = soundRef.current;
+    if (!player) return;
     try {
-      await sound.pauseAsync();
+      player.pause();
       setPaused(true);
     } catch (e) {
       setError(e?.message || 'That clip could not be paused.');
@@ -99,11 +123,11 @@ export default function useShreyaVoice({ language = TTS_LANGUAGE, gender = 'fema
 
   /** Resume a paused clip. Re-claims playback, in case something else started meanwhile. */
   const resume = useCallback(async () => {
-    const sound = soundRef.current;
-    if (!sound) return;
+    const player = soundRef.current;
+    if (!player) return;
     try {
       await registerActiveAudio(handleRef.current);
-      await sound.playAsync();
+      player.play();
       setPaused(false);
     } catch (e) {
       setError(e?.message || 'That clip could not be resumed.');
@@ -127,24 +151,29 @@ export default function useShreyaVoice({ language = TTS_LANGUAGE, gender = 'fema
         await registerActiveAudio(handleRef.current);
         if (epochRef.current !== epoch) return;
 
-        const { sound } = await Audio.Sound.createAsync({ uri }, { shouldPlay: true });
+        // `createAudioPlayer` is synchronous and does not auto-play, so playback is started
+        // explicitly below — expo-av's `createAsync({ shouldPlay: true })` did both at once.
+        const player = createAudioPlayer({ uri });
         if (epochRef.current !== epoch) {
-          await sound.unloadAsync().catch(() => {});
+          player.remove();
           return;
         }
-        soundRef.current = sound;
+        soundRef.current = player;
         setSpeaking(true);
         setPaused(false);
 
         await new Promise((resolve) => {
-          sound.setOnPlaybackStatusUpdate((status) => {
-            if (!status.isLoaded) return resolve();
-            // `didJustFinish` fires once; an error also has to resolve or the caller hangs.
-            // A PAUSE must not resolve — the clip has not finished, and Learn with Shreya waits on
-            // this promise before advancing to the next line.
-            if (status.didJustFinish) return resolve();
+          // Kept on the subscription so `unload()` can detach it; a listener left attached to a
+          // removed player is what leaks one clip's worth of state per line spoken.
+          subscriptionRef.current = player.addListener('playbackStatusUpdate', (status) => {
+            // `didJustFinish` fires once; a player that never loads also has to resolve or the
+            // caller hangs. A PAUSE must not resolve — the clip has not finished, and Learn with
+            // Shreya waits on this promise before advancing to the next line.
+            if (status?.didJustFinish) return resolve();
+            if (status?.isLoaded === false && status?.playing === false) return undefined;
             return undefined;
           });
+          player.play();
         });
       } catch (e) {
         // Still non-blocking — a lesson must never stall over audio — but no longer INVISIBLE.

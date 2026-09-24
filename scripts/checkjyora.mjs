@@ -229,11 +229,12 @@ async function assertions(svcPack, ral, src, java, web) {
   if (!/registerActiveAudio\(/.test(voice)) {
     bad('useShreyaVoice does not register with the audio controller — two screens will play over each other');
   }
-  // Registering AFTER createAsync would overlap for the length of the call.
+  // Registering AFTER the player is created would overlap for the length of the call.
+  // RETARGETED for expo-audio (SDK 57): `Audio.Sound.createAsync` became `createAudioPlayer`.
   const speakBody = voice.slice(voice.indexOf('const speak'), voice.indexOf('const prefetch'));
   const regAt = speakBody.indexOf('registerActiveAudio');
-  const createAt = speakBody.indexOf('Audio.Sound.createAsync');
-  if (regAt < 0 || createAt < 0) bad('could not locate register/createAsync in speak() — check this assertion');
+  const createAt = speakBody.indexOf('createAudioPlayer(');
+  if (regAt < 0 || createAt < 0) bad('could not locate register/createAudioPlayer in speak() — check this assertion');
   else if (regAt > createAt) bad('playback is claimed AFTER the sound is created — the clips overlap');
 
   if (!/pause|resume/.test(voice)) bad('useShreyaVoice lost pause/resume');
@@ -356,12 +357,18 @@ const MUTATIONS = [
   },
   {
     name: 'playback claimed AFTER the sound is created (they overlap)',
+    // Retargeted for expo-audio (SDK 57): `Audio.Sound.createAsync` became `createAudioPlayer`.
+    // The claim is deleted from before the player is built and re-added after it, which is exactly
+    // the overlap this rule exists to prevent. The 8-space indent keeps the deletion on speak()'s
+    // call rather than resume()'s, which sits earlier in the file at 6.
     src: (k, s) =>
       k === 'voice'
-        ? s.replace(
-            '        await registerActiveAudio(handleRef.current);\n        if (epochRef.current !== epoch) return;\n\n        const { sound } = await Audio.Sound.createAsync({ uri }, { shouldPlay: true });',
-            '        const { sound } = await Audio.Sound.createAsync({ uri }, { shouldPlay: true });\n        await registerActiveAudio(handleRef.current);',
-          )
+        ? s
+            .replace(/ {8}await registerActiveAudio\(handleRef\.current\);\r?\n/, '')
+            .replace(
+              /( {8}const player = createAudioPlayer\(\{ uri \}\);)/,
+              '$1\n        await registerActiveAudio(handleRef.current);',
+            )
         : s,
   },
   {

@@ -299,8 +299,11 @@ function assertions(service, catalog, langs, src, java) {
   // Not a correctness claim — AMR-WB is still unverified against Azure — but the pieces have to
   // agree with each other, or the Content-Type lies about the bytes.
   const rec = codeOnly(src.recorder);
-  if (!/outputFormat: Audio\.AndroidOutputFormat\.AMR_WB/.test(rec)
-    || !/audioEncoder: Audio\.AndroidAudioEncoder\.AMR_WB/.test(rec)) {
+  // RETARGETED for expo-audio (SDK 57): the container and encoder are plain STRINGS now —
+  // 'amrwb' and 'amr_wb' — where expo-av used AndroidOutputFormat/AndroidAudioEncoder enums.
+  // The rule is unchanged and still the one that matters: the two must agree, or Android silently
+  // records something else and Azure rejects it.
+  if (!/outputFormat: 'amrwb'/.test(rec) || !/audioEncoder: 'amr_wb'/.test(rec)) {
     bad('the Android container and encoder no longer agree — Android silently falls back');
   }
   if (!/android: 'audio\/amr-wb'/.test(rec)) {
@@ -446,7 +449,7 @@ const MUTATIONS = [
     name: 'the Android encoder and container disagreeing',
     src: (k, s) =>
       k === 'recorder'
-        ? s.replace('audioEncoder: Audio.AndroidAudioEncoder.AMR_WB', 'audioEncoder: Audio.AndroidAudioEncoder.AAC')
+        ? s.replace("audioEncoder: 'amr_wb'", "audioEncoder: 'aac'")
         : s,
   },
   {
@@ -455,7 +458,13 @@ const MUTATIONS = [
   },
   {
     name: 'AMR recorded in stereo (the encoder rejects it)',
-    src: (k, s) => (k === 'recorder' ? s.replace('numberOfChannels: 1', 'numberOfChannels: 2') : s),
+    // Anchored on the AMR bit rate, so it lands inside the android block. RECORDING_OPTIONS now
+    // carries a top-level numberOfChannels too, and a bare replace hit that instead — leaving the
+    // android block mono and the mutation testing nothing.
+    src: (k, s) =>
+      k === 'recorder'
+        ? s.replace(/numberOfChannels: 1,(\s*)bitRate: 23850/, 'numberOfChannels: 2,$1bitRate: 23850')
+        : s,
   },
 ];
 
