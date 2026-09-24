@@ -7,13 +7,10 @@
     "orientation": "portrait",
     "icon": "./assets/images/The3CEdge.png",
     "userInterfaceStyle": "light",
-    "platforms": ["ios", "android"],
-    "privacy": "public",
-    "splash": {
-      "image": "./assets/images/The3CEdge.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
-    },
+    "platforms": [
+      "ios",
+      "android"
+    ],
     "ios": {
       "bundleIdentifier": "com.shreyartha.education",
       "supportsTablet": true,
@@ -30,11 +27,6 @@
       "package": "com.the3cedgeai.app",
       "versionCode": 16,
       "softwareKeyboardLayoutMode": "pan",
-      "splash": {
-        "image": "./assets/images/The3CEdge.png",
-        "resizeMode": "contain",
-        "backgroundColor": "#ffffff"
-      },
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/The3CEdge.png",
         "backgroundColor": "#ffffff"
@@ -52,6 +44,16 @@
     },
     "plugins": [
       "expo-router",
+      "expo-sharing",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/images/The3CEdge.png",
+          "resizeMode": "contain",
+          "backgroundColor": "#ffffff"
+        }
+      ],
+      "expo-status-bar",
       "@react-native-community/datetimepicker",
       [
         "expo-image-picker",
