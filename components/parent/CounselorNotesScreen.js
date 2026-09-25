@@ -2,6 +2,7 @@ import { useCallback } from 'react';
 import { Text, View } from 'react-native';
 import { SLATE, SPACING, TYPE, leading } from '../../constants/theme';
 import { Card, EmptyState, ScreenScaffold, StatusChip } from '../ui';
+import { Readable } from '../shared/readaloud/ReadAloudMode';
 import useStaffResource from '../../hooks/useStaffResource';
 import { fetchCounselorNotes } from '../../services/parent/insightsService';
 import { formatLongDate } from '../../utils/dates';
@@ -26,15 +27,15 @@ export default function CounselorNotesScreen() {
 
   const notes = data || [];
 
-  // What the read-aloud button says. Assembled here because there is no DOM to scrape: the words
-  // spoken are exactly the words rendered below.
-  const spoken = notes
-    .map((note) => [
-      note.counselorName || 'Counsellor',
-      formatLongDate(note.sessionDate || note.createdAt),
-      note.counselorNotes,
-    ].filter(Boolean).join('. '))
-    .join('\n\n');
+  // What ONE note says when it is tapped. There is no DOM to scrape on React Native, so each
+  // Readable states its own words — and per note rather than per screen is the point: a parent
+  // after a single counsellor's remark should not have to sit through all of them.
+  const spokenNote = (note) => [
+    note.counselorName || 'Counsellor',
+    formatLongDate(note.sessionDate || note.createdAt),
+    note.counselorNotes,
+    note.caseStatus ? `Status: ${note.caseStatus}` : '',
+  ].filter(Boolean).join('. ');
 
   return (
     <ScreenScaffold
@@ -45,7 +46,7 @@ export default function CounselorNotesScreen() {
       onRetry={reload}
       refreshing={refreshing}
       onRefresh={refresh}
-      readAloud={spoken}
+      selectableReadAloud
     >
       {notes.length === 0 ? (
         <EmptyState
@@ -55,7 +56,9 @@ export default function CounselorNotesScreen() {
         />
       ) : (
         notes.map((note) => (
-          <Card key={note.id} style={styles.item}>
+          // One note, one thing to hear — the whole point of tapping rather than reciting a screen.
+          <Readable key={note.id} text={spokenNote(note)}>
+            <Card style={styles.item}>
             <View style={styles.head}>
               <Text style={styles.counselor} numberOfLines={1}>
                 {note.counselorName || 'Counsellor'}
@@ -80,7 +83,8 @@ export default function CounselorNotesScreen() {
                 <StatusChip label={`Status: ${note.caseStatus}`} tone="neutral" />
               </View>
             ) : null}
-          </Card>
+            </Card>
+          </Readable>
         ))
       )}
     </ScreenScaffold>

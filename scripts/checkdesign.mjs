@@ -152,6 +152,14 @@ const IDENTITY_HEX = new Set([
   '#d1fae5', '#34d399',
   '#9aa0a6', // BAND.none, defined once in theme and read from there
   '#ef4444', // EventsScreen's holiday marker — a calendar category, not an error state
+  // The rank predictor's indigo, verbatim from the web — #eef2ff over #c7d2fe is the same
+  // surface/border pair AdaptiveReportCharts.css uses, and all four ink shades are the website's
+  // own (28, 6, 13, 12 and 15 occurrences under frontendmain/src respectively).
+  '#eef2ff', '#c7d2fe', '#3730a3', '#312e81', '#1e1b4b',
+  // The mock-test summary's pass/fail pair, matched to student/platform/AcademicIQ/AcademicIQ.css —
+  // the very stylesheet this screen mirrors. FEEDBACK.successText is #15803d, a different green, so
+  // tokenising these two would put the app's verdict colours out of step with the website's.
+  '#2e7d32', '#c62828',
 ]);
 
 /** Sizes that are GLYPHS — an emoji or an icon rendered as text. Not type, so not on the scale. */

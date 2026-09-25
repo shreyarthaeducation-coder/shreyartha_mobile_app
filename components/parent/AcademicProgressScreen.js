@@ -5,6 +5,7 @@ import { SLATE, SPACING, TYPE } from '../../constants/theme';
 import { usePalette } from '../ui/PaletteContext';
 import { Card, CardTitle, ScreenScaffold } from '../ui';
 import AnalyticsBody from '../student/analytics/AnalyticsBody';
+import { Readable } from '../shared/readaloud/ReadAloudMode';
 import {
   fetchAcademicProfile,
   fetchMockTests,
@@ -108,9 +109,12 @@ export default function AcademicProgressScreen() {
         setRefreshing(true);
         load();
       }}
-      readAloud={spoken}
+      selectableReadAloud
     >
       {/* ── Part A: selected chapters and topics ─────────────────────────── */}
+      {/* The analytics below are charts, which do not read aloud usefully; this card is the part
+          a parent would want spoken, so it is the tappable one. */}
+      <Readable text={spoken}>
       <Card>
         <CardTitle>📖 Selected Chapters &amp; Topics</CardTitle>
         {subjects.length === 0 ? (
@@ -196,6 +200,7 @@ export default function AcademicProgressScreen() {
           })
         )}
       </Card>
+      </Readable>
 
       {/* ── Part B: the analytics overview, shared with the student panel ── */}
       <AnalyticsBody

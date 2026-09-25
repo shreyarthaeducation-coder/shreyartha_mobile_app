@@ -35,6 +35,9 @@ const SRC = {
   recorder: 'hooks/useVoiceRecorder.js',
   speakButton: 'components/student/ai/ShreyaSpeakButton.js',
   ttsClient: 'services/shared/ttsClient.js',
+  readAloudMode: 'components/shared/readaloud/ReadAloudMode.js',
+  parentNotes: 'components/parent/CounselorNotesScreen.js',
+  partnerOverview: 'components/partner/PartnerOverviewScreen.js',
 };
 
 const JAVA_SRC = {
@@ -263,6 +266,38 @@ function assertions(service, catalog, langs, src, java) {
     bad('ShreyaSpeakButton no longer translates before speaking — every panel is back to English');
   }
 
+  // ── 4c. CHOOSING WHAT GETS READ ───────────────────────────────────────────
+  // Read-aloud used to recite a whole screen. On a phone there is no comfortable text selection,
+  // so the equivalent is a mode: press once, then tap the one card you want. Three things hold it
+  // together, and each fails silently if broken.
+  const mode = codeOnly(src.readAloudMode);
+
+  // 1. A Readable must be INERT when the mode is off, or every card on every screen becomes a
+  //    button and the screens stop behaving the way they were written.
+  // `[\s\S]{0,90}?` rather than `[^)]*`: the guard reads
+  // `if (!mode.active || !String(text || '').trim())`, and a `[^)]` run cannot cross the `)` of
+  // `String(...)` — the assertion then fails against correct code, which is how it first landed.
+  if (!/if \(!mode\.active[\s\S]{0,90}?return children;/.test(mode)) {
+    bad('Readable no longer passes children straight through when the mode is off');
+  }
+
+  // 2. It speaks through the neutral client. studentApi does not read a parent's token and signs
+  //    the user out on a 403 — a read-aloud tap must never end somebody's session.
+  if (!/ttsClient/.test(mode)) {
+    bad('the read-aloud mode does not use ttsClient — a parent tap would 401, or sign them out');
+  }
+
+  // 3. The screens that were converted must ASK for the mode. Without the prop they fall back to
+  //    reading the entire screen, which is the behaviour this replaced — and nothing would fail.
+  for (const key of ['parentNotes', 'partnerOverview']) {
+    if (!/selectableReadAloud/.test(codeOnly(src[key]))) {
+      bad(`${SRC[key]} no longer asks for tap-to-read — it silently recites the whole screen again`);
+    }
+    if (!/<Readable[\s>]/.test(codeOnly(src[key]))) {
+      bad(`${SRC[key]} has no <Readable> blocks, so there is nothing for a tap to select`);
+    }
+  }
+
   // ── 5. referenceText is a form field, not a document part ─────────────────
   if (/@RequestPart\(\s*value\s*=\s*"referenceText"/.test(java.speech)) {
     bad('referenceText is back on @RequestPart — RN sends it with no Content-Type, risking a 415');
@@ -321,6 +356,24 @@ function assertions(service, catalog, langs, src, java) {
 }
 
 const MUTATIONS = [
+  {
+    name: 'a Readable stays tappable when the mode is off',
+    src: (k, s) =>
+      k === 'readAloudMode' ? s.replace('if (!mode.active', 'if (false && !mode.active') : s,
+  },
+  {
+    name: 'tap-to-read speaks through studentApi again (which signs a parent out on a 403)',
+    src: (k, s) => (k === 'readAloudMode' ? s.replace(/ttsClient/g, 'studentApi') : s),
+  },
+  {
+    name: 'a converted screen falls back to reciting the whole screen',
+    src: (k, s) =>
+      k === 'parentNotes' ? s.replace('selectableReadAloud', 'readAloud={spokenNote({})}') : s,
+  },
+  {
+    name: 'a converted screen loses its Readable blocks',
+    src: (k, s) => (k === 'partnerOverview' ? s.replace(/<Readable/g, '<View').replace(/<\/Readable>/g, '</View>') : s),
+  },
   {
     name: 'THE BUG: TTS_LANGUAGE set back to the BCP-47 tag',
     service: (s) => s.replace("TTS_LANGUAGE = 'en'", "TTS_LANGUAGE = 'en-US'"),

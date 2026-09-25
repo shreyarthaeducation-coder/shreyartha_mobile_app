@@ -133,8 +133,19 @@ function assertions(src, java) {
   if (/@RequestParam[^)]*(schoolUserId|userId|recipient)/.test(java.controller)) {
     bad('the controller takes a recipient parameter — one staff member could read another\'s inbox');
   }
-  if (!/n\.schoolUserId = :userId/.test(java.repo)) {
+  // TWO queries carry `n.schoolUserId = :userId` now that accounts can be deleted outright, so
+  // testing for that fragment anywhere in the file said nothing about either of them: strip the
+  // scope off markAllRead and `deleteAllForUser` still satisfied the match, which is exactly how
+  // this assertion went vacuous without failing. Each is pinned to its own statement instead.
+  if (
+    !/UPDATE StaffNotification[\s\S]{0,200}?WHERE n\.schoolUserId = :userId AND n\.readAt IS NULL/.test(
+      java.repo,
+    )
+  ) {
     bad('markAllRead does not scope by owner — it would clear every staff member\'s inbox');
+  }
+  if (!/DELETE FROM StaffNotification[\s\S]{0,120}?WHERE n\.schoolUserId = :userId/.test(java.repo)) {
+    bad('deleteAllForUser does not scope by owner — it would wipe every staff member\'s inbox');
   }
 
   // ── 4. `link` is a menu key, resolved per role ─────────────────────────────
@@ -286,6 +297,15 @@ const MUTATIONS = [
     name: 'markAllRead stops scoping by owner',
     mutate: (f, s) => (f === JAVA.repo
       ? s.replace('WHERE n.schoolUserId = :userId AND n.readAt IS NULL', 'WHERE n.readAt IS NULL') : s),
+  },
+  {
+    // The sibling query that made the one above vacuous — pinned so it cannot happen in reverse.
+    name: 'deleteAllForUser stops scoping by owner',
+    mutate: (f, s) => (f === JAVA.repo
+      ? s.replace(
+        'DELETE FROM StaffNotification n WHERE n.schoolUserId = :userId',
+        'DELETE FROM StaffNotification n',
+      ) : s),
   },
   {
     name: 'one notification is fetched by id alone',

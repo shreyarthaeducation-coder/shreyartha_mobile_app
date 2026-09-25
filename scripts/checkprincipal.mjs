@@ -77,18 +77,41 @@ function loadSources(mutate) {
   return out;
 }
 
-/** The web sidebar is the source of truth for the item set — extracted, never retyped. */
-function webSidebarItems() {
+/**
+ * The web sidebar is the source of truth for the item set — extracted, never retyped.
+ *
+ * BOTH school sidebars have since been refactored onto `buildSchoolNavGroups`: the sidebar file now
+ * lists only the keys it routes, and every label, icon and position moved to
+ * `School/shared/schoolNavGroups.js`. The regex that used to scrape `label:` out of the sidebar
+ * itself therefore matched nothing at all — which is how this checker started reporting an empty
+ * web menu rather than the drift it exists to catch.
+ *
+ * So rather than scrape the new file too, this EVALUATES the web's own builder with the web's own
+ * key list. That module is dependency-free ESM with no JSX, so Node imports it as it stands, and
+ * what comes back is exactly what the sidebar renders — in render order, grouping included.
+ */
+async function webSidebarItems() {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'pcheck-web-'));
+  const file = path.join(dir, 'schoolNavGroups.mjs');
+  fs.writeFileSync(file, read(path.join(WEB, 'src', 'School', 'shared', 'schoolNavGroups.js')));
+  const { buildSchoolNavGroups } = await import(pathToFileURL(file).href);
+
+  // The sidebar's own `ROUTED` list: the Principal dashboard routes fewer sections than the School
+  // Admin one, and the builder drops every key it is not given. A rename of that constant leaves
+  // `routed` empty, which the "found only 0 items" assertion below reports rather than hides.
   const src = read(
     path.join(WEB, 'src', 'School', 'Principal', 'components', 'PrincipalSidebar.js'),
   );
-  const block = src.slice(src.indexOf('const menuItems'), src.indexOf('return ('));
-  const items = [];
-  const re = /key:\s*"([^"]+)"[\s\S]*?label:\s*"([^"]+)"/g;
-  let m;
-  while ((m = re.exec(block))) items.push({ key: m[1], label: m[2] });
-  return items;
+  const start = src.indexOf('const ROUTED');
+  const block = start < 0 ? '' : src.slice(start, src.indexOf('];', start));
+  const routed = [...block.matchAll(/"([^"]+)"/g)].map((m) => m[1]);
+
+  return buildSchoolNavGroups('', routed).flatMap((group) =>
+    group.items.map(({ key, label }) => ({ key, label })),
+  );
 }
+
+const WEB_SIDEBAR = await webSidebarItems();
 
 function assertions({ staffRoles, admin, theme }, sources) {
   const out = [];
@@ -107,7 +130,7 @@ function assertions({ staffRoles, admin, theme }, sources) {
   }
 
   // ── 2. mirrors the web sidebar, in order ───────────────────────────────────
-  const web = webSidebarItems();
+  const web = WEB_SIDEBAR;
   if (web.length < 10) bad(`sidebar extractor found only ${web.length} items`);
 
   // The web's key is `academicIQAliases`; ours is `academicIqAliases`. Keys are internal React

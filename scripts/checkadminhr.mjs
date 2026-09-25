@@ -98,13 +98,37 @@ function pathsIn(src, constName, constValue) {
   return out;
 }
 
-/** The web's SCHOOL_ADMIN sidebar labels — the source of truth for what the three are called. */
-function webAdminLabels() {
-  const src = read(
-    path.join(WEB, 'src', 'School', 'Admin', 'components', 'SchoolAdminSidebar.js'),
+/**
+ * The web's SCHOOL_ADMIN sidebar labels — the source of truth for what the three are called.
+ *
+ * The sidebar was refactored onto `buildSchoolNavGroups` and no longer contains a single `label:`
+ * of its own; it passes the keys it routes and the labels live in `School/shared/schoolNavGroups.js`.
+ * Scraping the sidebar therefore returned nothing, and all three names were reported missing.
+ *
+ * Evaluating the web's own builder with the web's own key list is what keeps this honest: it names
+ * the labels the admin actually sees, and a section moved behind a flag still counts as present.
+ */
+async function webAdminLabels() {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'hrcheck-web-'));
+  const file = path.join(dir, 'schoolNavGroups.mjs');
+  fs.writeFileSync(file, read(path.join(WEB, 'src', 'School', 'shared', 'schoolNavGroups.js')));
+  const { buildSchoolNavGroups } = await import(pathToFileURL(file).href);
+
+  const src = codeOnly(
+    read(path.join(WEB, 'src', 'School', 'Admin', 'components', 'SchoolAdminSidebar.js')),
   );
-  return [...codeOnly(src).matchAll(/label:\s*"([^"]+)"/g)].map((m) => m[1]);
+  const start = src.indexOf('const ALWAYS');
+  const block = start < 0 ? '' : src.slice(start, src.indexOf('];', start));
+  const always = [...block.matchAll(/"([^"]+)"/g)].map((m) => m[1]);
+  // Three more sections are switched on by prop by whichever dashboard mounts the sidebar.
+  const byProp = [...src.matchAll(/keys\.push\("([^"]+)"\)/g)].map((m) => m[1]);
+
+  return buildSchoolNavGroups('', [...always, ...byProp]).flatMap((group) =>
+    group.items.map((item) => item.label),
+  );
 }
+
+const WEB_ADMIN_LABELS = await webAdminLabels();
 
 function routeNames() {
   return new Set(
@@ -133,7 +157,7 @@ function assertions(roles, portals, src) {
   const keysOf = (r) => (r.menu || []).map((i) => i.key);
 
   // ── 1. the three tiles exist, with the web's own labels ───────────────────
-  const labels = webAdminLabels();
+  const labels = WEB_ADMIN_LABELS;
   const WANT = {
     fees: 'Fee Management',
     leaveManagement: 'Leave Management',

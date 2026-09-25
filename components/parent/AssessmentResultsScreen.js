@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { FEEDBACK, SLATE, SPACING, TYPE, leading } from '../../constants/theme';
 import { usePalette } from '../ui/PaletteContext';
 import { Card, CardTitle, ScreenScaffold } from '../ui';
+import { Readable } from '../shared/readaloud/ReadAloudMode';
 import { ProgressBar } from '../ui/charts';
 import useStaffResource from '../../hooks/useStaffResource';
 import { parentApi } from '../../services/parentApi';
@@ -44,19 +45,15 @@ export default function AssessmentResultsScreen() {
   const psychFailed = !!data?.psychometric?.error;
   const percent = psychometricPercent(psych);
 
-  // The words the read-aloud button speaks — the same ones the cards below render. There is no DOM
-  // on a phone to read them out of, so the screen states them.
-  const spokenSummary = [
-    'My Personal Statement.',
-    statement || 'No personal statement added yet.',
-    psychFailed
-      ? 'The psychometric assessment could not be loaded right now.'
-      : [
-          psych?.chapterName,
-          `${psych?.completedCount || 0} of ${psych?.totalTopics || 0} topics completed`,
-          psych?.hasCompletedAssessment ? 'Assessment completed.' : 'Assessment not completed yet.',
-        ].filter(Boolean).join('. '),
-  ].join(' ');
+  // What the PSYCHOMETRIC card says when tapped. The personal statement card states its own words
+  // beside it, so this no longer repeats them: two cards, two things to hear, tapped separately.
+  const spokenPsych = psychFailed
+    ? 'The psychometric assessment could not be loaded right now.'
+    : [
+        psych?.chapterName,
+        `${psych?.completedCount || 0} of ${psych?.totalTopics || 0} topics completed`,
+        psych?.hasCompletedAssessment ? 'Assessment completed.' : 'Assessment not completed yet.',
+      ].filter(Boolean).join('. ');
 
   return (
     <ScreenScaffold
@@ -67,15 +64,20 @@ export default function AssessmentResultsScreen() {
       onRetry={reload}
       refreshing={refreshing}
       onRefresh={refresh}
-      readAloud={spokenSummary}
+      selectableReadAloud
     >
-      <Card style={styles.card}>
-        <CardTitle>My Personal Statement</CardTitle>
-        <Text style={statement ? styles.statement : styles.muted}>
-          {statement || 'No personal statement added yet.'}
-        </Text>
-      </Card>
+      {/* Each card is its own thing to hear, so a parent can tap the statement without also
+          sitting through the psychometric summary. */}
+      <Readable text={`My Personal Statement. ${statement || 'No personal statement added yet.'}`}>
+        <Card style={styles.card}>
+          <CardTitle>My Personal Statement</CardTitle>
+          <Text style={statement ? styles.statement : styles.muted}>
+            {statement || 'No personal statement added yet.'}
+          </Text>
+        </Card>
+      </Readable>
 
+      <Readable text={spokenPsych}>
       <Card style={styles.card}>
         <CardTitle>{psychFailed ? 'Data unavailable' : psych?.chapterName}</CardTitle>
 
@@ -110,6 +112,7 @@ export default function AssessmentResultsScreen() {
           </>
         )}
       </Card>
+      </Readable>
     </ScreenScaffold>
   );
 }

@@ -3,6 +3,7 @@ import { Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { SLATE, SPACING, TYPE } from '../../constants/theme';
 import { Card, CardTitle, EmptyState, ProgressBar, ScreenScaffold, Select } from '../ui';
+import { Readable } from '../shared/readaloud/ReadAloudMode';
 import { usePalette } from '../ui/PaletteContext';
 import { makeStyles } from '../../utils/makeStyles';
 import { fetchProfile } from '../../services/partner/profileService';
@@ -129,11 +130,19 @@ export default function PartnerOverviewScreen({ homeRoute = '/partner' }) {
       loading={loading}
       error={error}
       notice={notice}
-      readAloud={spoken}
+      selectableReadAloud
       onRetry={() => load('load')}
       refreshing={refreshing}
       onRefresh={() => load('refresh')}
     >
+      <Readable
+        text={[
+          profile?.fullName || 'Partner',
+          profile?.partnerCode ? `Partner code ${profile.partnerCode}` : '',
+          isMaster ? 'Master partner' : '',
+          schools.length ? `${schools.length} linked schools` : 'No linked schools yet',
+        ].filter(Boolean).join('. ')}
+      >
       <Card>
         <CardTitle>{profile?.fullName || 'Partner'}</CardTitle>
         <View style={styles.codeRow}>
@@ -166,8 +175,10 @@ export default function PartnerOverviewScreen({ homeRoute = '/partner' }) {
           </View>
         </View>
       </Card>
+      </Readable>
 
       {totals ? (
+        <Readable text={spoken}>
         <Card>
           <CardTitle>Earnings to date</CardTitle>
           <View style={styles.stats}>
@@ -194,6 +205,7 @@ export default function PartnerOverviewScreen({ homeRoute = '/partner' }) {
             ))}
           </View>
         </Card>
+        </Readable>
       ) : null}
 
       <Card>

@@ -4,7 +4,6 @@ import { SLATE, SPACING, TYPE } from '../../../constants/theme';
 import { usePalette } from '../../ui/PaletteContext';
 import { makeStyles } from '../../../utils/makeStyles';
 import { fromLettered } from '../../../utils/questionModel';
-import shuffleArray from '../../../utils/shuffle';
 import { buildTagBreakdown } from '../../../utils/tagBreakdown';
 import {
   fetchMockTestAnalysis,
@@ -48,8 +47,9 @@ export default function MockTestRunner({ paper, onBack, showToast }) {
     setMarkedForRetry(new Set());
     setResult(null);
     try {
-      // Shuffled, like the web's mock runner.
-      setQuestions(shuffleArray(await fetchMockTestQuestions(paper.id)));
+      // NOT shuffled, matching the web: a mock paper keeps the order it was authored in, because
+      // its sections and difficulty ramp live in that order and the report is built from it.
+      setQuestions(await fetchMockTestQuestions(paper.id));
     } catch {
       setQuestions([]);
     } finally {

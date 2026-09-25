@@ -4,6 +4,7 @@ import { QUIZ, SLATE, SPACING, TYPE, leading } from '../../../constants/theme';
 import { usePalette } from '../../ui/PaletteContext';
 import { makeStyles } from '../../../utils/makeStyles';
 import RichText from '../../RichText';
+import shuffleArray from '../../../utils/shuffle';
 import { StudentCard, StudentCardTitle, StudentNote } from '../StudentCard';
 import { codingBloomsRemark } from '../../../constants/codingProBlooms';
 import {
@@ -50,7 +51,10 @@ export default function CodingAssessment({ topicId, topicName, showToast }) {
     setAnswers({});
     setResult(null);
     try {
-      setQuestions(await fetchUnderstandingQuestions(topicId));
+      // Shuffled, like every other understanding test — and like the WEB Coding Pro assessment,
+      // which has always shuffled. This screen was the one place where the two platforms served
+      // the same paper differently: every student saw it in the identical authored sequence.
+      setQuestions(shuffleArray(await fetchUnderstandingQuestions(topicId)));
     } catch {
       setQuestions([]);
     } finally {

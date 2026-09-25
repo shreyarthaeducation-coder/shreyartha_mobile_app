@@ -1,6 +1,7 @@
 import { useCallback } from 'react';
 import { EmptyState, ScreenScaffold } from '../ui';
 import ReportBody from '../staff/counsellor/ReportBody';
+import { Readable } from '../shared/readaloud/ReadAloudMode';
 import useStaffResource from '../../hooks/useStaffResource';
 import { fetchCounsellorReports } from '../../services/parent/reportService';
 
@@ -27,13 +28,11 @@ export default function CounsellorReportScreen() {
   // Read-aloud speaks the report's identity only. The body is a hydrated multi-section form built
   // inside ReportBody (and Griffin is withheld until published), so the prose is not reachable from
   // here — and a button that spoke an empty string would look broken. Narrow rather than wrong.
-  const spoken = reports
-    .map((report) => [
-      report.className ? `Counsellor report for ${report.className}` : 'Counsellor report',
-      report.counsellorName ? `by ${report.counsellorName}` : '',
-      report.reportDate ? `dated ${report.reportDate}` : '',
-    ].filter(Boolean).join(', '))
-    .join('. ');
+  const spokenReport = (report) => [
+    report.className ? `Counsellor report for ${report.className}` : 'Counsellor report',
+    report.counsellorName ? `by ${report.counsellorName}` : '',
+    report.reportDate ? `dated ${report.reportDate}` : '',
+  ].filter(Boolean).join(', ');
 
   return (
     <ScreenScaffold
@@ -44,7 +43,7 @@ export default function CounsellorReportScreen() {
       onRetry={reload}
       refreshing={refreshing}
       onRefresh={refresh}
-      readAloud={spoken}
+      selectableReadAloud
     >
       {reports.length === 0 ? (
         <EmptyState
@@ -53,7 +52,11 @@ export default function CounsellorReportScreen() {
           message="No counsellor reports have been shared for your child yet."
         />
       ) : (
-        reports.map((report) => <ReportBody key={report.id} report={report} />)
+        reports.map((report) => (
+          <Readable key={report.id} text={spokenReport(report)}>
+            <ReportBody report={report} />
+          </Readable>
+        ))
       )}
     </ScreenScaffold>
   );

@@ -10,6 +10,11 @@ import Toast from './Toast';
 // By path, for the same reason as StaffHeader above: the student barrel pulls in screens.
 import ShreyaSpeakButton from '../student/ai/ShreyaSpeakButton';
 import ttsClient from '../../services/shared/ttsClient';
+import {
+  ReadAloudBanner,
+  ReadAloudModeProvider,
+  useReadAloudMode,
+} from '../shared/readaloud/ReadAloudMode';
 
 /**
  * The frame every native staff sub-screen shares: teal safe area, back-bar header, and the
@@ -29,6 +34,9 @@ import ttsClient from '../../services/shared/ttsClient';
  *                          22 languages the panel is set to. The web reads the page out of the DOM;
  *                          React Native has no DOM, so each screen hands over the words it is
  *                          showing. Omit it and nothing is rendered, which is every other caller.
+ *   selectableReadAloud  — the control becomes a "tap anything to hear it" switch instead, and the
+ *                          screen's <Readable> blocks become individually tappable. This is the
+ *                          phone's equivalent of highlighting a passage in a browser.
  */
 
 function ErrorBlock({ message, onRetry, palette }) {
@@ -55,11 +63,58 @@ function ErrorBlock({ message, onRetry, palette }) {
 }
 
 /**
- * `ttsClient` rather than the student transport: this renders in the parent, partner and teacher
- * panels, whose tokens `studentApi` does not read — and whose users must not be signed out because
- * a voice service refused.
+ * The read-aloud control at the top of a screen.
+ *
+ * Two behaviours, and which one appears depends on the screen:
+ *
+ *   - `selectable` — the button turns "tap anything to hear it" ON, and each `<Readable>` block
+ *     becomes tappable. This is the phone's answer to highlighting text in a browser.
+ *   - plain `readAloud` text — one press reads the whole screen, which is all a screen can offer
+ *     until its blocks are wrapped.
+ *
+ * `ttsClient` rather than the student transport in both cases: this renders in the parent, partner
+ * and teacher panels, whose tokens `studentApi` does not read — and whose users must not be signed
+ * out because a voice service refused.
  */
-function ReadAloud({ text }) {
+function ReadAloudControl({ text, selectable }) {
+  const palette = usePalette();
+  const mode = useReadAloudMode();
+
+  if (selectable) {
+    return (
+      <View style={styles.readAloud}>
+        <Pressable
+          onPress={mode.toggle}
+          style={({ pressed }) => [
+            styles.modeBtn,
+            { borderColor: palette.primary },
+            mode.active && { backgroundColor: palette.primary },
+            pressed && styles.modePressed,
+          ]}
+          accessibilityRole="button"
+          accessibilityState={{ selected: mode.active }}
+          accessibilityLabel={
+            mode.active ? 'Stop choosing what to read aloud' : 'Choose what to read aloud'
+          }
+        >
+          <Ionicons
+            name={mode.active ? 'volume-high' : 'volume-medium-outline'}
+            size={16}
+            color={mode.active ? palette.onPrimary : palette.primary}
+          />
+          <Text
+            style={[
+              styles.modeBtnText,
+              { color: mode.active ? palette.onPrimary : palette.primary },
+            ]}
+          >
+            {mode.active ? 'Tap to hear' : 'Shreya Speak'}
+          </Text>
+        </Pressable>
+      </View>
+    );
+  }
+
   if (!text || !text.trim()) return null;
   return (
     <View style={styles.readAloud}>
@@ -86,6 +141,9 @@ export default function ScreenScaffold({
   scrollRef,
   palette: paletteProp,
   readAloud = '',
+  // When true the read-aloud control turns on "tap anything to hear it" instead of reading the
+  // whole screen. The screen's own blocks opt in by wrapping themselves in <Readable text="…">.
+  selectableReadAloud = false,
   children,
 }) {
   const contextPalette = usePalette();
@@ -119,7 +177,8 @@ export default function ScreenScaffold({
         }
       >
         {notice ? <Text style={styles.notice}>{notice}</Text> : null}
-        <ReadAloud text={readAloud} />
+        <ReadAloudControl text={readAloud} selectable={selectableReadAloud} />
+        <ReadAloudBanner />
         {children}
       </ScrollView>
     );
@@ -127,18 +186,24 @@ export default function ScreenScaffold({
     body = (
       <View style={styles.flex}>
         {notice ? <Text style={styles.notice}>{notice}</Text> : null}
-        <ReadAloud text={readAloud} />
+        <ReadAloudControl text={readAloud} selectable={selectableReadAloud} />
+        <ReadAloudBanner />
         {children}
       </View>
     );
   }
 
   return (
-    <SafeAreaView style={[styles.safe, { backgroundColor: palette.headerBg }]} edges={['top', 'left', 'right']}>
-      <StaffHeader title={title} fallbackRoute={fallbackRoute} />
-      <View style={styles.page}>{body}</View>
-      <Toast message={toast?.message} tone={toast?.tone} />
-    </SafeAreaView>
+    <ReadAloudModeProvider>
+      <SafeAreaView
+        style={[styles.safe, { backgroundColor: palette.headerBg }]}
+        edges={['top', 'left', 'right']}
+      >
+        <StaffHeader title={title} fallbackRoute={fallbackRoute} />
+        <View style={styles.page}>{body}</View>
+        <Toast message={toast?.message} tone={toast?.tone} />
+      </SafeAreaView>
+    </ReadAloudModeProvider>
   );
 }
 
@@ -172,6 +237,17 @@ const styles = StyleSheet.create({
   retryPressed: { opacity: 0.8 },
   retryText: { color: '#ffffff', fontWeight: '700', fontSize: TYPE.heading },
   readAloud: { alignItems: 'flex-start', marginBottom: SPACING.sm },
+  modeBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    borderWidth: 1.5,
+    borderRadius: 999,
+    paddingVertical: 7,
+    paddingHorizontal: 14,
+  },
+  modeBtnText: { fontSize: TYPE.label, fontWeight: '700' },
+  modePressed: { opacity: 0.75 },
   notice: {
     fontSize: TYPE.body,
     color: SLATE[500],

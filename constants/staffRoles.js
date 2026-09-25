@@ -111,8 +111,14 @@ export const STAFF_ROLE_CONFIG = {
       'Manage classes, sections, and subjects',
       'View school statistics and reports',
     ],
-    // Mirrors PrincipalSidebar.js item for item — 15 entries, flat, no disabled items and no
-    // conditional pushes — PLUS the three at the end, which the web left out.
+    // Mirrors PrincipalSidebar.js item for item — 17 entries — PLUS the five at the end, which the
+    // web leaves out.
+    //
+    // THE WEB SIDEBAR IS GROUPED NOW: eight collapsible sections built by
+    // `School/shared/schoolNavGroups.js`, where this menu is a flat tile grid. So what is mirrored
+    // is the order those groups render in, read top to bottom — which is not the order this list
+    // used to carry — and the labels come from that same module, the sidebar file no longer holding
+    // one of its own. scripts/checkprincipal.mjs evaluates the web's builder and pins both.
     //
     // ── THE THREE THE WEBSITE FORGOT ──────────────────────────────────────────
     // Fee, Leave and Payroll Management have no PrincipalSidebar counterpart. That is a gap in the
@@ -121,33 +127,34 @@ export const STAFF_ROLE_CONFIG = {
     // SecurityConfig's roleHierarchy, `SchoolAdminFeeController` is `hasRole('SCHOOL_ADMIN')` and
     // `SchoolAdminHrController` is `hasAnyRole('SCHOOL_ADMIN','VICE_PRINCIPAL')`.
     // `HrLeaveService.approversFor` even counts Principals as part of the approver pool. Only the
-    // sidebar entry was ever missing. Labels are verbatim from SchoolAdminSidebar.
+    // sidebar entry was ever missing. Labels are verbatim from the web's own schoolNavGroups.
     menu: [
       { key: 'overview', label: 'Dashboard Overview', icon: 'stats-chart-outline', native: '/staff/principal/overview' },
       // Already native and role-agnostic: TeacherSelfAttendanceController names PRINCIPAL, and the
       // web renders TeacherSelfAttendance here unchanged.
       { key: 'selfAttendance', label: 'Self Attendance', icon: 'time-outline', native: '/staff/principal/self-attendance' },
-      { key: 'staff', label: 'Staff Management', icon: 'people-circle-outline', native: '/staff/principal/staff' },
-      { key: 'classes', label: 'Class Management', icon: 'school-outline', native: '/staff/principal/classes' },
-      // The roster and the grading scales. Both sit on /api/school-admin and name PRINCIPAL in their
-      // own guard, so neither leans on the role hierarchy. They mirror the web sidebar's position —
-      // between Class Management and Test and Examination — which checkprincipal pins.
-      { key: 'manageStudents', label: 'Manage Students', icon: 'person-add-outline', native: '/staff/principal/manage-students' },
-      { key: 'gradeManagement', label: 'Grade Management', icon: 'ribbon-outline', native: '/staff/principal/grade-management' },
-      // Deliberately NOT /reports: that route is the VP's teacher exam screen. The admin screen
-      // owns exam records (create / edit / publish-to-parents), which a teacher cannot do.
-      { key: 'reports', label: 'Test and Examination', icon: 'clipboard-outline', native: '/staff/principal/admin-reports' },
-      { key: 'students', label: 'Student Management', icon: 'people-outline', native: '/staff/principal/students' },
-      { key: 'linkedColleges', label: 'Linked Colleges', icon: 'business-outline', native: '/staff/principal/linked-colleges' },
-      { key: 'staffAttendance', label: 'Staff Attendance', icon: 'timer-outline', native: '/staff/principal/staff-attendance' },
-      { key: 'events', label: 'Events', icon: 'megaphone-outline', native: '/staff/principal/events' },
-      { key: 'staffEvaluation', label: 'Staff Evaluation', icon: 'trending-up-outline', native: '/staff/principal/staff-evaluation' },
-      { key: 'academicIqAliases', label: 'Academic IQ Aliases', icon: 'pricetag-outline', native: '/staff/principal/academic-iq-aliases' },
-      { key: 'languageProAliases', label: 'Language Pro Aliases', icon: 'language-outline', native: '/staff/principal/language-pro-aliases' },
-      { key: 'codingProAliases', label: 'Coding Pro Aliases', icon: 'code-slash-outline', native: '/staff/principal/coding-pro-aliases' },
-      { key: 'liveMeeting', label: 'Live Meeting', icon: 'videocam-outline', native: '/staff/principal/live-meeting' },
       // /api/staff/**/calendar is role-agnostic by design — StaffMyCalendar serves six dashboards.
       { key: 'myCalendar', label: 'My Calendar', icon: 'calendar-outline', native: '/staff/principal/my-calendar' },
+      { key: 'students', label: 'Student Management', icon: 'people-outline', native: '/staff/principal/students' },
+      // The roster. Sits on /api/school-admin and names PRINCIPAL in its own guard, so it does not
+      // lean on the role hierarchy — as does Grade Management, now a group further down.
+      { key: 'manageStudents', label: 'Manage Students', icon: 'person-add-outline', native: '/staff/principal/manage-students' },
+      { key: 'classes', label: 'Class Management', icon: 'school-outline', native: '/staff/principal/classes' },
+      { key: 'linkedColleges', label: 'Linked Colleges', icon: 'business-outline', native: '/staff/principal/linked-colleges' },
+      // "… Management", not "… Aliases": the web renamed all three when it grouped the sidebar, and
+      // a label the user reads is the one thing this mirror will not let drift.
+      { key: 'academicIqAliases', label: 'Academic IQ Management', icon: 'pricetag-outline', native: '/staff/principal/academic-iq-aliases' },
+      { key: 'languageProAliases', label: 'Language Pro Management', icon: 'language-outline', native: '/staff/principal/language-pro-aliases' },
+      { key: 'codingProAliases', label: 'Coding Pro Management', icon: 'code-slash-outline', native: '/staff/principal/coding-pro-aliases' },
+      // Deliberately NOT /reports: that route is the VP's teacher exam screen. The admin screen
+      // owns exam records (create / edit / publish-to-parents), which a teacher cannot do.
+      { key: 'reports', label: 'Test & Examination', icon: 'clipboard-outline', native: '/staff/principal/admin-reports' },
+      { key: 'gradeManagement', label: 'Grade Management', icon: 'ribbon-outline', native: '/staff/principal/grade-management' },
+      { key: 'staff', label: 'Staff Management', icon: 'people-circle-outline', native: '/staff/principal/staff' },
+      { key: 'staffAttendance', label: 'Staff Attendance', icon: 'timer-outline', native: '/staff/principal/staff-attendance' },
+      { key: 'staffEvaluation', label: 'Staff Evaluation', icon: 'trending-up-outline', native: '/staff/principal/staff-evaluation' },
+      { key: 'events', label: 'Events', icon: 'megaphone-outline', native: '/staff/principal/events' },
+      { key: 'liveMeeting', label: 'Live Meeting', icon: 'videocam-outline', native: '/staff/principal/live-meeting' },
       { key: 'fees', label: 'Fee Management', icon: 'cash-outline', native: '/staff/principal/fees' },
       { key: 'leaveManagement', label: 'Leave Management', icon: 'calendar-number-outline', native: '/staff/principal/leave-management' },
       { key: 'payrollManagement', label: 'Payroll Management', icon: 'wallet-outline', native: '/staff/principal/payroll-management' },
