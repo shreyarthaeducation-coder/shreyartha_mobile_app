@@ -56,4 +56,9 @@ export const STUDENT_CHATBOT_CONFIG = {
   nameKey: 'studentUserName',
   greeting: studentGreeting,
   resolveLink: resolveStudentLink,
+  subtitle: 'Here to guide you 24/7',
+  loadingText: 'Loading your personalised assistant…',
+  // The teacher's shortcuts (/attendance, /homework, /student-analytics) do not exist under
+  // /student; the chat's page links and ↺ Sections remain.
+  quickActions: [],
 };

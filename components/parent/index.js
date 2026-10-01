@@ -16,6 +16,7 @@ export { default as CounselorNotesScreen } from './CounselorNotesScreen';
 export { default as AssessmentResultsScreen } from './AssessmentResultsScreen';
 export { default as ParentCalendarScreen } from './ParentCalendarScreen';
 export { default as CounsellorReportScreen } from './CounsellorReportScreen';
+export { default as CounsellingReportScreen } from './CounsellingReportScreen';
 export { default as AcademicProgressScreen } from './AcademicProgressScreen';
 export { default as FeesScreen } from './FeesScreen';
 export { default as LearningActivitiesScreen } from './LearningActivitiesScreen';

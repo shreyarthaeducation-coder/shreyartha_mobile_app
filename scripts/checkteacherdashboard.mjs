@@ -51,11 +51,24 @@ const SRC = {
   keys: 'constants/storageKeys.js',
 };
 
-/** The sixteen keys the menu had before the redesign split them. The set is what must not drift. */
+/**
+ * The keys the menu had before the redesign split them. The set is what must not drift.
+ *
+ * Sixteen until 29 Sep 2026, when `counselling` (Counselling Needs and Notes) and `counsellorReport`
+ * became two tabs of one `counsellingReport` item, as on the web — a merge, not a lost feature: both
+ * screens are inside it, and their old routes redirect to their tabs.
+ *
+ * 30 Sep 2026: four tabs the website had and the app lacked were added — Student Management
+ * (studentManagement) and the report card's three graded areas (scholastics, coScholastics,
+ * additionalSkills). Added into the Workspace groups; the home page did not change.
+ *
+ * 1 Oct 2026: `counselling` (Counselling Needs and Notes) is a tile of its own again, beside the
+ * Counselling Report, which keeps the psychometric result and the counsellor report as its two tabs.
+ */
 const ORIGINAL_KEYS = [
-  'attendance', 'resources', 'homework', 'liveClasses', 'syllabus',
-  'reports', 'adaptiveAssessment',
-  'groups', 'counselling', 'counsellorReport',
+  'attendance', 'studentManagement', 'resources', 'homework', 'liveClasses', 'syllabus',
+  'reports', 'scholastics', 'coScholastics', 'additionalSkills', 'adaptiveAssessment',
+  'groups', 'counselling', 'counsellingReport',
   'profile', 'myCalendar', 'upskill',
   'selfAttendance', 'leave', 'payroll',
 ].sort();
@@ -173,7 +186,7 @@ function assertions(menu, svc, chat, src) {
   const tabBar = codeOnly(src.tabBar);
 
   if (!/TEACHER_WORKSPACE_GROUPS/.test(workspace)) {
-    bad('My Workspace does not read TEACHER_WORKSPACE_GROUPS — its twelve tiles are hardcoded or gone');
+    bad('My Workspace does not read TEACHER_WORKSPACE_GROUPS — its eleven tiles are hardcoded or gone');
   }
   if (!/TEACHER_ATTENDANCE_ITEMS/.test(hub)) {
     bad('My Attendance does not read TEACHER_ATTENDANCE_ITEMS — its three rows are hardcoded or gone');

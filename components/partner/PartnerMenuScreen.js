@@ -13,6 +13,10 @@ import IdentityCard from '../shared/home/IdentityCard';
 import HeroCard from '../shared/home/HeroCard';
 import StatStrip from '../shared/home/StatStrip';
 import SearchEntry from '../shared/home/SearchEntry';
+import AssistantCard from '../shared/home/AssistantCard';
+import SectionDivider from '../shared/home/SectionDivider';
+import ShreyaChatSheet from '../staff/ShreyaChatSheet';
+import { partnerChatbotConfigFor } from '../../constants/partnerChatbotConfig';
 import PartnerTermsSheet from './PartnerTermsSheet';
 import { PARTNER_HEADER_ACTIONS, partnerMenuFor } from '../../constants/partnerMenu';
 import { fetchProfile, partnerTypeOf, verifiedOf } from '../../services/partner/profileService';
@@ -39,11 +43,12 @@ import ChangePasswordRow from '../shared/home/ChangePasswordRow';
  * `PORTALS.parent` deliberately (the two auth stylesheets are byte-identical), and the parent
  * redesign already gave that palette the tokens the shared kit reads.
  *
- * ── NO SHREYA BLOCK ─────────────────────────────────────────────────────────
- * The design draws a "For Support / Chat with Shreya" card. **`/api/partner/shreya/**` does not
- * exist** — only the student, parent and teacher controllers do — and the decision was to leave it
- * out rather than ship an inert card. There is no `partnerChatbotConfig`, and nothing here imports
- * `AssistantCard`. Adding it later is a config file and a mount, once a backend exists.
+ * ── SHREYA ──────────────────────────────────────────────────────────────────
+ * The design's "For Support / Chat with Shreya" card was left out while `/api/partner/shreya/**` did
+ * not exist, rather than ship an inert card. It exists now (PartnerShreyaController), so the card
+ * and the shared ShreyaChatSheet are here, configured by constants/partnerChatbotConfig.js — whose
+ * Linked Partners section appears only for a Master. The sheet mounts below the verification
+ * redirect, like the parent's, so an unverified partner can never reach it.
  *
  * ── NO FOOTER ───────────────────────────────────────────────────────────────
  * Same call as the parent: the design's Home / Support / Profile tabs would show the identity card
@@ -94,10 +99,20 @@ const STRINGS = {
 
   myPartnership: 'My Partnership',
   masterPartner: 'Master Partner',
+  forSupport: 'For Support',
+  shreyaRole: 'AI Companion',
+  shreyaBlurb: 'Ask about your schools, earnings, plans and partner code — by text or voice.',
+  shreyaCta: 'Chat with Shreya',
   searchPlaceholder: 'Search schools, students, earnings and more…',
   searchButton: 'Search',
   logOut: 'Log Out',
 };
+
+const SHREYA_AVATAR = require('../../assets/images/Chatbot.png');
+
+// Shreya's own blue — the same as the parent card and every AI surface in the app. She is a guest in
+// the partner purple, not a section of it.
+const SHREYA_ACCENT = '#2196f3';
 
 export default function PartnerMenuScreen() {
   const styles = useStyles();
@@ -114,6 +129,7 @@ export default function PartnerMenuScreen() {
   // null = unknown, so the grid never flashes before the gate resolves.
   const [verified, setVerified] = useState(null);
   const [termsOpen, setTermsOpen] = useState(false);
+  const [chatOpen, setChatOpen] = useState(false);
   const [figures, setFigures] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -184,6 +200,8 @@ export default function PartnerMenuScreen() {
   );
 
   const menu = useMemo(() => partnerMenuFor(partnerType), [partnerType]);
+  // Same tier as the tiles: a Master's chat offers Linked Partners, a Normal partner's does not.
+  const shreyaConfig = useMemo(() => partnerChatbotConfigFor(partnerType), [partnerType]);
 
   if (verified === null) return <View style={styles.blank} />;
   if (verified === false) return <Redirect href="/partner/pending-verification" />;
@@ -316,6 +334,20 @@ export default function PartnerMenuScreen() {
           ))}
         </View>
 
+        <SectionDivider label={t.forSupport} tone="light" />
+
+        <AssistantCard
+          tone="light"
+          layout="row"
+          name="Shreya"
+          role={t.shreyaRole}
+          blurb={t.shreyaBlurb}
+          cta={t.shreyaCta}
+          avatar={SHREYA_AVATAR}
+          accent={SHREYA_ACCENT}
+          onPress={() => setChatOpen(true)}
+        />
+
         <SearchEntry
           tone="light"
           placeholder={t.searchPlaceholder}
@@ -338,6 +370,17 @@ export default function PartnerMenuScreen() {
       </ScrollView>
 
       <PartnerTermsSheet visible={termsOpen} onClose={() => setTermsOpen(false)} />
+
+      {/* Mounted only while open, and structurally below the `pending-verification` redirect above,
+          so an unverified partner can never reach the chat. */}
+      {chatOpen ? (
+        <ShreyaChatSheet
+          visible
+          onClose={() => setChatOpen(false)}
+          basePath="/partner"
+          config={shreyaConfig}
+        />
+      ) : null}
     </SafeAreaView>
   );
 }

@@ -15,7 +15,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "expo-router";
 import { COLORS, SHADOWS, SLATE, SPACING, TYPE, leading } from "../../constants/theme";
 import { loginGroup } from "../../constants/authPortals";
-import SearchBar from "../components/SearchBar";
+import SearchBar from "../../components/landing/SearchBar";
 import PulsingCta from "../../components/shared/PulsingCta";
 import { api } from "../../services/apiService";
 import { Ionicons } from "@expo/vector-icons";
@@ -256,9 +256,17 @@ export default function LandingScreen() {
     setContactLoading(true);
     setContactError("");
     try {
-      await api.post("/api/contact", {
-        ...contactForm,
+      // /api/website/contact, as the website posts it — /api/contact never existed, so every send
+      // from here failed. The server also requires a preferredMode (PHONE | WHATSAPP | VIDEO) and
+      // stores no phone column: a number given means "call me" and travels in the message; without
+      // one, the counsellor's reply is the emailed video link.
+      const phone = (contactForm.phone || "").trim();
+      await api.post("/api/website/contact", {
+        name: contactForm.name,
+        email: contactForm.email,
         subject: contactSubject,
+        message: phone ? `${contactForm.message}\n\nPhone: ${phone}` : contactForm.message,
+        preferredMode: phone ? "PHONE" : "VIDEO",
       });
       setContactSuccess(true);
       setContactForm({ name: "", email: "", phone: "", message: "" });

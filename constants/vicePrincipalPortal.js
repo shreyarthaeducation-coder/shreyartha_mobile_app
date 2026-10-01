@@ -36,9 +36,13 @@ export const VICE_PRINCIPAL = {
    *   adaptiveAssessment  TeacherPracticeQuestionController is hasAnyRole('TEACHER','VICE_PRINCIPAL')
    *   upskill             on the sidebar but `disabled: true`, with no route registered
    *   leave / payroll     StaffHrController names VICE_PRINCIPAL; only the profile's HR tab uses it
-   *   counsellorReport    teacher-only sidebar item
+   *   counsellorReport    the counsellor's authoring screen — the VP reads reports through
+   *                       counsellingReport instead
+   *
+   * `counsellingReport` (1 Oct 2026) is the teacher's Counselling Report screen — psychometric result
+   * and counsellor report as tabs — which the web VP now mounts beside the notes.
    */
-  features: ['attendance', 'counselling', 'groups', 'homework', 'syllabus', 'liveSchools'],
+  features: ['attendance', 'counselling', 'counsellingReport', 'groups', 'homework', 'syllabus', 'liveSchools'],
 };
 
 /** True for the VP route segment. Kept as a function to match getCounsellorPortal's shape. */

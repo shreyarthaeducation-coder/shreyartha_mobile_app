@@ -359,7 +359,9 @@ export default function ParentMenuScreen() {
           rows={[
             { key: 'parentName', icon: 'person-outline', label: t.rowParentName, value: parent.name, tint: 'violet' },
             { key: 'email', icon: 'mail-outline', label: t.rowEmail, value: parent.email, tint: 'blue' },
-            { key: 'studentName', icon: 'people-outline', label: t.rowStudentName, value: student?.fullName, tint: 'green' },
+            // happy-, not people-outline: beside the parent's own person-outline name, with no row
+            // labels (1 Oct 2026), the two names need icons that do not look alike.
+            { key: 'studentName', icon: 'happy-outline', label: t.rowStudentName, value: student?.fullName, tint: 'green' },
             { key: 'grade', icon: 'school-outline', label: t.rowGrade, value: gradeLabel(student?.currentClass), tint: 'amber' },
             { key: 'stream', icon: 'book-outline', label: t.rowStream, value: student?.stream || student?.section, tint: 'blue' },
             { key: 'school', icon: 'business-outline', label: t.rowSchool, value: student?.schoolName, tint: 'violet' },

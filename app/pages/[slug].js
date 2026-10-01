@@ -1,15 +1,15 @@
 import { useLocalSearchParams } from 'expo-router';
-import LearningAssessmentScreen from './screens/LearningAssessmentScreen';
-import SkillsLearningScreen from './screens/SkillsLearningScreen';
-import StudentsProfileScreen from './screens/StudentsProfileScreen';
-import CounsellingScreen from './screens/CounsellingScreen';
-import PsychometricSuiteScreen from './screens/PsychometricSuiteScreen';
-import SubjectCareerScreen from './screens/SubjectCareerScreen';
-import CompetitiveExamScreen from './screens/CompetitiveExamScreen';
-import CodingAIRoboticsScreen from './screens/CodingAIRoboticsScreen';
-import LanguageLearningScreen from './screens/LanguageLearningScreen';
-import GlobalOpportunitiesScreen from './screens/GlobalOpportunitiesScreen';
-import ProgressTrackingScreen from './screens/ProgressTrackingScreen';
+import LearningAssessmentScreen from '../../components/pages/screens/LearningAssessmentScreen';
+import SkillsLearningScreen from '../../components/pages/screens/SkillsLearningScreen';
+import StudentsProfileScreen from '../../components/pages/screens/StudentsProfileScreen';
+import CounsellingScreen from '../../components/pages/screens/CounsellingScreen';
+import PsychometricSuiteScreen from '../../components/pages/screens/PsychometricSuiteScreen';
+import SubjectCareerScreen from '../../components/pages/screens/SubjectCareerScreen';
+import CompetitiveExamScreen from '../../components/pages/screens/CompetitiveExamScreen';
+import CodingAIRoboticsScreen from '../../components/pages/screens/CodingAIRoboticsScreen';
+import LanguageLearningScreen from '../../components/pages/screens/LanguageLearningScreen';
+import GlobalOpportunitiesScreen from '../../components/pages/screens/GlobalOpportunitiesScreen';
+import ProgressTrackingScreen from '../../components/pages/screens/ProgressTrackingScreen';
 
 const SCREEN_MAP = {
   'learning-assessment': LearningAssessmentScreen,

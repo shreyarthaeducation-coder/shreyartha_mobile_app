@@ -97,6 +97,68 @@ export async function ttsPost(endpoint, body) {
   return payload;
 }
 
-export const ttsClient = { post: ttsPost };
+/** A recording upload is slower than a JSON call; 30 seconds of audio over mobile data needs room. */
+const MULTIPART_TIMEOUT_MS = 60000;
+
+/**
+ * POSTs multipart form data — the Shreya microphone's recording, to /api/v1/speech/transcribe — with
+ * the same token and the same contract as `ttsPost`: never clears storage, never navigates. A failed
+ * dictation is a message on the chat sheet, not a sign-out.
+ *
+ * `files` values are React Native file descriptors `{ uri, type, name }`, as useVoiceRecorder
+ * returns them. No Content-Type header: FormData must write its own multipart boundary.
+ */
+export async function ttsMultipart(endpoint, { fields = {}, files = {} } = {}) {
+  const token = await readAnyToken();
+  const form = new FormData();
+  Object.entries(fields).forEach(([key, value]) => {
+    if (value !== undefined && value !== null) form.append(key, String(value));
+  });
+  Object.entries(files).forEach(([key, file]) => {
+    if (file?.uri) form.append(key, file);
+  });
+
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), MULTIPART_TIMEOUT_MS);
+
+  let response;
+  try {
+    response = await fetch(`${API_BASE_URL}${endpoint}`, {
+      method: 'POST',
+      headers: {
+        Accept: 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: form,
+      signal: controller.signal,
+    });
+  } catch {
+    throw new Error('Could not reach the voice service. Check your connection.');
+  } finally {
+    clearTimeout(timer);
+  }
+
+  let payload = null;
+  try {
+    payload = await response.json();
+  } catch {
+    payload = null;
+  }
+
+  if (!response.ok) {
+    const error = new Error(
+      payload?.message
+        || (response.status === 403
+          ? 'Voice input is not available for this account.'
+          : 'The voice service is unavailable right now.'),
+    );
+    error.status = response.status;
+    error.code = payload?.error || null;
+    throw error;
+  }
+  return payload;
+}
+
+export const ttsClient = { post: ttsPost, multipart: ttsMultipart };
 
 export default ttsClient;

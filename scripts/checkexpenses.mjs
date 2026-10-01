@@ -25,10 +25,11 @@ const FILES = {
   screen: path.join(APP, 'components', 'staff', 'TravelExpensesScreen.js'),
   service: path.join(APP, 'services', 'travelExpenseService.js'),
   webSales: path.join(WEB, 'Sales', 'platform', 'SalesLayout.js'),
-  webTeacher: path.join(WEB, 'School', 'ShreyarthaTeacher', 'ShreyarthaTeacherSidebar.js'),
+  // The two sidebars render declared nav groups since 1 Oct 2026; the item lives in the declaration.
+  webTeacher: path.join(WEB, 'School', 'ShreyarthaTeacher', 'shreyarthaTeacherNavGroups.js'),
   webShreyaCounsellor: path.join(WEB, 'School', 'ShreyarthaCounsellor', 'index.js'),
   webSchoolCounsellor: path.join(WEB, 'School', 'Counselor', 'index.js'),
-  webSidebar: path.join(WEB, 'School', 'Counselor', 'components', 'CounselorSidebar.js'),
+  webSidebar: path.join(WEB, 'School', 'Counselor', 'components', 'counselorNavGroups.js'),
   webPage: path.join(WEB, 'School', 'shared', 'TravelExpenses.js'),
 };
 
@@ -117,7 +118,7 @@ const ASSERTIONS = [
   },
   {
     name: 'web: the Shreyartha teacher sidebar carries My Expenses',
-    test: (s) => /\{ key: "expenses",\s+label: "My Expenses",\s+path: `\$\{BASE\}\/expenses` \}/.test(s.webTeacher),
+    test: (s) => s.webTeacher.includes('{ key: "expenses", label: "My Expenses", path: "expenses" }'),
   },
   {
     name: 'web: the Shreyartha counsellor switches the flag on',
@@ -129,7 +130,10 @@ const ASSERTIONS = [
   },
   {
     name: 'web: the counsellor sidebar adds the item only behind the flag',
-    test: (s) => /if \(includeTravelExpenses\) \{\s+menuItems\.push\(\{\s+key: "expenses",/.test(s.webSidebar),
+    test: (s) =>
+      s.webSidebar.includes(
+        '...(includeTravelExpenses ? [{ key: "expenses", label: "My Expenses", path: "expenses" }] : [])',
+      ),
   },
 ];
 
@@ -160,7 +164,8 @@ const MUTATIONS = [
   ],
   ['web Sales nav loses it', 'webSales', '{ key: "expenses", label: "My Expenses"', '{ key: "expensesX", label: "My Expenses"'],
   ['school counsellors get it', 'webSchoolCounsellor', '      includeF2F', '      includeTravelExpenses\n      includeF2F'],
-  ['the sidebar stops checking the flag', 'webSidebar', 'if (includeTravelExpenses) {', 'if (true) {'],
+  ['the sidebar stops checking the flag', 'webSidebar', '...(includeTravelExpenses ? [{ key: "expenses"', '...(true ? [{ key: "expenses"'],
+  ['the Shreyartha teacher sidebar loses it', 'webTeacher', '{ key: "expenses", label: "My Expenses"', '{ key: "expensesX", label: "My Expenses"'],
 ];
 
 const run = (sources) => ASSERTIONS.filter((a) => !a.test(sources)).map((a) => a.name);

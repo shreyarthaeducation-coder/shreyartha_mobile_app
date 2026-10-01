@@ -7,6 +7,7 @@ import { Banner, PasswordField, PrimaryButton } from '../auth';
 import { SLATE, SPACING } from '../../constants/theme';
 import StaffHeader from './StaffHeader';
 import { makeStyles } from '../../utils/makeStyles';
+import { usePalette } from '../ui/PaletteContext';
 
 /**
  * Native change-password form for all school-staff roles — the mobile counterpart of
@@ -24,10 +25,15 @@ const BASE_URL = (
   'https://shreyartha.com'
 ).replace(/\/+$/, '');
 
-const MIN_PASSWORD_LENGTH = 6;
+// 8, as the message below says and as a password reset requires (PasswordResetService). It was 6
+// here and on the website while both told the user 8.
+const MIN_PASSWORD_LENGTH = 8;
 
 export default function StaffChangePasswordScreen({ homeRoute }) {
   const styles = useStyles();
+  // The panel's own accent — teal, counsellor purple, principal red. PALETTE was passed to four
+  // fields below but never defined, so opening Change Password threw a ReferenceError on every panel.
+  const PALETTE = usePalette();
   const [oldPassword, setOldPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');

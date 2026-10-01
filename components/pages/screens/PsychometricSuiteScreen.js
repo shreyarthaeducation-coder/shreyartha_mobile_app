@@ -3,9 +3,9 @@ import { StyleSheet, View, Text, TouchableOpacity, ScrollView } from 'react-nati
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Stack, useRouter } from 'expo-router';
 import { COLORS, FONTS, SHADOWS, SPACING, TYPE, leading } from '../../../constants/theme';
-import SearchBar from '../../components/SearchBar';
+import SearchBar from '../../landing/SearchBar';
 
-const HERO_COLOR = '#0369a1';
+const HERO_COLOR = '#6d28d9';
 
 const FOOTER_LINKS = [
   'Learning & Assessment', 'Skills Learning', 'Students Profile', 'Counselling',
@@ -13,7 +13,7 @@ const FOOTER_LINKS = [
   'Coding AI & Robotics', 'Language Learning', 'Global Opportunities', 'Progress Tracking',
 ];
 
-export default function CodingAIRoboticsScreen() {
+export default function PsychometricSuiteScreen() {
   const router = useRouter();
 
   return (
@@ -25,7 +25,7 @@ export default function CodingAIRoboticsScreen() {
         <TouchableOpacity style={styles.backBtn} onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))}>
           <Text style={styles.backText}>← Back</Text>
         </TouchableOpacity>
-        <Text style={styles.headerTitle} numberOfLines={1}>Coding, AI & Robotics</Text>
+        <Text style={styles.headerTitle} numberOfLines={1}>Psychometric Assessment</Text>
         <View style={{ width: 60 }} />
       </View>
 
@@ -40,13 +40,12 @@ export default function CodingAIRoboticsScreen() {
         <View style={[styles.hero, { backgroundColor: HERO_COLOR }]}>
           <View style={styles.heroCircle1} />
           <View style={styles.heroCircle2} />
-          <Text style={styles.heroIcon}>🤖</Text>
-          <Text style={styles.heroTitle}>Coding, AI & Robotics</Text>
-          <Text style={styles.heroSubtitle}>"Technology Education for the Future"</Text>
+          <Text style={styles.heroIcon}>🧠</Text>
+          <Text style={styles.heroTitle}>Psychometric Assessment</Text>
+          <Text style={styles.heroSubtitle}>"Discover Your True Potential"</Text>
           <Text style={styles.heroDesc}>
-            Prepare for the technology-driven future with our comprehensive Coding, AI, and Robotics
-            curriculum. From block-based programming to advanced machine learning, we nurture the
-            next generation of tech innovators.
+            Our comprehensive psychometric assessment suite uses scientifically validated tools to
+            map your cognitive abilities, personality traits, aptitudes, and learning styles.
           </Text>
           <View style={styles.heroBtns}>
             <TouchableOpacity style={styles.heroBtn} onPress={() => router.push('/auth/student-login')}>
@@ -58,18 +57,18 @@ export default function CodingAIRoboticsScreen() {
           </View>
         </View>
 
-        {/* Learning Tracks */}
+        {/* Assessment Types */}
         <View style={styles.sectionContainer}>
-          <Text style={styles.sectionTitle}>Learning Tracks</Text>
-          <Text style={styles.sectionSubtitle}>Structured pathways from beginner to advanced</Text>
+          <Text style={styles.sectionTitle}>Assessment Types</Text>
+          <Text style={styles.sectionSubtitle}>Scientifically validated tools for comprehensive profiling</Text>
           <View style={styles.cardsRow}>
             {[
-              { icon: '💻', title: 'Web Development', desc: 'HTML, CSS, JavaScript, React. Build real websites and web applications from scratch.' },
-              { icon: '🐍', title: 'Python & Data Science', desc: 'Python programming, data analysis, visualization, and machine learning fundamentals.' },
-              { icon: '🤖', title: 'Robotics & Arduino', desc: 'Hardware programming, sensor integration, and building autonomous robots.' },
-              { icon: '🧠', title: 'AI & Machine Learning', desc: 'Neural networks, computer vision, NLP, and practical AI application development.' },
-              { icon: '📱', title: 'App Development', desc: 'iOS and Android app development using React Native and Flutter frameworks.' },
-              { icon: '🔒', title: 'Cybersecurity Basics', desc: 'Digital safety, ethical hacking fundamentals, and network security essentials.' },
+              { icon: '🧩', title: 'Intelligence Testing', desc: 'Measures cognitive abilities including logical reasoning, spatial awareness, and problem-solving.' },
+              { icon: '💼', title: 'Personality Profiling', desc: 'Comprehensive personality assessment using validated frameworks like MBTI and Big Five.' },
+              { icon: '🎯', title: 'Aptitude Mapping', desc: 'Identifies natural strengths and aptitudes across academic and vocational domains.' },
+              { icon: '📈', title: 'Learning Styles', desc: 'Determines your optimal learning modalities for personalized study strategies.' },
+              { icon: '🌟', title: 'Emotional Intelligence', desc: 'Assesses EQ across self-awareness, empathy, and social relationship domains.' },
+              { icon: '🔬', title: 'Career Compatibility', desc: 'Matches your psychometric profile to ideal career paths and academic subjects.' },
             ].map((card, i) => (
               <View key={i} style={styles.card}>
                 <Text style={styles.cardIcon}>{card.icon}</Text>
@@ -80,27 +79,28 @@ export default function CodingAIRoboticsScreen() {
           </View>
         </View>
 
-        {/* Course Levels Table */}
+        {/* Test Modules Table */}
         <View style={styles.sectionContainer}>
-          <Text style={styles.sectionTitle}>Course Levels</Text>
+          <Text style={styles.sectionTitle}>Test Modules</Text>
         </View>
         <View style={styles.table}>
           <View style={styles.tableHeader}>
-            <Text style={styles.tableHeaderText}>Level</Text>
-            <Text style={styles.tableHeaderText}>Skills Covered</Text>
-            <Text style={[styles.tableHeaderText, { flex: 0.7 }]}>Duration</Text>
+            <Text style={styles.tableHeaderText}>Module</Text>
+            <Text style={styles.tableHeaderText}>What It Measures</Text>
+            <Text style={[styles.tableHeaderText, { flex: 0.6 }]}>Duration</Text>
           </View>
           {[
-            { level: 'Foundation (Grade 3-5)', skills: 'Block coding, Scratch, basic algorithms', duration: '3 months' },
-            { level: 'Beginner (Grade 6-8)', skills: 'Python basics, web design, micro:bit', duration: '6 months' },
-            { level: 'Intermediate (Grade 9-10)', skills: 'Data structures, app development', duration: '8 months' },
-            { level: 'Advanced (Grade 11-12)', skills: 'AI/ML, full-stack, robotics projects', duration: '12 months' },
-            { level: 'Competitive (All Grades)', skills: 'Hackathons, olympiads, competitions', duration: 'Ongoing' },
+            { module: 'Cognitive Abilities', measures: 'Reasoning, memory, processing speed', duration: '45 mins' },
+            { module: 'Personality Profile', measures: 'Traits, values, motivations', duration: '30 mins' },
+            { module: 'Career Aptitude', measures: 'Skills, interests, career fit', duration: '60 mins' },
+            { module: 'Emotional Intelligence', measures: 'EQ competencies, social skills', duration: '25 mins' },
+            { module: 'Learning Styles', measures: 'Visual, auditory, kinesthetic', duration: '20 mins' },
+            { module: 'Creativity Index', measures: 'Creative thinking, innovation', duration: '35 mins' },
           ].map((row, i) => (
             <View key={i} style={[styles.tableRow, i % 2 === 1 && styles.tableRowAlt]}>
-              <Text style={styles.tableCellBold}>{row.level}</Text>
-              <Text style={styles.tableCell}>{row.skills}</Text>
-              <Text style={[styles.tableCell, { flex: 0.7 }]}>{row.duration}</Text>
+              <Text style={styles.tableCellBold}>{row.module}</Text>
+              <Text style={styles.tableCell}>{row.measures}</Text>
+              <Text style={[styles.tableCell, { flex: 0.6 }]}>{row.duration}</Text>
             </View>
           ))}
         </View>
@@ -109,9 +109,10 @@ export default function CodingAIRoboticsScreen() {
         <View style={[styles.ctaSection, { backgroundColor: HERO_COLOR }]}>
           <View style={styles.ctaCircle1} />
           <View style={styles.ctaCircle2} />
-          <Text style={styles.ctaTitle}>Code Your Future</Text>
+          <Text style={styles.ctaTitle}>Discover Your Psychometric Profile</Text>
           <Text style={styles.ctaSubtitle}>
-            Join our technology programs and develop the skills to build the technologies of tomorrow.
+            Take our comprehensive assessment battery and receive a detailed report with personalized
+            recommendations for academic and career success.
           </Text>
           <TouchableOpacity style={styles.ctaBtn} onPress={() => router.push('/auth/student-login')}>
             <Text style={styles.ctaBtnText}>Get Started</Text>

@@ -81,7 +81,8 @@ const VICE_PRINCIPAL = {
       key: 'classroom',
       label: 'Classroom',
       icon: 'easel-outline',
-      itemKeys: ['attendance', 'homework', 'liveClasses', 'syllabus'],
+      // Create Group sits with the classroom work, as in the web's Teaching & Academics (1 Oct 2026).
+      itemKeys: ['attendance', 'groups', 'homework', 'liveClasses', 'syllabus'],
     },
     {
       key: 'assessment',
@@ -90,10 +91,11 @@ const VICE_PRINCIPAL = {
       itemKeys: ['reports'],
     },
     {
+      // The teacher's pair, as on the web: the notes on their own, beside the Counselling Report.
       key: 'student-support',
       label: 'Student Support',
       icon: 'heart-outline',
-      itemKeys: ['groups', 'counselling'],
+      itemKeys: ['counselling', 'counsellingReport'],
     },
     // Beyond the web sidebar, and beyond anything a teacher can do: a VP is a real leave approver
     // and payroll admin. Grouped well away from the personal three, on purpose.
@@ -185,7 +187,8 @@ const SHREYARTHA_TEACHER = {
       key: 'classroom',
       label: 'Classroom',
       icon: 'easel-outline',
-      itemKeys: ['attendance', 'subjects', 'homework', 'resources', 'liveClasses', 'syllabus'],
+      // Create Group sits with the classroom work, as in the web's Teaching & Academics (1 Oct 2026).
+      itemKeys: ['attendance', 'subjects', 'resources', 'groups', 'homework', 'liveClasses', 'syllabus'],
     },
     {
       key: 'assessment',
@@ -197,7 +200,7 @@ const SHREYARTHA_TEACHER = {
       key: 'student-support',
       label: 'Student Support',
       icon: 'heart-outline',
-      itemKeys: ['groups', 'counselling', 'counsellorReport'],
+      itemKeys: ['counselling', 'counsellorReport'],
     },
     {
       key: 'personal',
@@ -315,10 +318,18 @@ const COUNSELOR = {
 
   workspaceGroups: [
     {
-      key: 'caseload',
-      label: 'My Caseload',
+      // Named and split as on the web counsellor sidebar (1 Oct 2026). Wellness Groups, the web's
+      // other Student Management item, is this home's third hero.
+      key: 'student-management',
+      label: 'Student Management',
       icon: 'people-outline',
-      itemKeys: ['attendance', 'counselling', 'faceToFace', 'counsellorReport'],
+      itemKeys: ['attendance'],
+    },
+    {
+      key: 'student-support',
+      label: 'Student Support',
+      icon: 'heart-outline',
+      itemKeys: ['counselling', 'counsellorReport', 'faceToFace'],
     },
     {
       key: 'personal',
@@ -333,7 +344,7 @@ const COUNSELOR = {
   profileItemKey: 'profile',
 
   attendanceNote:
-    'Marking student attendance lives in My Workspace, under My Caseload. This page is your own record.',
+    'Marking student attendance lives in My Workspace, under Student Management. This page is your own record.',
 
   /**
    * No Shreya. `TeacherShreyaController` is `hasAnyRole('TEACHER','SHREYARTHA_TEACHER')` and
@@ -434,10 +445,18 @@ const SHREYARTHA_COUNCELLOR = {
 
   workspaceGroups: [
     {
-      key: 'caseload',
-      label: 'My Caseload',
+      // Named and split as on the web counsellor sidebar (1 Oct 2026). Wellness Groups, the web's
+      // other Student Management item, is this home's third hero.
+      key: 'student-management',
+      label: 'Student Management',
       icon: 'people-outline',
-      itemKeys: ['attendance', 'counselling', 'faceToFace', 'counsellorReport', 'queries'],
+      itemKeys: ['attendance'],
+    },
+    {
+      key: 'student-support',
+      label: 'Student Support',
+      icon: 'heart-outline',
+      itemKeys: ['counselling', 'counsellorReport', 'faceToFace', 'queries'],
     },
     {
       key: 'personal',
@@ -452,7 +471,7 @@ const SHREYARTHA_COUNCELLOR = {
   profileItemKey: 'profile',
 
   attendanceNote:
-    'Marking student attendance lives in My Workspace, under My Caseload. This page is your own record.',
+    'Marking student attendance lives in My Workspace, under Student Management. This page is your own record.',
 
   /** No Shreya, for the same reason Portal A has none — see the COUNSELOR descriptor above. */
   support: 'help',
@@ -606,7 +625,7 @@ const PRINCIPAL = {
       icon: 'school-outline',
       // Grading scales belong next to Test and Examination: they are what the marks recorded there
       // are turned into.
-      itemKeys: ['reports', 'gradeManagement', 'academicIqAliases', 'languageProAliases', 'codingProAliases'],
+      itemKeys: ['reports', 'gradeManagement', 'reportCardAreas', 'reportCardGrades', 'academicIqAliases', 'languageProAliases', 'codingProAliases'],
     },
     {
       key: 'staffOps',

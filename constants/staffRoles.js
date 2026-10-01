@@ -150,6 +150,10 @@ export const STAFF_ROLE_CONFIG = {
       // owns exam records (create / edit / publish-to-parents), which a teacher cannot do.
       { key: 'reports', label: 'Test & Examination', icon: 'clipboard-outline', native: '/staff/principal/admin-reports' },
       { key: 'gradeManagement', label: 'Grade Management', icon: 'ribbon-outline', native: '/staff/principal/grade-management' },
+      // The report card's graded areas with no exam behind them (web 352164f): set up for every
+      // section at once, and — read-only — what the teachers have graded.
+      { key: 'reportCardAreas', label: 'Report Card Areas', icon: 'grid-outline', native: '/staff/principal/report-card-areas' },
+      { key: 'reportCardGrades', label: 'Report Card Grades', icon: 'checkmark-done-outline', native: '/staff/principal/report-card-grades' },
       { key: 'staff', label: 'Staff Management', icon: 'people-circle-outline', native: '/staff/principal/staff' },
       { key: 'staffAttendance', label: 'Staff Attendance', icon: 'timer-outline', native: '/staff/principal/staff-attendance' },
       { key: 'staffEvaluation', label: 'Staff Evaluation', icon: 'trending-up-outline', native: '/staff/principal/staff-evaluation' },
@@ -193,7 +197,8 @@ export const STAFF_ROLE_CONFIG = {
     // VP dashboard imports nine School/Teacher/pages/* components unchanged, and the role
     // hierarchy makes VICE_PRINCIPAL imply TEACHER, so no namespace differs. See
     // constants/vicePrincipalPortal.js for why that descriptor carries no paths.
-    // Flat, not grouped — the web VP sidebar is a flat 11-item list.
+    // In the web VP sidebar's order, flattened (vicePrincipalNavGroups.js, grouped since 1 Oct 2026);
+    // the home arranges them in constants/staffHome.js.
     menu: [
       { key: 'profile', label: 'My Profile', icon: 'person-circle-outline', native: '/staff/vice_principal/profile' },
       { key: 'selfAttendance', label: 'Self Attendance', icon: 'time-outline', native: '/staff/vice_principal/self-attendance' },
@@ -207,6 +212,9 @@ export const STAFF_ROLE_CONFIG = {
       { key: 'syllabus', label: 'Syllabus Completion', icon: 'list-outline', native: '/staff/vice_principal/syllabus' },
       { key: 'reports', label: 'Test and Examination', icon: 'clipboard-outline', native: '/staff/vice_principal/reports' },
       { key: 'counselling', label: 'Counselling Needs and Notes', icon: 'chatbubbles-outline', native: '/staff/vice_principal/counselling' },
+      // The teacher's Counselling Report (Psychometric Result + Counsellor Report tabs), beside the
+      // notes in Student Support — as on the web since 1 Oct 2026.
+      { key: 'counsellingReport', label: 'Counselling Report', icon: 'reader-outline', native: '/staff/vice_principal/counselling-report' },
       { key: 'myCalendar', label: 'My Calendar', icon: 'calendar-outline', native: '/staff/vice_principal/my-calendar' },
       // "Upskill Your Self" is disabled on the web VP sidebar (no route registered) — omitted,
       // even though /api/teacher-skillsedge names VICE_PRINCIPAL.

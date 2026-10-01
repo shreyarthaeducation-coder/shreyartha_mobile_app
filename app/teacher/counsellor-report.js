@@ -1,6 +1,9 @@
-import { CounsellorReportScreen } from '../../components/staff';
+import { Redirect } from 'expo-router';
 
-/** Native Counsellor Report — read-only; teachers can view but never author these. */
+/**
+ * Counsellor Report is the Counselling Report's third tab now. The route stays for the links that
+ * still name it, older app builds' included.
+ */
 export default function TeacherCounsellorReport() {
-  return <CounsellorReportScreen homeRoute="/teacher" />;
+  return <Redirect href="/teacher/counselling-report?tab=report" />;
 }

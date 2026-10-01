@@ -3,9 +3,9 @@ import { StyleSheet, View, Text, TouchableOpacity, ScrollView } from 'react-nati
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Stack, useRouter } from 'expo-router';
 import { COLORS, FONTS, SHADOWS, SPACING, TYPE, leading } from '../../../constants/theme';
-import SearchBar from '../../components/SearchBar';
+import SearchBar from '../../landing/SearchBar';
 
-const HERO_COLOR = '#4F46E5';
+const HERO_COLOR = '#1a1a2e';
 
 const FOOTER_LINKS = [
   'Learning & Assessment', 'Skills Learning', 'Students Profile', 'Counselling',
@@ -13,7 +13,7 @@ const FOOTER_LINKS = [
   'Coding AI & Robotics', 'Language Learning', 'Global Opportunities', 'Progress Tracking',
 ];
 
-export default function ProgressTrackingScreen() {
+export default function GlobalOpportunitiesScreen() {
   const router = useRouter();
 
   return (
@@ -25,7 +25,7 @@ export default function ProgressTrackingScreen() {
         <TouchableOpacity style={styles.backBtn} onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))}>
           <Text style={styles.backText}>← Back</Text>
         </TouchableOpacity>
-        <Text style={styles.headerTitle} numberOfLines={1}>Progress Tracking</Text>
+        <Text style={styles.headerTitle} numberOfLines={1}>Global Opportunities</Text>
         <View style={{ width: 60 }} />
       </View>
 
@@ -40,13 +40,13 @@ export default function ProgressTrackingScreen() {
         <View style={[styles.hero, { backgroundColor: HERO_COLOR }]}>
           <View style={styles.heroCircle1} />
           <View style={styles.heroCircle2} />
-          <Text style={styles.heroIcon}>📊</Text>
-          <Text style={styles.heroTitle}>Progress Tracking</Text>
+          <Text style={styles.heroIcon}>🌍</Text>
+          <Text style={styles.heroTitle}>Global Opportunities</Text>
           <Text style={styles.heroSubtitle}>"Content coming soon."</Text>
           <Text style={styles.heroDesc}>
-            We are building a powerful progress tracking system that will give you real-time insights
-            into your academic journey. From grades to goals, you will be able to track every aspect
-            of your learning with precision and clarity.
+            We are curating an exceptional collection of global opportunities for Shreyartha students.
+            From international exchanges to global competitions, this section will feature everything
+            you need to take your education global. Stay tuned!
           </Text>
           <View style={styles.heroBtns}>
             <TouchableOpacity style={styles.heroBtn} onPress={() => router.push('/auth/student-login')}>
@@ -63,12 +63,13 @@ export default function ProgressTrackingScreen() {
           <View style={styles.comingSoonCard}>
             <Text style={styles.comingSoonTitle}>🚀 Coming Soon</Text>
             <Text style={styles.comingSoonText}>
-              Our comprehensive progress tracking dashboard will include:{'\n\n'}
-              • Real-time grade and performance tracking{'\n'}
-              • Goal setting and milestone monitoring{'\n'}
-              • Personalized improvement recommendations{'\n'}
-              • Parent and teacher dashboards{'\n'}
-              • Comparative analytics and rankings
+              Our team is working on bringing you the best global opportunities. This section will
+              feature:{'\n\n'}
+              • International student exchanges{'\n'}
+              • Global scholarship listings{'\n'}
+              • Study abroad programs{'\n'}
+              • International competitions & olympiads{'\n'}
+              • Global internship opportunities
             </Text>
             <TouchableOpacity style={styles.comingSoonBtn} onPress={() => router.push('/auth/student-login')}>
               <Text style={styles.comingSoonBtnText}>Get Started</Text>
@@ -80,9 +81,9 @@ export default function ProgressTrackingScreen() {
         <View style={[styles.ctaSection, { backgroundColor: HERO_COLOR }]}>
           <View style={styles.ctaCircle1} />
           <View style={styles.ctaCircle2} />
-          <Text style={styles.ctaTitle}>Track Your Success</Text>
+          <Text style={styles.ctaTitle}>Be the First to Know</Text>
           <Text style={styles.ctaSubtitle}>
-            Register now to get early access to our progress tracking system when it launches.
+            Sign up to get notified when Global Opportunities goes live with exclusive early access.
           </Text>
           <TouchableOpacity style={styles.ctaBtn} onPress={() => router.push('/auth/student-login')}>
             <Text style={styles.ctaBtnText}>Get Started</Text>

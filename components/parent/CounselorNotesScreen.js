@@ -17,7 +17,8 @@ import { makeStyles } from '../../utils/makeStyles';
  * nothing but React), so it serves every panel. Renaming it would touch ~40 shipped files.
  */
 
-export default function CounselorNotesScreen() {
+// `embedded` — rendered as the Counselling Report's Counsellor Notes tab, which draws the header.
+export default function CounselorNotesScreen({ embedded = false }) {
   const styles = useStyles();
 
   const fetcher = useCallback((signal) => fetchCounselorNotes(signal), []);
@@ -41,6 +42,7 @@ export default function CounselorNotesScreen() {
     <ScreenScaffold
       title="Counselor Notes"
       fallbackRoute="/parent"
+      embedded={embedded}
       loading={loading}
       error={error}
       onRetry={reload}

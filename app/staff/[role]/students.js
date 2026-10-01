@@ -1,6 +1,7 @@
 import { useLocalSearchParams } from 'expo-router';
 import { StudentManagementScreen } from '../../../components/staff';
 import { getAdminPortal } from '../../../constants/schoolAdminPortals';
+import { psychometricPrintApiBase, psychometricPrintRoute } from '../../../constants/psychometricPrint';
 
 /** Student Management — read-only roster plus the Academic IQ change log. */
 export default function StudentManagement() {
@@ -13,6 +14,10 @@ export default function StudentManagement() {
   if (!portal?.classes) return null;
 
   return (
-    <StudentManagementScreen homeRoute={`/staff/${roleKey}`} apiBase={portal.classes} />
+    <StudentManagementScreen
+      homeRoute={`/staff/${roleKey}`}
+      apiBase={portal.classes}
+      printRoute={psychometricPrintApiBase(roleKey) ? psychometricPrintRoute(`/staff/${roleKey}`) : undefined}
+    />
   );
 }

@@ -3,9 +3,9 @@ import { StyleSheet, View, Text, TouchableOpacity, ScrollView } from 'react-nati
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Stack, useRouter } from 'expo-router';
 import { COLORS, FONTS, SHADOWS, SPACING, TYPE, leading } from '../../../constants/theme';
-import SearchBar from '../../components/SearchBar';
+import SearchBar from '../../landing/SearchBar';
 
-const HERO_COLOR = '#b0003a';
+const HERO_COLOR = '#4F46E5';
 
 const FOOTER_LINKS = [
   'Learning & Assessment', 'Skills Learning', 'Students Profile', 'Counselling',
@@ -13,7 +13,7 @@ const FOOTER_LINKS = [
   'Coding AI & Robotics', 'Language Learning', 'Global Opportunities', 'Progress Tracking',
 ];
 
-export default function CompetitiveExamScreen() {
+export default function StudentsProfileScreen() {
   const router = useRouter();
 
   return (
@@ -25,7 +25,7 @@ export default function CompetitiveExamScreen() {
         <TouchableOpacity style={styles.backBtn} onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))}>
           <Text style={styles.backText}>← Back</Text>
         </TouchableOpacity>
-        <Text style={styles.headerTitle} numberOfLines={1}>Competitive Examination</Text>
+        <Text style={styles.headerTitle} numberOfLines={1}>Students Profile</Text>
         <View style={{ width: 60 }} />
       </View>
 
@@ -40,13 +40,12 @@ export default function CompetitiveExamScreen() {
         <View style={[styles.hero, { backgroundColor: HERO_COLOR }]}>
           <View style={styles.heroCircle1} />
           <View style={styles.heroCircle2} />
-          <Text style={styles.heroIcon}>🏆</Text>
-          <Text style={styles.heroTitle}>Competitive Examination</Text>
-          <Text style={styles.heroSubtitle}>"Shreyartha Competitive Excellence"</Text>
+          <Text style={styles.heroIcon}>👤</Text>
+          <Text style={styles.heroTitle}>Students Profile</Text>
+          <Text style={styles.heroSubtitle}>"Your Academic Identity"</Text>
           <Text style={styles.heroDesc}>
-            Comprehensive preparation for India's most competitive entrance examinations. Our
-            integrated approach combines curriculum alignment, mock tests, and personalized
-            mentorship for guaranteed success.
+            Build a comprehensive academic profile that showcases your achievements, skills, and
+            potential to universities, employers, and scholarship committees worldwide.
           </Text>
           <View style={styles.heroBtns}>
             <TouchableOpacity style={styles.heroBtn} onPress={() => router.push('/auth/student-login')}>
@@ -58,42 +57,17 @@ export default function CompetitiveExamScreen() {
           </View>
         </View>
 
-        {/* Master Your Target Table */}
+        {/* Benefits */}
         <View style={styles.sectionContainer}>
-          <Text style={styles.sectionTitle}>Master Your Target Entrance</Text>
-        </View>
-        <View style={styles.table}>
-          <View style={styles.tableHeader}>
-            <Text style={styles.tableHeaderText}>Category</Text>
-            <Text style={styles.tableHeaderText}>Examinations</Text>
-            <Text style={styles.tableHeaderText}>Strategy</Text>
-          </View>
-          {[
-            { cat: 'Engineering & Technology', exams: 'JEE Main, JEE Advanced, BITSAT', strategy: 'Deep-dive into core concepts with 10,000+ practice problems' },
-            { cat: 'Medical & Healthcare', exams: 'NEET (UG)', strategy: 'Comprehensive focus on Biology, Chemistry with clinical application' },
-            { cat: 'CUET UG', exams: 'Central University Common Entrance', strategy: 'Specialized domain-specific and general test prep' },
-            { cat: 'Commerce & Finance', exams: 'CA Foundation, IPMAT, CMA', strategy: 'Specialized accounting and quantitative aptitude paths' },
-            { cat: 'Defence & Paramilitary', exams: 'NDA, CDS, AFCAT, CAPF', strategy: 'Physical + academic preparation with SSB coaching' },
-            { cat: 'Arts & Humanities', exams: 'CLAT, NID-DAT', strategy: 'Creative and logic-based preparation programs' },
-            { cat: 'Govt. Examinations', exams: 'SSC, Banking, Railways, UPSC', strategy: 'Comprehensive GK, reasoning, and subject matter prep' },
-          ].map((row, i) => (
-            <View key={i} style={[styles.tableRow, i % 2 === 1 && styles.tableRowAlt]}>
-              <Text style={styles.tableCellBold}>{row.cat}</Text>
-              <Text style={styles.tableCell}>{row.exams}</Text>
-              <Text style={styles.tableCell}>{row.strategy}</Text>
-            </View>
-          ))}
-        </View>
-
-        {/* Competitive Advantage */}
-        <View style={styles.sectionContainer}>
-          <Text style={styles.sectionTitle}>Our Competitive Advantage</Text>
+          <Text style={styles.sectionTitle}>Profile Benefits</Text>
           <View style={styles.cardsRow}>
             {[
-              { icon: '📊', title: 'Integrated Mock Assessments', desc: 'Weekly full-length mock tests with detailed performance analysis and rank prediction.' },
-              { icon: '📋', title: 'NEP 2020 Alignment', desc: 'Exam prep seamlessly integrated with school curriculum for dual benefits.' },
-              { icon: '🎯', title: 'Subject & Career Synergy', desc: 'Exam preparation connected to long-term career goals and subject strengths.' },
-              { icon: '🌍', title: 'Global Benchmarking', desc: 'Performance benchmarked against national and international student populations.' },
+              { icon: '🏆', title: 'Achievement Tracking', desc: 'Document every academic achievement, co-curricular activity, and personal milestone.' },
+              { icon: '📊', title: 'Analytics Dashboard', desc: 'Visualize your academic progress with detailed charts and performance insights.' },
+              { icon: '🎯', title: 'Goal Setting', desc: 'Set personalized academic and career goals with guided milestone tracking.' },
+              { icon: '🌟', title: 'Portfolio Builder', desc: 'Create a rich multimedia portfolio showcasing your best work and projects.' },
+              { icon: '🤝', title: 'University Connect', desc: 'Share your profile directly with universities and scholarship programs.' },
+              { icon: '📜', title: 'Certification Hub', desc: 'Collect and display all your certifications and achievements in one place.' },
             ].map((card, i) => (
               <View key={i} style={styles.card}>
                 <Text style={styles.cardIcon}>{card.icon}</Text>
@@ -104,24 +78,41 @@ export default function CompetitiveExamScreen() {
           </View>
         </View>
 
-        {/* Journey section */}
+        {/* Profile Features Table */}
         <View style={styles.sectionContainer}>
-          <Text style={styles.sectionTitle}>Your Journey to Success</Text>
-          <Text style={styles.sectionSubtitle}>
-            Every student's path to competitive exam success is unique. Shreyartha's personalized
-            approach ensures that your preparation is optimized for your strengths, learning style,
-            and target institution.
-          </Text>
+          <Text style={styles.sectionTitle}>Profile Features</Text>
+        </View>
+        <View style={styles.table}>
+          <View style={styles.tableHeader}>
+            <Text style={styles.tableHeaderText}>Feature</Text>
+            <Text style={styles.tableHeaderText}>Description</Text>
+            <Text style={[styles.tableHeaderText, { flex: 0.5 }]}> </Text>
+          </View>
+          {[
+            { feature: 'Academic History', desc: 'Complete record of grades, subjects, and academic performance' },
+            { feature: 'Skills Matrix', desc: 'Comprehensive mapping of technical and soft skills' },
+            { feature: 'Career Readiness', desc: 'Assessment of college and career preparedness' },
+            { feature: 'Extracurriculars', desc: 'Sports, arts, clubs, and community involvement' },
+            { feature: 'Recommendations', desc: 'Teacher and mentor recommendations and endorsements' },
+          ].map((row, i) => (
+            <View key={i} style={[styles.tableRow, i % 2 === 1 && styles.tableRowAlt]}>
+              <Text style={styles.tableCellBold}>{row.feature}</Text>
+              <Text style={styles.tableCell}>{row.desc}</Text>
+              <TouchableOpacity style={styles.tableBtn} onPress={() => router.push('/auth/student-login')}>
+                <Text style={styles.tableBtnText}>Explore</Text>
+              </TouchableOpacity>
+            </View>
+          ))}
         </View>
 
         {/* CTA */}
         <View style={[styles.ctaSection, { backgroundColor: HERO_COLOR }]}>
           <View style={styles.ctaCircle1} />
           <View style={styles.ctaCircle2} />
-          <Text style={styles.ctaTitle}>Start Your Exam Preparation</Text>
+          <Text style={styles.ctaTitle}>Build Your Profile Today</Text>
           <Text style={styles.ctaSubtitle}>
-            Join thousands of successful students who cracked competitive exams with Shreyartha's
-            proven preparation methodology.
+            Start documenting your academic journey and unlock opportunities with a comprehensive
+            student profile.
           </Text>
           <TouchableOpacity style={styles.ctaBtn} onPress={() => router.push('/auth/student-login')}>
             <Text style={styles.ctaBtnText}>Get Started</Text>
@@ -187,6 +178,8 @@ const styles = StyleSheet.create({
   tableRowAlt: { backgroundColor: COLORS.surface },
   tableCell: { flex: 1, fontSize: TYPE.body, color: COLORS.text, lineHeight: leading(TYPE.body) },
   tableCellBold: { flex: 1, fontSize: TYPE.body, color: COLORS.secondary, fontWeight: '600', lineHeight: leading(TYPE.body) },
+  tableBtn: { paddingVertical: 6, paddingHorizontal: 14, borderRadius: 20, backgroundColor: COLORS.primary },
+  tableBtnText: { color: '#fff', fontSize: TYPE.label, fontWeight: '700' },
   ctaSection: { margin: SPACING.md, borderRadius: 20, padding: SPACING.xl, alignItems: 'center', overflow: 'hidden', position: 'relative' },
   ctaCircle1: { position: 'absolute', width: 180, height: 180, borderRadius: 90, backgroundColor: 'rgba(255,255,255,0.1)', top: -60, right: -40 },
   ctaCircle2: { position: 'absolute', width: 100, height: 100, borderRadius: 50, backgroundColor: 'rgba(255,255,255,0.08)', bottom: -30, left: -20 },

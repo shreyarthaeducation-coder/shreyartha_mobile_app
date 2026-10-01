@@ -179,7 +179,12 @@ export default function ExamsScreen({ homeRoute = '/teacher' }) {
               <View style={styles.examText}>
                 <Text style={styles.examName}>{exam.examName}</Text>
                 <Text style={styles.examMeta}>
-                  {exam.examCode} · max {exam.maxMarks}
+                  {/* What the paper is really out of: its questions' total (Set 1's, a choice counted
+                      once — or the exam's total for a paper made from an answer book), not the
+                      exam's nominal maximum, which is usually the untouched default of 100. */}
+                  {exam.examCode} · out of{' '}
+                  {exam.questionCount > 0 ? exam.totalQuestionMarks ?? exam.maxMarks : exam.maxMarks}
+                  {exam.questionSets > 1 ? ` · ${exam.questionSets} sets` : ''}
                 </Text>
               </View>
               <View
@@ -224,8 +229,9 @@ export default function ExamsScreen({ homeRoute = '/teacher' }) {
               >
                 <Ionicons name="create-outline" size={17} color="#ffffff" />
                 <Text style={styles.actionTextPrimary}>
-                  {/* The exam's question count decides which marks screen opens — say which. */}
-                  {exam.questionCount > 0 ? 'Per-question marks' : 'Enter marks'}
+                  {/* The website's label. An exam with questions opens question by question and
+                      either shape can switch to the other, so the button names the task. */}
+                  Enter/Edit Marks
                 </Text>
               </Pressable>
             </View>
@@ -379,13 +385,18 @@ export default function ExamsScreen({ homeRoute = '/teacher' }) {
           setMarksExam(null);
           revalidateOverview();
         }}
+        // Questions made from a scanned answer book change the exam card's count and total even
+        // before anything is saved.
+        onChanged={revalidateOverview}
         showToast={showToast}
       />
 
       <QuestionsSheet
         visible={!!questionsExam}
         exam={questionsExam}
-        academicIqSubjectId={examScope.academicIqSubjectId}
+        // The SchoolSectionSubject id: chapters come from /api/teacher/curriculum, which works for
+        // every subject — Academic IQ, Coding Pro, Language Pro or none — not only linked ones.
+        sectionSubjectId={examScope.subjectId}
         onClose={() => setQuestionsExam(null)}
         onChanged={revalidateOverview}
         showToast={showToast}

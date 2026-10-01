@@ -100,20 +100,31 @@ async function loadConstants(mutate) {
 // Returns the list of failure messages instead of printing, so self-tests can consume it.
 // ─────────────────────────────────────────────────────────────────────────────
 
-/** The web sidebar is the source of truth for the item set — extracted, never retyped. */
-function webSidebarItems() {
-  const src = read(
-    path.join(WEB, 'src', 'School', 'Vice_Principal', 'components', 'VicePrincipalSidebar.js'),
+/**
+ * The web sidebar is the source of truth for the item set — extracted, never retyped.
+ *
+ * Since 1 Oct 2026 the VP sidebar renders `vicePrincipalNavGroups.js` (the teacher panel's groups)
+ * through the shared GroupedSidebar, so the old regex over `VicePrincipalSidebar.js`'s `menuItems`
+ * would match nothing. Rather than scrape the new file, this EVALUATES it, with the one module it
+ * imports, the way checkprincipal.mjs evaluates schoolNavGroups.js: both are dependency-free ESM with
+ * no JSX. What comes back is the sidebar's own items in render order, groups flattened.
+ */
+async function loadWebSidebarItems() {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'vpcheck-web-'));
+  const utils = read(path.join(WEB, 'src', 'School', 'shared', 'navGroups', 'navGroupUtils.js'));
+  const groupsSrc = read(
+    path.join(WEB, 'src', 'School', 'Vice_Principal', 'components', 'vicePrincipalNavGroups.js'),
+  ).replace(/from "\.\.\/\.\.\/shared\/navGroups\/navGroupUtils"/, 'from "./navGroupUtils.mjs"');
+  fs.writeFileSync(path.join(dir, 'navGroupUtils.mjs'), utils);
+  fs.writeFileSync(path.join(dir, 'vicePrincipalNavGroups.mjs'), groupsSrc);
+  const mod = await import(pathToFileURL(path.join(dir, 'vicePrincipalNavGroups.mjs')).href);
+  return (mod.vicePrincipalNavGroups || []).flatMap((group) =>
+    group.items.map(({ key, label, disabled }) => ({ key, label, disabled: disabled === true })),
   );
-  const block = src.slice(src.indexOf('const menuItems'), src.indexOf('return ('));
-  const items = [];
-  const re = /key:\s*"([^"]+)"[\s\S]*?label:\s*"([^"]+)"([\s\S]*?)(?=\{\s*key:|\]\s*;)/g;
-  let m;
-  while ((m = re.exec(block))) {
-    items.push({ key: m[1], label: m[2], disabled: /disabled:\s*true/.test(m[3]) });
-  }
-  return items;
 }
+
+const WEB_SIDEBAR_ITEMS = await loadWebSidebarItems();
+const webSidebarItems = () => WEB_SIDEBAR_ITEMS;
 
 function assertions({ staffRoles, vp, scope, home }, sources) {
   const out = [];

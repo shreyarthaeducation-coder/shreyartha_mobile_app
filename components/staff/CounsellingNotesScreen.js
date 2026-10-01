@@ -88,6 +88,9 @@ export default function CounsellingNotesScreen({
   // session read and write are identical across portals, so nothing else changes.
   scopeKind = 'classSection',
   schoolsEndpoint,
+  // Rendered as a tab of the teacher's Counselling Report, which draws the header. Every other
+  // role omits it.
+  embedded = false,
 }) {
   const styles = useStyles();
   const PALETTE = usePalette();
@@ -287,6 +290,7 @@ export default function CounsellingNotesScreen({
     <ScreenScaffold
       title="Counselling Notes"
       fallbackRoute={homeRoute}
+      embedded={embedded}
       loading={classesLoading}
       error={classList.length === 0 ? classesError : ''}
       onRetry={reload}

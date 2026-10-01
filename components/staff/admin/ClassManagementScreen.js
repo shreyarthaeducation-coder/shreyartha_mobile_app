@@ -16,6 +16,7 @@ import {
 import useStaffResource from '../../../hooks/useStaffResource';
 import {
   SUBJECT_TYPES,
+  addCustomSectionName,
   availableAcademicSubjects,
   availableClasses,
   availableCodingSubjects,
@@ -34,6 +35,7 @@ import {
   importAcademicYear,
   updateSubject,
 } from '../../../services/admin/classService';
+import { applyExistingExams, fetchExamTemplates } from '../../../services/admin/examService';
 import { defaultAcademicYear, fetchAcademicYears } from '../../../services/teacher/scopeService';
 import { makeStyles } from '../../../utils/makeStyles';
 
@@ -46,7 +48,10 @@ import { makeStyles } from '../../../utils/makeStyles';
  * and cascading, so all three confirm.
  *
  * Everything creatable comes from a CATALOGUE, not free text: the school's board decides which
- * classes and subjects exist. Only a custom subject can be typed.
+ * classes and subjects exist. A custom subject and a custom section name ("F COMM") can be typed.
+ *
+ * Adding subjects also offers the class's existing tests (`reportsBase`), ticked, so a subject
+ * added after a bulk test create is not left with no tests and nothing saying so.
  */
 
 function Chip({ label, selected, onPress }) {
@@ -68,7 +73,7 @@ function Chip({ label, selected, onPress }) {
   );
 }
 
-export default function ClassManagementScreen({ homeRoute, apiBase, academicYearWrites }) {
+export default function ClassManagementScreen({ homeRoute, apiBase, academicYearWrites, reportsBase }) {
   const styles = useStyles();
   const PALETTE = usePalette();
   const { toast, showToast } = useToast();
@@ -94,6 +99,9 @@ export default function ClassManagementScreen({ homeRoute, apiBase, academicYear
   const [subjectType, setSubjectType] = useState('THEORY');
   const [editing, setEditing] = useState(null);
   const [editForm, setEditForm] = useState({ subjectName: '', subjectCode: '', subjectType: '' });
+  const [customSection, setCustomSection] = useState('');
+  const [examTemplates, setExamTemplates] = useState([]);
+  const [applyCodes, setApplyCodes] = useState([]);
 
   const loadYears = useCallback(async () => {
     const rows = await fetchAcademicYears();
@@ -172,6 +180,40 @@ export default function ClassManagementScreen({ homeRoute, apiBase, academicYear
     setYearLabel('');
     setImportFrom(null);
     setEditing(null);
+    setCustomSection('');
+  };
+
+  // The class's existing tests, fetched when the Add-subjects sheet opens. Listed per CLASS, not per
+  // year: a test made for Class 6 only is missing from Class 7 on purpose. Everything ticked by
+  // default — a subject that skips the class's tests is the exception.
+  const templateClassId = sheet === 'subject' ? currentClass?.id ?? null : null;
+  useEffect(() => {
+    if (!reportsBase || !yearId || !templateClassId) {
+      setExamTemplates([]);
+      setApplyCodes([]);
+      return undefined;
+    }
+    const controller = new AbortController();
+    fetchExamTemplates(reportsBase, yearId, templateClassId, controller.signal)
+      .then((list) => {
+        setExamTemplates(list);
+        setApplyCodes(list.map((t) => t.examCode));
+      })
+      .catch(() => {
+        setExamTemplates([]);
+        setApplyCodes([]);
+      });
+    return () => controller.abort();
+  }, [reportsBase, yearId, templateClassId]);
+
+  const addTypedSection = () => {
+    const { picked, error: refusal } = addCustomSectionName(customSection, currentClass, pickedSections);
+    if (refusal) {
+      showToast(refusal, 'error');
+      return;
+    }
+    setPickedSections(picked);
+    setCustomSection('');
   };
 
   const run = async (fn, okMessage) => {
@@ -213,24 +255,53 @@ export default function ClassManagementScreen({ homeRoute, apiBase, academicYear
   const toggle = (list, setList, value) =>
     setList(list.includes(value) ? list.filter((v) => v !== value) : [...list, value]);
 
-  const submitSubjects = () =>
-    run(
-      () =>
-        createSubjects(apiBase, {
-          sectionId: currentSection.id,
-          subjects: buildSubjectPayload({
-            academicNames: pickedAcademic,
-            codingNames: pickedCoding,
-            customName,
-            codes,
-            customCode,
-            subjectType,
-            catalogueSubjects: creatableAcademic,
-            codingCurriculums: creatableCoding,
-          }),
-        }),
-      'Subjects added.',
-    );
+  const submitSubjects = async () => {
+    let subjects;
+    try {
+      subjects = buildSubjectPayload({
+        academicNames: pickedAcademic,
+        codingNames: pickedCoding,
+        customName,
+        codes,
+        customCode,
+        subjectType,
+        catalogueSubjects: creatableAcademic,
+        codingCurriculums: creatableCoding,
+      });
+    } catch (e) {
+      showToast(e.message, 'error');
+      return;
+    }
+    setSaving(true);
+    try {
+      const added = await createSubjects(apiBase, { sectionId: currentSection.id, subjects });
+      // Give the new subjects the class's existing tests — exactly the ids just created, so adding
+      // a subject touches nothing else in the year.
+      let examNote = '';
+      const newIds = (added?.subjects || added?.data || []).map((sub) => sub?.id).filter(Boolean);
+      if (reportsBase && applyCodes.length > 0 && newIds.length > 0) {
+        try {
+          const applied = await applyExistingExams(reportsBase, {
+            academicYearId: yearId,
+            classId: currentClass?.id,
+            examCodes: applyCodes,
+            subjectIds: newIds,
+          });
+          if (applied?.created > 0) examNote = ` ${applied.created} existing test(s) added to them.`;
+        } catch (e) {
+          // The subjects are saved either way; say so rather than implying the whole thing failed.
+          examNote = ` Subjects added, but the existing tests could not be applied: ${e?.message || 'unknown error'}`;
+        }
+      }
+      showToast(`${subjects.length} subject(s) added.${examNote}`, 'success');
+      closeSheet();
+      await revalidate();
+    } catch (e) {
+      showToast(e?.message || 'Something went wrong.', 'error');
+    } finally {
+      setSaving(false);
+    }
+  };
 
   return (
     <ScreenScaffold
@@ -573,10 +644,12 @@ export default function ClassManagementScreen({ homeRoute, apiBase, academicYear
         submitDisabled={pickedSections.length === 0}
       >
         {creatableSections.length === 0 ? (
-          <Text style={styles.hint}>This class already has every section (A–F).</Text>
-        ) : (
+          <Text style={styles.hint}>This class already has sections A–F. Name another below.</Text>
+        ) : null}
+        {/* The fixed A–F, plus any typed names — a typed chip untaps like any other. */}
+        {[...creatableSections, ...pickedSections.filter((n) => !creatableSections.includes(n))].length ? (
           <View style={styles.chipWrap}>
-            {creatableSections.map((name) => (
+            {[...creatableSections, ...pickedSections.filter((n) => !creatableSections.includes(n))].map((name) => (
               <Chip
                 key={name}
                 label={name}
@@ -585,7 +658,33 @@ export default function ClassManagementScreen({ homeRoute, apiBase, academicYear
               />
             ))}
           </View>
-        )}
+        ) : null}
+        <View style={styles.customRow}>
+          <View style={styles.customField}>
+            <TextField
+              label="Name a section"
+              value={customSection}
+              onChangeText={setCustomSection}
+              placeholder="e.g. G or F COMM"
+              autoCapitalize="characters"
+              onSubmitEditing={addTypedSection}
+              returnKeyType="done"
+            />
+          </View>
+          <Pressable
+            onPress={addTypedSection}
+            disabled={!customSection.trim()}
+            style={({ pressed }) => [
+              styles.customAdd,
+              { borderColor: PALETTE.primary },
+              (pressed || !customSection.trim()) && styles.pressed,
+            ]}
+            accessibilityRole="button"
+            accessibilityLabel="Add this section name"
+          >
+            <Text style={[styles.addText, { color: PALETTE.primary }]}>Add</Text>
+          </Pressable>
+        </View>
       </FormSheet>
 
       {/* ── subjects ──────────────────────────────────────────────────────── */}
@@ -680,6 +779,26 @@ export default function ClassManagementScreen({ homeRoute, apiBase, academicYear
             onChangeText={setCustomCode}
             placeholder="e.g. ART01"
           />
+        ) : null}
+
+        {examTemplates.length > 0 ? (
+          <>
+            <Text style={styles.groupLabel}>Give them this class&apos;s existing tests</Text>
+            <Text style={styles.hint}>
+              Tests already made in Class {currentClass?.className}. Ticked ones are created for the subjects being
+              added; a test made for another class is missing here on purpose.
+            </Text>
+            <View style={styles.chipWrap}>
+              {examTemplates.map((t) => (
+                <Chip
+                  key={t.examCode}
+                  label={`${t.examName || t.examCode} · ${t.examCode}`}
+                  selected={applyCodes.includes(t.examCode)}
+                  onPress={() => toggle(applyCodes, setApplyCodes, t.examCode)}
+                />
+              ))}
+            </View>
+          </>
         ) : null}
       </FormSheet>
 
@@ -777,4 +896,13 @@ const useStyles = makeStyles((p) => ({
     marginBottom: 6,
   },
   hint: { fontSize: TYPE.label, color: SLATE[500], lineHeight: leading(TYPE.label), marginTop: 4 },
+  customRow: { flexDirection: 'row', alignItems: 'flex-end', gap: 8 },
+  customField: { flex: 1 },
+  customAdd: {
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    marginBottom: SPACING.sm,
+  },
 }));

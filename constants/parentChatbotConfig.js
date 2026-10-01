@@ -40,4 +40,12 @@ export const PARENT_CHATBOT_CONFIG = {
   nameKey: 'parentUserName',
   greeting: parentGreeting,
   resolveLink: resolveParentLink,
+  subtitle: "Here for your child's journey",
+  loadingText: 'Loading your personalised assistant…',
+  // The website's two free-chat actions (ParentChatbot.js): two tabs of the Counselling Report,
+  // which exists under app/parent/; the teacher's defaults (/homework, /student-analytics) do not.
+  quickActions: [
+    { label: '💬 Counsellor Notes', suffix: '/counselling-report?tab=notes' },
+    { label: '📋 Counsellor Report', suffix: '/counselling-report?tab=report' },
+  ],
 };

@@ -3,6 +3,7 @@ import { StudentGroupsScreen, WellnessGroupsScreen } from '../../../components/s
 import { getCounsellorPortal } from '../../../constants/counsellorPortals';
 import { SHREYA01_TEACHER } from '../../../constants/shreya01TeacherPortal';
 import { isVicePrincipal } from '../../../constants/vicePrincipalPortal';
+import { psychometricPrintApiBase, psychometricPrintRoute } from '../../../constants/psychometricPrint';
 
 /**
  * ONE ROUTE, TWO UNRELATED FEATURES — they share only a sidebar slot.
@@ -42,6 +43,7 @@ export default function StaffGroups() {
   return (
     <WellnessGroupsScreen
       homeRoute={`/staff/${roleKey}`}
+      printRoute={psychometricPrintApiBase(roleKey) ? psychometricPrintRoute(`/staff/${roleKey}`) : undefined}
       indicesEndpoint={portal.surveyIndices}
       scopeKind={portal.scope}
       schoolsEndpoint={portal.schoolsClasses}

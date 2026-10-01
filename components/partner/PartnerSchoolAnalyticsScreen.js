@@ -9,7 +9,6 @@ import useSortableRows from '../../hooks/useSortableRows';
 import { fetchProfile } from '../../services/partner/profileService';
 import { fetchSchoolStudents, totalPaid } from '../../services/partner/analyticsService';
 import { formatRupees, formatShortDate } from '../../utils/currency';
-import { Readable } from '../shared/readaloud/ReadAloudMode';
 
 /**
  * School Analytics — the students at a linked school who subscribed.
@@ -95,10 +94,6 @@ export default function PartnerSchoolAnalyticsScreen({ homeRoute = '/partner' })
     return 'swap-vertical';
   };
 
-  // The two summary figures this screen leads with, spoken in the selected language.
-  const spoken = `School Analytics. ${rowsRaw.length} students. `
-    + `Total paid ${formatRupees(totalPaid(rowsRaw))}.`;
-
   const SORTS = [
     ['studentName', 'Name'],
     ['currentClass', 'Class'],
@@ -116,7 +111,7 @@ export default function PartnerSchoolAnalyticsScreen({ homeRoute = '/partner' })
       onRetry={() => (code ? loadStudents(code, 'load') : loadProfile())}
       refreshing={refreshing}
       onRefresh={() => loadStudents(code, 'refresh')}
-      selectableReadAloud
+      // No Shreya Speak on the page: the partner hears Shreya in the chat, as on the website.
     >
       {codes.length === 0 && !loading ? (
         <EmptyState
@@ -139,20 +134,16 @@ export default function PartnerSchoolAnalyticsScreen({ homeRoute = '/partner' })
             <Text style={styles.oneSchool}>{code}</Text>
           )}
 
-          {/* The two headline figures, tappable on their own — the student table below is a list
-              to read with the eyes, not a passage to hear. */}
-          <Readable text={spoken}>
-            <View style={styles.summary}>
-              <View style={styles.summaryCell}>
-                <Text style={styles.summaryValue}>{rowsRaw.length}</Text>
-                <Text style={styles.summaryLabel}>Students</Text>
-              </View>
-              <View style={styles.summaryCell}>
-                <Text style={styles.summaryValue}>{formatRupees(totalPaid(rowsRaw))}</Text>
-                <Text style={styles.summaryLabel}>Total paid</Text>
-              </View>
+          <View style={styles.summary}>
+            <View style={styles.summaryCell}>
+              <Text style={styles.summaryValue}>{rowsRaw.length}</Text>
+              <Text style={styles.summaryLabel}>Students</Text>
             </View>
-          </Readable>
+            <View style={styles.summaryCell}>
+              <Text style={styles.summaryValue}>{formatRupees(totalPaid(rowsRaw))}</Text>
+              <Text style={styles.summaryLabel}>Total paid</Text>
+            </View>
+          </View>
 
           <View style={styles.searchWrap}>
             <Ionicons name="search" size={18} color={SLATE[400]} />

@@ -27,7 +27,10 @@ const PARENT_BASE = '/parent/platform/dashboard';
  * `ParentHome` renders exactly one thing: the linked child's profile card — avatar, name, class,
  * stream, school. On mobile the tile grid IS the home screen, and its Welcome header already shows
  * that card. A "Home" tile sitting on the home screen, navigating to information visible directly
- * above it, is noise. Nine tiles here + the header equals the web's ten sidebar items.
+ * above it, is noise. Seven tiles here + the header equals the web's eight sidebar items.
+ *
+ * Counselling Report is one tile for what were three (Assessment Results, Counselor Notes,
+ * Counsellor Report) — they are its three tabs, on the web and here.
  *
  * Notifications joined both lists with the parent inbox — every school event aimed at the child's
  * class. It sits after Schedule because it is about the same events.
@@ -35,9 +38,7 @@ const PARENT_BASE = '/parent/platform/dashboard';
 export const PARENT_MENU = [
   { key: 'academic-progress', label: 'Academic Progress', icon: 'stats-chart-outline', native: '/parent/academic-progress' },
   { key: 'learning-activities', label: 'Learning Activities', icon: 'library-outline', native: '/parent/learning-activities' },
-  { key: 'assessment-results', label: 'Assessment Results', icon: 'ribbon-outline', native: '/parent/assessment-results' },
-  { key: 'counselor-notes', label: 'Counselor Notes', icon: 'chatbubbles-outline', native: '/parent/counselor-notes' },
-  { key: 'counsellor-report', label: 'Counsellor Report', icon: 'reader-outline', native: '/parent/counsellor-report' },
+  { key: 'counselling-report', label: 'Counselling Report', icon: 'reader-outline', native: '/parent/counselling-report' },
   { key: 'attendance', label: 'Attendance', icon: 'calendar-outline', native: '/parent/attendance' },
   { key: 'schedule', label: 'Schedule', icon: 'today-outline', native: '/parent/schedule' },
   { key: 'notifications', label: 'Notifications', icon: 'notifications-outline', native: '/parent/notifications' },

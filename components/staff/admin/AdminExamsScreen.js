@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Pressable, Switch, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Pressable, Switch, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { SLATE, SPACING, TYPE } from '../../../constants/theme';
+import { FEEDBACK, SLATE, SPACING, TYPE } from '../../../constants/theme';
 import { usePalette } from '../../ui/PaletteContext';
 import {
   Card,
@@ -18,11 +18,18 @@ import {
   EXAM_TYPES,
   EXAM_TYPE_DEFAULT_CODE,
   MARK_STATUSES,
+  adminRowsToSave,
+  applyExistingExams,
   clampMark,
   createExam,
+  examGaps,
+  fetchExamTemplates,
   fetchExams,
   fetchMarksSheet,
+  markCeiling,
   saveMarks,
+  sheetOutOfLabel,
+  studentSet,
   setExamVisibility,
   updateExam,
 } from '../../../services/admin/examService';
@@ -113,6 +120,57 @@ export default function AdminExamsScreen({ homeRoute, apiBase, classesBase }) {
   );
 
   const exams = data || [];
+
+  // Tests that exist in the year (or the chosen class) but not for every subject — usually a
+  // subject added after the test was made. Shown only when something is missing. Class is optional
+  // here, as on the web: with none chosen it covers the whole year.
+  const templatesFetcher = useCallback(
+    (signal) => fetchExamTemplates(apiBase, yearId, classId, signal),
+    [apiBase, yearId, classId],
+  );
+  const { data: templates, revalidate: revalidateTemplates } = useStaffResource(templatesFetcher, {
+    enabled: !!yearId,
+    initialData: [],
+  });
+  const gaps = examGaps(templates);
+  const [applyingCode, setApplyingCode] = useState(null);
+
+  const applyGap = (template) => {
+    const where = currentClass
+      ? `Class ${currentClass.className}`
+      : years.find((y) => y.id === yearId)?.yearLabel || 'this academic year';
+    Alert.alert(
+      `Create "${template.examName || template.examCode}"?`,
+      `For the ${template.subjectsMissingIt} subject(s) in ${where} that do not have it. Subjects that already have it are left alone.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Create',
+          onPress: async () => {
+            setApplyingCode(template.examCode);
+            try {
+              const res = await applyExistingExams(apiBase, {
+                academicYearId: yearId,
+                classId: currentClass?.id,
+                examCodes: [template.examCode],
+              });
+              showToast(
+                `${template.examName || template.examCode} added to ${res?.created ?? 0} subject(s).` +
+                  (res?.skipped ? ` ${res.skipped} already had it.` : ''),
+                'success',
+              );
+              await revalidateTemplates();
+              if (ready) await revalidate();
+            } catch (e) {
+              showToast(e?.message || 'Could not create the missing tests.', 'error');
+            } finally {
+              setApplyingCode(null);
+            }
+          },
+        },
+      ],
+    );
+  };
 
   const openCreate = () => {
     setEditingId(null);
@@ -205,14 +263,21 @@ export default function AdminExamsScreen({ homeRoute, apiBase, classesBase }) {
   }, [apiBase, marksExamId, showToast]);
 
   const submitMarks = async () => {
+    // Only rows with something to say — see adminRowsToSave. A blank PRESENT row is refused by the
+    // server, and used to stop the whole save at the first student nobody had marked yet.
+    const { entries, problem } = adminRowsToSave(sheet?.students, edits);
+    if (entries.length === 0) {
+      showToast('Nothing to save yet — enter a mark, or mark someone absent.', 'error');
+      return;
+    }
+    if (problem) {
+      showToast(problem, 'error');
+      return;
+    }
     setSavingMarks(true);
     try {
-      await saveMarks(
-        apiBase,
-        marksExamId,
-        (sheet?.students || []).map((s) => ({ studentId: s.studentId, ...edits[s.studentId] })),
-      );
-      showToast('Marks saved.', 'success');
+      await saveMarks(apiBase, marksExamId, entries);
+      showToast(`Marks saved for ${entries.length} student${entries.length === 1 ? '' : 's'}.`, 'success');
       setMarksExam(null);
       setSheet(null);
     } catch (e) {
@@ -222,7 +287,7 @@ export default function AdminExamsScreen({ homeRoute, apiBase, classesBase }) {
     }
   };
 
-  const maxMarks = sheet?.maxMarks ?? marksExam?.maxMarks ?? null;
+  const hasSets = (sheet?.sets || []).length > 1;
 
   return (
     <ScreenScaffold
@@ -274,6 +339,44 @@ export default function AdminExamsScreen({ homeRoute, apiBase, classesBase }) {
           disabled={!sectionId}
         />
       </View>
+
+      {gaps.length > 0 ? (
+        <Card style={[styles.item, styles.gapCard]}>
+          <Text style={styles.gapTitle}>
+            Tests missing from some subjects{currentClass ? ` in Class ${currentClass.className}` : ''}
+          </Text>
+          <Text style={styles.hint}>
+            These tests exist here, but not for every subject — usually because the subject was added after the
+            test was created. Applying one creates it for the subjects that do not have it.
+          </Text>
+          {gaps.map((t) => (
+            <View key={t.examCode} style={styles.gapRow}>
+              <View style={styles.headText}>
+                <Text style={styles.gapName} numberOfLines={1}>
+                  {t.examName || t.examCode} · {t.examCode}
+                </Text>
+                <Text style={styles.examMeta}>
+                  in {t.subjectsWithIt} · {t.subjectsMissingIt} missing
+                </Text>
+              </View>
+              <Pressable
+                onPress={() => applyGap(t)}
+                disabled={applyingCode !== null}
+                style={({ pressed }) => [
+                  styles.gapBtn,
+                  { borderColor: PALETTE.primary },
+                  (pressed || applyingCode !== null) && styles.pressed,
+                ]}
+                accessibilityRole="button"
+              >
+                <Text style={[styles.gapBtnText, { color: PALETTE.primary }]}>
+                  {applyingCode === t.examCode ? 'Applying…' : `Apply to ${t.subjectsMissingIt}`}
+                </Text>
+              </Pressable>
+            </View>
+          ))}
+        </Card>
+      ) : null}
 
       {!ready ? (
         <EmptyState
@@ -390,7 +493,9 @@ export default function AdminExamsScreen({ homeRoute, apiBase, classesBase }) {
       <FormSheet
         visible={!!marksExam}
         title={marksExam ? `Marks · ${marksExam.examCode}` : 'Marks'}
-        subtitle={maxMarks != null ? `Out of ${maxMarks}` : undefined}
+        subtitle={
+          sheet ? sheetOutOfLabel(sheet) : marksExam?.maxMarks != null ? `Out of ${marksExam.maxMarks}` : undefined
+        }
         onClose={() => {
           setMarksExam(null);
           setSheet(null);
@@ -409,12 +514,27 @@ export default function AdminExamsScreen({ homeRoute, apiBase, classesBase }) {
           (sheet?.students || []).map((student) => {
             const entry = edits[student.studentId] || {};
             const absent = entry.status === 'ABSENT';
+            const set = studentSet(student);
+            const ceiling = markCeiling(sheet, set);
             return (
               <View key={student.studentId} style={styles.student}>
                 <Text style={styles.studentName} numberOfLines={1}>
                   {student.studentName}
                   {student.rollNumber ? ` · ${student.rollNumber}` : ''}
                 </Text>
+                {student.admissionNumber || hasSets || student.practicalMarksObtained != null ? (
+                  <Text style={styles.examMeta}>
+                    {[
+                      student.admissionNumber ? `Adm. ${student.admissionNumber}` : null,
+                      hasSets ? `Set ${set} · out of ${ceiling}` : null,
+                      student.practicalMarksObtained != null
+                        ? `Practical ${student.practicalMarksObtained}/${sheet?.practicalMaxMarks ?? '—'}`
+                        : null,
+                    ]
+                      .filter(Boolean)
+                      .join(' · ')}
+                  </Text>
+                ) : null}
                 <View style={styles.studentRow}>
                   <Select
                     variant="chip"
@@ -438,8 +558,8 @@ export default function AdminExamsScreen({ homeRoute, apiBase, classesBase }) {
                             ...prev,
                             [student.studentId]: {
                               ...prev[student.studentId],
-                              // The only max-marks guard that exists on mobile — see clampMark.
-                              marksObtained: clampMark(text, maxMarks),
+                              // Clamped to this student's SET total — what the server checks.
+                              marksObtained: clampMark(text, ceiling),
                             },
                           }))
                         }
@@ -488,4 +608,10 @@ const useStyles = makeStyles(() => ({
   markField: { flex: 1 },
   spinner: { marginTop: SPACING.lg },
   hint: { fontSize: TYPE.label, color: SLATE[500], marginTop: SPACING.sm },
+  gapCard: { backgroundColor: FEEDBACK.warningBg },
+  gapTitle: { fontSize: TYPE.heading, fontWeight: '700', color: FEEDBACK.warningText },
+  gapRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: SPACING.sm },
+  gapName: { fontSize: TYPE.body, fontWeight: '700', color: SLATE[800] },
+  gapBtn: { borderWidth: 1, borderRadius: 8, paddingVertical: 7, paddingHorizontal: 10 },
+  gapBtnText: { fontSize: TYPE.label, fontWeight: '700' },
 }));

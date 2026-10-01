@@ -291,6 +291,11 @@ function assertions({ staffRoles, admin, theme }, sources) {
   if (!/academicYearWrites/.test(sources['classes.js'])) {
     bad('classes.js does not pass the academic-year WRITE base (creates would hit the read path)');
   }
+  // The existing-tests offer in Add subjects reads /reports — without the base it silently offers
+  // nothing, and a subject added after a bulk test create is left with no tests.
+  if (!/reportsBase=\{portal\.reports\}/.test(sources['classes.js'])) {
+    bad('classes.js does not pass reportsBase — Add subjects cannot offer the class\'s existing tests');
+  }
 
   // ── 7. palettes ────────────────────────────────────────────────────────────
   //
@@ -470,6 +475,10 @@ const MUTATIONS = [
       n === 'classes.js' ? s.replace(/academicYearWrites=\{[^}]*\}/g, '') : s,
   },
   {
+    name: 'classes.js losing the reports base',
+    sources: (n, s) => (n === 'classes.js' ? s.replace(/reportsBase=\{[^}]*\}/g, '') : s),
+  },
+  {
     name: 'the live-meeting route unregistered in _layout.js',
     sources: (n, s) =>
       n === '_layout.js' ? s.replace('<Stack.Screen name="live-meeting" />', '') : s,
@@ -634,6 +643,74 @@ async function serviceAssertions(staged) {
   eq(last().endpoint, '/api/school-admin/reports/exams/5/results/2', 'saveMarks writes to /results/{studentId}');
   eq(last().body.marksObtained, null, 'an ABSENT student sends null marks, not the typed value');
 
+  // What a mark is out of: the SET the student sat (the server's setCeiling), not the nominal max.
+  const twoSets = { maxMarks: 100, sets: [{ questionSet: 1, totalMarks: 80 }, { questionSet: 2, totalMarks: 78 }] };
+  eq(exams.markCeiling(twoSets, 2), 78, 'markCeiling must use the set the student sat');
+  eq(exams.markCeiling(twoSets, 3), 80, 'an unknown set falls back to the first set');
+  eq(exams.markCeiling({ maxMarks: 100, sets: [] }, 1), 100, 'no questions: the exam maxMarks');
+  eq(
+    exams.sheetOutOfLabel({ ...twoSets, practicalMaxMarks: 20 }),
+    '2 sets: Set 1 /80, Set 2 /78 · Practical /20',
+    'the marks sheet says what each set is out of, and the practical',
+  );
+
+  // Which rows a save sends: something typed, an absence, or a result already on file.
+  const roster = [
+    { studentId: 1, studentName: 'Asha', status: null },
+    { studentId: 2, studentName: 'Ravi', status: 'PRESENT' },
+    { studentId: 3, studentName: 'Mia', status: null },
+    { studentId: 4, studentName: 'Zoe', status: null },
+  ];
+  const partial = exams.adminRowsToSave(roster, {
+    1: { status: 'PRESENT', marksObtained: '40' },
+    2: { status: 'PRESENT', marksObtained: '12' },
+    3: { status: 'PRESENT', marksObtained: '' },
+    4: { status: 'ABSENT', marksObtained: '' },
+  });
+  eq(partial.entries.map((e) => e.studentId), [1, 2, 4], 'an untouched row must not be sent');
+  eq(partial.problem, null, 'a partly-marked sheet is not a problem');
+  const cleared = exams.adminRowsToSave(roster, {
+    1: { status: 'PRESENT', marksObtained: '40' },
+    2: { status: 'PRESENT', marksObtained: '' },
+  });
+  if (!/Ravi/.test(cleared.problem || '')) {
+    bad('a result on file whose mark was cleared must be named before the server refuses it — got ' + cleared.problem);
+  }
+
+  // Tests missing from some subjects.
+  eq(
+    exams.examGaps([{ examCode: 'A', subjectsMissingIt: 0 }, { examCode: 'B', subjectsMissingIt: 2 }]).map((t) => t.examCode),
+    ['B'],
+    'examGaps lists only tests something lacks',
+  );
+  calls.length = 0;
+  await exams.fetchExamTemplates('/api/school-admin/reports', 7, 3);
+  eq(last().endpoint, '/api/school-admin/reports/exams/templates', 'templates endpoint');
+  eq(last().options?.params, { academicYearId: 7, classId: 3 }, 'templates are scoped to the class');
+  calls.length = 0;
+  await exams.applyExistingExams('/api/school-admin/reports', { academicYearId: 7, classId: 3, examCodes: ['MT1'] });
+  eq(last().endpoint, '/api/school-admin/reports/exams/apply-existing', 'apply-existing endpoint');
+  eq(
+    Object.keys(last().body).sort(),
+    ['academicYearId', 'classId', 'examCodes'],
+    'the gap repair sends NO subjectIds — that is what makes it repair every subject lacking the test',
+  );
+  await exams.applyExistingExams('/api/school-admin/reports', {
+    academicYearId: 7,
+    classId: 3,
+    examCodes: ['MT1'],
+    subjectIds: [11, 12],
+  });
+  eq(last().body.subjectIds, [11, 12], 'subjects just added are named, so nothing else is touched');
+
+  // A hand-typed section name.
+  const xi = { className: 'XI', sections: [{ sectionName: 'A' }, { sectionName: 'F COMM' }] };
+  eq(cls.addCustomSectionName('  g   sci ', xi, []), { picked: ['g sci'], error: null }, 'spaces collapse');
+  if (!cls.addCustomSectionName('f comm', xi, []).error) {
+    bad('a section the class already has (any case) must be refused');
+  }
+  eq(cls.addCustomSectionName('G', xi, ['g']), { picked: ['g'], error: null }, 'a name already picked is not added twice');
+
   const events = await staged.load('eventService');
   calls.length = 0;
   await events.createEvent('/api/school-admin/events', {
@@ -740,6 +817,33 @@ const SERVICE_MUTATIONS = [
         : s,
   },
   {
+    name: 'markCeiling ignores which set the student sat',
+    mutate: (f, s) =>
+      f === 'examService.js' ? s.replace('const found = sets.find((s) => s.questionSet === set);', 'const found = null;') : s,
+  },
+  {
+    name: 'every untouched row sent on save',
+    mutate: (f, s) => (f === 'examService.js' ? s.replace('Boolean(student?.status) ||', 'true ||') : s),
+  },
+  {
+    name: 'a cleared mark not named before saving',
+    mutate: (f, s) => (f === 'examService.js' ? s.replace('problem: blank ?', 'problem: false ?') : s),
+  },
+  {
+    name: 'the gap repair sending subjectIds',
+    mutate: (f, s) =>
+      f === 'examService.js'
+        ? s.replace('if (subjectIds && subjectIds.length) body.subjectIds = subjectIds;', 'body.subjectIds = subjectIds || [];')
+        : s,
+  },
+  {
+    name: 'a typed section compared case-sensitively',
+    mutate: (f, s) =>
+      f === 'classService.js'
+        ? s.replace('String(other).toLowerCase() === name.toLowerCase()', 'String(other) === name')
+        : s,
+  },
+  {
     name: 'a subject with no code allowed through',
     mutate: (f, s) =>
       f === 'classService.js'
@@ -765,6 +869,35 @@ console.log('\nService behaviour:');
   const problems = await serviceAssertions(await stageServices());
   if (problems.length === 0) ok('every admin service sends the request the backend expects');
   else problems.forEach(fail);
+}
+
+console.log('\nScreen wiring — Test & Examination and Class Management:');
+{
+  const ADMIN_SCREENS = path.join(APP, 'components', 'staff', 'admin');
+  const screenChecks = (exams, classes) => {
+    const out = [];
+    if (!/adminRowsToSave\(sheet\?\.students, edits\)/.test(exams)) out.push('marks save does not filter rows through adminRowsToSave');
+    if (!/clampMark\(text, ceiling\)/.test(exams)) out.push('a mark is not clamped to the student\'s set total');
+    if (!/examGaps\(templates\)/.test(exams)) out.push('no tests-missing panel');
+    if (!/applyExistingExams\(apiBase, \{[\s\S]{0,120}examCodes: \[template\.examCode\]/.test(exams)) out.push('the gap panel does not apply one test at a time');
+    if (!/addCustomSectionName\(customSection, currentClass, pickedSections\)/.test(classes)) out.push('no way to name a section');
+    if (!/subjectIds: newIds/.test(classes)) out.push('existing tests are not applied to the subjects just added');
+    return out;
+  };
+  const examsSrc = read(path.join(ADMIN_SCREENS, 'AdminExamsScreen.js'));
+  const classesSrc = read(path.join(ADMIN_SCREENS, 'ClassManagementScreen.js'));
+  const found = screenChecks(examsSrc, classesSrc);
+  if (found.length) found.forEach(fail);
+  else ok('partial saves, set ceilings, gap repair, typed sections and existing tests are wired');
+  const planted = [
+    ['clamped to the exam max again', examsSrc.replace('clampMark(text, ceiling)', 'clampMark(text, maxMarks)'), classesSrc],
+    ['gap panel removed', examsSrc.replace('examGaps(templates)', '[]'), classesSrc],
+    ['apply sent to every subject', examsSrc, classesSrc.replace('subjectIds: newIds', 'subjectIds: undefined')],
+  ];
+  for (const [name, e, c] of planted) {
+    if (screenChecks(e, c).length) ok('self-test caught: ' + name);
+    else fail('NOT CAUGHT: ' + name);
+  }
 }
 
 console.log('\nRegression — the finished panels:');

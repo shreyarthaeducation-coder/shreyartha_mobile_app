@@ -12,10 +12,12 @@ import { tint } from './tints';
  *   ╭──────╮   Hi, Priya Sharma 👋
  *   │  📷  │   Sales Executive
  *   ╰──────╯
- *   ┌────────────────┬─────────────────┐
- *   │ 🪪 Employee ID │ 📅 Date of Joining│
- *   │ SHREYA01-EMP-7 │ 12 Jan 2024      │
- *   └────────────────┴─────────────────┘
+ *   ┌──────────────────┬────────────────┐
+ *   │ 🪪 SHREYA01-EMP-7 │ 📅 12 Jan 2024 │
+ *   └──────────────────┴────────────────┘
+ *
+ * Since 1 Oct 2026 a chip shows only its value; the icon names it (the product owner's call, for every
+ * dashboard). The label stays on the chip data for screen readers ("Employee ID: SHREYA01-EMP-7").
  *
  * ── WHY THIS IS NOT `IdentityCard` WITH DIFFERENT ROWS ──────────────────────
  * `IdentityCard` is a photo beside a LIST of labelled facts, each a full-width row with the value
@@ -114,14 +116,14 @@ export default function ProfileHeaderCard({
               key={chip.key}
               // The divider is on the chip rather than between them, so a single chip has none.
               style={[styles.chip, i > 0 && styles.chipDivided]}
+              // The label is not drawn, so this is the only place it is said.
+              accessible
+              accessibilityLabel={`${chip.label}: ${chip.value}`}
             >
               <View style={[styles.chipIcon, { backgroundColor: tint(chip.tint).bg }]}>
                 <Ionicons name={chip.icon} size={17} color={tint(chip.tint).fg} />
               </View>
               <View style={styles.chipText}>
-                <Text style={styles.chipLabel} numberOfLines={1}>
-                  {chip.label}
-                </Text>
                 {/* Shrink rather than truncate: the real employee code is
                     `{SCHOOLCODE}-EMP-{seq}` — 17+ characters — and an ellipsised ID is useless
                     to somebody reading it out to payroll. */}
@@ -213,8 +215,7 @@ const useStyles = makeStyles((p) => ({
     justifyContent: 'center',
   },
   chipText: { flex: 1, minWidth: 0 },
-  chipLabel: { fontSize: TYPE.caption, color: SLATE[500] },
-  chipValue: { fontSize: TYPE.label, fontWeight: '700', color: SLATE[800], marginTop: 1 },
+  chipValue: { fontSize: TYPE.label, fontWeight: '700', color: SLATE[800] },
 
   pressed: { opacity: 0.75 },
 }));

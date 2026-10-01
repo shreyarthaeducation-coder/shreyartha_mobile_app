@@ -45,8 +45,12 @@ export const TEACHER_WORKSPACE_GROUPS = [
     label: 'Classroom',
     icon: 'easel-outline',
     items: [
+      { key: 'studentManagement', label: 'Student Management', icon: 'id-card-outline', native: '/teacher/student-management' },
       { key: 'attendance', label: 'Mark Attendance', icon: 'checkbox-outline', native: '/teacher/attendance' },
       { key: 'resources', label: 'My Teaching Resources', icon: 'folder-open-outline', native: '/teacher/resources' },
+      // Here since 1 Oct 2026, as on the web (Teaching & Academics): Student Support is now the two
+      // counselling tiles only.
+      { key: 'groups', label: 'Create Group', icon: 'people-outline', native: '/teacher/groups' },
       { key: 'homework', label: 'Homework', icon: 'document-text-outline', native: '/teacher/homework' },
       { key: 'liveClasses', label: 'Live Classes', icon: 'videocam-outline', native: '/teacher/live-classes' },
       { key: 'syllabus', label: 'Syllabus Completion', icon: 'list-outline', native: '/teacher/syllabus' },
@@ -58,6 +62,11 @@ export const TEACHER_WORKSPACE_GROUPS = [
     icon: 'clipboard-outline',
     items: [
       { key: 'reports', label: 'Test and Examination', icon: 'clipboard-outline', native: '/teacher/reports' },
+      // The report card's graded areas with no exam behind them — directly under Test and Examination
+      // on the website too, because a teacher fills them in the same sitting as the marks.
+      { key: 'scholastics', label: 'Scholastics', icon: 'ribbon-outline', native: '/teacher/scholastics' },
+      { key: 'coScholastics', label: 'Co-Scholastics', icon: 'medal-outline', native: '/teacher/co-scholastics' },
+      { key: 'additionalSkills', label: 'Additional Skills', icon: 'trophy-outline', native: '/teacher/additional-skills' },
       { key: 'adaptiveAssessment', label: 'My Adaptive Assessment', icon: 'analytics-outline', native: '/teacher/adaptive-assessment' },
     ],
   },
@@ -66,9 +75,11 @@ export const TEACHER_WORKSPACE_GROUPS = [
     label: 'Student Support',
     icon: 'heart-outline',
     items: [
-      { key: 'groups', label: 'Create Group', icon: 'people-outline', native: '/teacher/groups' },
+      // As on the web since 1 Oct 2026: Counselling Needs and Notes on its own, beside the Counselling
+      // Report (Psychometric Result + Counsellor Report tabs). `/teacher/counsellor-report` and
+      // `?tab=notes` redirect.
       { key: 'counselling', label: 'Counselling Needs and Notes', icon: 'chatbubbles-outline', native: '/teacher/counselling' },
-      { key: 'counsellorReport', label: 'Counsellor Report', icon: 'reader-outline', native: '/teacher/counsellor-report' },
+      { key: 'counsellingReport', label: 'Counselling Report', icon: 'reader-outline', native: '/teacher/counselling-report' },
     ],
   },
   {
@@ -118,8 +129,10 @@ export const TEACHER_PROFILE_ITEM = {
  * (route checks, the chatbot's suffix map, the search index) reads this and stays correct as the
  * grouping changes.
  *
- * All three sources are included, so the sixteen original items are still exactly sixteen after the
- * redesign split them across two destinations and a tab.
+ * All three sources are included, so the sixteen original items are still all here after the
+ * redesign split them across two destinations and a tab — fifteen from 29 Sep 2026, when Counselling
+ * Needs and Notes and Counsellor Report became tabs of one Counselling Report item, and sixteen again
+ * from 1 Oct 2026, when Counselling Needs and Notes came back out as a tile of its own.
  */
 export const TEACHER_MENU = [
   ...TEACHER_WORKSPACE_GROUPS.flatMap((group) => group.items),

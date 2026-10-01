@@ -104,7 +104,7 @@ export const TEACHER_SECTIONS = [
   {
     label: 'Counselling & Reports',
     sectionKey: 'counselling',
-    routeSuffix: '/counselling',
+    routeSuffix: '/counselling-report',
     overview:
       "**Counselling & Reports** brings together the counselling needs you have raised and the counsellor's assessments.",
     functionality:

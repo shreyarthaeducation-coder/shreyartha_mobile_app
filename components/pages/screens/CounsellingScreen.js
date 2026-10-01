@@ -3,9 +3,9 @@ import { StyleSheet, View, Text, TouchableOpacity, ScrollView } from 'react-nati
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Stack, useRouter } from 'expo-router';
 import { COLORS, FONTS, SHADOWS, SPACING, TYPE, leading } from '../../../constants/theme';
-import SearchBar from '../../components/SearchBar';
+import SearchBar from '../../landing/SearchBar';
 
-const HERO_COLOR = '#1a1a2e';
+const HERO_COLOR = '#0d7377';
 
 const FOOTER_LINKS = [
   'Learning & Assessment', 'Skills Learning', 'Students Profile', 'Counselling',
@@ -13,7 +13,7 @@ const FOOTER_LINKS = [
   'Coding AI & Robotics', 'Language Learning', 'Global Opportunities', 'Progress Tracking',
 ];
 
-export default function GlobalOpportunitiesScreen() {
+export default function CounsellingScreen() {
   const router = useRouter();
 
   return (
@@ -25,7 +25,7 @@ export default function GlobalOpportunitiesScreen() {
         <TouchableOpacity style={styles.backBtn} onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))}>
           <Text style={styles.backText}>← Back</Text>
         </TouchableOpacity>
-        <Text style={styles.headerTitle} numberOfLines={1}>Global Opportunities</Text>
+        <Text style={styles.headerTitle} numberOfLines={1}>Counselling</Text>
         <View style={{ width: 60 }} />
       </View>
 
@@ -40,13 +40,12 @@ export default function GlobalOpportunitiesScreen() {
         <View style={[styles.hero, { backgroundColor: HERO_COLOR }]}>
           <View style={styles.heroCircle1} />
           <View style={styles.heroCircle2} />
-          <Text style={styles.heroIcon}>🌍</Text>
-          <Text style={styles.heroTitle}>Global Opportunities</Text>
-          <Text style={styles.heroSubtitle}>"Content coming soon."</Text>
+          <Text style={styles.heroIcon}>🤝</Text>
+          <Text style={styles.heroTitle}>Counselling</Text>
+          <Text style={styles.heroSubtitle}>"24/7 AI-Empowered Support System"</Text>
           <Text style={styles.heroDesc}>
-            We are curating an exceptional collection of global opportunities for Shreyartha students.
-            From international exchanges to global competitions, this section will feature everything
-            you need to take your education global. Stay tuned!
+            Our comprehensive counselling ecosystem combines artificial intelligence with human
+            expertise to provide round-the-clock personalized support for every student's unique journey.
           </Text>
           <View style={styles.heroBtns}>
             <TouchableOpacity style={styles.heroBtn} onPress={() => router.push('/auth/student-login')}>
@@ -58,32 +57,62 @@ export default function GlobalOpportunitiesScreen() {
           </View>
         </View>
 
-        {/* Coming Soon */}
+        {/* 360° Support */}
         <View style={styles.sectionContainer}>
-          <View style={styles.comingSoonCard}>
-            <Text style={styles.comingSoonTitle}>🚀 Coming Soon</Text>
-            <Text style={styles.comingSoonText}>
-              Our team is working on bringing you the best global opportunities. This section will
-              feature:{'\n\n'}
-              • International student exchanges{'\n'}
-              • Global scholarship listings{'\n'}
-              • Study abroad programs{'\n'}
-              • International competitions & olympiads{'\n'}
-              • Global internship opportunities
-            </Text>
-            <TouchableOpacity style={styles.comingSoonBtn} onPress={() => router.push('/auth/student-login')}>
-              <Text style={styles.comingSoonBtnText}>Get Started</Text>
-            </TouchableOpacity>
+          <Text style={styles.sectionTitle}>360° Support Ecosystem</Text>
+          <Text style={styles.sectionSubtitle}>Comprehensive support covering every aspect of student well-being</Text>
+          <View style={styles.cardsRow}>
+            {[
+              { icon: '🧭', title: 'Career Guidance', desc: 'Analyzes your "Student Profile" to map the perfect career trajectory with actionable steps and mentorship.' },
+              { icon: '📚', title: 'Academic Counselling', desc: 'Identifies learning gaps and provides personalized study plans to boost academic performance.' },
+              { icon: '💚', title: 'Emotional Support', desc: 'Provides 24/7 "check-ins" and evidence-based emotional wellness strategies for student well-being.' },
+              { icon: '🩺', title: 'Clinical Counselling', desc: 'Uses validated screening tools and connects students with licensed clinical professionals when needed.' },
+              { icon: '♿', title: 'Special Care (Inclusion)', desc: 'Tailored interfaces and support plans for students with diverse learning needs and disabilities.' },
+              { icon: '🚨', title: 'Crisis Intervention', desc: 'Timely intervention protocols with immediate escalation to trained counsellors for crisis situations.' },
+            ].map((card, i) => (
+              <View key={i} style={styles.card}>
+                <Text style={styles.cardIcon}>{card.icon}</Text>
+                <Text style={styles.cardTitle}>{card.title}</Text>
+                <Text style={styles.cardDesc}>{card.desc}</Text>
+              </View>
+            ))}
           </View>
+        </View>
+
+        {/* Support Areas Table */}
+        <View style={styles.sectionContainer}>
+          <Text style={styles.sectionTitle}>Support Areas & Impact</Text>
+        </View>
+        <View style={styles.table}>
+          <View style={styles.tableHeader}>
+            <Text style={styles.tableHeaderText}>Support Area</Text>
+            <Text style={styles.tableHeaderText}>AI-Powered Capabilities</Text>
+            <Text style={styles.tableHeaderText}>Impact & Alignment</Text>
+          </View>
+          {[
+            { area: 'Career Guidance', caps: 'Personality & aptitude matching, career path modeling', impact: 'Reduces career uncertainty, aligns with NEP 2020' },
+            { area: 'Academic Counselling', caps: 'Learning gap analysis, personalized study plans', impact: 'Measurable improvement in academic performance' },
+            { area: 'Emotional Support', caps: 'Sentiment analysis, mood tracking, wellness tips', impact: 'Reduces student stress and anxiety' },
+            { area: 'Clinical Counselling', caps: 'Screening tools, professional referral system', impact: 'Early intervention, mental health support' },
+            { area: 'Special Care', caps: 'Adaptive interfaces, customized learning paths', impact: 'Inclusive education for all learners' },
+            { area: 'Crisis Intervention', caps: 'Real-time monitoring, emergency escalation', impact: 'Ensures student safety and well-being' },
+          ].map((row, i) => (
+            <View key={i} style={[styles.tableRow, i % 2 === 1 && styles.tableRowAlt]}>
+              <Text style={styles.tableCellBold}>{row.area}</Text>
+              <Text style={styles.tableCell}>{row.caps}</Text>
+              <Text style={styles.tableCell}>{row.impact}</Text>
+            </View>
+          ))}
         </View>
 
         {/* CTA */}
         <View style={[styles.ctaSection, { backgroundColor: HERO_COLOR }]}>
           <View style={styles.ctaCircle1} />
           <View style={styles.ctaCircle2} />
-          <Text style={styles.ctaTitle}>Be the First to Know</Text>
+          <Text style={styles.ctaTitle}>Get Support Today</Text>
           <Text style={styles.ctaSubtitle}>
-            Sign up to get notified when Global Opportunities goes live with exclusive early access.
+            Our AI-powered counselling system is available 24/7. Connect with expert counsellors and
+            AI support tools to guide your academic and personal journey.
           </Text>
           <TouchableOpacity style={styles.ctaBtn} onPress={() => router.push('/auth/student-login')}>
             <Text style={styles.ctaBtnText}>Get Started</Text>
@@ -135,11 +164,20 @@ const styles = StyleSheet.create({
   heroBtn2: { borderWidth: 2, borderColor: 'rgba(255,255,255,0.7)', paddingVertical: 12, paddingHorizontal: 24, borderRadius: 28 },
   heroBtn2Text: { fontWeight: '600', fontSize: TYPE.heading, color: '#fff' },
   sectionContainer: { padding: SPACING.md },
-  comingSoonCard: { backgroundColor: COLORS.white, borderRadius: 20, padding: SPACING.lg, ...SHADOWS.md, alignItems: 'center' },
-  comingSoonTitle: { fontSize: TYPE.display, fontWeight: '800', color: COLORS.secondary, marginBottom: 16 },
-  comingSoonText: { fontSize: TYPE.body, color: COLORS.textSecondary, lineHeight: leading(TYPE.body), marginBottom: 20, textAlign: 'left', width: '100%' },
-  comingSoonBtn: { backgroundColor: COLORS.primary, paddingVertical: 12, paddingHorizontal: 36, borderRadius: 24 },
-  comingSoonBtnText: { fontWeight: '700', fontSize: TYPE.heading, color: '#fff' },
+  sectionTitle: { fontSize: TYPE.headline, fontWeight: '800', color: COLORS.secondary, marginBottom: 8, textAlign: 'center' },
+  sectionSubtitle: { fontSize: TYPE.body, color: COLORS.textSecondary, textAlign: 'center', lineHeight: leading(TYPE.body), marginBottom: 16 },
+  cardsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, justifyContent: 'center' },
+  card: { width: '47%', backgroundColor: COLORS.white, borderRadius: 16, padding: SPACING.md, ...SHADOWS.sm },
+  cardIcon: { fontSize: 28, marginBottom: 8 },
+  cardTitle: { fontSize: TYPE.heading, fontWeight: '700', color: COLORS.secondary, marginBottom: 6 },
+  cardDesc: { fontSize: TYPE.body, color: COLORS.textSecondary, lineHeight: leading(TYPE.body) },
+  table: { marginHorizontal: SPACING.md, marginTop: SPACING.md, borderRadius: 16, overflow: 'hidden', borderWidth: 1, borderColor: COLORS.border },
+  tableHeader: { flexDirection: 'row', backgroundColor: COLORS.primary, padding: 12 },
+  tableHeaderText: { flex: 1, fontWeight: '700', color: '#fff', fontSize: TYPE.body },
+  tableRow: { flexDirection: 'row', padding: 12, borderBottomWidth: 1, borderBottomColor: COLORS.border, alignItems: 'center' },
+  tableRowAlt: { backgroundColor: COLORS.surface },
+  tableCell: { flex: 1, fontSize: TYPE.body, color: COLORS.text, lineHeight: leading(TYPE.body) },
+  tableCellBold: { flex: 1, fontSize: TYPE.body, color: COLORS.secondary, fontWeight: '600', lineHeight: leading(TYPE.body) },
   ctaSection: { margin: SPACING.md, borderRadius: 20, padding: SPACING.xl, alignItems: 'center', overflow: 'hidden', position: 'relative' },
   ctaCircle1: { position: 'absolute', width: 180, height: 180, borderRadius: 90, backgroundColor: 'rgba(255,255,255,0.1)', top: -60, right: -40 },
   ctaCircle2: { position: 'absolute', width: 100, height: 100, borderRadius: 50, backgroundColor: 'rgba(255,255,255,0.08)', bottom: -30, left: -20 },

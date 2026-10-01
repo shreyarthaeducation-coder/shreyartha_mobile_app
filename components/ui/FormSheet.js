@@ -1,3 +1,4 @@
+import { useContext } from 'react';
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -12,6 +13,8 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { SHADOWS, SLATE, SPACING, TYPE } from '../../constants/theme';
 import { usePalette } from './PaletteContext';
+import SheetToastContext from './SheetToastContext';
+import Toast from './Toast';
 
 /**
  * Full-height sheet for create/edit forms — the native replacement for the web's `ResizableModal`.
@@ -21,10 +24,13 @@ import { usePalette } from './PaletteContext';
  *     listeners and re-lays-out even with `behavior=undefined`, and the IME-show re-layout can hand
  *     focus to another attached EditText, which closes the keyboard. Android relies on
  *     `android.softwareKeyboardLayoutMode: "pan"` in app.json instead.
- *   - The backdrop is a `Pressable` wrapping a `Pressable` that swallows taps, rather than an
- *     onPress on the container — a touch that starts inside the card must never dismiss it.
+ *   - The backdrop is its own full-screen `Pressable` BEHIND the card, not a Pressable wrapped
+ *     around it — a touch inside the card must never dismiss it. It used to be a Pressable
+ *     wrapping a tap-swallowing Pressable wrapping the ScrollView; on Android's New Architecture
+ *     that pair could keep the drag, and a long question list would not scroll.
  *
- * The body scrolls; the action row is pinned so Save is always reachable on a long form.
+ * The body scrolls; the action row is pinned so Save is always reachable on a long form. The
+ * screen's toast is shown in here too (SheetToastContext) — the screen's own is under the Modal.
  */
 
 export default function FormSheet({
@@ -45,6 +51,7 @@ export default function FormSheet({
   children,
 }) {
   const contextPalette = usePalette();
+  const toast = useContext(SheetToastContext);
   // Explicit prop wins; otherwise the surrounding portal palette (teal by default).
   const palette = paletteProp || contextPalette;
   const Body = Platform.OS === 'ios' ? KeyboardAvoidingView : View;
@@ -52,10 +59,16 @@ export default function FormSheet({
 
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <Pressable style={styles.backdrop} onPress={onClose}>
+      <View style={styles.backdrop}>
+        {/* Behind the card, so a tap or a drag inside the card never reaches it. */}
+        <Pressable
+          style={StyleSheet.absoluteFill}
+          onPress={onClose}
+          accessibilityRole="button"
+          accessibilityLabel="Close"
+        />
         <Body style={[styles.bodyWrap, fullHeight && styles.bodyWrapFull]} {...bodyProps}>
-          {/* Swallows taps so a drag or tap inside the card never reaches the backdrop. */}
-          <Pressable style={[styles.sheet, fullHeight && styles.sheetFull]} onPress={() => {}}>
+          <View style={[styles.sheet, fullHeight && styles.sheetFull]}>
             <View style={styles.header}>
               <View style={styles.headerText}>
                 <Text style={styles.title} numberOfLines={1}>
@@ -106,6 +119,7 @@ export default function FormSheet({
               style={[styles.scroll, fullHeight && styles.scrollFull]}
               contentContainerStyle={styles.scrollContent}
               keyboardShouldPersistTaps="handled"
+              nestedScrollEnabled
               showsVerticalScrollIndicator={false}
             >
               {children}
@@ -140,9 +154,14 @@ export default function FormSheet({
               </Pressable>
             </View>
             ) : null}
-          </Pressable>
+          </View>
         </Body>
-      </Pressable>
+        {toast ? (
+          <View style={styles.toastLayer} pointerEvents="none">
+            <Toast message={toast.message} tone={toast.tone} />
+          </View>
+        ) : null}
+      </View>
     </Modal>
   );
 }
@@ -186,7 +205,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     backgroundColor: SLATE[100],
   },
-  scroll: { flexGrow: 0 },
+  // flexShrink: a sheet that is not full height is capped at 92% of the screen, and a ScrollView that
+  // cannot shrink grows past the cap instead of scrolling, its end cut off.
+  scroll: { flexGrow: 0, flexShrink: 1 },
   scrollFull: { flex: 1, flexGrow: 1 },
   scrollContent: { padding: SPACING.md, paddingBottom: SPACING.sm },
   actions: {
@@ -220,4 +241,6 @@ const styles = StyleSheet.create({
   submitDisabled: { backgroundColor: SLATE[300] },
   submitText: { fontSize: TYPE.heading, fontWeight: '700', color: '#ffffff' },
   pressed: { opacity: 0.75 },
+  // Near the top of the screen, clear of the pinned Save row the keyboard pushes up.
+  toastLayer: { position: 'absolute', left: 0, right: 0, top: 48, height: 96 },
 });

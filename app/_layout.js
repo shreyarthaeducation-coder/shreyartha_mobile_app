@@ -98,8 +98,11 @@ export default function RootLayout() {
             {/* Native teacher panel (route group) */}
             <Stack.Screen name="teacher" options={{ headerShown: false }} />
 
-            {/* Native staff shells for the other school roles (config-driven route group) */}
-            <Stack.Screen name="staff" options={{ headerShown: false }} />
+            {/* Native staff shells for the other school roles (config-driven route group). The only
+                route under app/staff/ is the dynamic [role] folder — there is no app/staff/_layout.js
+                — so this child is named "staff/[role]". Plain "staff" names nothing and Expo Router
+                warns "No route named staff exists". */}
+            <Stack.Screen name="staff/[role]" options={{ headerShown: false }} />
 
             {/* Legacy dashboard redirect screens */}
             <Stack.Screen

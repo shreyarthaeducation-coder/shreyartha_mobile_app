@@ -6,7 +6,6 @@ import {
   Pressable,
   ScrollView,
   Text,
-  UIManager,
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -47,10 +46,8 @@ import { makeStyles } from '../../utils/makeStyles';
  * same items flattened (the teacher constant derives it, so the two cannot drift).
  */
 
-// LayoutAnimation is opt-in on old-architecture Android and a no-op elsewhere.
-if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
-  UIManager.setLayoutAnimationEnabledExperimental(true);
-}
+// No setLayoutAnimationEnabledExperimental: this app runs the New Architecture, where LayoutAnimation
+// works without it and the call only logs "is currently a no-op in the New Architecture" on start.
 
 export default function StaffMenuScreen({ config }) {
   const styles = useStyles();

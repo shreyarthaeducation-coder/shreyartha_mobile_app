@@ -2,7 +2,7 @@
   "expo": {
     "name": "Shreyartha",
     "slug": "shreyartha-mobile-app",
-    "version": "2.1.0",
+    "version": "2.1.1",
     "scheme": "shreyartha",
     "orientation": "portrait",
     "icon": "./assets/images/The3CEdge.png",
@@ -18,14 +18,14 @@
         "NSCameraUsageDescription": "Shreyartha uses your camera to let you upload a profile photo.",
         "NSPhotoLibraryUsageDescription": "Shreyartha accesses your photo library so you can choose a profile photo.",
         "NSPhotoLibraryAddUsageDescription": "Shreyartha saves images to your photo library.",
-        "NSMicrophoneUsageDescription": "Shreyartha uses your microphone for audio features in learning modules.",
+        "NSMicrophoneUsageDescription": "Shreyartha uses your microphone for audio features in learning modules and to let you ask Shreya your questions by voice.",
         "NSUserTrackingUsageDescription": "This identifier is used to measure app performance and improve your learning experience.",
         "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
       "package": "com.the3cedgeai.app",
-      "versionCode": 16,
+      "versionCode": 17,
       "softwareKeyboardLayoutMode": "pan",
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/The3CEdge.png",

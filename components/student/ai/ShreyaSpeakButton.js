@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Image, Pressable, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { FEEDBACK, SPACING, TOUCH, TYPE, leading } from '../../../constants/theme';
@@ -7,6 +7,7 @@ import { makeStyles } from '../../../utils/makeStyles';
 import useShreyaVoice from '../../../hooks/useShreyaVoice';
 import { useLanguage } from '../../../context/LanguageContext';
 import htmlToText from '../../../utils/htmlToText';
+import { languageCodeOf } from '../../../utils/languageCode';
 
 /**
  * "Shreya Speak" — read this content aloud.
@@ -44,11 +45,21 @@ export default function ShreyaSpeakButton({
   style,
   // Non-student panels pass services/shared/ttsClient; students leave it undefined.
   client,
+  // The rest is for the Shreya chat-sheet header (components/staff/ShreyaChatSheet.js): a pill that
+  // reads on the dark header, a disabled state while Shreya is typing or the user is dictating, and
+  // `onMessage`, which hands errors and notices to the sheet instead of growing the header a line.
+  variant = 'default',
+  disabled = false,
+  onMessage,
+  accessibilityLabel = 'Read aloud',
 }) {
   const styles = useStyles();
   const palette = usePalette();
+  const onDark = variant === 'onDark';
   const { language, translateBatch } = useLanguage();
-  const voice = useShreyaVoice({ language, client });
+  // `language` is the context's OBJECT; /tts and /translate/batch take its code (utils/languageCode).
+  const code = languageCodeOf(language);
+  const voice = useShreyaVoice({ language: code, client });
 
   const [loading, setLoading] = useState(false);
   const [notice, setNotice] = useState('');
@@ -74,9 +85,9 @@ export default function ShreyaSpeakButton({
       // strings unchanged for English and on any failure, so a translation outage degrades to
       // English audio rather than to silence.
       let spoken = plain;
-      if (language && language !== 'en') {
+      if (code !== 'en') {
         try {
-          const [translated] = await translateBatch([plain], language);
+          const [translated] = await translateBatch([plain], code);
           if (translated && translated.trim()) spoken = translated;
         } catch {
           // Fall through and speak the English — better than nothing coming out.
@@ -88,14 +99,26 @@ export default function ShreyaSpeakButton({
       setLoading(false);
     }
     return undefined;
-  }, [text, speaking, paused, speak, pause, resume, language, translateBatch]);
+  }, [text, speaking, paused, speak, pause, resume, code, translateBatch]);
 
   const showStop = speaking || paused;
+  // On the chat header the palette's `deep` is dark-on-dark — and Principal / Shreyartha Teacher
+  // palettes do not define it at all, which renders React Native's default black.
+  const iconColor = onDark ? '#ffffff' : palette.deep;
+
+  // A failure that says nothing is what hid a 400 for a whole phase — see useShreyaVoice. With
+  // `onMessage` the caller shows it; without, it renders under the button as it always has.
+  const message = error || notice;
+  useEffect(() => {
+    if (onMessage) onMessage(message || '');
+  }, [message, onMessage]);
 
   const icon = () => {
-    if (loading) return <ActivityIndicator size="small" color={palette.deep} />;
-    if (speaking && !paused) return <Ionicons name="pause" size={19} color={palette.deep} />;
-    if (paused) return <Ionicons name="play" size={19} color={palette.deep} />;
+    if (loading) return <ActivityIndicator size="small" color={iconColor} />;
+    if (speaking && !paused) return <Ionicons name="pause" size={19} color={iconColor} />;
+    if (paused) return <Ionicons name="play" size={19} color={iconColor} />;
+    // The chat header already shows Shreya's face beside the title; a speaker says what this does.
+    if (onDark) return <Ionicons name="volume-high" size={18} color={iconColor} />;
     return (
       <Image
         source={require('../../../assets/images/Chatbot.png')}
@@ -110,33 +133,35 @@ export default function ShreyaSpeakButton({
       <View style={styles.row}>
         <Pressable
           onPress={onPress}
+          disabled={disabled}
           style={({ pressed }) => [
             styles.btn,
             compact && styles.btnCompact,
+            onDark && styles.btnOnDark,
+            disabled && styles.btnDisabled,
             pressed && styles.pressed,
           ]}
           accessibilityRole="button"
-          accessibilityLabel="Read aloud"
-          accessibilityState={{ selected: speaking && !paused }}
+          accessibilityLabel={accessibilityLabel}
+          accessibilityState={{ selected: speaking && !paused, disabled }}
         >
           {icon()}
-          {compact ? null : <Text style={styles.label}>{label}</Text>}
+          {compact ? null : <Text style={[styles.label, onDark && styles.labelOnDark]}>{label}</Text>}
         </Pressable>
 
         {showStop ? (
           <Pressable
             onPress={stop}
-            style={({ pressed }) => [styles.stop, pressed && styles.pressed]}
+            style={({ pressed }) => [styles.stop, onDark && styles.stopOnDark, pressed && styles.pressed]}
             accessibilityRole="button"
             accessibilityLabel="Stop reading aloud"
           >
-            <Ionicons name="stop" size={16} color={palette.deep} />
+            <Ionicons name="stop" size={16} color={onDark ? FEEDBACK.errorText : palette.deep} />
           </Pressable>
         ) : null}
       </View>
 
-      {/* A failure that says nothing is what hid a 400 for a whole phase — see useShreyaVoice. */}
-      {error || notice ? <Text style={styles.notice}>{error || notice}</Text> : null}
+      {!onMessage && message ? <Text style={styles.notice}>{message}</Text> : null}
     </View>
   );
 }
@@ -156,8 +181,12 @@ const useStyles = makeStyles((p) => ({
     minHeight: TOUCH.min,
   },
   btnCompact: { paddingHorizontal: 10 },
+  // Translucent white: reads on every portal's headerBg without knowing which one it is.
+  btnOnDark: { backgroundColor: 'rgba(255,255,255,0.18)', borderColor: 'rgba(255,255,255,0.45)' },
+  btnDisabled: { opacity: 0.5 },
   avatar: { width: 20, height: 20 },
   label: { fontSize: TYPE.label, fontWeight: '700', color: p.deep },
+  labelOnDark: { color: '#ffffff' },
   stop: {
     width: 34,
     height: 34,
@@ -168,6 +197,7 @@ const useStyles = makeStyles((p) => ({
     borderWidth: 1,
     borderColor: p.primary,
   },
+  stopOnDark: { backgroundColor: 'rgba(255,255,255,0.92)', borderColor: 'rgba(255,255,255,0.7)' },
   notice: { fontSize: TYPE.caption, color: FEEDBACK.errorText, lineHeight: leading(TYPE.caption), marginTop: 5 },
   pressed: { opacity: 0.75 },
 }));

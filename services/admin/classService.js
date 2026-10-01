@@ -158,6 +158,27 @@ export function availableSections(schoolClass) {
 }
 
 /**
+ * Adds a hand-typed section name to the picked list, once.
+ *
+ * A–F is not every school: one of ours has a Class XI commerce section genuinely called "F COMM".
+ * Compared case-insensitively against the class's existing sections AND those already picked,
+ * because the server treats "f comm" and "F COMM" as the same section. Spaces are collapsed.
+ *
+ * @returns {{ picked: string[], error: string|null }} `picked` unchanged when refused or repeated
+ */
+export function addCustomSectionName(typed, schoolClass, picked) {
+  const name = String(typed || '').trim().replace(/\s+/g, ' ');
+  const list = picked || [];
+  if (!name) return { picked: list, error: null };
+  const same = (other) => String(other).toLowerCase() === name.toLowerCase();
+  if ((schoolClass?.sections || []).some((sec) => same(sec.sectionName))) {
+    return { picked: list, error: `Class ${schoolClass.className} already has a section ${name}.` };
+  }
+  if (list.some(same)) return { picked: list, error: null };
+  return { picked: [...list, name], error: null };
+}
+
+/**
  * Catalogue subjects for one class that the chosen section doesn't already have.
  *
  * MATCHED BY NAME AT BOTH ENDS — the catalogue class is found by `ac.name === cls.className`, and

@@ -7,12 +7,19 @@ import { makeStyles } from '../../../utils/makeStyles';
 import { initialsOf } from '../../staff/helpers';
 
 /**
- * Who this portal is about, at the top of its dashboard: a photo, then a list of labelled facts.
+ * Who this portal is about, at the top of its dashboard: a photo, then a list of facts.
  *
- *   ╭────╮   👤  Student's Name       Aarav Sharma
- *   │ 📷 │   🎓  Grade                Grade 10
- *   ╰────╯   📖  Stream               Science (PCM)
- *            🎯  Career Preferences   Data Scientist, AI Engineer
+ *   ╭────╮   👤  Aarav Sharma
+ *   │ 📷 │   🎓  Grade 10
+ *   ╰────╯   📖  Science (PCM)
+ *            🎯  Data Scientist, AI Engineer
+ *
+ * ── VALUES ONLY, SINCE 1 OCT 2026 ────────────────────────────────────────────
+ * Each row shows its icon and its value; the label is not drawn — the icon says what the fact is
+ * (the product owner's call, for every dashboard). The label is NOT gone: it is still on the row data,
+ * screen readers announce it ("Grade: Grade 10"), and an empty row shows it ("Stream: Not set"), so a
+ * missing fact still says which fact is missing. Two rows whose icons only the label told apart were
+ * given distinct icons at the call sites.
  *
  * ── THE ROWS ARE A PROP, AND THAT IS THE WHOLE GENERALISATION ───────────────
  * The student passes four facts about themselves; the parent passes six — their own name and email,
@@ -149,15 +156,10 @@ export default function IdentityCard({
                 <View style={[styles.iconTile, styles[row.tint || 'blue']]}>
                   <Ionicons name={row.icon} size={17} color={palette.primary} />
                 </View>
-                <Text style={[styles.rowLabel, light && styles.rowLabelLight]} numberOfLines={2}>
-                  {row.label}
-                </Text>
-                {/* ONE LINE, ELLIPSIS IN THE MIDDLE, TAP TO EXPAND.
-                    This was numberOfLines={2} — literally an instruction to wrap, and an email is
-                    the value that takes it: the column gets roughly 150dp after a 45%-capped label
-                    and the icon tile, while a 24-character address at label size needs about 180.
-                    Middle rather than tail, so the domain survives the truncation — "which
-                    account is this?" is usually answered by what comes after the @. */}
+                {/* No visible label (see the header comment): the icon names the fact.
+                    ONE LINE, ELLIPSIS IN THE MIDDLE, TAP TO EXPAND. Middle rather than tail, so an
+                    email's domain survives the truncation — "which account is this?" is usually
+                    answered by what comes after the @. */}
                 <Text
                   style={[
                     styles.rowValue,
@@ -169,7 +171,7 @@ export default function IdentityCard({
                   onPress={() => setExpandedRow((k) => (k === row.key ? null : row.key))}
                   suppressHighlighting
                 >
-                  {value || t.notSet || 'Not set'}
+                  {value || `${row.label}: ${t.notSet || 'Not set'}`}
                 </Text>
               </>
             );
@@ -289,13 +291,8 @@ const useStyles = makeStyles((p) => ({
 
   rowDividedLight: { borderTopWidth: 1, borderTopColor: SLATE[200] },
 
-  // minWidth + maxWidth, not a fixed 78pt box, and two lines rather than one. This label is
-  // machine-translated into 22 languages, and at the raised `caption` size "Student Name" alone
-  // reached the 78pt edge in English — a Tamil or Malayalam label simply lost its end. The value
-  // beside it is `flex: 1`, so the cap at 45% is what stops a long label crowding it out.
-  rowLabel: { fontSize: TYPE.caption, color: p.onDark, minWidth: 78, maxWidth: '45%' },
-  rowLabelLight: { color: SLATE[500] },
-  rowValue: { flex: 1, fontSize: TYPE.label, fontWeight: '700', color: '#ffffff', textAlign: 'right' },
+  // Left-aligned beside its icon now that no label sits between them.
+  rowValue: { flex: 1, fontSize: TYPE.label, fontWeight: '700', color: '#ffffff', textAlign: 'left' },
   rowValueLight: { color: SLATE[800] },
   // Last in the cascade at both tones, so "Not set" always reads as absent rather than as a value.
   rowValueEmpty: { fontWeight: '500', color: SLATE[500] },

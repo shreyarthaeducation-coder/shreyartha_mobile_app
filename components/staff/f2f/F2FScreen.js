@@ -40,15 +40,17 @@ export default function F2FScreen() {
 
   return (
     <ScreenScaffold title="Face-to-Face Counselling" fallbackRoute={`/staff/${roleKey}`}>
+      {/* SegmentedTabs reads `options` ({ value, label }) and `value`. This passed `tabs`/`activeKey`,
+          which it ignores — the bar drew nothing, and Previous, Walk-in and Sheet were unreachable. */}
       <SegmentedTabs
         scrollable
-        tabs={[
-          { key: 'live', label: 'Live session' },
-          { key: 'sessions', label: 'Previous' },
-          { key: 'walkin', label: 'Walk-in' },
-          { key: 'sheet', label: 'Sheet' },
+        options={[
+          { value: 'live', label: 'Live session' },
+          { value: 'sessions', label: 'Previous' },
+          { value: 'walkin', label: 'Walk-in' },
+          { value: 'sheet', label: 'Sheet' },
         ]}
-        activeKey={tab}
+        value={tab}
         onChange={(next) => {
           // Re-entering Walk-in starts a fresh one rather than resuming the last.
           if (next === 'walkin' && tab !== 'walkin') setWalkInKey((k) => k + 1);

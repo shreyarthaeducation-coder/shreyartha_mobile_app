@@ -25,6 +25,11 @@ const SHREYA_CONFIGS = {
     buildExplanation: buildPrincipalSectionExplanation,
     service: principalShreya,
     nameKey: 'schoolUserName',
+    subtitle: 'Your school leadership companion',
+    loadingText: 'Loading your leadership companion…',
+    // No Shreya Speak (and no mic): /api/v1/translate/tts refuses SCHOOL_ADMIN — a Principal's
+    // role — so the button would 403 on every tap, and the web principal panel has no voice either.
+    voice: false,
   },
 };
 

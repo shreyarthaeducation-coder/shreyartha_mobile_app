@@ -3,9 +3,9 @@ import { StyleSheet, View, Text, TouchableOpacity, ScrollView } from 'react-nati
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Stack, useRouter } from 'expo-router';
 import { COLORS, FONTS, SHADOWS, SPACING, TYPE, leading } from '../../../constants/theme';
-import SearchBar from '../../components/SearchBar';
+import SearchBar from '../../landing/SearchBar';
 
-const HERO_COLOR = '#059669';
+const HERO_COLOR = '#b0003a';
 
 const FOOTER_LINKS = [
   'Learning & Assessment', 'Skills Learning', 'Students Profile', 'Counselling',
@@ -13,7 +13,7 @@ const FOOTER_LINKS = [
   'Coding AI & Robotics', 'Language Learning', 'Global Opportunities', 'Progress Tracking',
 ];
 
-export default function LanguageLearningScreen() {
+export default function LearningAssessmentScreen() {
   const router = useRouter();
 
   return (
@@ -25,10 +25,11 @@ export default function LanguageLearningScreen() {
         <TouchableOpacity style={styles.backBtn} onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))}>
           <Text style={styles.backText}>← Back</Text>
         </TouchableOpacity>
-        <Text style={styles.headerTitle} numberOfLines={1}>Language Learning</Text>
+        <Text style={styles.headerTitle} numberOfLines={1}>Learning & Assessment</Text>
         <View style={{ width: 60 }} />
       </View>
 
+      {/* Search Bar */}
       <SearchBar />
 
       <ScrollView
@@ -40,13 +41,13 @@ export default function LanguageLearningScreen() {
         <View style={[styles.hero, { backgroundColor: HERO_COLOR }]}>
           <View style={styles.heroCircle1} />
           <View style={styles.heroCircle2} />
-          <Text style={styles.heroIcon}>🌐</Text>
-          <Text style={styles.heroTitle}>Language Learning</Text>
-          <Text style={styles.heroSubtitle}>"Global Communication Skills"</Text>
+          <Text style={styles.heroIcon}>📚</Text>
+          <Text style={styles.heroTitle}>Learning & Assessment</Text>
+          <Text style={styles.heroSubtitle}>"Bridging Potential & Excellence"</Text>
           <Text style={styles.heroDesc}>
-            Master languages that open doors to global opportunities. Our comprehensive language
-            learning programs combine immersive techniques with technology to accelerate fluency and
-            cultural understanding.
+            At Shreyartha, we believe every student deserves a learning experience as unique as their
+            potential. Our integrated assessment framework bridges the gap between academic knowledge
+            and real-world excellence.
           </Text>
           <View style={styles.heroBtns}>
             <TouchableOpacity style={styles.heroBtn} onPress={() => router.push('/auth/student-login')}>
@@ -58,18 +59,15 @@ export default function LanguageLearningScreen() {
           </View>
         </View>
 
-        {/* Languages Offered */}
+        {/* Core Philosophy */}
         <View style={styles.sectionContainer}>
-          <Text style={styles.sectionTitle}>Languages Offered</Text>
-          <Text style={styles.sectionSubtitle}>Expert instruction in world's most valuable languages</Text>
+          <Text style={styles.sectionTitle}>Our Core Philosophy</Text>
+          <Text style={styles.sectionSubtitle}>Three pillars that guide our approach to education</Text>
           <View style={styles.cardsRow}>
             {[
-              { icon: '🇫🇷', title: 'French', desc: 'From DELF A1 to C2 certification. Cultural immersion, conversation, and academic French.' },
-              { icon: '🇩🇪', title: 'German', desc: 'GOETHE certification pathway with focus on academic and professional German.' },
-              { icon: '🇪🇸', title: 'Spanish', desc: 'DELE certification prep. Latin American and European Spanish with cultural context.' },
-              { icon: '🇨🇳', title: 'Mandarin Chinese', desc: 'HSK certification pathway. Simplified Chinese for academic and business contexts.' },
-              { icon: '🇯🇵', title: 'Japanese', desc: 'JLPT certification. Hiragana, Katakana, and basic Kanji with cultural studies.' },
-              { icon: '🇬🇧', title: 'English (IELTS/TOEFL)', desc: 'Intensive IELTS and TOEFL preparation for international university admissions.' },
+              { icon: '🌍', title: 'Global Benchmarking', desc: 'Aligning assessments with international standards to prepare students for global success.' },
+              { icon: '📊', title: 'Actionable Insights', desc: 'Transforming assessment data into personalized learning roadmaps for every student.' },
+              { icon: '🤝', title: 'Empowered Mentorship', desc: 'Connecting assessment outcomes with expert mentorship for continuous growth.' },
             ].map((card, i) => (
               <View key={i} style={styles.card}>
                 <Text style={styles.cardIcon}>{card.icon}</Text>
@@ -80,33 +78,50 @@ export default function LanguageLearningScreen() {
           </View>
         </View>
 
-        {/* Learning Methodology */}
+        {/* Resources Table */}
         <View style={styles.sectionContainer}>
-          <Text style={styles.sectionTitle}>Our Learning Methodology</Text>
-          <View style={styles.cardsRow}>
-            {[
-              { icon: '🎧', title: 'Immersive Audio', desc: 'Native speaker recordings and podcasts for authentic accent and listening comprehension.' },
-              { icon: '💬', title: 'Conversation Practice', desc: 'Live sessions with native speakers and AI conversation partners for speaking fluency.' },
-              { icon: '📚', title: 'Grammar Mastery', desc: 'Systematic grammar instruction with contextual practice and real-world examples.' },
-              { icon: '🎯', title: 'Exam Preparation', desc: 'Targeted preparation for international language certification examinations.' },
-            ].map((card, i) => (
-              <View key={i} style={styles.card}>
-                <Text style={styles.cardIcon}>{card.icon}</Text>
-                <Text style={styles.cardTitle}>{card.title}</Text>
-                <Text style={styles.cardDesc}>{card.desc}</Text>
-              </View>
-            ))}
+          <Text style={styles.sectionTitle}>Resources for Academic Mastery</Text>
+        </View>
+        <View style={styles.table}>
+          <View style={styles.tableHeader}>
+            <Text style={styles.tableHeaderText}>Resource</Text>
+            <Text style={styles.tableHeaderText}>Description</Text>
+            <Text style={[styles.tableHeaderText, { flex: 0.6 }]}> </Text>
           </View>
+          {[
+            { name: 'The Shreyartha Framework', desc: 'Integrates high-stakes curriculum with continuous, low-stakes assessment.' },
+            { name: 'University Bridge Pack', desc: 'Cultivates the critical thinking skills demanded by top-tier global universities.' },
+            { name: 'Excellence Certification', desc: 'Premium professional development for teachers to master integrated learning.' },
+            { name: 'Global Leadership Webinars', desc: 'Live expert sessions on bridging the gap between local and global standards.' },
+          ].map((row, i) => (
+            <View key={i} style={[styles.tableRow, i % 2 === 1 && styles.tableRowAlt]}>
+              <Text style={styles.tableCellBold}>{row.name}</Text>
+              <Text style={styles.tableCell}>{row.desc}</Text>
+              <TouchableOpacity style={styles.tableBtn} onPress={() => router.push('/auth/student-login')}>
+                <Text style={styles.tableBtnText}>Explore Now</Text>
+              </TouchableOpacity>
+            </View>
+          ))}
+        </View>
+
+        {/* Quote */}
+        <View style={styles.sectionContainer}>
+          <Text style={styles.sectionTitle}>"Every Moment is a Milestone"</Text>
+          <Text style={styles.sectionSubtitle}>
+            "At Shreyartha, we understand that education is a continuous journey. Our assessment
+            philosophy ensures that every learning moment—big or small—contributes meaningfully to
+            a student's path to excellence."
+          </Text>
         </View>
 
         {/* CTA */}
         <View style={[styles.ctaSection, { backgroundColor: HERO_COLOR }]}>
           <View style={styles.ctaCircle1} />
           <View style={styles.ctaCircle2} />
-          <Text style={styles.ctaTitle}>Speak to the World</Text>
+          <Text style={styles.ctaTitle}>Ready to Bridge Your Potential?</Text>
           <Text style={styles.ctaSubtitle}>
-            Start your language learning journey and unlock opportunities in international education,
-            careers, and cultural exchange.
+            Join thousands of students who have discovered their true academic potential with
+            Shreyartha's integrated learning and assessment framework.
           </Text>
           <TouchableOpacity style={styles.ctaBtn} onPress={() => router.push('/auth/student-login')}>
             <Text style={styles.ctaBtnText}>Get Started</Text>
@@ -165,6 +180,15 @@ const styles = StyleSheet.create({
   cardIcon: { fontSize: 28, marginBottom: 8 },
   cardTitle: { fontSize: TYPE.heading, fontWeight: '700', color: COLORS.secondary, marginBottom: 6 },
   cardDesc: { fontSize: TYPE.body, color: COLORS.textSecondary, lineHeight: leading(TYPE.body) },
+  table: { marginHorizontal: SPACING.md, marginTop: SPACING.md, borderRadius: 16, overflow: 'hidden', borderWidth: 1, borderColor: COLORS.border },
+  tableHeader: { flexDirection: 'row', backgroundColor: COLORS.primary, padding: 12 },
+  tableHeaderText: { flex: 1, fontWeight: '700', color: '#fff', fontSize: TYPE.body },
+  tableRow: { flexDirection: 'row', padding: 12, borderBottomWidth: 1, borderBottomColor: COLORS.border, alignItems: 'center' },
+  tableRowAlt: { backgroundColor: COLORS.surface },
+  tableCell: { flex: 1, fontSize: TYPE.body, color: COLORS.text, lineHeight: leading(TYPE.body) },
+  tableCellBold: { flex: 1, fontSize: TYPE.body, color: COLORS.secondary, fontWeight: '600', lineHeight: leading(TYPE.body) },
+  tableBtn: { paddingVertical: 6, paddingHorizontal: 14, borderRadius: 20, backgroundColor: COLORS.primary },
+  tableBtnText: { color: '#fff', fontSize: TYPE.label, fontWeight: '700' },
   ctaSection: { margin: SPACING.md, borderRadius: 20, padding: SPACING.xl, alignItems: 'center', overflow: 'hidden', position: 'relative' },
   ctaCircle1: { position: 'absolute', width: 180, height: 180, borderRadius: 90, backgroundColor: 'rgba(255,255,255,0.1)', top: -60, right: -40 },
   ctaCircle2: { position: 'absolute', width: 100, height: 100, borderRadius: 50, backgroundColor: 'rgba(255,255,255,0.08)', bottom: -30, left: -20 },

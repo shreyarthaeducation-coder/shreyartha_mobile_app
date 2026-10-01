@@ -29,6 +29,8 @@ import {
   worstLevel,
 } from '../../services/counsellor/surveyService';
 import { makeStyles } from '../../utils/makeStyles';
+import { useRouter } from 'expo-router';
+import { PsychometricPrintLink } from '../shared/BulkPsychometricPrintScreen';
 
 /**
  * Wellness Groups — the counsellor's wellbeing-survey screen, both portals.
@@ -45,6 +47,8 @@ import { makeStyles } from '../../utils/makeStyles';
 
 export default function WellnessGroupsScreen({
   homeRoute = '/teacher',
+  // Where "Print psychometric reports" goes; no link when absent.
+  printRoute,
   indicesEndpoint,
   scopeKind = 'classSection',
   schoolsEndpoint,
@@ -52,6 +56,7 @@ export default function WellnessGroupsScreen({
 }) {
   const styles = useStyles();
   const PALETTE = usePalette();
+  const router = useRouter();
   const schoolScoped = scopeKind === 'schoolClass';
   const [scope, setScope] = useState(schoolScoped ? EMPTY_SCHOOL_SCOPE : EMPTY_SCOPE);
   const [student, setStudent] = useState(null);
@@ -124,6 +129,7 @@ export default function WellnessGroupsScreen({
       toast={toast}
       scroll
     >
+      {printRoute ? <PsychometricPrintLink route={printRoute} onPress={() => router.push(printRoute)} /> : null}
       {schoolScoped ? (
         <SchoolClassPicker
           endpoint={schoolsEndpoint}

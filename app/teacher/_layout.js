@@ -103,9 +103,17 @@ export default function TeacherLayout() {
         <Stack.Screen name="syllabus" />
         <Stack.Screen name="live-classes" />
         <Stack.Screen name="reports" />
+        {/* The report card's graded areas with no exam behind them — the website's three tabs
+            under Test & Examination — and the class teacher's Student Management. */}
+        <Stack.Screen name="scholastics" />
+        <Stack.Screen name="co-scholastics" />
+        <Stack.Screen name="additional-skills" />
+        <Stack.Screen name="student-management" />
         <Stack.Screen name="adaptive-assessment" />
         <Stack.Screen name="counselling" />
         <Stack.Screen name="counsellor-report" />
+        <Stack.Screen name="counselling-report" />
+        <Stack.Screen name="psychometric-print" />
         <Stack.Screen name="upskill" />
         <Stack.Screen name="my-calendar" />
         <Stack.Screen name="leave" />

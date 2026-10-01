@@ -31,6 +31,9 @@ export default function CounsellorReportScreen({
   // Shreyartha teacher has no section tier at all. The report body below is identical either way.
   scopeKind = 'classSection',
   schoolsEndpoint,
+  // Rendered as a tab of the teacher's Counselling Report, which draws the header. Every other
+  // role omits it.
+  embedded = false,
 }) {
   const schoolScoped = scopeKind === 'schoolClass';
 
@@ -93,6 +96,7 @@ export default function CounsellorReportScreen({
     <ScreenScaffold
       title="Counsellor Report"
       fallbackRoute={homeRoute}
+      embedded={embedded}
       loading={classesLoading}
       error={classList.length === 0 ? classesError : ''}
       onRetry={reload}

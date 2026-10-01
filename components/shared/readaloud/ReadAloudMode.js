@@ -5,6 +5,7 @@ import { makeStyles } from '../../../utils/makeStyles';
 import useShreyaVoice from '../../../hooks/useShreyaVoice';
 import { useLanguage } from '../../../context/LanguageContext';
 import ttsClient from '../../../services/shared/ttsClient';
+import { languageCodeOf } from '../../../utils/languageCode';
 
 /**
  * "Tap anything to hear it" — choosing what gets read aloud, on a phone.
@@ -37,18 +38,20 @@ export function ReadAloudModeProvider({ children }) {
   const [active, setActive] = useState(false);
   const { language } = useLanguage();
   const { translateBatch } = useLanguage();
+  // `language` is the context's OBJECT; /tts and /translate/batch take its code (utils/languageCode).
+  const code = languageCodeOf(language);
   // The neutral client, not studentApi: this runs in the parent and partner panels, whose tokens
   // studentApi does not read and whose session it would end on a 403.
-  const voice = useShreyaVoice({ language, client: ttsClient });
+  const voice = useShreyaVoice({ language: code, client: ttsClient });
 
   const speak = useCallback(
     async (text) => {
       const plain = String(text || '').trim();
       if (!plain) return;
       let spoken = plain;
-      if (language && language !== 'en') {
+      if (code !== 'en') {
         try {
-          const [translated] = await translateBatch([plain], language);
+          const [translated] = await translateBatch([plain], code);
           if (translated && translated.trim()) spoken = translated;
         } catch {
           // Speak the English rather than nothing.
@@ -56,7 +59,7 @@ export function ReadAloudModeProvider({ children }) {
       }
       await voice.speak(spoken);
     },
-    [language, translateBatch, voice],
+    [code, translateBatch, voice],
   );
 
   const value = useMemo(

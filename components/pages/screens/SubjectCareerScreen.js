@@ -3,9 +3,9 @@ import { StyleSheet, View, Text, TouchableOpacity, ScrollView } from 'react-nati
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Stack, useRouter } from 'expo-router';
 import { COLORS, FONTS, SHADOWS, SPACING, TYPE, leading } from '../../../constants/theme';
-import SearchBar from '../../components/SearchBar';
+import SearchBar from '../../landing/SearchBar';
 
-const HERO_COLOR = '#1a1a2e';
+const HERO_COLOR = '#b45309';
 
 const FOOTER_LINKS = [
   'Learning & Assessment', 'Skills Learning', 'Students Profile', 'Counselling',
@@ -13,7 +13,7 @@ const FOOTER_LINKS = [
   'Coding AI & Robotics', 'Language Learning', 'Global Opportunities', 'Progress Tracking',
 ];
 
-export default function SkillsLearningScreen() {
+export default function SubjectCareerScreen() {
   const router = useRouter();
 
   return (
@@ -25,7 +25,7 @@ export default function SkillsLearningScreen() {
         <TouchableOpacity style={styles.backBtn} onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))}>
           <Text style={styles.backText}>← Back</Text>
         </TouchableOpacity>
-        <Text style={styles.headerTitle} numberOfLines={1}>Skills Learning</Text>
+        <Text style={styles.headerTitle} numberOfLines={1}>Subject & Career</Text>
         <View style={{ width: 60 }} />
       </View>
 
@@ -40,12 +40,13 @@ export default function SkillsLearningScreen() {
         <View style={[styles.hero, { backgroundColor: HERO_COLOR }]}>
           <View style={styles.heroCircle1} />
           <View style={styles.heroCircle2} />
-          <Text style={styles.heroIcon}>🛠️</Text>
-          <Text style={styles.heroTitle}>Skills Learning</Text>
-          <Text style={styles.heroSubtitle}>"Skills Edge"</Text>
+          <Text style={styles.heroIcon}>📋</Text>
+          <Text style={styles.heroTitle}>Subject & Career</Text>
+          <Text style={styles.heroSubtitle}>"Shreyartha Global Navigator"</Text>
           <Text style={styles.heroDesc}>
-            Empowering the Future through Skills Learning — Equipping students with 21st-century
-            skills aligned with NEP 2020, global frameworks, and industry demands.
+            Our intelligent Subject & Career navigation system helps students chart personalized
+            pathways from current subjects to future careers using data-driven insights and global
+            benchmarking.
           </Text>
           <View style={styles.heroBtns}>
             <TouchableOpacity style={styles.heroBtn} onPress={() => router.push('/auth/student-login')}>
@@ -57,16 +58,57 @@ export default function SkillsLearningScreen() {
           </View>
         </View>
 
-        {/* Why Modern Skills Matter */}
+        {/* Skills Match Meter */}
         <View style={styles.sectionContainer}>
-          <Text style={styles.sectionTitle}>Why Modern Skills Matter</Text>
-          <Text style={styles.sectionSubtitle}>Aligned with leading global education frameworks</Text>
+          <Text style={styles.sectionTitle}>Skills Match Meter</Text>
+          <Text style={styles.sectionSubtitle}>How our system connects your subjects to your dream career</Text>
           <View style={styles.cardsRow}>
             {[
-              { icon: '📋', title: 'NEP 2020', desc: "National Education Policy 2020 emphasizes skill development, vocational training, and multidisciplinary learning." },
-              { icon: '🌐', title: 'OECD Education 2030', desc: "OECD's framework focuses on competencies needed for students to shape their future." },
-              { icon: '🔷', title: 'P21 Framework', desc: "The Partnership for 21st Century Learning framework integrates core subjects with life skills." },
-              { icon: '🌍', title: 'WEF Future of Jobs', desc: "World Economic Forum identifies critical skills for the future workforce and economy." },
+              { icon: '⚙️', title: 'How It Works', desc: 'Our AI analyzes your academic performance, psychometric profile, and interests to generate a personalized career compatibility score for hundreds of career paths.' },
+              { icon: '📊', title: 'Your Results', desc: 'Receive detailed match percentages, gap analysis reports, and actionable recommendations to bridge the distance between where you are and where you want to be.' },
+            ].map((card, i) => (
+              <View key={i} style={[styles.card, { width: '95%' }]}>
+                <Text style={styles.cardIcon}>{card.icon}</Text>
+                <Text style={styles.cardTitle}>{card.title}</Text>
+                <Text style={styles.cardDesc}>{card.desc}</Text>
+              </View>
+            ))}
+          </View>
+        </View>
+
+        {/* Career Horizons Table */}
+        <View style={styles.sectionContainer}>
+          <Text style={styles.sectionTitle}>Career Horizons 2026</Text>
+        </View>
+        <View style={styles.table}>
+          <View style={styles.tableHeader}>
+            <Text style={styles.tableHeaderText}>Career Field</Text>
+            <Text style={styles.tableHeaderText}>Key Subjects</Text>
+            <Text style={[styles.tableHeaderText, { flex: 0.7 }]}>Growth</Text>
+          </View>
+          {[
+            { field: 'Tech & AI', subjects: 'Mathematics, Computer Science, Physics', growth: '🚀 Excellent' },
+            { field: 'Sustainability', subjects: 'Environmental Science, Geography, Chemistry', growth: '📈 High' },
+            { field: 'New-Age Commerce', subjects: 'Economics, Mathematics, Business Studies', growth: '💼 Strong' },
+            { field: 'Design & Media', subjects: 'Art, Media Studies, Psychology', growth: '🎨 Growing' },
+            { field: 'Healthcare', subjects: 'Biology, Chemistry, Physics', growth: '❤️ Stable' },
+          ].map((row, i) => (
+            <View key={i} style={[styles.tableRow, i % 2 === 1 && styles.tableRowAlt]}>
+              <Text style={styles.tableCellBold}>{row.field}</Text>
+              <Text style={styles.tableCell}>{row.subjects}</Text>
+              <Text style={[styles.tableCell, { flex: 0.7 }]}>{row.growth}</Text>
+            </View>
+          ))}
+        </View>
+
+        {/* Scholarships */}
+        <View style={styles.sectionContainer}>
+          <Text style={styles.sectionTitle}>Scholarship Opportunities</Text>
+          <View style={styles.cardsRow}>
+            {[
+              { icon: '🌍', title: 'International Scholarships', desc: 'Access to 500+ international scholarship opportunities matched to your academic profile and career goals.' },
+              { icon: '🏅', title: 'Domestic Scholarships', desc: 'Comprehensive database of national scholarships, government schemes, and institutional grants.' },
+              { icon: '📈', title: 'Success Tracker', desc: 'Monitor your scholarship applications, track deadlines, and optimize your success rate.' },
             ].map((card, i) => (
               <View key={i} style={styles.card}>
                 <Text style={styles.cardIcon}>{card.icon}</Text>
@@ -77,43 +119,13 @@ export default function SkillsLearningScreen() {
           </View>
         </View>
 
-        {/* Skills Curriculum Table */}
+        {/* Quote */}
         <View style={styles.sectionContainer}>
-          <Text style={styles.sectionTitle}>Skills Curriculum</Text>
-        </View>
-        <View style={styles.table}>
-          <View style={styles.tableHeader}>
-            <Text style={styles.tableHeaderText}>Skill Area</Text>
-            <Text style={styles.tableHeaderText}>Focus</Text>
-            <Text style={[styles.tableHeaderText, { flex: 0.6 }]}> </Text>
-          </View>
-          {[
-            { area: 'Financial Awareness', focus: 'Personal finance, investment basics, entrepreneurship' },
-            { area: 'Coding & Technology', focus: 'Python, web development, app building' },
-            { area: 'Life Skills', focus: 'Communication, critical thinking, emotional intelligence' },
-            { area: 'World Languages', focus: 'French, Spanish, Mandarin, German' },
-            { area: 'IELTS/TOEFL Prep', focus: 'International English language certification' },
-            { area: 'Art, Craft & Performing Arts', focus: 'Creative expression, music, dance, visual arts' },
-            { area: 'Sports & Yoga', focus: 'Physical wellness, mindfulness, team sports' },
-            { area: 'Beauty & Wellness', focus: 'Grooming, health sciences, wellness coaching' },
-          ].map((row, i) => (
-            <View key={i} style={[styles.tableRow, i % 2 === 1 && styles.tableRowAlt]}>
-              <Text style={styles.tableCellBold}>{row.area}</Text>
-              <Text style={styles.tableCell}>{row.focus}</Text>
-              <TouchableOpacity style={styles.tableBtn} onPress={() => router.push('/auth/student-login')}>
-                <Text style={styles.tableBtnText}>Enroll Now</Text>
-              </TouchableOpacity>
-            </View>
-          ))}
-        </View>
-
-        {/* Transform section */}
-        <View style={styles.sectionContainer}>
-          <Text style={styles.sectionTitle}>Transform Your Future</Text>
+          <Text style={styles.sectionTitle}>"Every Subject is a Stepping Stone"</Text>
           <Text style={styles.sectionSubtitle}>
-            In today's rapidly evolving world, traditional academic knowledge alone is not enough.
-            Shreyartha's skills learning programs bridge the gap between classroom learning and
-            real-world application, ensuring our students are truly ready for tomorrow.
+            "At Shreyartha, we see every subject as a gateway to unlimited possibilities. Our
+            navigation system ensures that no academic interest goes unexplored and no career dream
+            goes uncharted."
           </Text>
         </View>
 
@@ -121,10 +133,10 @@ export default function SkillsLearningScreen() {
         <View style={[styles.ctaSection, { backgroundColor: HERO_COLOR }]}>
           <View style={styles.ctaCircle1} />
           <View style={styles.ctaCircle2} />
-          <Text style={styles.ctaTitle}>Start Your Skills Journey</Text>
+          <Text style={styles.ctaTitle}>Navigate Your Future</Text>
           <Text style={styles.ctaSubtitle}>
-            Enroll in our comprehensive skills programs and gain the competitive edge needed for
-            success in the modern world.
+            Discover the perfect intersection of your subjects, skills, and career aspirations with
+            Shreyartha's intelligent navigation system.
           </Text>
           <TouchableOpacity style={styles.ctaBtn} onPress={() => router.push('/auth/student-login')}>
             <Text style={styles.ctaBtnText}>Get Started</Text>
@@ -190,8 +202,6 @@ const styles = StyleSheet.create({
   tableRowAlt: { backgroundColor: COLORS.surface },
   tableCell: { flex: 1, fontSize: TYPE.body, color: COLORS.text, lineHeight: leading(TYPE.body) },
   tableCellBold: { flex: 1, fontSize: TYPE.body, color: COLORS.secondary, fontWeight: '600', lineHeight: leading(TYPE.body) },
-  tableBtn: { paddingVertical: 6, paddingHorizontal: 14, borderRadius: 20, backgroundColor: COLORS.primary },
-  tableBtnText: { color: '#fff', fontSize: TYPE.label, fontWeight: '700' },
   ctaSection: { margin: SPACING.md, borderRadius: 20, padding: SPACING.xl, alignItems: 'center', overflow: 'hidden', position: 'relative' },
   ctaCircle1: { position: 'absolute', width: 180, height: 180, borderRadius: 90, backgroundColor: 'rgba(255,255,255,0.1)', top: -60, right: -40 },
   ctaCircle2: { position: 'absolute', width: 100, height: 100, borderRadius: 50, backgroundColor: 'rgba(255,255,255,0.08)', bottom: -30, left: -20 },

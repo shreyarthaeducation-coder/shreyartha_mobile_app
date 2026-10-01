@@ -8,8 +8,11 @@ import { SPACING, TYPE } from '../../constants/theme';
  * `loading` both shows the spinner and disables the press — this is the double-submit guard the
  * web page lacks entirely (its buttons stay live during the request).
  */
-export default function PrimaryButton({ title, onPress, loading, disabled, palette, style }) {
+export default function PrimaryButton({ title, label, onPress, loading, disabled, palette, style }) {
   const isDisabled = loading || disabled;
+  // `label` too: every other button in the app takes `label`, and the sign-in gate passed it here —
+  // which rendered "Sign in" as an empty coloured bar.
+  const text = title ?? label;
 
   return (
     <Pressable
@@ -28,7 +31,7 @@ export default function PrimaryButton({ title, onPress, loading, disabled, palet
       {loading ? (
         <ActivityIndicator color={palette.onPrimary} />
       ) : (
-        <Text style={[styles.text, { color: palette.onPrimary }]}>{title}</Text>
+        <Text style={[styles.text, { color: palette.onPrimary }]}>{text}</Text>
       )}
     </Pressable>
   );

@@ -37,7 +37,12 @@ const SRC = {
   ttsClient: 'services/shared/ttsClient.js',
   readAloudMode: 'components/shared/readaloud/ReadAloudMode.js',
   parentNotes: 'components/parent/CounselorNotesScreen.js',
+  // Teacher and partner screens: Shreya Speak lives in their chat (29 Sep 2026), not on the page.
   partnerOverview: 'components/partner/PartnerOverviewScreen.js',
+  partnerAnalytics: 'components/partner/PartnerSchoolAnalyticsScreen.js',
+  teacherWorkspace: 'components/teacher/TeacherWorkspaceScreen.js',
+  teacherPsychometric: 'components/teacher/StudentPsychometricScreen.js',
+  languageCode: 'utils/languageCode.js',
 };
 
 const JAVA_SRC = {
@@ -106,6 +111,19 @@ async function loadService(mutate) {
   return import(`${pathToFileURL(file).href}?t=${Math.random()}`);
 }
 
+/**
+ * utils/languageCode.js, evaluated. Takes the SAME `src` mutation the text assertions get, so a
+ * mutation of this file changes both what is read and what is run — the lesson of `mutateService`.
+ */
+async function loadLanguageCode(mutateSrc) {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'langcode-'));
+  let src = read(path.join(APP, SRC.languageCode));
+  if (mutateSrc) src = mutateSrc('languageCode', src);
+  const file = path.join(dir, 'languageCode.mjs');
+  fs.writeFileSync(file, src);
+  return import(`${pathToFileURL(file).href}?t=${Math.random()}`);
+}
+
 async function loadCatalog(mutate) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'cat-'));
   let src = read(path.join(APP, 'constants', 'phonemeCatalog.js'));
@@ -149,7 +167,7 @@ const PLACES = ['lips', 'teeth', 'ridge', 'back'];
 const VOWEL_ROWS = ['high', 'mid', 'low'];
 const VOWEL_COLS = ['front', 'central', 'back'];
 
-function assertions(service, catalog, langs, src, java) {
+function assertions(service, catalog, langs, src, java, lc) {
   const out = [];
   const bad = (m) => out.push(m);
 
@@ -266,6 +284,36 @@ function assertions(service, catalog, langs, src, java) {
     bad('ShreyaSpeakButton no longer translates before speaking — every panel is back to English');
   }
 
+  // ── 4b'. THE LANGUAGE IS A CODE, NOT THE CONTEXT'S OBJECT ─────────────────
+  // useLanguage().language is { code, nativeName, englishName }. Handed straight to useShreyaVoice it
+  // went out as `"language": {…}` on /tts, whose TTSRequest.language is a String — a 400 in EVERY
+  // language, English included — and translateBatch quietly fell back to English. It shipped on
+  // 24 Sep 2026 and no checker saw it, because every assertion above reads names, not values.
+  if (typeof lc?.languageCodeOf !== 'function') {
+    bad('utils/languageCode.js no longer exports languageCodeOf');
+  } else {
+    if (lc.languageCodeOf({ code: 'hi', nativeName: 'हिन्दी', englishName: 'Hindi' }) !== 'hi') {
+      bad('languageCodeOf does not reduce the context object to its code');
+    }
+    if (lc.languageCodeOf('bn') !== 'bn') bad('languageCodeOf mangles a code that is already a string');
+    const fallback = lc.languageCodeOf(undefined);
+    if (!langs.has(fallback)) {
+      bad(`languageCodeOf falls back to "${fallback}", which SupportedLanguage.java does not declare`);
+    }
+  }
+  for (const key of ['speakButton', 'readAloudMode']) {
+    const code = codeOnly(src[key]);
+    if (!/languageCodeOf\(language\)/.test(code)) {
+      bad(`${SRC[key]} no longer reduces the language object to its code`);
+    }
+    if (/useShreyaVoice\(\{\s*language\s*[,}]/.test(code)) {
+      bad(`${SRC[key]} hands the language OBJECT to useShreyaVoice — /tts answers 400`);
+    }
+    if (/translateBatch\(\[[^\]]*\],\s*language\s*\)/.test(code)) {
+      bad(`${SRC[key]} hands the language OBJECT to translateBatch — it falls back to English`);
+    }
+  }
+
   // ── 4c. CHOOSING WHAT GETS READ ───────────────────────────────────────────
   // Read-aloud used to recite a whole screen. On a phone there is no comfortable text selection,
   // so the equivalent is a mode: press once, then tap the one card you want. Three things hold it
@@ -289,12 +337,21 @@ function assertions(service, catalog, langs, src, java) {
 
   // 3. The screens that were converted must ASK for the mode. Without the prop they fall back to
   //    reading the entire screen, which is the behaviour this replaced — and nothing would fail.
-  for (const key of ['parentNotes', 'partnerOverview']) {
+  for (const key of ['parentNotes']) {
     if (!/selectableReadAloud/.test(codeOnly(src[key]))) {
       bad(`${SRC[key]} no longer asks for tap-to-read — it silently recites the whole screen again`);
     }
     if (!/<Readable[\s>]/.test(codeOnly(src[key]))) {
       bad(`${SRC[key]} has no <Readable> blocks, so there is nothing for a tap to select`);
+    }
+  }
+
+  // 3b. The teacher and partner panels hear Shreya in the CHAT only. On the website their title-bar
+  //     Shreya Speak moved into the chatbot (29 Sep 2026); a pill on the page here would be the
+  //     second Shreya the move got rid of. The parent and student panels keep theirs, as the web does.
+  for (const key of ['partnerOverview', 'partnerAnalytics', 'teacherWorkspace', 'teacherPsychometric']) {
+    if (/selectableReadAloud|\breadAloud=/.test(codeOnly(src[key]))) {
+      bad(`${SRC[key]} has a Shreya Speak on the page again — teacher and partner hear Shreya in the chat`);
     }
   }
 
@@ -372,7 +429,18 @@ const MUTATIONS = [
   },
   {
     name: 'a converted screen loses its Readable blocks',
-    src: (k, s) => (k === 'partnerOverview' ? s.replace(/<Readable/g, '<View').replace(/<\/Readable>/g, '</View>') : s),
+    src: (k, s) => (k === 'parentNotes' ? s.replace(/<Readable/g, '<View').replace(/<\/Readable>/g, '</View>') : s),
+  },
+  {
+    name: 'a page-level Shreya Speak put back on a partner screen',
+    src: (k, s) => (k === 'partnerOverview' ? s.replace('<ScreenScaffold', '<ScreenScaffold selectableReadAloud') : s),
+  },
+  {
+    name: 'a page-level Shreya Speak put back on the teacher workspace',
+    src: (k, s) =>
+      k === 'teacherWorkspace'
+        ? s.replace('fallbackRoute="/teacher">', 'fallbackRoute="/teacher" readAloud={t.intro}>')
+        : s,
   },
   {
     name: 'THE BUG: TTS_LANGUAGE set back to the BCP-47 tag',
@@ -465,6 +533,28 @@ const MUTATIONS = [
         : s,
   },
   {
+    name: 'THE 24 SEP BUG: Shreya Speak hands the language OBJECT to the voice again',
+    src: (k, s) =>
+      k === 'speakButton'
+        ? s.replace('useShreyaVoice({ language: code, client })', 'useShreyaVoice({ language, client })')
+        : s,
+  },
+  {
+    name: 'tap-to-read translating with the language object again',
+    src: (k, s) =>
+      k === 'readAloudMode'
+        ? s.replace('translateBatch([plain], code)', 'translateBatch([plain], language)')
+        : s,
+  },
+  {
+    name: 'languageCodeOf passing the object straight through',
+    src: (k, s) => (k === 'languageCode' ? s.replace("return code || 'en';", 'return language;') : s),
+  },
+  {
+    name: 'languageCodeOf falling back to a BCP-47 tag that /tts rejects',
+    src: (k, s) => (k === 'languageCode' ? s.replace("return code || 'en';", "return code || 'en-US';") : s),
+  },
+  {
     name: 'read-aloud goes back to speaking English only',
     src: (k, s) => (k === 'speakButton' ? s.replace(/translateBatch\(/g, 'noTranslate(') : s),
   },
@@ -525,7 +615,11 @@ console.log('Self-tests (each mutation must be caught):');
 for (const m of MUTATIONS) {
   let caught;
   try {
-    const [service, catalog] = await Promise.all([loadService(m.service), loadCatalog(m.catalog)]);
+    const [service, catalog, lc] = await Promise.all([
+      loadService(m.service),
+      loadCatalog(m.catalog),
+      loadLanguageCode(m.src),
+    ]);
     caught =
       assertions(
         service,
@@ -533,6 +627,7 @@ for (const m of MUTATIONS) {
         supportedLanguages(m.languages),
         loadSources(m.src, m.service),
         loadJava(m.java),
+        lc,
       ).length > 0;
   } catch {
     caught = true; // a mutation that will not even load is caught, loudly
@@ -543,9 +638,9 @@ for (const m of MUTATIONS) {
 
 console.log('\nSpeech / Sound Studio:');
 {
-  const [service, catalog] = await Promise.all([loadService(), loadCatalog()]);
+  const [service, catalog, lc] = await Promise.all([loadService(), loadCatalog(), loadLanguageCode()]);
   const langs = supportedLanguages();
-  const problems = assertions(service, catalog, langs, loadSources(), loadJava());
+  const problems = assertions(service, catalog, langs, loadSources(), loadJava(), lc);
   if (problems.length === 0) {
     const { CONSONANTS, VOWELS, DIPHTHONGS } = catalog;
     ok(

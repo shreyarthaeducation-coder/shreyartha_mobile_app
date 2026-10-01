@@ -22,6 +22,7 @@ export default function ClassManagement() {
       homeRoute={`/staff/${roleKey}`}
       apiBase={portal.classes}
       academicYearWrites={portal.academicYearWrites}
+      reportsBase={portal.reports}
     />
   );
 }

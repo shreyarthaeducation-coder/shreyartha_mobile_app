@@ -249,7 +249,9 @@ export default function TeacherHomeScreen() {
             },
             {
               key: 'subject',
-              icon: 'book-outline',
+              // Not book-outline: that is Stream on the student and parent cards, and with the row
+              // labels gone (1 Oct 2026) the icon alone has to tell them apart.
+              icon: 'library-outline',
               label: t.rowSubject,
               // Distinct AND year-filtered — see subjectsTaught. Raw, this row reads
               // "Mathematics, Mathematics, Mathematics" for a teacher with three sections.

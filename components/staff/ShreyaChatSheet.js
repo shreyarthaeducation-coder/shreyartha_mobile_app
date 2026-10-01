@@ -16,11 +16,18 @@ import {
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
-import { SHADOWS, SLATE, SPACING, TYPE, leading } from '../../constants/theme';
+import { FEEDBACK, SHADOWS, SLATE, SPACING, TYPE, leading } from '../../constants/theme';
 import { usePalette } from '../ui/PaletteContext';
 import { makeStyles } from '../../utils/makeStyles';
 import { buildSectionExplanation, sectionsForPortal } from '../../constants/teacherChatbotData';
 import * as teacherShreya from '../../services/teacher/shreyaService';
+import ShreyaSpeakButton from '../student/ai/ShreyaSpeakButton';
+import ShreyaChatMic from './ShreyaChatMic';
+import ttsClient from '../../services/shared/ttsClient';
+import { stopActiveAudio } from '../../utils/audioController';
+import { latestShreyaTurn } from '../../utils/latestShreyaTurn';
+import { useLanguage } from '../../context/LanguageContext';
+import { languageCodeOf } from '../../utils/languageCode';
 
 
 /**
@@ -41,6 +48,16 @@ import * as teacherShreya from '../../services/teacher/shreyaService';
  */
 
 const ASK_ANYTHING = 'Ask me anything';
+
+/** The teacher's shortcuts, and the default. `suffix` is appended to basePath. */
+const TEACHER_QUICK_ACTIONS = [
+  { label: '📋 Mark Attendance', suffix: '/attendance' },
+  { label: '📚 Assign Homework', suffix: '/homework' },
+  { label: '📊 My Students', suffix: '/student-analytics' },
+];
+
+const MIC_IDLE = { active: false, recording: false, transcribing: false, elapsed: 0, error: '' };
+const clock = (s) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
 
 const botMsg = (text, options) => ({ sender: 'bot', text, options: options || null });
 const userMsg = (text) => ({ sender: 'user', text });
@@ -135,7 +152,8 @@ export default function ShreyaChatSheet({
    * the teacher shell (usePalette() defaults to PORTALS.school, which this file used to hardcode),
    * purple inside app/parent/_layout.js.
    *
-   * @type {{ sections, buildExplanation, service, nameKey, greeting, resolveLink }}
+   * @type {{ sections, buildExplanation, service, nameKey, greeting, resolveLink,
+   *          voice, subtitle, loadingText, quickActions }}
    */
   config,
 }) {
@@ -169,6 +187,19 @@ export default function ShreyaChatSheet({
    * means "no native screen for that" — the button is dropped rather than pointed somewhere wrong.
    */
   const resolveLink = config?.resolveLink || ((route) => route);
+  /**
+   * The chrome the teacher's defaults used to hard-code for every portal — a parent was told this
+   * was "Your teaching companion" and offered "Assign Homework", a route the parent app does not have.
+   *   voice        — Shreya Speak in the header. False for the Principal: /api/v1/translate/tts
+   *                  refuses SCHOOL_ADMIN, and the web principal panel has no voice either.
+   *   subtitle, loadingText — the portal's own wording.
+   *   quickActions — [{ label, suffix }] under free chat; each suffix is appended to basePath, so
+   *                  only routes that exist in that portal belong in the list ([] hides them).
+   */
+  const voiceEnabled = config?.voice !== false;
+  const subtitle = config?.subtitle || 'Your teaching companion';
+  const loadingText = config?.loadingText || 'Loading your teaching companion…';
+  const quickActions = config?.quickActions || TEACHER_QUICK_ACTIONS;
 
   const toPageLink = useCallback(
     (chapterLink) => {
@@ -193,6 +224,31 @@ export default function ShreyaChatSheet({
   const [aiHistory, setAiHistory] = useState([]);
   const [sending, setSending] = useState(false);
   const [inputValue, setInputValue] = useState('');
+
+  /** What the header's Shreya Speak reads: Shreya's latest turn (utils/latestShreyaTurn). */
+  const turn = useMemo(() => latestShreyaTurn(messages), [messages]);
+  /** Its notices, shown on the caption line under the header instead of growing the header. */
+  const [speakNote, setSpeakNote] = useState('');
+
+  /**
+   * The mic (ShreyaChatMic, free chat only). Its state lives here so the input can go read-only and
+   * say "Listening…" in its placeholder, and Shreya Speak can wait while someone is dictating.
+   */
+  const { language } = useLanguage();
+  const [micStatus, setMicStatus] = useState(MIC_IDLE);
+  /** A spoken question lands in the text box, to be checked and sent — never sent by itself. */
+  const appendTranscript = useCallback((text) => {
+    setInputValue((prev) => (prev.trim() ? `${prev.trim()} ${text}` : text));
+  }, []);
+
+  // CounselorScreen and ShreyaLauncher keep this sheet MOUNTED while hidden (`visible={false}`), so
+  // closing it is not an unmount — without this, Shreya would keep talking behind a closed sheet.
+  // Only on the open → closed edge: a sheet that mounts hidden must not silence someone else.
+  const wasVisibleRef = useRef(visible);
+  useEffect(() => {
+    if (wasVisibleRef.current && !visible) stopActiveAudio();
+    wasVisibleRef.current = visible;
+  }, [visible]);
 
   const scrollToEnd = useCallback(() => {
     setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 80);
@@ -280,12 +336,12 @@ export default function ShreyaChatSheet({
       const label = section?.label || 'classes';
       addMessages(
         botMsg(
-          `Type your questions below — I'll answer based on your own **${label}** data. You can also use the quick actions under the chat.`,
+          `${voiceEnabled ? 'Type or speak' : 'Type'} your questions below — I'll answer based on your own **${label}** data. You can also use the quick actions under the chat.`,
         ),
       );
       setStep('freeChat');
     },
-    [addMessages],
+    [addMessages, voiceEnabled],
   );
 
   /* ── Layer 1: a section ─────────────────────────────────────────────────── */
@@ -461,31 +517,60 @@ export default function ShreyaChatSheet({
       >
         <View style={styles.overlay}>
           <View style={styles.sheet}>
+            {/* Two rows, as on the website: title + ×, then subtitle + Shreya Speak — the one place
+                read-aloud lives for this chat. */}
             <View style={styles.header}>
-              <View style={styles.headerLeft}>
-                <View style={styles.avatar}>
-                  <Image source={CHATBOT_AVATAR} style={styles.avatarImg} resizeMode="cover" />
+              <View style={styles.avatar}>
+                <Image source={CHATBOT_AVATAR} style={styles.avatarImg} resizeMode="cover" />
+              </View>
+              <View style={styles.headerText}>
+                <View style={styles.headerRow}>
+                  <Text style={styles.headerTitle} numberOfLines={1}>
+                    Shreya – Your AI Companion
+                  </Text>
+                  <Pressable
+                    onPress={onClose}
+                    hitSlop={10}
+                    style={({ pressed }) => [styles.closeBtn, pressed && styles.pressed]}
+                    accessibilityRole="button"
+                    accessibilityLabel="Close Shreya"
+                  >
+                    <Ionicons name="close" size={22} color="#ffffff" />
+                  </Pressable>
                 </View>
-                <View style={styles.headerText}>
-                  <Text style={styles.headerTitle}>Shreya – Your AI Companion</Text>
-                  <Text style={styles.headerSubtitle}>Your teaching companion</Text>
+                <View style={styles.headerRow}>
+                  <Text style={styles.headerSubtitle} numberOfLines={1}>
+                    {subtitle}
+                  </Text>
+                  {voiceEnabled && step !== 'loading' ? (
+                    <ShreyaSpeakButton
+                      // A new turn remounts it, which stops an old reading mid-sentence.
+                      key={turn}
+                      variant="onDark"
+                      client={ttsClient}
+                      text={turn}
+                      // Not while someone is dictating: Shreya would be recorded into their question.
+                      disabled={!turn || micStatus.active}
+                      onMessage={setSpeakNote}
+                      accessibilityLabel="Shreya Speak: read Shreya's latest reply aloud"
+                    />
+                  ) : null}
                 </View>
               </View>
-              <Pressable
-                onPress={onClose}
-                hitSlop={10}
-                style={({ pressed }) => [styles.closeBtn, pressed && styles.pressed]}
-                accessibilityRole="button"
-                accessibilityLabel="Close Shreya"
-              >
-                <Ionicons name="close" size={22} color="#ffffff" />
-              </Pressable>
             </View>
+            {/* Always mounted, hidden when empty: this sheet is careful about what mounts and
+                unmounts around the free-chat input. */}
+            <Text
+              style={[styles.caption, !speakNote && styles.captionHidden]}
+              accessibilityLiveRegion="polite"
+            >
+              {speakNote}
+            </Text>
 
             {step === 'loading' ? (
               <View style={styles.loader}>
                 <ActivityIndicator size="large" color={palette.primary} />
-                <Text style={styles.loaderText}>Loading your teaching companion…</Text>
+                <Text style={styles.loaderText}>{loadingText}</Text>
               </View>
             ) : (
               <ScrollView
@@ -584,18 +669,14 @@ export default function ShreyaChatSheet({
                   contentContainerStyle={styles.actionRowContent}
                   keyboardShouldPersistTaps="handled"
                 >
-                  {[
-                    ['📋 Mark Attendance', '/attendance'],
-                    ['📚 Assign Homework', '/homework'],
-                    ['📊 My Students', '/student-analytics'],
-                  ].map(([label, suffix]) => (
+                  {quickActions.map((action) => (
                     <Pressable
-                      key={suffix}
-                      onPress={() => goTo(suffix)}
+                      key={action.suffix}
+                      onPress={() => goTo(action.suffix)}
                       style={({ pressed }) => [styles.actionBtn, pressed && styles.pressed]}
                       accessibilityRole="button"
                     >
-                      <Text style={styles.actionText}>{label}</Text>
+                      <Text style={styles.actionText}>{action.label}</Text>
                     </Pressable>
                   ))}
                   <Pressable
@@ -614,20 +695,35 @@ export default function ShreyaChatSheet({
                 <View style={styles.inputRow}>
                   <TextInput
                     style={styles.input}
-                    placeholder={`Ask Shreya about your ${
-                      selectedSection ? selectedSection.label : 'classes'
-                    }…`}
-                    placeholderTextColor={SLATE[500]}
+                    // The mic reports here rather than on a new row: mounting a row beside a focused
+                    // input is what dismisses the Android keyboard.
+                    placeholder={
+                      micStatus.recording
+                        ? `Listening… ${clock(micStatus.elapsed)} — tap ■ when done`
+                        : micStatus.transcribing
+                          ? 'Turning your words into text…'
+                          : micStatus.error ||
+                            `Ask Shreya about your ${selectedSection ? selectedSection.label : 'classes'}…`
+                    }
+                    placeholderTextColor={micStatus.error && !micStatus.active ? FEEDBACK.errorText : SLATE[500]}
                     value={inputValue}
                     onChangeText={setInputValue}
                     onSubmitEditing={submit}
                     returnKeyType="send"
-                    editable={!sending}
+                    editable={!sending && !micStatus.active}
                     multiline={false}
                     // No autoFocus: the web has it, but autofocus inside an Android Modal
                     // fights the keyboard and is the single most reliable way to reintroduce
                     // the dismiss bug this app spent two sessions fixing.
                   />
+                  {voiceEnabled ? (
+                    <ShreyaChatMic
+                      languageCode={languageCodeOf(language)}
+                      disabled={sending}
+                      onTranscript={appendTranscript}
+                      onStatus={setMicStatus}
+                    />
+                  ) : null}
                   <Pressable
                     onPress={submit}
                     disabled={!inputValue.trim() || sending}
@@ -669,12 +765,17 @@ const useStyles = makeStyles((p) => ({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    gap: 10,
     backgroundColor: p.headerBg,
     paddingHorizontal: SPACING.md,
     paddingVertical: 12,
   },
-  headerLeft: { flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 8,
+  },
   avatar: {
     width: 38,
     height: 38,
@@ -683,10 +784,21 @@ const useStyles = makeStyles((p) => ({
     overflow: 'hidden',
   },
   avatarImg: { width: '100%', height: '100%' },
-  headerText: { flex: 1 },
-  headerTitle: { fontSize: TYPE.heading, fontWeight: '700', color: '#ffffff' },
-  headerSubtitle: { fontSize: TYPE.caption, color: 'rgba(255,255,255,0.78)', marginTop: 1 },
+  headerText: { flex: 1, gap: 6 },
+  headerTitle: { flexShrink: 1, fontSize: TYPE.heading, fontWeight: '700', color: '#ffffff' },
+  headerSubtitle: { flexShrink: 1, fontSize: TYPE.caption, color: 'rgba(255,255,255,0.78)' },
   closeBtn: { padding: 4 },
+  // Shreya Speak's notices. A strip under the header rather than text inside it, so an error never
+  // changes the header's height.
+  caption: {
+    fontSize: TYPE.caption,
+    lineHeight: leading(TYPE.caption),
+    color: FEEDBACK.errorText,
+    backgroundColor: SLATE[50],
+    paddingHorizontal: SPACING.md,
+    paddingVertical: 6,
+  },
+  captionHidden: { display: 'none' },
 
   loader: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: SPACING.sm },
   loaderText: { fontSize: TYPE.body, color: SLATE[500] },

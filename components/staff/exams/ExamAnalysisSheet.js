@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { FEEDBACK, PORTALS, SLATE, SPACING, TYPE, leading } from '../../../constants/theme';
+import { PORTALS, SLATE, SPACING, TYPE, leading } from '../../../constants/theme';
 import { FormSheet, GaugeChart, GroupedBars } from '../../ui';
 import { fetchExamAnalysis } from '../../../services/teacher/examService';
 import { captureAndShare } from '../../../utils/shareCapture';
+import { htmlToText } from '../../../utils/htmlToText';
 
 /**
  * One student's breakdown for one exam.
@@ -141,18 +142,26 @@ export default function ExamAnalysisSheet({ visible, target, onClose, showToast 
           {(data.questionScores || []).length > 0 ? (
             <>
               <Text style={styles.heading}>Question-wise score</Text>
-              {data.questionScores.map((q) => {
-                const pct =
-                  q.maxMarks > 0 ? Math.round((q.marksObtained / q.maxMarks) * 100) : 0;
+              {data.questionScores.map((q, i) => {
+                // A question made from a scanned answer book has no maximum of its own, so its
+                // mark is out of nothing in particular: shown as scored, with no percentage.
+                const outOf = q.maxMarks == null ? null : q.maxMarks;
+                const pct = outOf > 0 ? Math.round((q.marksObtained / outOf) * 100) : 0;
                 return (
-                  <View key={q.questionOrder} style={styles.qCard}>
+                  // Keyed by position: questionOrder repeats once a paper has sub-questions (each
+                  // part numbers from 1 within its parent).
+                  <View key={`${i}-${q.questionOrder}`} style={styles.qCard}>
                     <View style={styles.qHead}>
                       <Text style={styles.qIndex}>Q{q.questionOrder}</Text>
                       <Text style={styles.qScore}>
-                        {q.marksObtained ?? 0}/{q.maxMarks ?? 0} · {pct}%
+                        {outOf == null
+                          ? `${q.marksObtained ?? 0}/—`
+                          : `${q.marksObtained ?? 0}/${outOf} · ${pct}%`}
                       </Text>
                     </View>
-                    <Text style={styles.qText}>{q.questionStatement}</Text>
+                    {/* Plain words: the website's editor stores HTML, and this card is captured as
+                        an image to share, which a maths WebView would come out blank in. */}
+                    <Text style={styles.qText}>{htmlToText(q.questionStatement || '')}</Text>
                     <View style={styles.qMeta}>
                       {[q.chapterName, q.topicName, q.bloomsTaxonomy, q.skillSet]
                         .filter(Boolean)

@@ -99,7 +99,15 @@ export async function applyPortalSession(portal, data) {
 }
 
 /** A person-facing name for a portal the app cannot open. */
-export function portalLabel(portal) {
+export function portalLabel(portal, data) {
+  // A SCHOOL answer is refused per staff role, not per portal: name the role, or the message read
+  // "that accounts sign in on the website — this app has no that panel yet".
+  if (portal === 'SCHOOL') {
+    const role = String(data?.userType || '').toUpperCase();
+    if (role === 'HR') return 'HR';
+    if (role === 'ADMIN') return 'School Admin';
+    return role ? role.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase()) : 'That';
+  }
   switch (portal) {
     case 'INVESTOR': return 'Investor';
     case 'UNIVERSITY': return 'University';

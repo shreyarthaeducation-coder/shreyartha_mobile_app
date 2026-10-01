@@ -54,7 +54,3 @@ export async function fetchPsychometric(signal) {
     hasCompletedAssessment: !!res?.hasCompletedAssessment,
   };
 }
-
-/** Percent complete, guarding the divide-by-zero the web guards too. */
-export const psychometricPercent = (p) =>
-  p?.totalTopics > 0 ? Math.round((p.completedCount / p.totalTopics) * 100) : 0;

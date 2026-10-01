@@ -6,7 +6,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { COLORS, SHADOWS, SPACING, TYPE, leading } from '../../constants/theme';
-import SearchBar from '../components/SearchBar';
+import SearchBar from '../../components/landing/SearchBar';
 
 
 const { width } = Dimensions.get('window');

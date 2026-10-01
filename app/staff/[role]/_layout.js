@@ -183,6 +183,8 @@ export default function StaffRoleLayout() {
           portal, which is what keeps the other four panels unaffected. */}
       <Stack.Screen name="face-to-face" />
       <Stack.Screen name="counsellor-report" />
+      <Stack.Screen name="counselling-report" />
+      <Stack.Screen name="psychometric-print" />
       <Stack.Screen name="groups" />
       <Stack.Screen name="queries" />
       <Stack.Screen name="my-calendar" />
@@ -212,6 +214,9 @@ export default function StaffRoleLayout() {
       {/* The roster and the grading scales, both on /api/school-admin and Principal-only today. */}
       <Stack.Screen name="manage-students" />
       <Stack.Screen name="grade-management" />
+      {/* The report card's graded areas: set up for the school, and what teachers have graded. */}
+      <Stack.Screen name="report-card-areas" />
+      <Stack.Screen name="report-card-grades" />
       {/* `reports` is the VP's teacher exam screen; the principal's admin one is separate. */}
       <Stack.Screen name="admin-reports" />
       <Stack.Screen name="live-meeting" />

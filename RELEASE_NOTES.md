@@ -1,5 +1,191 @@
 # Shreyartha Mobile — Release Notes
 
+## 2.1.1 (versionCode 17) — full audit against the website: errors, teacher tabs, principal tabs (30 Sept – 1 Oct 2026)
+
+**Release audit (1 Oct)**
+- **Face-to-Face Counselling's tab bar was empty since release 16.** It passed `tabs`/`activeKey`, but
+  SegmentedTabs reads `options`/`value`, so Previous, Walk-in and Sheet were unreachable. Fixed.
+- **`expo-font` and `expo-asset` are now installed directly.** `@expo/vector-icons` and `expo-audio`
+  need them, and a store build (unlike Expo Go) only includes native modules that are direct
+  dependencies.
+- Patch updates for SDK 57: expo 57.0.26, expo-document-picker 57.0.3, expo-router 57.0.24.
+- `expo-doctor`: 19/21. The two left are the non-square icon (1568×1003, the same file release 16
+  shipped with) and `react-native-render-html` flagged as unmaintained (JavaScript only).
+
+
+Ships with the next store build (no OTA channel). Homepages are unchanged by design. Every new
+screen is a tab or an entry in an existing inner hub. **The rich-text editor needs the website
+deployed first**, because it is the website's own editor at `/school/embed/rich-text`.
+
+**Every upload was broken on SDK 57 (1 Oct): fixed**
+- Expo SDK 57 replaces the global `fetch` with `expo/fetch`. That fetch cannot send a
+  `{ uri, name, type }` file part, which is how every upload in the app is written.
+- Every photo, PDF and recording upload threw "Unsupported FormDataPart implementation" before
+  leaving the phone, and the marks-sheet scan showed "Could not reach the server".
+- `EXPO_PUBLIC_USE_RN_FETCH=1` (in `.env`, and in every `eas.json` profile for store builds) keeps
+  React Native's fetch. This was checked in the built bundle, and `scripts/checkfetch.mjs` guards it.
+- **The store build must be made with this `eas.json`.**
+- Also fixed: the universal sign-in's "Sign in" and "Send reset link" buttons were blank (the text
+  was passed as `label`, but the button read `title`).
+
+**Test and Examination — second pass (1 Oct)**
+- **Enter/Edit Marks is now the website's table.**
+  - One row per student and one cell per question, headed "Q1 /5", then Total and Remarks.
+  - The student column stays put while the cells scroll sideways.
+  - With several question sets, there is one table per set.
+  - The per-student sheets, which printed each question's text, are gone.
+- **Scanning an answer book:**
+  - The scanner, the result summary and the new-paper review are panels inside the marks sheet, as on
+    the website. They used to be separate Modals, which closed as the camera opened.
+  - A mark now goes on the question the sheet numbers it. When the server left a box out, the app
+    had put every later mark one question early.
+  - A cover naming another student is flagged before saving.
+- **Failures are visible.**
+  - Every sheet now shows the screen's messages inside itself. Scan and save errors used to appear
+    underneath the sheet, so a failure looked like nothing happening.
+  - The marks sheet also writes errors at its top.
+- **Scrolling:**
+  - No Pressable wraps a sheet's scrolling body any more.
+  - Maths rendered in a WebView no longer takes the scroll gesture.
+  - A sheet that isn't full height scrolls instead of cutting its content off.
+- Removed the `setLayoutAnimationEnabledExperimental` start-up warning (a no-op on the New Architecture).
+
+**Errors fixed**
+- `[Layout children]: No route named "staff"`: the root layout now names `staff/[role]`.
+  `checkroutes` now fails on any layout screen name with no route behind it.
+- 20 component files that lived inside `app/` were registered as routes. They moved to
+  `components/landing/` and `components/pages/screens/`.
+- **Change Password crashed for every staff panel** (`PALETTE` undefined). It now also asks for
+  8 characters, as its message and password reset always said (the website form likewise).
+- The landing page's **contact form never sent**: it posted to `/api/contact`, which doesn't exist.
+  It now posts to `/api/website/contact` with the `preferredMode` the server requires.
+- Sign-in for an HR or School Admin account now names the role. It used to read "that accounts…
+  no that panel".
+
+**Teacher — Test and Examination**
+- Marks sheet as on the website:
+  - a toolbar "Scan a marks sheet" (student filter, set, photo or PDF)
+  - practical marks and the practical's total
+  - a Set column, and switching between total-only and per-question marking
+  - Excel template download and import
+  - roll and admission numbers on each row
+- Manage Questions as on the website:
+  - question-set tabs
+  - sub-questions (a)(b), either/or join and split, reordering
+  - copying a paper from or to other sections
+  - PDF and photo import
+  - pictures on the question, options and sample answer
+  - adding a chapter or topic inline, and "+ Add a new skill set"
+  - the website's rich-text editor (maths, tables, images)
+  - a printable paper download
+- **Data loss fixed:** editing a question in the app erased its pictures and could blank its
+  chapter/topic, because the server overwrites all six picture URLs on every update. Every field is
+  now sent.
+- Rich text and maths now render instead of showing raw HTML.
+
+**Teacher — new tabs (Classroom and Assessment hubs)**
+- Student Management: roster, editing a student with a photo, and merging two records of the same
+  child.
+- Scholastics, Co-Scholastics and Additional Skills.
+
+**Principal**
+- New tabs: Report Card Areas and Report Card Grades.
+- Manage Students:
+  - **Names showed "—" for every student.** The screen read `id`/`fullName` where the server sends
+    `studentId`/`studentName`.
+  - Also added: the school-export template, a panel for students in no section with Place, Edit
+    placement, formal photo, and duplicate merge.
+- Test and Examination:
+  - **Saving marks failed on the first unmarked student.** Only rows with something to save are
+    sent now, and a cleared mark is named before saving.
+  - Marks are clamped to the student's set total, which is what the server checks, instead of the
+    nominal maximum.
+  - The marks sheet shows set totals and practical marks.
+  - A "Tests missing from some subjects" panel creates the missing tests.
+- Class Management:
+  - Name a section by hand ("F COMM").
+  - Adding subjects offers the class's existing tests, ticked.
+- Fee Management deep links (`?view=`) were ignored and now work.
+
+**Still website-only:** the HR portal, the School Admin panel, "My Team" (for managers) and the
+sales rep's Proformas.
+
+## Unreleased — marks from a photographed answer book; counselling in one place (30 Sept 2026)
+
+Ships with the next store build too (no OTA channel). **Deploy the backend first** — it carries
+Flyway **V111** (`exam_questions.marks` may be NULL, `exam_results.total_by_hand`) and the new
+endpoints below.
+
+- **Scan answer book (Test and Examination → marks).** Only where the server's
+  `GET /api/teacher/reports/scan-available` says `marksSheet: true`. Take or choose a photo of the
+  student's answer-book cover (sent as a JPEG, at most 3000 px); the marks land in that student's
+  boxes, coloured by how sure the reader is, and **nothing is saved until Save marks**. A blank box
+  or a dash counts as 0; an unreadable or disputed box is left empty and flagged, never guessed.
+- **An exam with no questions is set up by its first sheet.** The questions read off the cover are
+  shown first — add or remove one, correct a mark, check the paper's Total marks and the student's
+  total — and are created only on **Create**. The sheet then switches to per-question marking with
+  that student's marks in place. Such questions have no maximum of their own, so the paper is
+  marked out of its **Total marks**, which the teacher can change on the marks sheet
+  (`PUT …/exams/{id}/total-marks`; never below a mark already entered).
+- **A later sheet with more questions** offers to add them (`POST …/exams/{id}/questions/from-sheet`).
+  On a paper whose every question says what it is out of, the new ones must say it too.
+- **A student's total can be typed** — the examiner's "54.5 = 55" — and is kept as typed
+  (`totalByHand`), with "Use the questions added up" to go back to the sum.
+- **Fixed on the way — per-question marking:**
+  - It **sent every question of the exam**, so a paper with a Set 2 was refused ("That question is
+    not part of this paper"). It now sends the student's own set, with `questionSet`.
+  - It listed every row of the paper flat, so an either/or choice showed as two questions and a
+    passage as its parent plus its parts. It now shows the website's boxes: Q2 (either/or), Q3a, Q3b.
+  - **Untouched students are no longer saved as present with 0.** Only rows with a mark, a typed
+    total, an absence or an earlier result are sent — the website's rule.
+- **Fixed on the way — one total per student:** saving sent every student, and the server refuses a
+  present student with no total ("Marks are required for …"), so saving five of forty — or one
+  scanned answer book — failed outright. Only rows with a total, an absence or an earlier result
+  are sent now, as on the website.
+- **Manage Questions:** "Marks" may be left blank (no maximum), and editing such a question no
+  longer fills in 1. The analysis shows its score as "n/—", without a percentage.
+- **Counselling Report is one screen with three tabs** (Psychometric | Notes | Report) for parent
+  and teacher, as on the website. The old routes redirect to the right tab (`?tab=`). The teacher's
+  Psychometric tab needs the new `GET /api/teacher/counselling/students/{studentId}/psychometric`.
+- **Shreya Speak lives in the chat only** for teacher and partner. The page-level pill is gone from
+  the teacher workspace, the teacher's view of a student's psychometric result, and the partner
+  overview and school analytics, as on the website. Parent and student keep theirs, as the website does.
+- **Until this build is installed**, the app already on phones shows "/0" beside a question with no
+  maximum. That is cosmetic: it only caps a mark when a maximum exists, so marks still save.
+- New checker: `scripts/checkexamscan.mjs` (16 behaviours, 26 wiring assertions, 42 mutations).
+- **Not device-tested.** First device test: photograph a real answer book on Android and iOS, for
+  an exam with no questions (review → Create → Save marks) and for one with questions.
+
+## Unreleased — Shreya speaks and listens; the partner Shreya (Sept 2026)
+
+Ships with the next store build (no OTA channel). **Bump `version` / `android.versionCode` in
+app.json when cutting it** — app.json is at 2.1.0 / 16, and these notes lag behind that.
+
+- **Read-aloud works again, in every language.** Since the 24 Sep batch, Shreya Speak and
+  tap-to-read sent the language picker's whole object (`{code, nativeName, englishName}`) where
+  `/api/v1/translate/tts` takes a code, so every tap got a 400 — English included. Both now send
+  `languageCodeOf(language)` (`utils/languageCode.js`), and `checkspeech.mjs` fails on the old line.
+- **Shreya Speak in the chat.** The shared chat sheet's header now carries a Shreya Speak pill that
+  reads Shreya's latest reply, in the chosen language (teacher, Shreyartha teacher, parent, student,
+  partner). It stops when the sheet closes or Shreya answers again. The Principal has none —
+  `/tts` refuses SCHOOL_ADMIN, and the web principal panel has no voice either.
+- **A microphone in the chat.** Tap 🎤 in free chat, ask, tap ■: the words land in the text box to
+  check and send (never sent automatically). Uploads go to the new
+  `POST /api/v1/speech/transcribe` (Azure fast transcription).
+  **Needs a working Azure Speech key on the Standard (S0) tier** — the key in `backendmain/.env`
+  was rejected by Azure in every region on 26 Sep 2026, so the mic is built and unit-tested but has
+  **not been heard end to end**. First device test: record on Android (AMR-WB) and iOS (WAV). An
+  Android failure now says "could not read that recording (audio/amr-wb)" — if so, add an AAC
+  dictation preset to `useVoiceRecorder` rather than changing its AMR-WB default.
+- **Partner Shreya.** A For Support card on the partner home opens the chat on
+  `/api/partner/shreya` — schools, earnings, plans and partner code, payout details, and (Masters
+  only) linked partners. `checkpartnerdashboard.mjs` used to forbid any partner Shreya; it now
+  requires one, below the verification redirect, with the tier's config.
+- **Each portal's own shortcuts.** The sheet's free-chat actions were the teacher's for everyone
+  (a parent was offered "Assign Homework", a route the parent app does not have). They now come
+  from each portal's config; the subtitle and loading text too.
+- New checker: `scripts/checkshreyavoice.mjs` (23 mutations).
+
 ## 2.0.0 (versionCode 14)
 
 The release where the student panel reached parity with the website, the partner panel went fully

@@ -1,3 +1,4 @@
+/* global __DEV__ */
 // services/staffApi.js
 // The HTTP client for the native school-staff screens (teacher panel and the app/staff/[role]
 // shells). Everything the teacher panel fetches goes through here.
@@ -192,14 +193,26 @@ const request = async (endpoint, options = {}) => {
     // Distinguish a caller-side cancellation (screen unmounted — say nothing) from our own
     // timeout, which reads to the user exactly like being offline.
     const cancelled = err?.name === 'AbortError' && !!callerSignal?.aborted;
+    // Our own timer, as opposed to the network failing: a slow answer (a scanned answer book can
+    // take a minute and more) is not a lost connection, and saying so tells the teacher to wait
+    // and retry rather than hunt for a signal.
+    const timedOut = err?.name === 'AbortError' && !cancelled;
+    if (__DEV__ && !cancelled) {
+      // React Native reports every transport failure as a bare "Network request failed"; without
+      // this line there is nothing to tell a dropped connection from an unreadable upload file.
+      console.warn(`[staffApi] ${method} ${endpoint} failed: ${timedOut ? `timed out after ${timeoutMs} ms` : err?.message}`);
+    }
     const error = new StaffApiError(
       cancelled
         ? 'Request cancelled.'
-        : 'Could not reach the server. Check your connection and try again.',
+        : timedOut
+          ? `The server took longer than ${Math.round(timeoutMs / 1000)} seconds to answer. Try again in a moment.`
+          : 'Could not reach the server. Check your connection and try again.',
       0,
       null,
     );
     error.aborted = cancelled;
+    error.timedOut = timedOut;
     throw error;
   } finally {
     clearTimeout(timer);

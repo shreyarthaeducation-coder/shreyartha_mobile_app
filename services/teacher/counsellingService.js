@@ -143,3 +143,16 @@ export async function fetchCounsellorReports(studentId, signal, endpoint = TEACH
   });
   return Array.isArray(res) ? res : [];
 }
+
+/**
+ * A student's psychometric card, for the Counselling Report's first tab: the keys of the parent's
+ * `/api/parent/dashboard/psychometric` (chapterName, completedCount, totalTopics,
+ * hasCompletedAssessment, …) plus `personalStatement`. Portal A only — any student in the
+ * teacher's school; another school's is a 403.
+ */
+export async function fetchStudentPsychometric(studentId, signal) {
+  return staffApi.get(
+    `${TEACHER_COUNSELLING_BASE}/students/${encodeURIComponent(studentId)}/psychometric`,
+    { signal },
+  );
+}

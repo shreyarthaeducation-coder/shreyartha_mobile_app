@@ -7,6 +7,7 @@ import { usePalette } from './PaletteContext';
 // and those import this kit — going through it would close an import cycle.
 import StaffHeader from '../staff/StaffHeader';
 import Toast from './Toast';
+import SheetToastContext from './SheetToastContext';
 // By path, for the same reason as StaffHeader above: the student barrel pulls in screens.
 import ShreyaSpeakButton from '../student/ai/ShreyaSpeakButton';
 import ttsClient from '../../services/shared/ttsClient';
@@ -37,6 +38,9 @@ import {
  *   selectableReadAloud  — the control becomes a "tap anything to hear it" switch instead, and the
  *                          screen's <Readable> blocks become individually tappable. This is the
  *                          phone's equivalent of highlighting a passage in a browser.
+ *   embedded             — the screen is one tab of another screen (the Counselling Report), which
+ *                          already draws the safe area and the header: skip both, keep everything
+ *                          else. title and fallbackRoute are then unused.
  */
 
 function ErrorBlock({ message, onRetry, palette }) {
@@ -144,6 +148,9 @@ export default function ScreenScaffold({
   // When true the read-aloud control turns on "tap anything to hear it" instead of reading the
   // whole screen. The screen's own blocks opt in by wrapping themselves in <Readable text="…">.
   selectableReadAloud = false,
+  // Inside another screen's tab: no safe area and no header of its own. Every other caller omits
+  // it and is unchanged.
+  embedded = false,
   children,
 }) {
   const contextPalette = usePalette();
@@ -193,17 +200,32 @@ export default function ScreenScaffold({
     );
   }
 
+  // The sheets this screen opens are Modals, drawn above the Toast below: they show the same toast
+  // inside themselves (FormSheet), or every message raised while one is open is never seen.
+  if (embedded) {
+    return (
+      <SheetToastContext.Provider value={toast || null}>
+        <ReadAloudModeProvider>
+          <View style={styles.page}>{body}</View>
+          <Toast message={toast?.message} tone={toast?.tone} />
+        </ReadAloudModeProvider>
+      </SheetToastContext.Provider>
+    );
+  }
+
   return (
-    <ReadAloudModeProvider>
-      <SafeAreaView
-        style={[styles.safe, { backgroundColor: palette.headerBg }]}
-        edges={['top', 'left', 'right']}
-      >
-        <StaffHeader title={title} fallbackRoute={fallbackRoute} />
-        <View style={styles.page}>{body}</View>
-        <Toast message={toast?.message} tone={toast?.tone} />
-      </SafeAreaView>
-    </ReadAloudModeProvider>
+    <SheetToastContext.Provider value={toast || null}>
+      <ReadAloudModeProvider>
+        <SafeAreaView
+          style={[styles.safe, { backgroundColor: palette.headerBg }]}
+          edges={['top', 'left', 'right']}
+        >
+          <StaffHeader title={title} fallbackRoute={fallbackRoute} />
+          <View style={styles.page}>{body}</View>
+          <Toast message={toast?.message} tone={toast?.tone} />
+        </SafeAreaView>
+      </ReadAloudModeProvider>
+    </SheetToastContext.Provider>
   );
 }
 

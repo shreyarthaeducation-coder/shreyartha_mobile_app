@@ -1,6 +1,8 @@
-// Checker for the two product-owner requests:
+// Checker for the product-owner requests:
 //   1. "Welcome and then his image and below name should be there on home page" — for every user
 //   2. "its not survey.. and student reflection should come just after profile page"
+//   3. (1 Oct 2026) "for all the dashboards remove entity title name and only put entity value
+//      there, as the icon is descriptive enough" — IdentityCard rows and ProfileHeaderCard chips
 //
 //   node scripts/checkhomeheader.mjs
 //
@@ -42,6 +44,8 @@ const SOURCES = {
   // serves the staff and parent homes, so its own assertions below stay exactly as they were; only
   // the student half is retargeted.
   identityCard: 'components/shared/home/IdentityCard.js',
+  // The photo-led header (four staff roles). Its chips carry the same label/value pair.
+  profileHeaderCard: 'components/shared/home/ProfileHeaderCard.js',
   staffMenu: 'components/staff/StaffMenuScreen.js',
   welcomeHeader: 'components/ui/WelcomeHeader.js',
   profileService: 'services/student/profileService.js',
@@ -209,10 +213,69 @@ async function assertions(mods, sources, profileService) {
   // The old one-line greeting must be gone from the staff home, or two greetings render.
   if (/Hi, \{profile\.name\}/.test(sources.staffMenu)) bad('the staff home still says "Hi," instead of Welcome');
 
+  // ── 3. VALUES ONLY (1 Oct 2026) ──────────────────────────────────────────
+  // Read with comments stripped: both components DESCRIBE the label in prose, and an assertion
+  // matching the comment instead of the code is exactly the vacuous kind this file exists to avoid.
+  const cardCode = stripComments(card);
+  const chipCode = stripComments(sources.profileHeaderCard);
+  if (/>\s*\{row\.label\}\s*</.test(cardCode)) {
+    bad('IdentityCard draws the row label again — the dashboards show the value only, the icon names it');
+  }
+  if ((cardCode.match(/accessibilityLabel=\{`\$\{row\.label\}: /g) || []).length < 2) {
+    bad('IdentityCard rows (pressable and static) must still SAY their label to a screen reader');
+  }
+  if (!/\{value \|\| `\$\{row\.label\}: \$\{t\.notSet/.test(cardCode)) {
+    bad('an empty IdentityCard row must name the missing fact ("Stream: Not set"), not just say "Not set"');
+  }
+  if (/>\s*\{chip\.label\}\s*</.test(chipCode)) {
+    bad('ProfileHeaderCard draws the chip label again — the chips show the value only');
+  }
+  if (!/accessibilityLabel=\{`\$\{chip\.label\}: \$\{chip\.value\}`\}/.test(chipCode)) {
+    bad('ProfileHeaderCard chips must carry their label for a screen reader — it is drawn nowhere else');
+  }
+
   return out;
 }
 
+/** Block and line comments removed, so prose about a label never satisfies an assertion about code. */
+function stripComments(src) {
+  return src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
+}
+
 const MUTATIONS = [
+  {
+    name: 'the IdentityCard row label drawn again',
+    sources: (k, s) =>
+      k === 'identityCard'
+        ? s.replace('{/* No visible label', '<Text>{row.label}</Text>{/* No visible label')
+        : s,
+  },
+  {
+    // Only the LAST one (the static, non-pressable row), so the "both branches" count is what fails.
+    name: 'the IdentityCard screen-reader label dropped from the static rows',
+    sources: (k, s) => {
+      if (k !== 'identityCard') return s;
+      const at = s.lastIndexOf('accessibilityLabel={`${row.label}: ');
+      return at < 0 ? s : s.slice(0, at) + 'accessibilityLabel={`' + s.slice(at + 'accessibilityLabel={`${row.label}: '.length);
+    },
+  },
+  {
+    name: 'an empty IdentityCard row reduced to a bare "Not set"',
+    sources: (k, s) =>
+      k === 'identityCard' ? s.replace("{value || `${row.label}: ${t.notSet || 'Not set'}`}", "{value || t.notSet || 'Not set'}") : s,
+  },
+  {
+    name: 'the ProfileHeaderCard chip label drawn again',
+    sources: (k, s) =>
+      k === 'profileHeaderCard'
+        ? s.replace('<View style={styles.chipText}>', '<View style={styles.chipText}><Text>{chip.label}</Text>')
+        : s,
+  },
+  {
+    name: 'the ProfileHeaderCard chip screen-reader label dropped',
+    sources: (k, s) =>
+      k === 'profileHeaderCard' ? s.replace('accessibilityLabel={`${chip.label}: ${chip.value}`}', '') : s,
+  },
   {
     name: 'the reflection tab moved back to last',
     constants: (n, s) =>

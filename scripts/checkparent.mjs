@@ -48,6 +48,14 @@ const SRC = {
   shreyaApi: 'services/shreyaApi.js',
   parentMenuScreen: 'components/parent/ParentMenuScreen.js',
   chatbotConfig: 'constants/parentChatbotConfig.js',
+  // The Counselling Report (29 Sep 2026): one tile, three tabs, and the three old routes kept as
+  // redirects because the backend chatbot's page links still name them.
+  counsellingScreen: 'components/parent/CounsellingReportScreen.js',
+  assessmentScreen: 'components/parent/AssessmentResultsScreen.js',
+  notesScreen: 'components/parent/CounselorNotesScreen.js',
+  redirectPsychometric: 'app/parent/assessment-results.js',
+  redirectNotes: 'app/parent/counselor-notes.js',
+  redirectReport: 'app/parent/counsellor-report.js',
 };
 
 let failures = 0;
@@ -59,6 +67,33 @@ const ok = (msg) => console.log(`  ✓ ${msg}`);
 
 // Mixed line endings live in this repo; normalise so source assertions cannot fail on that alone.
 const read = (p) => fs.readFileSync(p, 'utf8').replace(/\r\n/g, '\n');
+
+/** The Counselling Report's tab constants — import-free, so evaluated like the menu. */
+async function loadCounsellingTabs(mutate) {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'parenttabs-'));
+  let src = read(path.join(APP, 'constants', 'counsellingReport.js'));
+  if (mutate) src = mutate(src);
+  fs.writeFileSync(path.join(dir, 'counsellingReport.mjs'), src);
+  return import(pathToFileURL(path.join(dir, 'counsellingReport.mjs')).href + `?t=${Math.random()}`);
+}
+
+/** The Counselling Report's tab keys as the WEB declares them, in order — never retyped. */
+function webCounsellingTabs() {
+  const src = read(
+    path.join(WEB, 'src', 'School', 'shared', 'counsellingReport', 'counsellingReportPaths.js'),
+  );
+  const start = src.indexOf('COUNSELLING_REPORT_TAB = ');
+  const block = src.slice(start, src.indexOf('});', start));
+  return [...block.matchAll(/[A-Z]+:\s*"([^"]+)"/g)].map((m) => m[1]);
+}
+
+/**
+ * A web dashboard suffix in the app's form. The one difference: a Counselling Report tab is a path
+ * segment on the web (`/counselling-report/notes`) and a query in the app
+ * (`/counselling-report?tab=notes`), because the app's tabs live inside one native screen.
+ */
+const toAppSuffix = (webSuffix) =>
+  webSuffix.replace(/^\/counselling-report\/([^/?#]+)$/, '/counselling-report?tab=$1');
 
 /** Stage the import-free constants as .mjs so they can be evaluated, not grepped. */
 async function loadMenu(mutate) {
@@ -195,15 +230,16 @@ function loadSources(mutate) {
   return out;
 }
 
-function assertions(menu, calendar, layoutSrc, src, fee, chatbot, routeNames) {
+function assertions(menu, calendar, layoutSrc, src, fee, chatbot, routeNames, tabs) {
   const out = [];
   const bad = (m) => out.push(m);
   const { PARENT_MENU, PARENT_HEADER_ACTIONS } = menu;
 
   // ── 1. the menu still mirrors the web sidebar ─────────────────────────────
   const web = webSidebarItems();
-  // Ten since Notifications joined the web sidebar (the parent inbox); the app menu carries it too.
-  if (web.length !== 10) bad(`web sidebar extractor found ${web.length} items, expected 10`);
+  // Eight since Assessment Results, Counselor Notes and Counsellor Report became the three tabs of
+  // one Counselling Report item (29 Sep 2026); ten before that, with Notifications.
+  if (web.length !== 8) bad(`web sidebar extractor found ${web.length} items, expected 8`);
 
   // "home" is deliberately absent: the tile grid IS home, and its header already shows the child
   // card that page renders. Everything else must be present, in order.
@@ -513,18 +549,26 @@ function assertions(menu, calendar, layoutSrc, src, fee, chatbot, routeNames) {
     bad(`chatbot sectionKeys drifted from the web\n      got:  ${gotSectionKeys}\n      want: ${wantSectionKeys}`);
   }
 
-  // Each web `route` becomes a suffix against /parent, and every one must be a real native screen.
+  // Each web `route` becomes a suffix against /parent, and every one must be a real native screen —
+  // with a Counselling Report tab moved from the path into `?tab=` (toAppSuffix), naming a real tab.
   for (let i = 0; i < PARENT_SECTIONS.length; i += 1) {
     const section = PARENT_SECTIONS[i];
     const web = webSections[i];
     if (!web) continue;
-    const wantSuffix = web.route.replace('/parent/platform/dashboard', '');
+    const wantSuffix = toAppSuffix(web.route.replace('/parent/platform/dashboard', ''));
     if (section.routeSuffix !== wantSuffix) {
       bad(`chatbot section "${section.sectionKey}" has routeSuffix "${section.routeSuffix}", web says "${wantSuffix}"`);
     }
-    const screen = section.routeSuffix ? section.routeSuffix.replace(/^\//, '') : 'index';
+    const [suffixPath, query] = (section.routeSuffix || '').split('?');
+    const screen = suffixPath ? suffixPath.replace(/^\//, '') : 'index';
     if (!routeNames.has(screen)) {
       bad(`chatbot section "${section.sectionKey}" points at /parent${section.routeSuffix} — no such screen`);
+    }
+    if (query) {
+      const tab = new URLSearchParams(query).get('tab');
+      if (!tabs.COUNSELLING_REPORT_TAB_ORDER.includes(tab)) {
+        bad(`chatbot section "${section.sectionKey}" opens tab "${tab}", which the Counselling Report does not have`);
+      }
     }
   }
 
@@ -639,13 +683,118 @@ function assertions(menu, calendar, layoutSrc, src, fee, chatbot, routeNames) {
     }
   }
 
+  // ── 12. the Counselling Report (29 Sep 2026) ──────────────────────────────
+  //
+  // Three tiles became one screen of three tabs, as on the web. What can go wrong without failing a
+  // build: the tabs drifting from the web's (links carry the keys between the two), a tab drawing a
+  // second header because it lost `embedded`, and an old route — which the backend chatbot's page
+  // links still name — landing on the wrong tab.
+  const order = tabs.COUNSELLING_REPORT_TAB_ORDER;
+  const webTabs = webCounsellingTabs();
+  if (webTabs.length !== 3) bad(`web Counselling Report extractor found ${webTabs.length} tabs, expected 3`);
+  if (order.join(',') !== webTabs.join(',')) {
+    bad(`Counselling Report tabs drifted from the web\n      app: ${order.join(',')}\n      web: ${webTabs.join(',')}`);
+  }
+  if (order[0] !== 'psychometric') {
+    bad('the Counselling Report no longer leads with the Psychometric Result');
+  }
+  if (tabs.counsellingReportTab(undefined) !== order[0] || tabs.counsellingReportTab('nonsense') !== order[0]) {
+    bad('a missing or unknown ?tab= no longer opens the first tab');
+  }
+
+  const reportScreen = codeOnly(src.counsellingScreen);
+  const shown = [...reportScreen.matchAll(/value:\s*COUNSELLING_REPORT_TABS\.([A-Z]+)/g)].map((m) =>
+    m[1].toLowerCase(),
+  );
+  if (shown.join(',') !== order.join(',')) {
+    bad(`the parent Counselling Report shows its tabs as ${shown.join(',') || '(none)'}, not ${order.join(',')}`);
+  }
+  for (const name of ['AssessmentResultsScreen', 'CounselorNotesScreen', 'CounsellorReportScreen']) {
+    if (!new RegExp(`<${name} embedded />`).test(reportScreen)) {
+      bad(`the Counselling Report renders ${name} without \`embedded\` — a second header inside the tab`);
+    }
+  }
+  for (const key of ['assessmentScreen', 'notesScreen', 'parentReport']) {
+    if (!/embedded=\{embedded\}/.test(codeOnly(src[key]))) {
+      bad(`${SRC[key]} does not pass \`embedded\` to its ScreenScaffold`);
+    }
+  }
+  // The free-chat shortcuts open tabs too (the config imports AsyncStorage, so it is read, not run).
+  for (const m of codeOnly(src.chatbotConfig).matchAll(/suffix: '\/counselling-report\?tab=([^']*)'/g)) {
+    if (!order.includes(m[1])) bad(`a parent chat shortcut opens tab "${m[1]}", which the Counselling Report does not have`);
+  }
+  for (const [key, tab] of [
+    ['redirectPsychometric', 'psychometric'],
+    ['redirectNotes', 'notes'],
+    ['redirectReport', 'report'],
+  ]) {
+    if (!new RegExp(`<Redirect href="/parent/counselling-report\\?tab=${tab}" />`).test(codeOnly(src[key]))) {
+      bad(`${SRC[key]} no longer redirects to the Counselling Report's ${tab} tab`);
+    }
+  }
+
   return out;
 }
 
 const MUTATIONS = [
   {
     name: 'a tile pointed at a route file that does not exist',
-    menu: (s) => s.replace("native: '/parent/counselor-notes'", "native: '/parent/nowhere'"),
+    menu: (s) => s.replace("native: '/parent/counselling-report'", "native: '/parent/nowhere'"),
+  },
+  {
+    name: 'the Counselling Report tile split back out of the menu (drifts from the web sidebar)',
+    menu: (s) =>
+      s.replace(
+        "{ key: 'counselling-report',",
+        "{ key: 'counselor-notes', label: 'Counselor Notes', icon: 'chatbubbles-outline', native: '/parent/counselor-notes' },\n  { key: 'counselling-report',",
+      ),
+  },
+  {
+    name: "the app's Counselling Report tabs reordered away from the web's",
+    tabs: (s) =>
+      s.replace(
+        '  COUNSELLING_REPORT_TABS.PSYCHOMETRIC,\n  COUNSELLING_REPORT_TABS.NOTES,',
+        '  COUNSELLING_REPORT_TABS.NOTES,\n  COUNSELLING_REPORT_TABS.PSYCHOMETRIC,',
+      ),
+  },
+  {
+    name: 'an unknown ?tab= no longer falling back to the first tab',
+    tabs: (s) => s.replace(': COUNSELLING_REPORT_TAB_ORDER[0];', ': requested;'),
+  },
+  {
+    name: 'the parent screen showing its tabs in another order',
+    src: (k, s) =>
+      k === 'counsellingScreen'
+        ? s.replace('value: COUNSELLING_REPORT_TABS.NOTES', 'value: COUNSELLING_REPORT_TABS.REPORT')
+        : s,
+  },
+  {
+    name: 'a Counselling Report tab rendered without `embedded` (a second header)',
+    src: (k, s) =>
+      k === 'counsellingScreen' ? s.replace('<CounselorNotesScreen embedded />', '<CounselorNotesScreen />') : s,
+  },
+  {
+    name: 'a tab screen ignoring `embedded`',
+    src: (k, s) => (k === 'notesScreen' ? s.replace('embedded={embedded}', '') : s),
+  },
+  {
+    name: "an old tile's route redirecting to the wrong tab",
+    src: (k, s) => (k === 'redirectNotes' ? s.replace('?tab=notes', '?tab=report') : s),
+  },
+  {
+    name: 'a chatbot link naming a Counselling Report tab that does not exist',
+    chatbot: (s) =>
+      s.replace('routeSuffix: "/counselling-report?tab=report"', 'routeSuffix: "/counselling-report?tab=reports"'),
+  },
+  {
+    name: 'a chat shortcut naming a Counselling Report tab that does not exist',
+    src: (k, s) =>
+      k === 'chatbotConfig' ? s.replace("suffix: '/counselling-report?tab=notes'", "suffix: '/counselling-report?tab=note'") : s,
+  },
+  {
+    name: 'a chatbot link still using the web path form of a tab (no such screen)',
+    chatbot: (s) =>
+      s.replace('routeSuffix: "/counselling-report?tab=report"', 'routeSuffix: "/counselling-report/report"'),
   },
   {
     name: 'a tile reverted to WebView',
@@ -901,8 +1050,9 @@ for (const m of MUTATIONS) {
     const calendar = await loadCalendar(m.calendar);
     const fee = await loadFeeService(m.fee);
     const chatbot = await loadChatbot(m.chatbot);
+    const tabs = await loadCounsellingTabs(m.tabs);
     caught =
-      assertions(menu, calendar, read(path.join(ROUTES, '_layout.js')), loadSources(m.src), fee, chatbot, routeNames())
+      assertions(menu, calendar, read(path.join(ROUTES, '_layout.js')), loadSources(m.src), fee, chatbot, routeNames(), tabs)
         .length > 0;
   } catch {
     caught = true; // a mutation that will not even load is caught, loudly
@@ -923,6 +1073,7 @@ console.log('\nParent panel:');
     await loadFeeService(),
     await loadChatbot(),
     routeNames(),
+    await loadCounsellingTabs(),
   );
   if (problems.length === 0) {
     const native = menu.PARENT_MENU.filter((i) => i.native).length;

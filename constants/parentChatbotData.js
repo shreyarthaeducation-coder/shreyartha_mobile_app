@@ -14,7 +14,10 @@
  * native route, so `router.push('/parent' + routeSuffix)` needs no mapping table. `''` lands on the
  * menu grid, which is the right destination for the two sections that point at the dashboard root.
  *
- * Three sections deliberately share `/academic-progress` and two share `/assessment-results` — the
+ * The one translation: the web opens a Counselling Report tab by path (`/counselling-report/report`)
+ * and the app by query (`/counselling-report?tab=report`) — see constants/counsellingReport.js.
+ *
+ * Three sections deliberately share `/academic-progress` and two share the psychometric tab — the
  * web does the same. They are different conversations about one screen, not a mistake.
  */
 
@@ -66,7 +69,7 @@ export const PARENT_SECTIONS = [
   {
     label: "Psychometric & Career",
     sectionKey: "psychometric",
-    routeSuffix: "/assessment-results",
+    routeSuffix: "/counselling-report?tab=psychometric",
     overview:
       "**Psychometric & Career** shows your child's progress through the scientifically designed career assessments.",
     functionality:
@@ -81,7 +84,7 @@ export const PARENT_SECTIONS = [
   {
     label: "Career Interests",
     sectionKey: "subject-career",
-    routeSuffix: "/assessment-results",
+    routeSuffix: "/counselling-report?tab=psychometric",
     overview:
       "**Career Interests** covers the subjects and career paths your child has been exploring.",
     functionality:
@@ -109,7 +112,7 @@ export const PARENT_SECTIONS = [
   {
     label: "Counselling & Wellbeing",
     sectionKey: "counselling",
-    routeSuffix: "/counsellor-report",
+    routeSuffix: "/counselling-report?tab=report",
     overview:
       "**Counselling & Wellbeing** brings together the school counsellor's notes and reports about your child.",
     functionality:

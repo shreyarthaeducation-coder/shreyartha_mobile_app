@@ -43,6 +43,8 @@ const SRC = {
   changePassword: 'components/partner/PartnerChangePasswordScreen.js',
   layout: 'app/partner/_layout.js',
   keys: 'constants/storageKeys.js',
+  chatData: 'constants/partnerChatbotData.js',
+  chatConfig: 'constants/partnerChatbotConfig.js',
 };
 
 let failures = 0;
@@ -96,10 +98,36 @@ async function loadService(mutate) {
   return import(`${pathToFileURL(file).href}?t=${Math.random()}`);
 }
 
+/**
+ * constants/partnerChatbotData.js, evaluated from the (possibly mutated) SOURCE TEXT — so a
+ * mutation of that file changes both what the greps read and what runs.
+ */
+async function loadChatData(text) {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'pchat-'));
+  const file = path.join(dir, 'partnerChatbotData.mjs');
+  fs.writeFileSync(file, text);
+  return import(`${pathToFileURL(file).href}?t=${Math.random()}`);
+}
+
+/**
+ * The section keys the SERVER knows — PartnerShreyaContextService.SECTION_KEYS. A key the app sends
+ * that is not in this set does not error: the server falls through to the overview and Shreya
+ * answers a different question, confidently.
+ */
+const SERVER_SECTION_KEYS = (() => {
+  const java = read(path.resolve(APP, '..', 'backendmain', 'src', 'main', 'java', 'com', 'shreyartha',
+    'backend', 'infrastructure', 'shreya', 'PartnerShreyaContextService.java'));
+  const list = java.match(/SECTION_KEYS\s*=\s*Set\.of\(([\s\S]*?)\);/)?.[1] || '';
+  return new Set([...list.matchAll(/"([a-z-]+)"/g)].map((m) => m[1]));
+})();
+
+const partnerScreenExists = (suffix) =>
+  fs.existsSync(path.join(APP, 'app', 'partner', `${suffix.replace(/^\//, '')}.js`));
+
 const okPart = (data) => ({ data, error: null, forbidden: false });
 const failedPart = () => ({ data: null, error: 'Could not load.', forbidden: false });
 
-function assertions(svc, src) {
+function assertions(svc, src, chat) {
   const out = [];
   const bad = (m) => out.push(m);
   const service = codeOnly(src.service);
@@ -208,15 +236,71 @@ function assertions(svc, src) {
     bad('the identity card has no "not yet assigned" state for an unassigned partner code');
   }
 
-  /* ── 4. NO PARTNER PHOTO, AND NO SHREYA ──────────────────────────────────── */
+  /* ── 4. NO PARTNER PHOTO ─────────────────────────────────────────────────── */
 
   const cardUse = home.match(/<IdentityCard[\s\S]*?\/>/);
   if (cardUse && /photoUrl=/.test(cardUse[0])) {
     bad('the identity card is passed a photoUrl — PartnerUser has thirteen fields and none is an image');
   }
-  // The decision was to leave Shreya out entirely rather than ship an inert card.
-  if (/AssistantCard|ShreyaChatSheet|ShreyaLauncher|partnerChatbot/.test(home)) {
-    bad('a Shreya surface appeared on the partner dashboard — /api/partner/shreya does not exist');
+
+  /* ── 4b. SHREYA — RETARGETED, SEPT 2026 ──────────────────────────────────── */
+  // This block used to FORBID a Shreya surface: the card was left out while /api/partner/shreya did
+  // not exist, rather than ship an inert card. PartnerShreyaController exists now, so the rule
+  // flips — and what can go wrong silently is WHERE the sheet mounts and WHAT it is given:
+  //   * above the verification redirect, an UNVERIFIED_PARTNER could open a chat of 403s;
+  //   * without the partner config it falls back to the TEACHER defaults — /api/teacher/shreya,
+  //     which refuses a partner — under a teacher greeting;
+  //   * on another basePath every page link lands in the wrong portal;
+  //   * a section key the server does not know answers about the overview instead, confidently.
+  const sheetUse = home.match(/<ShreyaChatSheet\b[\s\S]*?\/>/);
+  if (!sheetUse) {
+    bad('nothing on the partner dashboard opens Shreya — /api/partner/shreya exists and is unreachable');
+  } else {
+    if (!/basePath="\/partner"/.test(sheetUse[0])) {
+      bad('the Shreya sheet is not on the /partner base path — its page links would land in another portal');
+    }
+    if (!/config=\{shreyaConfig\}/.test(sheetUse[0])) {
+      bad('the Shreya sheet gets no partner config — it falls back to the teacher chatbot, which 403s a partner');
+    }
+    const redirectAt = home.search(/<Redirect\b[^>]*pending-verification/);
+    if (redirectAt < 0 || home.indexOf(sheetUse[0]) < redirectAt) {
+      bad('the Shreya sheet can mount above the verification redirect — an unverified partner could open it');
+    }
+  }
+  if (!/<AssistantCard\b/.test(home)) bad('the Shreya card is gone — nothing on the dashboard opens the chat');
+  if (!/partnerChatbotConfigFor\(partnerType\)/.test(home)) {
+    bad('the Shreya config no longer follows the tier — Linked Partners would be offered to the wrong partners');
+  }
+
+  const sectionsOf = (list) => (list || []).map((s) => s.sectionKey);
+  if (sectionsOf(chat.sectionsForPartner(false)).includes('linked-partners')) {
+    bad('a Normal partner is offered Linked Partners — the server only ever answers "a Master Partner feature"');
+  }
+  if (!sectionsOf(chat.sectionsForPartner(true)).includes('linked-partners')) {
+    bad('a Master partner lost Linked Partners from the chat');
+  }
+  if (SERVER_SECTION_KEYS.size < 5) bad(`could not read the server's SECTION_KEYS (got ${SERVER_SECTION_KEYS.size})`);
+  const unknownKeys = sectionsOf(chat.PARTNER_SECTIONS).filter((k) => !SERVER_SECTION_KEYS.has(k));
+  if (unknownKeys.length) {
+    bad(`section key(s) the server does not know: ${unknownKeys.join(', ')} — each silently answers about the overview`);
+  }
+  for (const section of chat.PARTNER_SECTIONS || []) {
+    if (section.routeSuffix && !partnerScreenExists(section.routeSuffix)) {
+      bad(`"Go to ${section.label}" points at /partner${section.routeSuffix}, which has no screen`);
+    }
+  }
+  for (const [route, want] of [
+    ['/partner/platform/dashboard', '/overview'],
+    ['/partner/platform/dashboard/monetization', '/monetization'],
+    ['/partner/platform/dashboard/linked-partners', '/linked-partners'],
+    ['/partner/platform/dashboard/no-such-page', null],
+    ['/parent/platform/dashboard/attendance', null],
+  ]) {
+    const got = chat.resolvePartnerLink(route);
+    if (got !== want) bad(`resolvePartnerLink(${route}) is ${JSON.stringify(got)}, not ${JSON.stringify(want)}`);
+  }
+  for (const m of codeOnly(src.chatConfig).matchAll(/suffix: '([^']+)'/g)) {
+    if (!partnerScreenExists(m[1])) bad(`a Shreya quick action points at /partner${m[1]}, which has no screen`);
   }
 
   /* ── 5. THE GATE STILL PRECEDES EVERY FETCH ──────────────────────────────── */
@@ -343,8 +427,53 @@ const MUTATIONS = [
     src: (k, s) => (k === 'home' ? s.replace('          name={profile?.fullName || partnerName}', '          name={profile?.fullName}\n          photoUrl={profile?.photo}') : s),
   },
   {
-    name: 'a Shreya card added despite there being no partner backend',
-    src: (k, s) => (k === 'home' ? s.replace('<SearchEntry', '<AssistantCard />\n        <SearchEntry') : s),
+    name: 'the Shreya sheet mounted above the verification redirect',
+    src: (k, s) =>
+      k === 'home'
+        ? s.replace(
+            '  if (verified === null) return <View style={styles.blank} />;',
+            '  const early = <ShreyaChatSheet visible basePath="/partner" config={shreyaConfig} />;\n  if (verified === null) return <View style={styles.blank} />;',
+          )
+        : s,
+  },
+  {
+    name: 'the Shreya sheet given no config (the teacher fallback that 403s a partner)',
+    src: (k, s) => (k === 'home' ? s.replace('config={shreyaConfig}', '') : s),
+  },
+  {
+    name: 'the Shreya sheet on the teacher base path',
+    src: (k, s) => (k === 'home' ? s.replace('basePath="/partner"', 'basePath="/teacher"') : s),
+  },
+  {
+    name: 'the Shreya card removed',
+    src: (k, s) => (k === 'home' ? s.replace('<AssistantCard', '<View') : s),
+  },
+  {
+    name: 'the Shreya config pinned to one tier',
+    src: (k, s) =>
+      k === 'home' ? s.replace('partnerChatbotConfigFor(partnerType)', "partnerChatbotConfigFor('MASTER')") : s,
+  },
+  {
+    name: 'Linked Partners offered to every partner',
+    src: (k, s) =>
+      k === 'chatData'
+        ? s.replace(
+            'return PARTNER_SECTIONS.filter((section) => !section.masterOnly || isMaster);',
+            'return PARTNER_SECTIONS;',
+          )
+        : s,
+  },
+  {
+    name: 'a chat section key the server does not know',
+    src: (k, s) => (k === 'chatData' ? s.replace("sectionKey: 'bank-info'", "sectionKey: 'bank-details'") : s),
+  },
+  {
+    name: 'the dashboard-root link sent to the menu instead of the analytics screen',
+    src: (k, s) => (k === 'chatData' ? s.replace("if (rest === '') return '/overview';", "if (rest === '') return '';") : s),
+  },
+  {
+    name: 'a Shreya quick action pointing at a screen the partner app does not have',
+    src: (k, s) => (k === 'chatConfig' ? s.replace("suffix: '/plans'", "suffix: '/homework'") : s),
   },
   {
     name: 'THE 403 STORM: the figures fetched before the verification gate',
@@ -400,7 +529,8 @@ for (const m of MUTATIONS) {
       if (k === 'service' && m.svc) text = m.svc(text);
       return text;
     };
-    caught = assertions(svc, loadSources(mutateSources)).length > 0;
+    const sources = loadSources(mutateSources);
+    caught = assertions(svc, sources, await loadChatData(sources.chatData)).length > 0;
   } catch {
     caught = true; // a mutation that will not even load is caught, loudly
   }
@@ -411,14 +541,16 @@ for (const m of MUTATIONS) {
 console.log('\nPartner dashboard:');
 {
   const svc = await loadService();
-  const problems = assertions(svc, loadSources());
+  const sources = loadSources();
+  const problems = assertions(svc, sources, await loadChatData(sources.chatData));
   if (problems.length === 0) {
     ok('revenue reads /earnings/summary, in whole rupees, with pending = pending + approved');
     ok('this month is picked out of the Apr→Mar financial-year buckets, not by calendar index');
     ok('students are counted DISTINCT from one call, not by downloading every roster');
     ok('Active/Pending Schools are coming soon — no status column exists to read');
     ok('a failed call is omitted, never drawn as zero');
-    ok('no invented join date, no invented partner code, no partner photo, no Shreya');
+    ok('no invented join date, no invented partner code, no partner photo');
+    ok(`Shreya: below the gate, on /partner, tier-aware config, ${SERVER_SECTION_KEYS.size} section keys all known to the server`);
     ok('the gate precedes every fetch, and the tier still varies the grid');
     ok('search is fingerprinted per partner and built from the menu the website pins');
   } else problems.forEach(fail);

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { Alert, Image, Platform, Pressable, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { SLATE, SPACING, TYPE, leading } from '../../../constants/theme';
 import { usePalette } from '../../ui/PaletteContext';
@@ -11,8 +11,10 @@ import {
   ScreenScaffold,
   Select,
   StatusChip,
+  TextField,
   useToast,
 } from '../../ui';
+import { DuplicateStudentsCard, StudentMergeSheet } from '../shared/StudentMerge';
 import useStaffResource from '../../../hooks/useStaffResource';
 import { fetchSchoolClasses } from '../../../services/admin/classService';
 import { defaultAcademicYear, fetchAcademicYears } from '../../../services/teacher/scopeService';
@@ -20,14 +22,23 @@ import {
   IMPORT_FILE_TYPES,
   ORIGIN_LABEL,
   STATUS_TEXT,
+  ROSTER_EXPORT_FORMAT,
   commitStudentImport,
   downloadImportTemplate,
   fetchRoster,
+  fetchRosterDuplicates,
+  fetchUnplaced,
   isBlocked,
+  mergeRosterStudents,
   naturalAction,
+  placeStudent,
+  previewRosterMerge,
   previewStudentImport,
+  setFormalPhoto,
+  uploadImage,
 } from '../../../services/admin/studentRosterService';
-import { pickFile } from '../../../utils/filePicker';
+import { normaliseDoubtImage } from '../../../utils/doubtImage';
+import { pickFile, pickImage, takePhoto } from '../../../utils/filePicker';
 import { makeStyles } from '../../../utils/makeStyles';
 
 /**
@@ -61,6 +72,13 @@ export default function ManageStudentsScreen({ homeRoute, apiBase }) {
   const [rowActions, setRowActions] = useState({}); // rowNumber -> action | 'SKIP'
   const [result, setResult] = useState(null);
   const [busy, setBusy] = useState('');
+
+  // Students on no roster, the same child twice, and the placement being edited.
+  const [unplaced, setUnplaced] = useState([]);
+  const [duplicates, setDuplicates] = useState([]);
+  const [mergePair, setMergePair] = useState(null);
+  const [mergePlan, setMergePlan] = useState(null);
+  const [placing, setPlacing] = useState(null); // { student, sectionId, rollNumber }
 
   // ── the year / class / section chain ──────────────────────────────────────
   useEffect(() => {
@@ -102,6 +120,126 @@ export default function ManageStudentsScreen({ homeRoute, apiBase }) {
     useStaffResource(rosterLoader);
 
   const students = useMemo(() => (Array.isArray(roster) ? roster : roster?.students || []), [roster]);
+
+  // ── students in no section ────────────────────────────────────────────────
+  // Quietly: a school with nothing stranded sees nothing, and a failure must not take the roster down.
+  const loadUnplaced = useCallback(async () => {
+    if (!yearId) {
+      setUnplaced([]);
+      return;
+    }
+    try {
+      setUnplaced(await fetchUnplaced(yearId));
+    } catch {
+      setUnplaced([]);
+    }
+  }, [yearId]);
+  useEffect(() => {
+    loadUnplaced();
+  }, [loadUnplaced]);
+
+  const loadDuplicates = useCallback(async () => {
+    if (!sectionId) {
+      setDuplicates([]);
+      return;
+    }
+    try {
+      setDuplicates(await fetchRosterDuplicates(sectionId));
+    } catch {
+      setDuplicates([]);
+    }
+  }, [sectionId]);
+  useEffect(() => {
+    loadDuplicates();
+  }, [loadDuplicates]);
+
+  // Every section of the year, flattened, so a placement can go anywhere — not only under the class
+  // picked above.
+  const allSections = useMemo(
+    () =>
+      classList.flatMap((cls) =>
+        (cls.sections || []).map((sec) => ({ value: sec.id, label: `Class ${cls.className} - ${sec.sectionName}` })),
+      ),
+    [classList],
+  );
+
+  const openPlacement = (student, presetSectionId) =>
+    setPlacing({
+      student,
+      sectionId: presetSectionId ?? null,
+      rollNumber: student.rollNumber || '',
+    });
+
+  const savePlacement = () =>
+    run('place', async () => {
+      if (!placing?.sectionId) return;
+      await placeStudent({
+        studentId: placing.student.studentId,
+        sectionId: placing.sectionId,
+        rollNumber: placing.rollNumber,
+      });
+      showToast(`${placing.student.studentName} placed.`, 'success');
+      setPlacing(null);
+      // Both lists shift: the student leaves "not in any section" and joins a roster.
+      await Promise.all([revalidate(), loadUnplaced()]);
+    });
+
+  const changePhoto = (student) => {
+    const attach = (source) =>
+      run(`photo-${student.studentId}`, async () => {
+        const picked = source === 'camera' ? await takePhoto() : await pickImage();
+        if (!picked) return;
+        if (picked.denied) {
+          showToast('Allow camera or photo access to set the photograph.', 'error');
+          return;
+        }
+        const file = await normaliseDoubtImage(picked.uri);
+        const url = await uploadImage({ ...file, name: 'formal-photo.jpg' });
+        await setFormalPhoto(student.studentId, url);
+        showToast('Photo saved.', 'success');
+        await revalidate();
+      });
+    const options = [
+      { text: 'Take photo', onPress: () => attach('camera') },
+      { text: 'Choose photo', onPress: () => attach('library') },
+    ];
+    if (student.formalPhotoUrl) {
+      options.push({
+        text: 'Remove photo',
+        style: 'destructive',
+        onPress: () =>
+          run(`photo-${student.studentId}`, async () => {
+            await setFormalPhoto(student.studentId, '');
+            showToast('Photo removed.', 'success');
+            await revalidate();
+          }),
+      });
+    }
+    if (Platform.OS === 'ios') options.push({ text: 'Cancel', style: 'cancel' });
+    Alert.alert(`${student.studentName}'s formal photo`, 'Used on report cards — the student’s own picture stays theirs.', options, {
+      cancelable: true,
+    });
+  };
+
+  const openMerge = async (pair) => {
+    setMergePair(pair);
+    setMergePlan(null);
+    try {
+      setMergePlan(await previewRosterMerge(pair.schoolRecord.studentId, pair.selfRegistered.studentId));
+    } catch (e) {
+      showToast(e?.message || 'Could not check that pair.', 'error');
+      setMergePair(null);
+    }
+  };
+
+  const confirmMerge = () =>
+    run('merge', async () => {
+      await mergeRosterStudents(mergePair.schoolRecord.studentId, mergePair.selfRegistered.studentId);
+      showToast(`${mergePair.schoolRecord.fullName} is now one record. They sign in with the account they already had.`, 'success');
+      setMergePair(null);
+      setMergePlan(null);
+      await Promise.all([revalidate(), loadDuplicates()]);
+    });
 
   const run = async (key, action) => {
     if (busy) return;
@@ -173,9 +311,9 @@ export default function ManageStudentsScreen({ homeRoute, apiBase }) {
       await revalidate();
     });
 
-  const template = () =>
-    run('template', async () => {
-      await downloadImportTemplate();
+  const template = (format = null) =>
+    run(format ? 'exportTemplate' : 'template', async () => {
+      await downloadImportTemplate(format);
       showToast('Template saved.', 'success');
     });
 
@@ -231,7 +369,7 @@ export default function ManageStudentsScreen({ homeRoute, apiBase }) {
             <Text style={styles.primaryText}>Import students</Text>
           </Pressable>
           <Pressable
-            onPress={template}
+            onPress={() => template(null)}
             disabled={!!busy}
             style={({ pressed }) => [styles.secondaryBtn, pressed && styles.pressed]}
             accessibilityRole="button"
@@ -241,8 +379,49 @@ export default function ManageStudentsScreen({ homeRoute, apiBase }) {
               {busy === 'template' ? 'Saving…' : 'Blank template'}
             </Text>
           </Pressable>
+          {/* The shape a school's existing student system already exports — bring what you have
+              instead of retyping it into ours. */}
+          <Pressable
+            onPress={() => template(ROSTER_EXPORT_FORMAT)}
+            disabled={!!busy}
+            style={({ pressed }) => [styles.secondaryBtn, pressed && styles.pressed]}
+            accessibilityRole="button"
+          >
+            <Ionicons name="document-text-outline" size={19} color={PALETTE.primaryDark} />
+            <Text style={[styles.secondaryText, { color: PALETTE.primaryDark }]}>
+              {busy === 'exportTemplate' ? 'Saving…' : 'School-export template'}
+            </Text>
+          </Pressable>
         </View>
       </Card>
+
+      {unplaced.length > 0 ? (
+        <Card>
+          <CardTitle>
+            {unplaced.length} student{unplaced.length === 1 ? '' : 's'} not in any section
+          </CardTitle>
+          {unplaced.map((u) => (
+            <View key={u.studentId} style={styles.studentRow}>
+              <View style={styles.studentMain}>
+                <Text style={styles.studentName} numberOfLines={1}>{u.studentName || '—'}</Text>
+                <Text style={styles.studentMeta} numberOfLines={2}>
+                  {u.reason || [u.currentClass, u.email].filter(Boolean).join(' · ')}
+                </Text>
+              </View>
+              <Pressable
+                onPress={() => openPlacement(u, null)}
+                disabled={!!busy}
+                style={({ pressed }) => [styles.smallBtn, pressed && styles.pressed]}
+                accessibilityRole="button"
+              >
+                <Text style={[styles.smallText, { color: PALETTE.primaryDark }]}>Place</Text>
+              </Pressable>
+            </View>
+          ))}
+        </Card>
+      ) : null}
+
+      {sectionId ? <DuplicateStudentsCard duplicates={duplicates} onReview={openMerge} /> : null}
 
       {!sectionId ? (
         <EmptyState
@@ -262,12 +441,33 @@ export default function ManageStudentsScreen({ homeRoute, apiBase }) {
             <CardTitle>{students.length} student{students.length === 1 ? '' : 's'}</CardTitle>
           </View>
           {students.map((s) => (
-            <View key={s.id ?? `${s.fullName}-${s.email}`} style={styles.studentRow}>
+            // The roster row is SectionRosterRow: studentId and studentName. It used to be read as
+            // `id` and `fullName`, which the server does not send — every name showed as "—".
+            <View key={s.studentId ?? s.enrollmentId ?? `${s.studentName}-${s.email}`} style={styles.studentRow}>
+              {s.formalPhotoUrl ? (
+                <Image source={{ uri: s.formalPhotoUrl }} style={styles.photo} />
+              ) : (
+                <View style={[styles.photo, styles.photoEmpty]}>
+                  <Ionicons name="person-outline" size={18} color={SLATE[400]} />
+                </View>
+              )}
               <View style={styles.studentMain}>
-                <Text style={styles.studentName} numberOfLines={1}>{s.fullName || '—'}</Text>
+                <Text style={styles.studentName} numberOfLines={1}>{s.studentName || s.fullName || '—'}</Text>
                 <Text style={styles.studentMeta} numberOfLines={1}>
-                  {s.email || 'No email — school record only'}
+                  {[s.rollNumber ? `Roll ${s.rollNumber}` : null, s.admissionNumber ? `Adm. ${s.admissionNumber}` : null]
+                    .filter(Boolean)
+                    .join(' · ') || s.email || 'No email — school record only'}
                 </Text>
+                <View style={styles.rowActions}>
+                  <Pressable onPress={() => openPlacement(s, sectionId)} disabled={!!busy} accessibilityRole="button">
+                    <Text style={[styles.smallText, { color: PALETTE.primaryDark }]}>Place / Edit</Text>
+                  </Pressable>
+                  <Pressable onPress={() => changePhoto(s)} disabled={!!busy} accessibilityRole="button">
+                    <Text style={[styles.smallText, { color: PALETTE.primaryDark }]}>
+                      {busy === `photo-${s.studentId}` ? 'Saving…' : 'Photo'}
+                    </Text>
+                  </Pressable>
+                </View>
               </View>
               {s.origin ? (
                 <StatusChip
@@ -369,6 +569,43 @@ export default function ManageStudentsScreen({ homeRoute, apiBase }) {
           </>
         )}
       </FormSheet>
+
+      <FormSheet
+        visible={!!placing}
+        title={placing ? `Place ${placing.student.studentName}` : 'Place'}
+        subtitle="A section and a roll number"
+        onClose={() => setPlacing(null)}
+        onSubmit={savePlacement}
+        submitting={busy === 'place'}
+        submitDisabled={!placing?.sectionId}
+        submitLabel="Save"
+      >
+        <Select
+          label="Section"
+          value={placing?.sectionId ?? null}
+          options={allSections}
+          onChange={(value) => setPlacing((prev) => ({ ...prev, sectionId: value }))}
+          placeholder={allSections.length ? 'Choose…' : 'No sections in this year'}
+          searchable={allSections.length > 12}
+        />
+        <TextField
+          label="Roll number"
+          value={placing?.rollNumber ?? ''}
+          onChangeText={(value) => setPlacing((prev) => ({ ...prev, rollNumber: value }))}
+          placeholder="Optional"
+        />
+      </FormSheet>
+
+      <StudentMergeSheet
+        pair={mergePair}
+        plan={mergePlan}
+        merging={busy === 'merge'}
+        onConfirm={confirmMerge}
+        onClose={() => {
+          setMergePair(null);
+          setMergePlan(null);
+        }}
+      />
     </ScreenScaffold>
   );
 }
@@ -426,6 +663,17 @@ const useStyles = makeStyles((p) => ({
     borderTopColor: SLATE[200],
   },
   studentMain: { flex: 1 },
+  photo: { width: 40, height: 40, borderRadius: 20, backgroundColor: SLATE[100] },
+  photoEmpty: { alignItems: 'center', justifyContent: 'center' },
+  rowActions: { flexDirection: 'row', gap: SPACING.md, marginTop: 4 },
+  smallBtn: {
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: p.primary,
+  },
+  smallText: { fontSize: TYPE.label, fontWeight: '700' },
   studentName: { fontSize: TYPE.body, fontWeight: '700', color: SLATE[800] },
   studentMeta: { fontSize: TYPE.label, color: SLATE[500], lineHeight: leading(TYPE.label) },
 

@@ -182,5 +182,77 @@ if (!count) {
   console.log(`  ✓ ${count} literal route(s) checked, all resolve`);
 }
 
+/* ── Layout screen names ─────────────────────────────────────────────────── */
+// A `<Stack.Screen name="…">` in a layout names a CHILD of that layout's folder. One that names
+// nothing is not an error Expo Router throws — it logs "[Layout children]: No route named "staff"
+// exists in nested children" on every start and silently ignores the options. That is exactly what
+// app/_layout.js did for months: the only route under app/staff/ is the dynamic `[role]` folder, so
+// the child is "staff/[role]", never "staff". The literal scan above cannot see a layout name.
+//
+// A name resolves when `<dir>/<name>.js`, `<dir>/<name>/index.js` or `<dir>/<name>/_layout.js` exists.
+// A name with a slash ("auth/sign-in", "staff/[role]") is a nested path and resolves the same way.
+function screenNames(src) {
+  const out = [];
+  const re = /\b(?:Stack|Tabs|Drawer)\.Screen\b[^>]*?\bname=\{?\s*(['"`])([^'"`]+)\1/g;
+  let m;
+  while ((m = re.exec(src))) out.push(m[2]);
+  return out;
+}
+
+function childExists(dir, name) {
+  const base = path.join(dir, ...name.split('/'));
+  return (
+    fs.existsSync(`${base}.js`) ||
+    fs.existsSync(path.join(base, 'index.js')) ||
+    fs.existsSync(path.join(base, '_layout.js'))
+  );
+}
+
+console.log('\nLayout screen names:');
+{
+  // Self-test first: the misspelling this section exists for must be caught.
+  const planted = screenNames('<Stack.Screen name="staf" options={{}} />');
+  const staffOk = childExists(APP_DIR, 'staff/[role]');
+  if (planted[0] !== 'staf' || childExists(APP_DIR, 'staf') || !staffOk) {
+    failures += 1;
+    console.error('  ✗ self-test failed — a missing screen name would not be caught');
+  }
+
+  const layouts = walk(APP_DIR).filter((f) => path.basename(f) === '_layout.js');
+  let names = 0;
+  let missing = 0;
+  for (const layout of layouts) {
+    const dir = path.dirname(layout);
+    for (const name of screenNames(read(layout))) {
+      names += 1;
+      if (!childExists(dir, name)) {
+        missing += 1;
+        failures += 1;
+        console.error(`  ✗ ${rel(layout)}: <Screen name="${name}"> — no child route answers it`);
+      }
+    }
+  }
+  if (!names) {
+    failures += 1;
+    console.error('  ✗ no layout screen names found — the scan is vacuous');
+  } else if (!missing) {
+    console.log(`  ✓ ${names} screen name(s) across ${layouts.length} layouts, all resolve`);
+  }
+}
+
+/* ── Nothing but routes under app/ ───────────────────────────────────────── */
+// Every .js file under app/ IS a route. Shared components kept there (app/components/SearchBar.js,
+// app/pages/screens/*.js until 30 Sep 2026) were registered as navigable pages and listed in the
+// router's children; components live in components/.
+{
+  const stray = walk(APP_DIR).filter((f) => /[\\/]app[\\/](components|pages[\\/]screens)[\\/]/.test(f));
+  if (stray.length) {
+    failures += 1;
+    stray.forEach((f) => console.error(`  ✗ ${rel(f)} is a component inside app/ — Expo Router makes it a route`));
+  } else {
+    console.log('  ✓ no component folders inside app/');
+  }
+}
+
 console.log(failures === 0 ? '\nPASS' : `\nFAIL — ${failures} problem(s)`);
 process.exit(failures === 0 ? 0 : 1);

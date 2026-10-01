@@ -3,9 +3,9 @@ import { StyleSheet, View, Text, TouchableOpacity, ScrollView } from 'react-nati
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Stack, useRouter } from 'expo-router';
 import { COLORS, FONTS, SHADOWS, SPACING, TYPE, leading } from '../../../constants/theme';
-import SearchBar from '../../components/SearchBar';
+import SearchBar from '../../landing/SearchBar';
 
-const HERO_COLOR = '#b0003a';
+const HERO_COLOR = '#1a1a2e';
 
 const FOOTER_LINKS = [
   'Learning & Assessment', 'Skills Learning', 'Students Profile', 'Counselling',
@@ -13,7 +13,7 @@ const FOOTER_LINKS = [
   'Coding AI & Robotics', 'Language Learning', 'Global Opportunities', 'Progress Tracking',
 ];
 
-export default function LearningAssessmentScreen() {
+export default function SkillsLearningScreen() {
   const router = useRouter();
 
   return (
@@ -25,11 +25,10 @@ export default function LearningAssessmentScreen() {
         <TouchableOpacity style={styles.backBtn} onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))}>
           <Text style={styles.backText}>← Back</Text>
         </TouchableOpacity>
-        <Text style={styles.headerTitle} numberOfLines={1}>Learning & Assessment</Text>
+        <Text style={styles.headerTitle} numberOfLines={1}>Skills Learning</Text>
         <View style={{ width: 60 }} />
       </View>
 
-      {/* Search Bar */}
       <SearchBar />
 
       <ScrollView
@@ -41,13 +40,12 @@ export default function LearningAssessmentScreen() {
         <View style={[styles.hero, { backgroundColor: HERO_COLOR }]}>
           <View style={styles.heroCircle1} />
           <View style={styles.heroCircle2} />
-          <Text style={styles.heroIcon}>📚</Text>
-          <Text style={styles.heroTitle}>Learning & Assessment</Text>
-          <Text style={styles.heroSubtitle}>"Bridging Potential & Excellence"</Text>
+          <Text style={styles.heroIcon}>🛠️</Text>
+          <Text style={styles.heroTitle}>Skills Learning</Text>
+          <Text style={styles.heroSubtitle}>"Skills Edge"</Text>
           <Text style={styles.heroDesc}>
-            At Shreyartha, we believe every student deserves a learning experience as unique as their
-            potential. Our integrated assessment framework bridges the gap between academic knowledge
-            and real-world excellence.
+            Empowering the Future through Skills Learning — Equipping students with 21st-century
+            skills aligned with NEP 2020, global frameworks, and industry demands.
           </Text>
           <View style={styles.heroBtns}>
             <TouchableOpacity style={styles.heroBtn} onPress={() => router.push('/auth/student-login')}>
@@ -59,15 +57,16 @@ export default function LearningAssessmentScreen() {
           </View>
         </View>
 
-        {/* Core Philosophy */}
+        {/* Why Modern Skills Matter */}
         <View style={styles.sectionContainer}>
-          <Text style={styles.sectionTitle}>Our Core Philosophy</Text>
-          <Text style={styles.sectionSubtitle}>Three pillars that guide our approach to education</Text>
+          <Text style={styles.sectionTitle}>Why Modern Skills Matter</Text>
+          <Text style={styles.sectionSubtitle}>Aligned with leading global education frameworks</Text>
           <View style={styles.cardsRow}>
             {[
-              { icon: '🌍', title: 'Global Benchmarking', desc: 'Aligning assessments with international standards to prepare students for global success.' },
-              { icon: '📊', title: 'Actionable Insights', desc: 'Transforming assessment data into personalized learning roadmaps for every student.' },
-              { icon: '🤝', title: 'Empowered Mentorship', desc: 'Connecting assessment outcomes with expert mentorship for continuous growth.' },
+              { icon: '📋', title: 'NEP 2020', desc: "National Education Policy 2020 emphasizes skill development, vocational training, and multidisciplinary learning." },
+              { icon: '🌐', title: 'OECD Education 2030', desc: "OECD's framework focuses on competencies needed for students to shape their future." },
+              { icon: '🔷', title: 'P21 Framework', desc: "The Partnership for 21st Century Learning framework integrates core subjects with life skills." },
+              { icon: '🌍', title: 'WEF Future of Jobs', desc: "World Economic Forum identifies critical skills for the future workforce and economy." },
             ].map((card, i) => (
               <View key={i} style={styles.card}>
                 <Text style={styles.cardIcon}>{card.icon}</Text>
@@ -78,39 +77,43 @@ export default function LearningAssessmentScreen() {
           </View>
         </View>
 
-        {/* Resources Table */}
+        {/* Skills Curriculum Table */}
         <View style={styles.sectionContainer}>
-          <Text style={styles.sectionTitle}>Resources for Academic Mastery</Text>
+          <Text style={styles.sectionTitle}>Skills Curriculum</Text>
         </View>
         <View style={styles.table}>
           <View style={styles.tableHeader}>
-            <Text style={styles.tableHeaderText}>Resource</Text>
-            <Text style={styles.tableHeaderText}>Description</Text>
+            <Text style={styles.tableHeaderText}>Skill Area</Text>
+            <Text style={styles.tableHeaderText}>Focus</Text>
             <Text style={[styles.tableHeaderText, { flex: 0.6 }]}> </Text>
           </View>
           {[
-            { name: 'The Shreyartha Framework', desc: 'Integrates high-stakes curriculum with continuous, low-stakes assessment.' },
-            { name: 'University Bridge Pack', desc: 'Cultivates the critical thinking skills demanded by top-tier global universities.' },
-            { name: 'Excellence Certification', desc: 'Premium professional development for teachers to master integrated learning.' },
-            { name: 'Global Leadership Webinars', desc: 'Live expert sessions on bridging the gap between local and global standards.' },
+            { area: 'Financial Awareness', focus: 'Personal finance, investment basics, entrepreneurship' },
+            { area: 'Coding & Technology', focus: 'Python, web development, app building' },
+            { area: 'Life Skills', focus: 'Communication, critical thinking, emotional intelligence' },
+            { area: 'World Languages', focus: 'French, Spanish, Mandarin, German' },
+            { area: 'IELTS/TOEFL Prep', focus: 'International English language certification' },
+            { area: 'Art, Craft & Performing Arts', focus: 'Creative expression, music, dance, visual arts' },
+            { area: 'Sports & Yoga', focus: 'Physical wellness, mindfulness, team sports' },
+            { area: 'Beauty & Wellness', focus: 'Grooming, health sciences, wellness coaching' },
           ].map((row, i) => (
             <View key={i} style={[styles.tableRow, i % 2 === 1 && styles.tableRowAlt]}>
-              <Text style={styles.tableCellBold}>{row.name}</Text>
-              <Text style={styles.tableCell}>{row.desc}</Text>
+              <Text style={styles.tableCellBold}>{row.area}</Text>
+              <Text style={styles.tableCell}>{row.focus}</Text>
               <TouchableOpacity style={styles.tableBtn} onPress={() => router.push('/auth/student-login')}>
-                <Text style={styles.tableBtnText}>Explore Now</Text>
+                <Text style={styles.tableBtnText}>Enroll Now</Text>
               </TouchableOpacity>
             </View>
           ))}
         </View>
 
-        {/* Quote */}
+        {/* Transform section */}
         <View style={styles.sectionContainer}>
-          <Text style={styles.sectionTitle}>"Every Moment is a Milestone"</Text>
+          <Text style={styles.sectionTitle}>Transform Your Future</Text>
           <Text style={styles.sectionSubtitle}>
-            "At Shreyartha, we understand that education is a continuous journey. Our assessment
-            philosophy ensures that every learning moment—big or small—contributes meaningfully to
-            a student's path to excellence."
+            In today's rapidly evolving world, traditional academic knowledge alone is not enough.
+            Shreyartha's skills learning programs bridge the gap between classroom learning and
+            real-world application, ensuring our students are truly ready for tomorrow.
           </Text>
         </View>
 
@@ -118,10 +121,10 @@ export default function LearningAssessmentScreen() {
         <View style={[styles.ctaSection, { backgroundColor: HERO_COLOR }]}>
           <View style={styles.ctaCircle1} />
           <View style={styles.ctaCircle2} />
-          <Text style={styles.ctaTitle}>Ready to Bridge Your Potential?</Text>
+          <Text style={styles.ctaTitle}>Start Your Skills Journey</Text>
           <Text style={styles.ctaSubtitle}>
-            Join thousands of students who have discovered their true academic potential with
-            Shreyartha's integrated learning and assessment framework.
+            Enroll in our comprehensive skills programs and gain the competitive edge needed for
+            success in the modern world.
           </Text>
           <TouchableOpacity style={styles.ctaBtn} onPress={() => router.push('/auth/student-login')}>
             <Text style={styles.ctaBtnText}>Get Started</Text>

@@ -17,7 +17,8 @@ import { fetchCounsellorReports } from '../../services/parent/reportService';
  * staff screen. `ScreenScaffold` imports `StaffHeader` the same way for the same reason.
  */
 
-export default function CounsellorReportScreen() {
+// `embedded` — rendered as the Counselling Report's Counsellor Report tab, which draws the header.
+export default function CounsellorReportScreen({ embedded = false }) {
   const fetcher = useCallback((signal) => fetchCounsellorReports(signal), []);
   const { data, loading, error, refreshing, reload, refresh } = useStaffResource(fetcher, {
     initialData: [],
@@ -38,6 +39,7 @@ export default function CounsellorReportScreen() {
     <ScreenScaffold
       title="Counsellor Report"
       fallbackRoute="/parent"
+      embedded={embedded}
       loading={loading}
       error={error}
       onRetry={reload}

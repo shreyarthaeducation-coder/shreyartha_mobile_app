@@ -3,7 +3,7 @@ import { StyleSheet, View, Text, TouchableOpacity, ScrollView } from 'react-nati
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Stack, useRouter } from 'expo-router';
 import { COLORS, FONTS, SHADOWS, SPACING, TYPE, leading } from '../../../constants/theme';
-import SearchBar from '../../components/SearchBar';
+import SearchBar from '../../landing/SearchBar';
 
 const HERO_COLOR = '#4F46E5';
 
@@ -13,7 +13,7 @@ const FOOTER_LINKS = [
   'Coding AI & Robotics', 'Language Learning', 'Global Opportunities', 'Progress Tracking',
 ];
 
-export default function StudentsProfileScreen() {
+export default function ProgressTrackingScreen() {
   const router = useRouter();
 
   return (
@@ -25,7 +25,7 @@ export default function StudentsProfileScreen() {
         <TouchableOpacity style={styles.backBtn} onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))}>
           <Text style={styles.backText}>← Back</Text>
         </TouchableOpacity>
-        <Text style={styles.headerTitle} numberOfLines={1}>Students Profile</Text>
+        <Text style={styles.headerTitle} numberOfLines={1}>Progress Tracking</Text>
         <View style={{ width: 60 }} />
       </View>
 
@@ -40,12 +40,13 @@ export default function StudentsProfileScreen() {
         <View style={[styles.hero, { backgroundColor: HERO_COLOR }]}>
           <View style={styles.heroCircle1} />
           <View style={styles.heroCircle2} />
-          <Text style={styles.heroIcon}>👤</Text>
-          <Text style={styles.heroTitle}>Students Profile</Text>
-          <Text style={styles.heroSubtitle}>"Your Academic Identity"</Text>
+          <Text style={styles.heroIcon}>📊</Text>
+          <Text style={styles.heroTitle}>Progress Tracking</Text>
+          <Text style={styles.heroSubtitle}>"Content coming soon."</Text>
           <Text style={styles.heroDesc}>
-            Build a comprehensive academic profile that showcases your achievements, skills, and
-            potential to universities, employers, and scholarship committees worldwide.
+            We are building a powerful progress tracking system that will give you real-time insights
+            into your academic journey. From grades to goals, you will be able to track every aspect
+            of your learning with precision and clarity.
           </Text>
           <View style={styles.heroBtns}>
             <TouchableOpacity style={styles.heroBtn} onPress={() => router.push('/auth/student-login')}>
@@ -57,62 +58,31 @@ export default function StudentsProfileScreen() {
           </View>
         </View>
 
-        {/* Benefits */}
+        {/* Coming Soon */}
         <View style={styles.sectionContainer}>
-          <Text style={styles.sectionTitle}>Profile Benefits</Text>
-          <View style={styles.cardsRow}>
-            {[
-              { icon: '🏆', title: 'Achievement Tracking', desc: 'Document every academic achievement, co-curricular activity, and personal milestone.' },
-              { icon: '📊', title: 'Analytics Dashboard', desc: 'Visualize your academic progress with detailed charts and performance insights.' },
-              { icon: '🎯', title: 'Goal Setting', desc: 'Set personalized academic and career goals with guided milestone tracking.' },
-              { icon: '🌟', title: 'Portfolio Builder', desc: 'Create a rich multimedia portfolio showcasing your best work and projects.' },
-              { icon: '🤝', title: 'University Connect', desc: 'Share your profile directly with universities and scholarship programs.' },
-              { icon: '📜', title: 'Certification Hub', desc: 'Collect and display all your certifications and achievements in one place.' },
-            ].map((card, i) => (
-              <View key={i} style={styles.card}>
-                <Text style={styles.cardIcon}>{card.icon}</Text>
-                <Text style={styles.cardTitle}>{card.title}</Text>
-                <Text style={styles.cardDesc}>{card.desc}</Text>
-              </View>
-            ))}
+          <View style={styles.comingSoonCard}>
+            <Text style={styles.comingSoonTitle}>🚀 Coming Soon</Text>
+            <Text style={styles.comingSoonText}>
+              Our comprehensive progress tracking dashboard will include:{'\n\n'}
+              • Real-time grade and performance tracking{'\n'}
+              • Goal setting and milestone monitoring{'\n'}
+              • Personalized improvement recommendations{'\n'}
+              • Parent and teacher dashboards{'\n'}
+              • Comparative analytics and rankings
+            </Text>
+            <TouchableOpacity style={styles.comingSoonBtn} onPress={() => router.push('/auth/student-login')}>
+              <Text style={styles.comingSoonBtnText}>Get Started</Text>
+            </TouchableOpacity>
           </View>
-        </View>
-
-        {/* Profile Features Table */}
-        <View style={styles.sectionContainer}>
-          <Text style={styles.sectionTitle}>Profile Features</Text>
-        </View>
-        <View style={styles.table}>
-          <View style={styles.tableHeader}>
-            <Text style={styles.tableHeaderText}>Feature</Text>
-            <Text style={styles.tableHeaderText}>Description</Text>
-            <Text style={[styles.tableHeaderText, { flex: 0.5 }]}> </Text>
-          </View>
-          {[
-            { feature: 'Academic History', desc: 'Complete record of grades, subjects, and academic performance' },
-            { feature: 'Skills Matrix', desc: 'Comprehensive mapping of technical and soft skills' },
-            { feature: 'Career Readiness', desc: 'Assessment of college and career preparedness' },
-            { feature: 'Extracurriculars', desc: 'Sports, arts, clubs, and community involvement' },
-            { feature: 'Recommendations', desc: 'Teacher and mentor recommendations and endorsements' },
-          ].map((row, i) => (
-            <View key={i} style={[styles.tableRow, i % 2 === 1 && styles.tableRowAlt]}>
-              <Text style={styles.tableCellBold}>{row.feature}</Text>
-              <Text style={styles.tableCell}>{row.desc}</Text>
-              <TouchableOpacity style={styles.tableBtn} onPress={() => router.push('/auth/student-login')}>
-                <Text style={styles.tableBtnText}>Explore</Text>
-              </TouchableOpacity>
-            </View>
-          ))}
         </View>
 
         {/* CTA */}
         <View style={[styles.ctaSection, { backgroundColor: HERO_COLOR }]}>
           <View style={styles.ctaCircle1} />
           <View style={styles.ctaCircle2} />
-          <Text style={styles.ctaTitle}>Build Your Profile Today</Text>
+          <Text style={styles.ctaTitle}>Track Your Success</Text>
           <Text style={styles.ctaSubtitle}>
-            Start documenting your academic journey and unlock opportunities with a comprehensive
-            student profile.
+            Register now to get early access to our progress tracking system when it launches.
           </Text>
           <TouchableOpacity style={styles.ctaBtn} onPress={() => router.push('/auth/student-login')}>
             <Text style={styles.ctaBtnText}>Get Started</Text>
@@ -164,22 +134,11 @@ const styles = StyleSheet.create({
   heroBtn2: { borderWidth: 2, borderColor: 'rgba(255,255,255,0.7)', paddingVertical: 12, paddingHorizontal: 24, borderRadius: 28 },
   heroBtn2Text: { fontWeight: '600', fontSize: TYPE.heading, color: '#fff' },
   sectionContainer: { padding: SPACING.md },
-  sectionTitle: { fontSize: TYPE.headline, fontWeight: '800', color: COLORS.secondary, marginBottom: 8, textAlign: 'center' },
-  sectionSubtitle: { fontSize: TYPE.body, color: COLORS.textSecondary, textAlign: 'center', lineHeight: leading(TYPE.body), marginBottom: 16 },
-  cardsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, justifyContent: 'center' },
-  card: { width: '47%', backgroundColor: COLORS.white, borderRadius: 16, padding: SPACING.md, ...SHADOWS.sm },
-  cardIcon: { fontSize: 28, marginBottom: 8 },
-  cardTitle: { fontSize: TYPE.heading, fontWeight: '700', color: COLORS.secondary, marginBottom: 6 },
-  cardDesc: { fontSize: TYPE.body, color: COLORS.textSecondary, lineHeight: leading(TYPE.body) },
-  table: { marginHorizontal: SPACING.md, marginTop: SPACING.md, borderRadius: 16, overflow: 'hidden', borderWidth: 1, borderColor: COLORS.border },
-  tableHeader: { flexDirection: 'row', backgroundColor: COLORS.primary, padding: 12 },
-  tableHeaderText: { flex: 1, fontWeight: '700', color: '#fff', fontSize: TYPE.body },
-  tableRow: { flexDirection: 'row', padding: 12, borderBottomWidth: 1, borderBottomColor: COLORS.border, alignItems: 'center' },
-  tableRowAlt: { backgroundColor: COLORS.surface },
-  tableCell: { flex: 1, fontSize: TYPE.body, color: COLORS.text, lineHeight: leading(TYPE.body) },
-  tableCellBold: { flex: 1, fontSize: TYPE.body, color: COLORS.secondary, fontWeight: '600', lineHeight: leading(TYPE.body) },
-  tableBtn: { paddingVertical: 6, paddingHorizontal: 14, borderRadius: 20, backgroundColor: COLORS.primary },
-  tableBtnText: { color: '#fff', fontSize: TYPE.label, fontWeight: '700' },
+  comingSoonCard: { backgroundColor: COLORS.white, borderRadius: 20, padding: SPACING.lg, ...SHADOWS.md, alignItems: 'center' },
+  comingSoonTitle: { fontSize: TYPE.display, fontWeight: '800', color: COLORS.secondary, marginBottom: 16 },
+  comingSoonText: { fontSize: TYPE.body, color: COLORS.textSecondary, lineHeight: leading(TYPE.body), marginBottom: 20, textAlign: 'left', width: '100%' },
+  comingSoonBtn: { backgroundColor: COLORS.primary, paddingVertical: 12, paddingHorizontal: 36, borderRadius: 24 },
+  comingSoonBtnText: { fontWeight: '700', fontSize: TYPE.heading, color: '#fff' },
   ctaSection: { margin: SPACING.md, borderRadius: 20, padding: SPACING.xl, alignItems: 'center', overflow: 'hidden', position: 'relative' },
   ctaCircle1: { position: 'absolute', width: 180, height: 180, borderRadius: 90, backgroundColor: 'rgba(255,255,255,0.1)', top: -60, right: -40 },
   ctaCircle2: { position: 'absolute', width: 100, height: 100, borderRadius: 50, backgroundColor: 'rgba(255,255,255,0.08)', bottom: -30, left: -20 },

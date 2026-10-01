@@ -130,6 +130,28 @@ function streamCard(stream, rank) {
  * on-screen one would be worse than no printed report.
  */
 export function buildReportHtml({ results, topicType, topicName, studentInfo }) {
+  return `<!DOCTYPE html><html><head><meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<style>${STYLES}</style></head><body>${reportBodyHtml({ results, topicType, topicName, studentInfo })}</body></html>`;
+}
+
+/**
+ * Several reports in one document — the bulk print (1 Oct 2026). Each report is exactly the one
+ * buildReportHtml would produce for it on its own, and each after the first starts on a new page.
+ *
+ * @param items `[{ results, topicType, topicName, studentInfo }]`
+ */
+export function buildBatchReportHtml(items) {
+  const bodies = (items || [])
+    .map((item, i) => `<section${i > 0 ? ' style="page-break-before: always; break-before: page;"' : ''}>${reportBodyHtml(item)}</section>`)
+    .join('');
+  return `<!DOCTYPE html><html><head><meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<style>${STYLES}</style></head><body>${bodies}</body></html>`;
+}
+
+/** One report's content, without the document around it. */
+function reportBodyHtml({ results, topicType, topicName, studentInfo }) {
   const isStream = topicType === 'streamAptitude';
   const config = reportFor(topicType) || REPORT_CONFIG['3c'];
 
@@ -158,9 +180,7 @@ export function buildReportHtml({ results, topicType, topicName, studentInfo }) 
       }${studentInfo.school && studentInfo.school !== 'N/A' ? ` &middot; ${esc(studentInfo.school)}` : ''}</p>`
     : '';
 
-  return `<!DOCTYPE html><html><head><meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<style>${STYLES}</style></head><body>
+  return `
   <h1>${esc(isStream ? STREAM_CONFIG.title : config.title)}</h1>
   ${topicName ? `<p class="sub">${esc(topicName)}</p>` : ''}
   ${who}
@@ -175,7 +195,7 @@ export function buildReportHtml({ results, topicType, topicName, studentInfo }) 
   </div>
   ${bodyHtml}
   <p class="foot">The 3C Edge &middot; Psychometric Assessment</p>
-</body></html>`;
+`;
 }
 
 /* ── The framework cover ─────────────────────────────────────────────────── */
@@ -256,12 +276,11 @@ async function mergeWithFramework(reportUri) {
 /* ── Entry point ─────────────────────────────────────────────────────────── */
 
 /**
- * Build the report PDF, prepend the framework cover when possible, and hand it to the share sheet.
+ * Render HTML to a PDF, prepend the framework cover when possible, and hand it to the share sheet.
  *
  * @returns {Promise<{shared: boolean, uri: string, withCover: boolean}>}
  */
-export async function downloadPsychometricPdf({ results, topicType, topicName, studentInfo }) {
-  const html = buildReportHtml({ results, topicType, topicName, studentInfo });
+async function renderCoverAndShare(html, dialogTitle) {
   const { uri: reportUri } = await Print.printToFileAsync({ html, base64: false });
 
   let finalUri = reportUri;
@@ -283,8 +302,31 @@ export async function downloadPsychometricPdf({ results, topicType, topicName, s
 
   await Sharing.shareAsync(finalUri, {
     mimeType: 'application/pdf',
-    dialogTitle: 'Psychometric Report',
+    dialogTitle,
     UTI: 'com.adobe.pdf',
   });
   return { shared: true, uri: finalUri, withCover };
+}
+
+/**
+ * Build the report PDF, prepend the framework cover when possible, and hand it to the share sheet.
+ *
+ * @returns {Promise<{shared: boolean, uri: string, withCover: boolean}>}
+ */
+export async function downloadPsychometricPdf({ results, topicType, topicName, studentInfo }) {
+  return renderCoverAndShare(
+    buildReportHtml({ results, topicType, topicName, studentInfo }),
+    'Psychometric Report',
+  );
+}
+
+/**
+ * Several reports as one PDF — the framework cover once, then each report from a new page — handed to
+ * the share sheet (print, save, send).
+ *
+ * @param items `[{ results, topicType, topicName, studentInfo }]`, already scored
+ */
+export async function printPsychometricBatch(items) {
+  if (!items || items.length === 0) throw new Error('There is nothing to print.');
+  return renderCoverAndShare(buildBatchReportHtml(items), 'Psychometric Reports');
 }

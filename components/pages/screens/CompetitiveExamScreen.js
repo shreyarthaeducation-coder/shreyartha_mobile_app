@@ -3,9 +3,9 @@ import { StyleSheet, View, Text, TouchableOpacity, ScrollView } from 'react-nati
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Stack, useRouter } from 'expo-router';
 import { COLORS, FONTS, SHADOWS, SPACING, TYPE, leading } from '../../../constants/theme';
-import SearchBar from '../../components/SearchBar';
+import SearchBar from '../../landing/SearchBar';
 
-const HERO_COLOR = '#0d7377';
+const HERO_COLOR = '#b0003a';
 
 const FOOTER_LINKS = [
   'Learning & Assessment', 'Skills Learning', 'Students Profile', 'Counselling',
@@ -13,7 +13,7 @@ const FOOTER_LINKS = [
   'Coding AI & Robotics', 'Language Learning', 'Global Opportunities', 'Progress Tracking',
 ];
 
-export default function CounsellingScreen() {
+export default function CompetitiveExamScreen() {
   const router = useRouter();
 
   return (
@@ -25,7 +25,7 @@ export default function CounsellingScreen() {
         <TouchableOpacity style={styles.backBtn} onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))}>
           <Text style={styles.backText}>← Back</Text>
         </TouchableOpacity>
-        <Text style={styles.headerTitle} numberOfLines={1}>Counselling</Text>
+        <Text style={styles.headerTitle} numberOfLines={1}>Competitive Examination</Text>
         <View style={{ width: 60 }} />
       </View>
 
@@ -40,12 +40,13 @@ export default function CounsellingScreen() {
         <View style={[styles.hero, { backgroundColor: HERO_COLOR }]}>
           <View style={styles.heroCircle1} />
           <View style={styles.heroCircle2} />
-          <Text style={styles.heroIcon}>🤝</Text>
-          <Text style={styles.heroTitle}>Counselling</Text>
-          <Text style={styles.heroSubtitle}>"24/7 AI-Empowered Support System"</Text>
+          <Text style={styles.heroIcon}>🏆</Text>
+          <Text style={styles.heroTitle}>Competitive Examination</Text>
+          <Text style={styles.heroSubtitle}>"Shreyartha Competitive Excellence"</Text>
           <Text style={styles.heroDesc}>
-            Our comprehensive counselling ecosystem combines artificial intelligence with human
-            expertise to provide round-the-clock personalized support for every student's unique journey.
+            Comprehensive preparation for India's most competitive entrance examinations. Our
+            integrated approach combines curriculum alignment, mock tests, and personalized
+            mentorship for guaranteed success.
           </Text>
           <View style={styles.heroBtns}>
             <TouchableOpacity style={styles.heroBtn} onPress={() => router.push('/auth/student-login')}>
@@ -57,18 +58,42 @@ export default function CounsellingScreen() {
           </View>
         </View>
 
-        {/* 360° Support */}
+        {/* Master Your Target Table */}
         <View style={styles.sectionContainer}>
-          <Text style={styles.sectionTitle}>360° Support Ecosystem</Text>
-          <Text style={styles.sectionSubtitle}>Comprehensive support covering every aspect of student well-being</Text>
+          <Text style={styles.sectionTitle}>Master Your Target Entrance</Text>
+        </View>
+        <View style={styles.table}>
+          <View style={styles.tableHeader}>
+            <Text style={styles.tableHeaderText}>Category</Text>
+            <Text style={styles.tableHeaderText}>Examinations</Text>
+            <Text style={styles.tableHeaderText}>Strategy</Text>
+          </View>
+          {[
+            { cat: 'Engineering & Technology', exams: 'JEE Main, JEE Advanced, BITSAT', strategy: 'Deep-dive into core concepts with 10,000+ practice problems' },
+            { cat: 'Medical & Healthcare', exams: 'NEET (UG)', strategy: 'Comprehensive focus on Biology, Chemistry with clinical application' },
+            { cat: 'CUET UG', exams: 'Central University Common Entrance', strategy: 'Specialized domain-specific and general test prep' },
+            { cat: 'Commerce & Finance', exams: 'CA Foundation, IPMAT, CMA', strategy: 'Specialized accounting and quantitative aptitude paths' },
+            { cat: 'Defence & Paramilitary', exams: 'NDA, CDS, AFCAT, CAPF', strategy: 'Physical + academic preparation with SSB coaching' },
+            { cat: 'Arts & Humanities', exams: 'CLAT, NID-DAT', strategy: 'Creative and logic-based preparation programs' },
+            { cat: 'Govt. Examinations', exams: 'SSC, Banking, Railways, UPSC', strategy: 'Comprehensive GK, reasoning, and subject matter prep' },
+          ].map((row, i) => (
+            <View key={i} style={[styles.tableRow, i % 2 === 1 && styles.tableRowAlt]}>
+              <Text style={styles.tableCellBold}>{row.cat}</Text>
+              <Text style={styles.tableCell}>{row.exams}</Text>
+              <Text style={styles.tableCell}>{row.strategy}</Text>
+            </View>
+          ))}
+        </View>
+
+        {/* Competitive Advantage */}
+        <View style={styles.sectionContainer}>
+          <Text style={styles.sectionTitle}>Our Competitive Advantage</Text>
           <View style={styles.cardsRow}>
             {[
-              { icon: '🧭', title: 'Career Guidance', desc: 'Analyzes your "Student Profile" to map the perfect career trajectory with actionable steps and mentorship.' },
-              { icon: '📚', title: 'Academic Counselling', desc: 'Identifies learning gaps and provides personalized study plans to boost academic performance.' },
-              { icon: '💚', title: 'Emotional Support', desc: 'Provides 24/7 "check-ins" and evidence-based emotional wellness strategies for student well-being.' },
-              { icon: '🩺', title: 'Clinical Counselling', desc: 'Uses validated screening tools and connects students with licensed clinical professionals when needed.' },
-              { icon: '♿', title: 'Special Care (Inclusion)', desc: 'Tailored interfaces and support plans for students with diverse learning needs and disabilities.' },
-              { icon: '🚨', title: 'Crisis Intervention', desc: 'Timely intervention protocols with immediate escalation to trained counsellors for crisis situations.' },
+              { icon: '📊', title: 'Integrated Mock Assessments', desc: 'Weekly full-length mock tests with detailed performance analysis and rank prediction.' },
+              { icon: '📋', title: 'NEP 2020 Alignment', desc: 'Exam prep seamlessly integrated with school curriculum for dual benefits.' },
+              { icon: '🎯', title: 'Subject & Career Synergy', desc: 'Exam preparation connected to long-term career goals and subject strengths.' },
+              { icon: '🌍', title: 'Global Benchmarking', desc: 'Performance benchmarked against national and international student populations.' },
             ].map((card, i) => (
               <View key={i} style={styles.card}>
                 <Text style={styles.cardIcon}>{card.icon}</Text>
@@ -79,40 +104,24 @@ export default function CounsellingScreen() {
           </View>
         </View>
 
-        {/* Support Areas Table */}
+        {/* Journey section */}
         <View style={styles.sectionContainer}>
-          <Text style={styles.sectionTitle}>Support Areas & Impact</Text>
-        </View>
-        <View style={styles.table}>
-          <View style={styles.tableHeader}>
-            <Text style={styles.tableHeaderText}>Support Area</Text>
-            <Text style={styles.tableHeaderText}>AI-Powered Capabilities</Text>
-            <Text style={styles.tableHeaderText}>Impact & Alignment</Text>
-          </View>
-          {[
-            { area: 'Career Guidance', caps: 'Personality & aptitude matching, career path modeling', impact: 'Reduces career uncertainty, aligns with NEP 2020' },
-            { area: 'Academic Counselling', caps: 'Learning gap analysis, personalized study plans', impact: 'Measurable improvement in academic performance' },
-            { area: 'Emotional Support', caps: 'Sentiment analysis, mood tracking, wellness tips', impact: 'Reduces student stress and anxiety' },
-            { area: 'Clinical Counselling', caps: 'Screening tools, professional referral system', impact: 'Early intervention, mental health support' },
-            { area: 'Special Care', caps: 'Adaptive interfaces, customized learning paths', impact: 'Inclusive education for all learners' },
-            { area: 'Crisis Intervention', caps: 'Real-time monitoring, emergency escalation', impact: 'Ensures student safety and well-being' },
-          ].map((row, i) => (
-            <View key={i} style={[styles.tableRow, i % 2 === 1 && styles.tableRowAlt]}>
-              <Text style={styles.tableCellBold}>{row.area}</Text>
-              <Text style={styles.tableCell}>{row.caps}</Text>
-              <Text style={styles.tableCell}>{row.impact}</Text>
-            </View>
-          ))}
+          <Text style={styles.sectionTitle}>Your Journey to Success</Text>
+          <Text style={styles.sectionSubtitle}>
+            Every student's path to competitive exam success is unique. Shreyartha's personalized
+            approach ensures that your preparation is optimized for your strengths, learning style,
+            and target institution.
+          </Text>
         </View>
 
         {/* CTA */}
         <View style={[styles.ctaSection, { backgroundColor: HERO_COLOR }]}>
           <View style={styles.ctaCircle1} />
           <View style={styles.ctaCircle2} />
-          <Text style={styles.ctaTitle}>Get Support Today</Text>
+          <Text style={styles.ctaTitle}>Start Your Exam Preparation</Text>
           <Text style={styles.ctaSubtitle}>
-            Our AI-powered counselling system is available 24/7. Connect with expert counsellors and
-            AI support tools to guide your academic and personal journey.
+            Join thousands of successful students who cracked competitive exams with Shreyartha's
+            proven preparation methodology.
           </Text>
           <TouchableOpacity style={styles.ctaBtn} onPress={() => router.push('/auth/student-login')}>
             <Text style={styles.ctaBtnText}>Get Started</Text>

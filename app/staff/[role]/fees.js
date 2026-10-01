@@ -15,7 +15,9 @@ import { getAdminPortal } from '../../../constants/schoolAdminPortals';
  * /api/school-admin/classes/students.
  */
 export default function FeeManagement() {
-  const { role } = useLocalSearchParams();
+  // `view` deep-links a tab (?view=…). It was read below without ever being taken from the params,
+  // so every link landed on the first tab.
+  const { role, view } = useLocalSearchParams();
   const roleKey = String(role || '').toLowerCase();
   const portal = getAdminPortal(roleKey);
   if (!portal?.fees) return null;

@@ -21,6 +21,8 @@ import {
 } from '../../../services/admin/studentService';
 import { formatLongDateTime } from '../../../utils/dates';
 import { makeStyles } from '../../../utils/makeStyles';
+import { useRouter } from 'expo-router';
+import { PsychometricPrintLink } from '../../shared/BulkPsychometricPrintScreen';
 
 /**
  * Student Management — the school's roster, and every Academic IQ profile change its students
@@ -129,7 +131,8 @@ function HistoryCard({ entry }) {
   );
 }
 
-export default function StudentManagementScreen({ homeRoute, apiBase }) {
+export default function StudentManagementScreen({ homeRoute, apiBase, printRoute }) {
+  const router = useRouter();
   const styles = useStyles();
   const PALETTE = usePalette();
   const [tab, setTab] = useState('roster');
@@ -181,6 +184,7 @@ export default function StudentManagementScreen({ homeRoute, apiBase }) {
       refreshing={refreshing}
       onRefresh={refresh}
     >
+      {printRoute ? <PsychometricPrintLink route={printRoute} onPress={() => router.push(printRoute)} /> : null}
       {stats.schoolCode ? (
         <Text style={styles.school}>
           {stats.schoolName ? `${stats.schoolName} · ` : ''}Code {stats.schoolCode}

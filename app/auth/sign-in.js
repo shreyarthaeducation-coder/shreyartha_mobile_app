@@ -63,9 +63,8 @@ export default function SignInScreen() {
       const { route, unsupported } = await applyPortalSession(portal, data);
       if (unsupported || !route) {
         // Nothing has been stored in this branch, so the person is not left half-signed-in.
-        setError(
-          `${portalLabel(portal)} accounts sign in on the website — this app has no ${portalLabel(portal)} panel yet.`,
-        );
+        const label = portalLabel(portal, data);
+        setError(`${label} accounts sign in on the website — this app has no ${label} panel yet.`);
         return;
       }
       setUserType(portal.toLowerCase() === 'school' ? 'school' : portal.toLowerCase());
@@ -122,7 +121,7 @@ export default function SignInScreen() {
       />
 
       <PrimaryButton
-        label="Sign in"
+        title="Sign in"
         onPress={submit}
         loading={loading}
         palette={PALETTE}
@@ -151,7 +150,7 @@ export default function SignInScreen() {
             editable={!forgotBusy}
           />
           <PrimaryButton
-            label="Send reset link"
+            title="Send reset link"
             onPress={sendReset}
             loading={forgotBusy}
             palette={PALETTE}

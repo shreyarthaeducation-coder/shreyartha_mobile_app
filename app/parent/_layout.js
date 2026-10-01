@@ -123,6 +123,7 @@ export default function ParentLayout() {
         <Stack.Screen name="attendance" />
         <Stack.Screen name="schedule" />
         <Stack.Screen name="counsellor-report" />
+        <Stack.Screen name="counselling-report" />
         <Stack.Screen name="academic-progress" />
         <Stack.Screen name="fees" />
         <Stack.Screen name="learning-activities" />

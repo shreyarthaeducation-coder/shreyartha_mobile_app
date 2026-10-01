@@ -1,32 +1,25 @@
-import { useCallback } from 'react';
-import { Text, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { FEEDBACK, SLATE, SPACING, TYPE, leading } from '../../constants/theme';
-import { usePalette } from '../ui/PaletteContext';
-import { Card, CardTitle, ScreenScaffold } from '../ui';
-import { Readable } from '../shared/readaloud/ReadAloudMode';
-import { ProgressBar } from '../ui/charts';
+import { useCallback, useState } from 'react';
+import { Alert } from 'react-native';
+import { ScreenScaffold } from '../ui';
+import PsychometricResultCards from '../shared/PsychometricResultCards';
 import useStaffResource from '../../hooks/useStaffResource';
 import { parentApi } from '../../services/parentApi';
-import {
-  fetchPersonalStatement,
-  fetchPsychometric,
-  psychometricPercent,
-} from '../../services/parent/insightsService';
-import { makeStyles } from '../../utils/makeStyles';
+import { fetchPersonalStatement, fetchPsychometric } from '../../services/parent/insightsService';
+import { printChildReports } from '../../services/shared/psychometricReportService';
+import { PsychometricPrintLink } from '../shared/BulkPsychometricPrintScreen';
 
 /**
- * Assessment Results — the child's personal statement and psychometric completion.
+ * The Counselling Report's Psychometric Result tab (formerly the Assessment Results screen): the
+ * child's personal statement and psychometric completion.
  *
  * Two independent reads, settled separately: a child with no personal statement is normal, and the
  * psychometric call can refuse for a non-school child. `Promise.all` would lose both cards to
  * either failure, which is exactly what the web avoids with two try/catches.
+ *
+ * `embedded` — rendered inside the Counselling Report's tabs, which draw the header.
  */
 
-export default function AssessmentResultsScreen() {
-  const styles = useStyles();
-  const palette = usePalette();
-
+export default function AssessmentResultsScreen({ embedded = false }) {
   const fetcher = useCallback(
     (signal) =>
       parentApi.settleAll({
@@ -39,26 +32,26 @@ export default function AssessmentResultsScreen() {
     initialData: null,
   });
 
-  const statement = data?.statement?.data || '';
-  const psych = data?.psychometric?.data;
-  // The web shows "Data unavailable" as the card title when this call fails; keep that signal.
-  const psychFailed = !!data?.psychometric?.error;
-  const percent = psychometricPercent(psych);
-
-  // What the PSYCHOMETRIC card says when tapped. The personal statement card states its own words
-  // beside it, so this no longer repeats them: two cards, two things to hear, tapped separately.
-  const spokenPsych = psychFailed
-    ? 'The psychometric assessment could not be loaded right now.'
-    : [
-        psych?.chapterName,
-        `${psych?.completedCount || 0} of ${psych?.totalTopics || 0} topics completed`,
-        psych?.hasCompletedAssessment ? 'Assessment completed.' : 'Assessment not completed yet.',
-      ].filter(Boolean).join('. ');
+  // Every report the child has completed, as one PDF (1 Oct 2026). A parent has one linked child.
+  const [printing, setPrinting] = useState(false);
+  const printAll = async () => {
+    if (printing) return;
+    setPrinting(true);
+    try {
+      const { printed } = await printChildReports();
+      if (!printed) Alert.alert('Nothing to print yet', 'No psychometric assessment has been completed yet.');
+    } catch (e) {
+      Alert.alert('Could not print', e?.message || 'The reports could not be printed.');
+    } finally {
+      setPrinting(false);
+    }
+  };
 
   return (
     <ScreenScaffold
       title="Assessment Results"
       fallbackRoute="/parent"
+      embedded={embedded}
       loading={loading}
       error={error}
       onRetry={reload}
@@ -66,62 +59,15 @@ export default function AssessmentResultsScreen() {
       onRefresh={refresh}
       selectableReadAloud
     >
-      {/* Each card is its own thing to hear, so a parent can tap the statement without also
-          sitting through the psychometric summary. */}
-      <Readable text={`My Personal Statement. ${statement || 'No personal statement added yet.'}`}>
-        <Card style={styles.card}>
-          <CardTitle>My Personal Statement</CardTitle>
-          <Text style={statement ? styles.statement : styles.muted}>
-            {statement || 'No personal statement added yet.'}
-          </Text>
-        </Card>
-      </Readable>
-
-      <Readable text={spokenPsych}>
-      <Card style={styles.card}>
-        <CardTitle>{psychFailed ? 'Data unavailable' : psych?.chapterName}</CardTitle>
-
-        {psychFailed ? (
-          <Text style={styles.muted}>
-            Could not load the psychometric assessment right now.
-          </Text>
-        ) : (
-          <>
-            <Text style={styles.count}>
-              {psych?.completedCount || 0}/{psych?.totalTopics || 0} Completed
-            </Text>
-            <ProgressBar value={percent} color={palette.primary} />
-
-            <View style={styles.statusRow}>
-              <Ionicons
-                name={psych?.hasCompletedAssessment ? 'checkmark-circle' : 'time-outline'}
-                size={18}
-                color={psych?.hasCompletedAssessment ? FEEDBACK.successText : SLATE[400]}
-              />
-              <Text
-                style={[
-                  styles.status,
-                  psych?.hasCompletedAssessment && { color: FEEDBACK.successText },
-                ]}
-              >
-                {psych?.hasCompletedAssessment
-                  ? 'Assessment completed. Results are available.'
-                  : 'Psychometric assessment not yet completed by the student.'}
-              </Text>
-            </View>
-          </>
-        )}
-      </Card>
-      </Readable>
+      <PsychometricPrintLink
+        label={printing ? 'Preparing reports…' : 'Print all reports'}
+        onPress={printAll}
+      />
+      <PsychometricResultCards
+        statement={data?.statement?.data || ''}
+        psych={data?.psychometric?.data}
+        psychFailed={!!data?.psychometric?.error}
+      />
     </ScreenScaffold>
   );
 }
-
-const useStyles = makeStyles(() => ({
-  card: { marginBottom: SPACING.sm },
-  statement: { fontSize: TYPE.body, color: SLATE[600], lineHeight: leading(TYPE.body) },
-  muted: { fontSize: TYPE.body, color: SLATE[500], lineHeight: leading(TYPE.body), fontStyle: 'italic' },
-  count: { fontSize: TYPE.body, color: SLATE[600], fontWeight: '700', marginBottom: 8 },
-  statusRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 7, marginTop: SPACING.sm },
-  status: { flex: 1, fontSize: TYPE.body, color: SLATE[500], lineHeight: leading(TYPE.body) },
-}));
