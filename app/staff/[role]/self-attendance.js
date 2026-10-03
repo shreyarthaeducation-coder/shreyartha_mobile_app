@@ -11,5 +11,8 @@ import { SelfAttendanceScreen } from '../../../components/staff';
  */
 export default function StaffSelfAttendance() {
   const { role } = useLocalSearchParams();
-  return <SelfAttendanceScreen homeRoute={`/staff/${String(role || '').toLowerCase()}`} />;
+  const roleKey = String(role || '').toLowerCase();
+  // "My day" (Start / End / Resume my day) is the sales rep's: their day is otherwise ended only by
+  // logging out. Every other shell gets the sheet exactly as before.
+  return <SelfAttendanceScreen homeRoute={`/staff/${roleKey}`} daySession={roleKey === 'sales'} />;
 }

@@ -1,6 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ALL_AUTH_KEYS } from '../constants/storageKeys';
 import { resolveDashboardRoute, storeSchoolSession } from './schoolSession';
+import { startStaffAttendanceSession } from './staffAttendanceService';
 
 /**
  * Turns a sign-in response into a stored session and a destination.
@@ -51,7 +52,21 @@ export async function applyPortalSession(portal, data) {
       }
       // storeSchoolSession owns the clear AND the ordering around the attendance key — do not
       // inline it here, the ordering is load-bearing (see its own note).
-      await storeSchoolSession(data);
+      const { verified, schoolCode } = await storeSchoolSession(data);
+      // Start the working day, as the website's unified sign-in does (auth/portalSession.js) and as
+      // the per-role login screens here always did. This door did not, so staff signing in through
+      // it had no attendance session at all — nothing for "End my day" or a logout to close.
+      // Verified staff only (an unverified account is refused by the server anyway), AFTER the
+      // session is stored (the call reads the token), and fire-and-forget: attendance must never
+      // delay or fail a sign-in.
+      if (verified) {
+        startStaffAttendanceSession({
+          name: data.fullName ?? 'User',
+          email: data.email ?? '',
+          role: data.userType || '',
+          schoolCode,
+        });
+      }
       return { route, userType: 'school' };
     }
 

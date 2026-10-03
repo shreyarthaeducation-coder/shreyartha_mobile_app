@@ -17,9 +17,12 @@ import {
  * IMPORTANT — this module deliberately uses raw `fetch`, never `services/apiService`.
  * apiService treats any non-auth 401/403 as "session dead" and force-logs-the-user-out. But a
  * 403 here is EXPECTED and harmless: the backend gates /api/staff/attendance/** on verified
- * staff roles, so unverified staff and all SHREYARTHA_* roles legitimately get 403. Routing this
- * through apiService would log a teacher out moments after they logged in. The web swallows the
- * same error; so do we.
+ * staff roles, so unverified staff and the SHREYARTHA_* roles it does not name (it does name
+ * SHREYARTHA_SALES and SHREYARTHA_HR) legitimately get 403. Routing this through apiService would
+ * log a teacher out moments after they logged in. The web swallows the same error; so do we.
+ *
+ * The BUTTONS — Start / End / Resume my day — are in services/staffDayService.js, which reports
+ * what happened instead of swallowing it.
  *
  * Every export is wrapped so it can never throw or block the login/logout flow.
  */

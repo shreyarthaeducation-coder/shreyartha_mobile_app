@@ -24,6 +24,11 @@ const FILES = {
   myCalendar: 'components/staff/MyCalendarScreen.js',
   detail: 'components/staff/AttendanceDayDetail.js',
   session: 'services/staffAttendanceService.js',
+  // "My day" — Start / End / Resume my day (3 Oct 2026).
+  day: 'services/staffDayService.js',
+  dayCard: 'components/staff/DaySessionCard.js',
+  route: 'app/staff/[role]/self-attendance.js',
+  portal: 'services/portalSession.js',
 };
 
 const load = () =>
@@ -149,6 +154,68 @@ const ASSERTIONS = [
       return fn.includes('const logoutLocation = await captureLocation();') && !fn.includes('Accuracy.High');
     },
   },
+
+  // ── My day: Start / End / Resume ───────────────────────────────────────────
+  //
+  // A wrong path here is a button that renders, spins and reports a server error; a missing
+  // confirmation is a rep ending their day with a stray thumb; a card shown to every role is a
+  // feature nobody asked for on five panels. None of it fails a build.
+  {
+    name: 'the day buttons call their own four endpoints, through staffApi',
+    test: (s) =>
+      s.day.includes("const BASE = '/api/staff/attendance';") &&
+      s.day.includes('staffApi.get(`${BASE}/today`') &&
+      s.day.includes('staffApi.post(`${BASE}/start`') &&
+      s.day.includes('staffApi.post(`${BASE}/end`') &&
+      s.day.includes('staffApi.post(`${BASE}/resume`, {})'),
+  },
+  {
+    name: 'ending the day sends where the person is',
+    test: (s) => {
+      const fn = body(s.day, 'export async function endDayNow()');
+      return fn.includes('const location = await captureLocation(BUTTON_LOCATION);') &&
+        fn.includes('{ logoutAt: new Date().toISOString(), location }');
+    },
+  },
+  {
+    name: 'End my day asks first, and warns that a short day is Incomplete',
+    test: (s) => {
+      const fn = body(s.dayCard, 'const confirmEnd = () =>');
+      return s.dayCard.includes('onPress={confirmEnd}') &&
+        fn.includes('Alert.alert(') &&
+        fn.includes("onPress: () => run('end', endDayNow,") &&
+        fn.includes('records today as Incomplete') &&
+        !s.dayCard.includes("onPress={() => run('end'");
+    },
+  },
+  {
+    name: 'Resume my day asks first',
+    test: (s) => {
+      const fn = body(s.dayCard, 'const confirmResume = () =>');
+      return s.dayCard.includes('onPress={confirmResume}') &&
+        fn.includes('Alert.alert(') &&
+        fn.includes("onPress: () => run('resume', resumeDayNow,") &&
+        !s.dayCard.includes("onPress={() => run('resume'");
+    },
+  },
+  {
+    name: 'only the sales rep gets the My day card, and the sheet refetches after it',
+    test: (s) =>
+      s.route.includes("daySession={roleKey === 'sales'}") &&
+      s.screen.includes('daySession = false }) {') &&
+      s.screen.includes('{daySession ? <DaySessionCard onChanged={reload} showToast={showToast} /> : null}'),
+  },
+  {
+    name: 'the unified sign-in starts the day — verified staff only, after the session is stored',
+    test: (s) => {
+      const at = s.portal.indexOf("case 'SCHOOL':");
+      const end = s.portal.indexOf("case 'PARENT':");
+      const block = at < 0 || end < 0 ? '' : s.portal.slice(at, end);
+      const stored = block.indexOf('await storeSchoolSession(data);');
+      const started = block.indexOf('if (verified) {\n        startStaffAttendanceSession({');
+      return stored >= 0 && started > stored && !block.includes('await startStaffAttendanceSession');
+    },
+  },
 ];
 
 const MUTATIONS = [
@@ -170,6 +237,26 @@ const MUTATIONS = [
     'const logoutLocation = await captureLocation();',
     'const logoutLocation = await captureLocation({ accuracy: Location.Accuracy.High });',
   ],
+  ['End my day posts to the start path', 'day', 'staffApi.post(`${BASE}/end`', 'staffApi.post(`${BASE}/start`'],
+  ['Resume my day posts to the end path', 'day', 'staffApi.post(`${BASE}/resume`, {})', 'staffApi.post(`${BASE}/end`, {})'],
+  [
+    'ending the day sends no location',
+    'day',
+    '{ logoutAt: new Date().toISOString(), location }',
+    '{ logoutAt: new Date().toISOString() }',
+  ],
+  ['End my day stops asking', 'dayCard', 'onPress={confirmEnd}', "onPress={() => run('end', endDayNow, 'Your day is ended.')}"],
+  ['the short-day warning dropped', 'dayCard', 'so ending now records today as Incomplete', 'so ending now is fine'],
+  [
+    'Resume my day stops asking',
+    'dayCard',
+    'onPress={confirmResume}',
+    "onPress={() => run('resume', resumeDayNow, 'Your day is running again.')}",
+  ],
+  ['every role gets the My day card', 'route', "daySession={roleKey === 'sales'}", 'daySession'],
+  ['the sheet is not refetched after a day action', 'screen', '<DaySessionCard onChanged={reload} showToast', '<DaySessionCard showToast'],
+  ['unverified staff start a day at sign-in', 'portal', 'if (verified) {\n        startStaffAttendanceSession({', 'if (true) {\n        startStaffAttendanceSession({'],
+  ['sign-in waits on the attendance call', 'portal', '        startStaffAttendanceSession({', '        await startStaffAttendanceSession({'],
 ];
 
 const run = (sources) => ASSERTIONS.filter((a) => !a.test(sources)).map((a) => a.name);

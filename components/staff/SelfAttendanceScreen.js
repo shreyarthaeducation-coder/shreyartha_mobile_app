@@ -21,6 +21,7 @@ import {
 import { formatLongDate, isSunday, toLocalDateTimeString, todayIso } from '../../utils/dates';
 import { makeStyles } from '../../utils/makeStyles';
 import AttendanceDayDetail, { STATUS_META, noFixReason } from './AttendanceDayDetail';
+import DaySessionCard from './DaySessionCard';
 
 /**
  * Native Self Attendance — the staff member's own month sheet.
@@ -76,7 +77,11 @@ function LegendItem({ color, label, hollow }) {
   );
 }
 
-export default function SelfAttendanceScreen({ homeRoute = '/teacher', bottomInset = 0 }) {
+/**
+ * @param daySession show the "My day" card (Start / End / Resume my day) above the sheet. Passed
+ *                   for the sales rep only — see app/staff/[role]/self-attendance.js.
+ */
+export default function SelfAttendanceScreen({ homeRoute = '/teacher', bottomInset = 0, daySession = false }) {
   const styles = useStyles();
   const PALETTE = usePalette();
   const now = new Date();
@@ -262,6 +267,10 @@ export default function SelfAttendanceScreen({ homeRoute = '/teacher', bottomIns
       onRefresh={refresh}
       toast={toast}
     >
+      {/* The working day itself — its start, and the button that ends it (3 Oct 2026). After any
+          action the sheet is refetched, so today's "Signed in · signed out" row agrees. */}
+      {daySession ? <DaySessionCard onChanged={reload} showToast={showToast} /> : null}
+
       {showToday ? (
         <Card>
           <CardTitle>Today</CardTitle>
