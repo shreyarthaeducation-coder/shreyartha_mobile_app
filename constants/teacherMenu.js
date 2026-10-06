@@ -67,10 +67,11 @@ export const TEACHER_WORKSPACE_GROUPS = [
       { key: 'scholastics', label: 'Scholastics', icon: 'ribbon-outline', native: '/teacher/scholastics' },
       { key: 'coScholastics', label: 'Co-Scholastics', icon: 'medal-outline', native: '/teacher/co-scholastics' },
       { key: 'additionalSkills', label: 'Additional Skills', icon: 'trophy-outline', native: '/teacher/additional-skills' },
-      { key: 'adaptiveAssessment', label: 'My Adaptive Assessment', icon: 'analytics-outline', native: '/teacher/adaptive-assessment' },
       // 5 Oct 2026, as on the web: host a test for a whole class with no student logins. The teacher's
-      // side only — students join in a web browser, never in the app.
+      // side only — students join in a web browser, never in the app. Above My Adaptive Assessment,
+      // as on the website.
       { key: 'liveTests', label: 'Live Test Rooms', icon: 'easel-outline', native: '/teacher/live-tests' },
+      { key: 'adaptiveAssessment', label: 'My Adaptive Assessment', icon: 'analytics-outline', native: '/teacher/adaptive-assessment' },
     ],
   },
   {
