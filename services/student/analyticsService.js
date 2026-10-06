@@ -131,5 +131,8 @@ export function codingStreams(progress, analytics) {
 
 /** Has the student finished the psychometric assessment? Drives summary vs "take it" prompt. */
 export function hasPsychometricResults(results) {
-  return !!(results && (results.results || results.overallReadiness !== undefined));
+  if (!results) return false;
+  // Every test taken, as answers (the current server); or one of the two older scored shapes.
+  if (Array.isArray(results.topics)) return results.topics.some((t) => (t.answers || []).length > 0);
+  return !!(results.results || results.overallReadiness !== undefined);
 }

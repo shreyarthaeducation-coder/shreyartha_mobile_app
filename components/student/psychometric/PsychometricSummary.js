@@ -1,6 +1,7 @@
 import { Text, View } from 'react-native';
 import { FEEDBACK, QUIZ, SLATE, SPACING, TYPE, leading } from '../../../constants/theme';
 import { makeStyles } from '../../../utils/makeStyles';
+import { buildPsychometricSummary } from '../../../constants/psychometricSummary';
 
 /**
  * The psychometric summary shown inside My Analytics.
@@ -58,11 +59,20 @@ const SUMMARY_CATEGORIES = [
 ];
 
 /**
- * `/api/psychometrics/results` answers in two shapes — `{ results: {...} }` or the result object
- * itself. The web tests `overallReadiness !== undefined` to tell them apart; same here.
+ * `/api/psychometrics/results` (no topic) answers with every test taken — `{ topics: [...] }`, the
+ * answers and questions, scored here. Until Oct 2026 the server refused that call outright, so this
+ * card never appeared for anyone; the two older shapes are still accepted.
  */
+/** Which test fills which slice of the summary. */
+const SLICE_TEST = {
+  personalityBlueprint: '3c',
+  learningProductivityMatrix: 'lpm',
+  skillProficiency: 'skillCompass',
+};
+
 export function unwrapResults(payload) {
   if (!payload) return null;
+  if (Array.isArray(payload.topics)) return buildPsychometricSummary(payload.topics);
   if (payload.results) return payload.results;
   if (payload.overallReadiness !== undefined) return payload;
   return null;
@@ -77,11 +87,23 @@ export default function PsychometricSummary({ results }) {
   const data = unwrapResults(results);
   if (!data) return null;
 
-  const stream = STREAM_REMARKS[data.primaryStream] || STREAM_REMARKS.science;
+  // `taken` (which tests there are answers for) is absent on the older shapes: all count as taken.
+  const has = (test) => !data.taken || !!data.taken[test];
+  const stream = data.taken
+    ? STREAM_REMARKS[data.primaryStream] || {
+        title: 'Stream not decided yet',
+        shortRemark: has('streamAptitude')
+          ? 'No stream scored above zero in your answers, so none is suggested.'
+          : 'Take the “Stream Aptitude Evaluator” to see which stream fits you best.',
+      }
+    : STREAM_REMARKS[data.primaryStream] || STREAM_REMARKS.science;
 
   const strengths = [];
   const developments = [];
   SUMMARY_CATEGORIES.forEach(([slice, key, name]) => {
+    // A test not taken has no categories; calling them development areas would be a verdict on
+    // answers nobody gave.
+    if (!has(SLICE_TEST[slice])) return;
     const score = data[slice]?.[key] || 0;
     (score >= 50 ? strengths : developments).push(name);
   });

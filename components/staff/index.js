@@ -17,6 +17,7 @@ export { default as ManageSubjectsScreen } from './ManageSubjectsScreen';
 export { default as LiveClassesScreen } from './LiveClassesScreen';
 export { default as ExamsScreen } from './ExamsScreen';
 export { default as AdaptiveAssessmentScreen } from './AdaptiveAssessmentScreen';
+export { default as LiveTestRoomsScreen } from './LiveTestRoomsScreen';
 export { default as MyCalendarScreen } from './MyCalendarScreen';
 export { default as LeaveScreen } from './LeaveScreen';
 export { default as PayrollScreen } from './PayrollScreen';

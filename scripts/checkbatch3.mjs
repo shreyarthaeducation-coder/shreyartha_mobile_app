@@ -183,8 +183,10 @@ async function assertions(mutate) {
     }
   }
   // Identity from the Principal, never from a parameter — a studentId param is an IDOR.
-  if (/getResults\(\s*Principal\s+\w+\s*,\s*@RequestParam\s+Long\s+topicId\s*\)/.test(s.psyCtl) === false) {
-    bad('getResults does not take (Principal, @RequestParam Long topicId) — scoping by anything but the principal would let a student read another student\'s answers');
+  // The topic became optional in Oct 2026 (no topic = every test taken, for My Analytics). The
+  // signature is still exactly Principal + topic: no parameter can name another student.
+  if (/getResults\(\s*Principal\s+\w+\s*,\s*@RequestParam\(required = false\)\s+Long\s+topicId\s*\)/.test(s.psyCtl) === false) {
+    bad('getResults does not take (Principal, @RequestParam(required = false) Long topicId) — scoping by anything but the principal would let a student read another student\'s answers');
   }
   if (/getResults\([^)]*@RequestParam[^)]*studentId/.test(s.psyCtl)) {
     bad('getResults accepts a studentId parameter — that is an IDOR; the counsellor endpoint is the guarded cross-student view');
@@ -467,8 +469,8 @@ const MUTATIONS = [
       /(@GetMapping\("\/results"\)\n\s*@PreAuthorize\("[^"]*"\s*\+\n\s*")or hasRole\('COLLEGE_STUDENT'\) /,
       '$1') : t],
   ['/results scoped by a studentId parameter', (k, t) =>
-    k === 'psyCtl' ? t.replace(/getResults\(Principal principal, @RequestParam Long topicId\)/,
-      'getResults(Principal principal, @RequestParam Long studentId, @RequestParam Long topicId)') : t],
+    k === 'psyCtl' ? t.replace(/getResults\(Principal principal, @RequestParam\(required = false\) Long topicId\)/,
+      'getResults(Principal principal, @RequestParam Long studentId, @RequestParam(required = false) Long topicId)') : t],
   ['findAnsweredTopicIds loses its DISTINCT', (k, t) =>
     k === 'psyRepo' ? t.replace(/SELECT DISTINCT a\.question\.topic\.id/, 'SELECT a.question.topic.id') : t],
   ['the bars branch removed', (k, t) =>

@@ -110,6 +110,7 @@ export default function TeacherLayout() {
         <Stack.Screen name="additional-skills" />
         <Stack.Screen name="student-management" />
         <Stack.Screen name="adaptive-assessment" />
+        <Stack.Screen name="live-tests" />
         <Stack.Screen name="counselling" />
         <Stack.Screen name="counsellor-report" />
         <Stack.Screen name="counselling-report" />

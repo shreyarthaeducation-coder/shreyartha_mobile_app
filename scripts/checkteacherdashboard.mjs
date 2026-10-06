@@ -64,10 +64,12 @@ const SRC = {
  *
  * 1 Oct 2026: `counselling` (Counselling Needs and Notes) is a tile of its own again, beside the
  * Counselling Report, which keeps the psychometric result and the counsellor report as its two tabs.
+ *
+ * 5 Oct 2026: `liveTests` (Live Test Rooms) added under Assessment, as on the website the same day.
  */
 const ORIGINAL_KEYS = [
   'attendance', 'studentManagement', 'resources', 'homework', 'liveClasses', 'syllabus',
-  'reports', 'scholastics', 'coScholastics', 'additionalSkills', 'adaptiveAssessment',
+  'reports', 'scholastics', 'coScholastics', 'additionalSkills', 'adaptiveAssessment', 'liveTests',
   'groups', 'counselling', 'counsellingReport',
   'profile', 'myCalendar', 'upskill',
   'selfAttendance', 'leave', 'payroll',

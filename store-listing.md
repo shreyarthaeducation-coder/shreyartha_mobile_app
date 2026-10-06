@@ -59,6 +59,9 @@ Monitor your child's academic progress, attendance, and learning activity from t
 FOR SCHOOLS 🏫
 Teachers, counselors, and principals can manage academic content, track student wellness, and communicate through our dedicated school staff portal.
 
+📝 LIVE TEST ROOMS FOR TEACHERS
+Run a test for the whole class from your phone. Share a room code, start and stop the test for everyone at once, watch each student's progress live, and see the results the moment it ends. Students who have forgotten their password can still take part.
+
 🔒 SAFE & PRIVATE
 Your data is encrypted and never shared with third parties. Full account deletion available via the web portal or by contacting support@shreyartha.com. Read our Privacy Policy at shreyartha.com/privacy.
 
@@ -66,6 +69,19 @@ Join 10,000+ students, 500+ schools, and educators across India and 50+ countrie
 
 Download now and unlock your potential.
 ```
+
+---
+
+## What's New — 2.1.2 (500 chars max)
+
+```
+• Teachers: new Live Test Rooms. Host a test for your class, share a room code, start and stop it for everyone, and see results as soon as it ends.
+• Run several tests in one session and get one combined report per student.
+• Students can join with their own login, or by name and roll number if they forgot their password.
+• My Analytics: your psychometric summary now shows your real scores for every test you have taken.
+• Sales team: start, end and resume your day.
+```
+*(under 500 chars ✓ — count again in Play Console if edited)*
 
 ---
 

@@ -1,5 +1,36 @@
 # Shreyartha Mobile — Release Notes
 
+## 2.1.2 (versionCode 18) — Live Test Rooms for teachers, and the psychometric summary that never appeared (5 – 7 Oct 2026)
+
+Ships with the next store build (no OTA channel). Homepages are unchanged. **Needs the backend
+deployed first** (migrations V117–V119 and the changed `/api/psychometrics/results`).
+
+**Live Test Rooms (teacher → Assessment & Examination)**
+- A teacher hosts a test for a class: pick the class, section and test, share the room code or link,
+  press Start, watch who has joined and how far each student has got, press Stop.
+- Kinds: mock test, Practice Zone, topic "Test Your Understanding", psychometric, adaptive.
+- Several papers of the same kind can run as one session (up to six; adaptive is one topic).
+- Students join **in a browser**, not in the app: they sign in at the door with their own email and
+  password, or use "I don't remember my password" and type their name, class and roll number.
+- The list shows who signed in, who signed in from another class, and who came in without a login.
+- A signed-in student's result is saved to their profile when they finish. The rest are merged by
+  the teacher after the session ("Merge all" takes every exact roll + name match in one go).
+- A student who is not on the class list can be added from the merge panel; the password is shown
+  once.
+- View any student's report, and share the results as a CSV file.
+
+**My Analytics: the psychometric summary now appears**
+- The card asked the server for results without naming a test, and the server refused, so the card
+  never showed for anyone. The server now answers with every test taken and the app scores them.
+- Only tests the student has taken are scored. A test not taken is not listed under development
+  areas, and no stream is suggested before the Stream Aptitude Evaluator has been taken.
+
+**Sales: My day** (already on `main` since 3 Oct) — start, end and resume the day from Self Attendance.
+
+**Checks:** `checklivetests` (30 assertions, 60 planted breaks), `checkpsychsummary` (25 planted
+breaks), `checkbatch3` updated for the results endpoint, Android export clean. `checkprincipal` still
+fails on the two report screens that exist only on the website. Not run on a phone.
+
 ## 2.1.1 (versionCode 17) — full audit against the website: errors, teacher tabs, principal tabs (30 Sept – 1 Oct 2026)
 
 **Release audit (1 Oct)**
