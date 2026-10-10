@@ -18,6 +18,7 @@ import { getTopicType, processAssessmentResults } from './psychometricScoring';
  */
 export function buildPsychometricSummary(topics) {
   const taken = {};
+  const testNames = [];
   const byType = {};
   let latest = null;
 
@@ -31,6 +32,7 @@ export function buildPsychometricSummary(topics) {
     const type = getTopicType(topic.topicName);
     byType[type] = processAssessmentResults(topic.questions || [], given, topic.topicName);
     taken[type] = true;
+    if (topic.topicName) testNames.push(topic.topicName);
     if (topic.answeredAt && (!latest || topic.answeredAt > latest)) latest = topic.answeredAt;
   });
 
@@ -49,6 +51,8 @@ export function buildPsychometricSummary(topics) {
   return {
     taken,
     testsTaken: types.length,
+    // The tests taken, by name, in the order the server lists them.
+    testNames,
     personalityBlueprint: byType['3c']?.personalityBlueprint || null,
     learningProductivityMatrix: byType.lpm?.learningProductivityMatrix || null,
     skillProficiency: byType.skillCompass?.skillProficiency || null,

@@ -234,7 +234,7 @@ async function assertions(mutate) {
   // The tick means "there are saved answers"; setting it before the save lands promises a reopen
   // that returns nothing.
   if (/submitAssessment\([^)]*\)[\s\S]{0,80}setCompletedTopicIds/.test(s.psyScreen) &&
-      !/\.then\(\(\) => \{[\s\S]{0,200}setCompletedTopicIds/.test(s.psyScreen)) {
+      !/\.then\(\((?:res)?\) => \{[\s\S]{0,200}setCompletedTopicIds/.test(s.psyScreen)) {
     bad('the completed tick is set optimistically rather than in submitAssessment().then — a failed save would promise a reopen that returns nothing');
   }
 

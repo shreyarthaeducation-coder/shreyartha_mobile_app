@@ -1,10 +1,12 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
-import { QUIZ, SLATE, SPACING, TYPE, leading } from '../../../constants/theme';
+import { FEEDBACK, QUIZ, SLATE, SPACING, TYPE, leading } from '../../../constants/theme';
 import { makeStyles } from '../../../utils/makeStyles';
 import { isAnswered } from '../../../utils/questionModel';
 import RichText from '../../RichText';
 import { StudentCard } from '../StudentCard';
+import { useNetworkState } from 'expo-network';
+import { clearDraft, currentUserTag, draftKey, loadDraft, saveDraft } from '../../../utils/answerDrafts';
 
 /**
  * The exam-hall runner every test screen uses — the app half of
@@ -43,6 +45,78 @@ export default function ExamRunner({
   const [current, setCurrent] = useState(0);
   const markedSet = marked instanceof Set ? marked : new Set();
 
+  // ── Answers survive a dead battery, a closed app or a lost connection (9 Oct 2026) ──
+  // Kept on the phone as they are given (utils/answerDrafts.js), put back when the same paper is
+  // opened again — one onAnswer at a time, so every host's own handler runs as if tapped — and
+  // removed once the paper is submitted. A Submit tapped offline waits for the connection.
+  const network = useNetworkState();
+  const online = network.isConnected !== false && network.isInternetReachable !== false;
+  const [user, setUser] = useState(null);
+  const [restoreQueue, setRestoreQueue] = useState([]);
+  const [restoredCount, setRestoredCount] = useState(0);
+  const [pendingSubmit, setPendingSubmit] = useState(false);
+  const restoring = useRef(false);
+  const checkedKey = useRef(null);
+  const key = draftKey(questions.map((q) => q.id), user);
+
+  useEffect(() => {
+    let alive = true;
+    currentUserTag().then((tag) => alive && setUser(tag));
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!key || checkedKey.current === key || submitted) return undefined;
+    checkedKey.current = key;
+    restoring.current = true;
+    let alive = true;
+    loadDraft(key).then((draft) => {
+      if (!alive) return;
+      const queue = [];
+      Object.entries(draft?.answers || {}).forEach(([id, value]) => {
+        const q = questions.find((x) => String(x.id) === id);
+        const option = q && (q.options || []).find((o) => String(o.key) === String(value));
+        if (option && answers[q.id] == null) queue.push([q.id, option.key]);
+      });
+      if (queue.length === 0) {
+        restoring.current = false;
+        return;
+      }
+      setRestoredCount(queue.length);
+      setRestoreQueue(queue);
+      if (Number.isInteger(draft.current)) setCurrent(draft.current);
+    });
+    return () => {
+      alive = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- once per paper
+  }, [key]);
+
+  useEffect(() => {
+    if (restoreQueue.length === 0) return;
+    const [[id, value], ...rest] = restoreQueue;
+    if (answers[id] !== value) onAnswer?.(id, value);
+    if (rest.length === 0) restoring.current = false;
+    setRestoreQueue(rest);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- driven by the queue only
+  }, [restoreQueue]);
+
+  useEffect(() => {
+    if (!key || restoring.current) return;
+    if (submitted) clearDraft(key);
+    else saveDraft(key, answers, current);
+  }, [key, answers, current, submitted]);
+
+  useEffect(() => {
+    if (online && pendingSubmit && !submitted) {
+      setPendingSubmit(false);
+      onSubmit?.();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- fires on reconnect
+  }, [online, pendingSubmit]);
+
   const total = questions.length;
   if (!total) return null;
 
@@ -69,7 +143,16 @@ export default function ExamRunner({
           </Text>
           {' answered'}
           {markedSet.size > 0 ? ` · ${markedSet.size} to retry` : ''}
+          {restoredCount > 0 && !submitted
+            ? ` · ${restoredCount} answer${restoredCount === 1 ? '' : 's'} kept from before`
+            : ''}
         </Text>
+        {!online && !submitted ? (
+          <Text style={styles.offline} accessibilityRole="alert">
+            You are offline. Your answers are being kept on this phone
+            {pendingSubmit ? ' and will be submitted as soon as you are back online.' : '.'}
+          </Text>
+        ) : null}
 
         {/* Horizontal so a 40-question paper does not push the question off the screen. */}
         <ScrollView
@@ -228,17 +311,17 @@ export default function ExamRunner({
       {!submitted ? (
         <>
           <Pressable
-            onPress={canSubmit ? onSubmit : undefined}
-            disabled={!canSubmit}
+            onPress={canSubmit && !pendingSubmit ? (online ? onSubmit : () => setPendingSubmit(true)) : undefined}
+            disabled={!canSubmit || pendingSubmit}
             style={({ pressed }) => [
               styles.primary,
-              !canSubmit && styles.primaryDisabled,
+              (!canSubmit || pendingSubmit) && styles.primaryDisabled,
               pressed && styles.pressed,
             ]}
             accessibilityRole="button"
-            accessibilityState={{ disabled: !canSubmit }}
+            accessibilityState={{ disabled: !canSubmit || pendingSubmit }}
           >
-            <Text style={styles.primaryText}>{submitLabel}</Text>
+            <Text style={styles.primaryText}>{pendingSubmit ? 'Will submit when back online' : submitLabel}</Text>
           </Pressable>
           {requireAll && answeredCount < total ? (
             <Text style={styles.submitNote}>Answer all {total} questions to submit.</Text>
@@ -254,6 +337,14 @@ export default function ExamRunner({
 const useStyles = makeStyles((p) => ({
   progress: { fontSize: TYPE.label, color: SLATE[600], marginBottom: SPACING.sm },
   progressStrong: { fontWeight: '800', color: SLATE[800] },
+  offline: {
+    fontSize: TYPE.label,
+    color: FEEDBACK.warningOnBg,
+    backgroundColor: FEEDBACK.warningBg,
+    borderRadius: 8,
+    padding: SPACING.sm,
+    marginBottom: SPACING.sm,
+  },
 
   palette: { gap: SPACING.xs, paddingVertical: 2 },
   dot: {

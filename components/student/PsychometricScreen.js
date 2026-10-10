@@ -21,7 +21,9 @@ import {
 } from '../../constants/psychometricScoring';
 import {
   CLASS_ERRORS,
-  fetchCompletedTopicIds,
+  attemptsUsed,
+  fetchPsychometricProgress,
+  MAX_PSYCHOMETRIC_ATTEMPTS,
   fetchEnabledTopicIds,
   fetchQuestions,
   fetchSavedAnswers,
@@ -32,6 +34,7 @@ import {
 } from '../../services/student/psychometricService';
 import { fetchProfileSection } from '../../services/student/profileService';
 import { downloadPsychometricPdf } from '../../utils/psychometricPdf';
+import { useDrillBack } from '../../hooks/useDrillBack';
 
 /**
  * Psychometric Assessment.
@@ -75,6 +78,9 @@ export default function PsychometricScreen() {
   const [results, setResults] = useState(null);
   /** Topics with saved answers — drives the ticks in the list and the reopen path. */
   const [completedTopicIds, setCompletedTopicIds] = useState(new Set());
+  // How many of its two attempts each test has used.
+  const [attempts, setAttempts] = useState({ attempts: {}, max: MAX_PSYCHOMETRIC_ATTEMPTS });
+  const usedAt = (topicId) => attemptsUsed({ attempts: attempts.attempts, completed: completedTopicIds }, topicId);
   /** True while showing a report rebuilt from saved answers rather than one just submitted. */
   const [reopened, setReopened] = useState(false);
   const [downloading, setDownloading] = useState(false);
@@ -119,12 +125,13 @@ export default function PsychometricScreen() {
     setClassNode(node);
     setChapter((node.chapters || [])[0] || null);
     // Both gates and the completion ticks resolve together; each fails soft on its own terms.
-    const [enabled, completed] = await Promise.all([
+    const [enabled, progress] = await Promise.all([
       fetchEnabledTopicIds(),
-      fetchCompletedTopicIds(),
+      fetchPsychometricProgress(),
     ]);
     setEnabledTopicIds(enabled);
-    setCompletedTopicIds(completed);
+    setCompletedTopicIds(progress.completed);
+    setAttempts({ attempts: progress.attempts, max: progress.max });
     setLoading(false);
   }, []);
 
@@ -203,13 +210,22 @@ export default function PsychometricScreen() {
       setReopened(false);
       // FIRE AND FORGET, as the web does. The student has just answered every question; they see
       // their report whether or not this reaches the server.
+      const id = String(topic?.id);
       submitAssessment(topic?.id, answers, computed)
-        .then(() => {
+        .then((res) => {
           // Only now is the topic genuinely reopenable — the tick means "there are saved answers",
           // so setting it optimistically would promise a reopen that returns nothing.
-          setCompletedTopicIds((prev) => new Set(prev).add(String(topic?.id)));
+          setCompletedTopicIds((prev) => new Set(prev).add(id));
+          setAttempts((prev) => ({
+            ...prev,
+            attempts: { ...prev.attempts, [id]: res?.attemptNo ?? (prev.attempts[id] || 0) + 1 },
+          }));
         })
-        .catch(() => {
+        .catch((e) => {
+          if (e?.status === 409) {
+            showToast(e.message || 'Both attempts at this test have been used, so this one was not saved.', 'error');
+            return;
+          }
           showToast('Your report is ready, but we could not save it. It may not appear in Analytics.', 'error');
         });
     };
@@ -306,13 +322,20 @@ export default function PsychometricScreen() {
               </>
             )}
           </Pressable>
-          <Pressable
-            onPress={retake}
-            style={({ pressed }) => [styles.secondary, pressed && styles.pressed]}
-            accessibilityRole="button"
-          >
-            <Text style={styles.secondaryText}>Retake this assessment</Text>
-          </Pressable>
+          <Text style={styles.rowSub}>
+            Attempt {Math.max(usedAt(topic?.id), 1)} of {attempts.max}. Your report is from your latest attempt.
+          </Text>
+          {usedAt(topic?.id) < attempts.max ? (
+            <Pressable
+              onPress={retake}
+              style={({ pressed }) => [styles.secondary, pressed && styles.pressed]}
+              accessibilityRole="button"
+            >
+              <Text style={styles.secondaryText}>Retake this assessment (last attempt)</Text>
+            </Pressable>
+          ) : (
+            <Text style={styles.rowSub}>Both attempts used.</Text>
+          )}
         </>
       );
     }
@@ -352,7 +375,9 @@ export default function PsychometricScreen() {
                     Your counsellor has not opened this assessment yet.
                   </Text>
                 ) : done ? (
-                  <Text style={styles.rowSub}>Completed — tap to view your report.</Text>
+                  <Text style={styles.rowSub}>
+                    Completed · attempt {usedAt(t.id)} of {attempts.max} — tap to view your report.
+                  </Text>
                 ) : null}
               </StudentCard>
             </Pressable>
@@ -452,6 +477,8 @@ export default function PsychometricScreen() {
     }
     return null;
   };
+  // The phone's back button goes up one level here too, not out of the screen.
+  useDrillBack([results, topic].filter(Boolean).length, back);
 
   return (
     <StudentScaffold

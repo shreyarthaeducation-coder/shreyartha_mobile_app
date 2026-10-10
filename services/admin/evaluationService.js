@@ -35,12 +35,13 @@ export const EVAL_ROLE_COLOR = {
 /**
  * Which staff categories exist in this school.
  *
- * ADMIN and SCHOOL_ADMIN are filtered out client-side, exactly as the web does — the endpoint
- * returns them, and nobody evaluates the administrator.
+ * ADMIN and SCHOOL_ADMIN are filtered out client-side, exactly as the web does, and so is PRINCIPAL:
+ * nobody evaluates the principal, the principal included (9 Oct 2026). The server no longer returns
+ * PRINCIPAL and refuses to evaluate one; this filter keeps an older server's list clean too.
  */
 export async function fetchStaffTypes(apiBase, signal) {
   const res = await staffApi.get(`${apiBase}/staff-types`, { signal });
-  const hidden = ['ADMIN', 'SCHOOL_ADMIN'];
+  const hidden = ['ADMIN', 'SCHOOL_ADMIN', 'PRINCIPAL'];
   return (Array.isArray(res) ? res : []).filter((role) => !hidden.includes(role));
 }
 

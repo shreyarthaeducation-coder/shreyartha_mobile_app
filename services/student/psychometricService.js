@@ -45,13 +45,37 @@ export function submitAssessment(topicId, answers, results) {
  * @returns {Promise<Set<string>>} empty when unavailable
  */
 export async function fetchCompletedTopicIds(signal) {
+  return (await fetchPsychometricProgress(signal)).completed;
+}
+
+/** Each test can be taken twice; the server keeps the count and refuses a third (9 Oct 2026). */
+export const MAX_PSYCHOMETRIC_ATTEMPTS = 2;
+
+/**
+ * Which tests are done and how many of their two attempts each has used. `attempts` is keyed by
+ * topic id as a STRING (the server sends it so). An older server sends no attempts: a completed
+ * test then counts as one used, which is what its answers show.
+ *
+ * @returns {Promise<{ completed: Set<string>, attempts: Object<string, number>, max: number }>}
+ */
+export async function fetchPsychometricProgress(signal) {
   try {
     const res = await studentApi.get('/api/psychometrics/progress', { signal });
     const ids = Array.isArray(res?.completedTopicIds) ? res.completedTopicIds : [];
-    return new Set(ids.map(String));
+    return {
+      completed: new Set(ids.map(String)),
+      attempts: res?.attempts && typeof res.attempts === 'object' ? res.attempts : {},
+      max: res?.maxAttempts || MAX_PSYCHOMETRIC_ATTEMPTS,
+    };
   } catch {
-    return new Set();
+    return { completed: new Set(), attempts: {}, max: MAX_PSYCHOMETRIC_ATTEMPTS };
   }
+}
+
+/** Attempts used at one test, by the rule above. */
+export function attemptsUsed(progress, topicId) {
+  const id = String(topicId);
+  return progress.attempts[id] || (progress.completed.has(id) ? 1 : 0);
 }
 
 /**

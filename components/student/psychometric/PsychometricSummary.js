@@ -148,6 +148,10 @@ export default function PsychometricSummary({ results }) {
         )}
       </View>
 
+      {data.testNames?.length ? (
+        <Text style={styles.date}>Tests taken: {data.testNames.join(', ')}</Text>
+      ) : null}
+
       {data.assessmentDate ? (
         <Text style={styles.date}>Last assessed {data.assessmentDate}</Text>
       ) : null}

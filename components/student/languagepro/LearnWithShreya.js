@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useDrillBack } from '../../../hooks/useDrillBack';
 import { Ionicons } from '@expo/vector-icons';
 import { DONE, SLATE, SPACING, TYPE, leading } from '../../../constants/theme';
 import { usePalette } from '../../ui/PaletteContext';
@@ -204,6 +205,9 @@ export default function LearnWithShreya() {
     router.back();
     return undefined;
   };
+
+  // The phone's back button goes up one level here too, not out of the screen.
+  useDrillBack(view === 'chapter' ? 3 : view === 'level' ? (activeDayId ? 2 : 1) : 0, back);
 
   const trail = [activeLevel, activeDay?.name].filter(Boolean).join(' › ');
 

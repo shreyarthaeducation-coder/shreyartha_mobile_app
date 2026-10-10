@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Linking, Pressable, ScrollView, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useDrillBack } from '../../../hooks/useDrillBack';
 import { Ionicons } from '@expo/vector-icons';
 import { FEEDBACK, QUIZ, SLATE, SPACING, TYPE, leading } from '../../../constants/theme';
 import { usePalette } from '../../ui/PaletteContext';
@@ -403,7 +404,11 @@ export default function CompetitiveExamScreen() {
       return (
         <MockTestRunner
           paper={activePaper}
-          onBack={() => setActivePaper(null)}
+          onBack={() => {
+            setActivePaper(null);
+            // The attempt just made may have opened the next paper.
+            if (subExam?.id) fetchMockTestPapers(subExam.id).then(setPapers).catch(() => {});
+          }}
           showToast={showToast}
         />
       );
@@ -449,18 +454,40 @@ export default function CompetitiveExamScreen() {
           papers.map((paper) => (
             <Pressable
               key={paper.id}
-              onPress={() => setActivePaper(paper)}
+              // Mock tests open one after another: a locked paper says why instead of opening.
+              onPress={() =>
+                paper.locked
+                  ? showToast(paper.lockReason || 'This mock test is locked.', 'error')
+                  : setActivePaper(paper)
+              }
               style={({ pressed }) => [pressed && styles.pressed]}
               accessibilityRole="button"
-              accessibilityLabel={`Take mock test: ${paper.name || paper.title}`}
+              accessibilityLabel={
+                paper.locked
+                  ? `Locked mock test: ${paper.name || paper.title}`
+                  : `Take mock test: ${paper.name || paper.title}`
+              }
+              accessibilityState={{ disabled: !!paper.locked }}
             >
-              <StudentCard>
+              <StudentCard style={paper.locked ? styles.lockedPaper : undefined}>
                 <View style={styles.rowHead}>
                   <Text style={styles.paperName}>{paper.name || paper.title}</Text>
-                  <Ionicons name="chevron-forward" size={17} color={palette.deep} />
+                  <Ionicons
+                    name={paper.locked ? 'lock-closed' : 'chevron-forward'}
+                    size={17}
+                    color={paper.locked ? SLATE[400] : palette.deep}
+                  />
                 </View>
                 {paper.durationMinutes ? (
                   <Text style={styles.paperMeta}>{paper.durationMinutes} minutes</Text>
+                ) : null}
+                {paper.attempts > 0 ? (
+                  <Text style={styles.paperMeta}>
+                    {paper.attempts} attempt{paper.attempts === 1 ? '' : 's'} · best {Math.round(paper.bestPercent ?? 0)}%
+                  </Text>
+                ) : null}
+                {paper.locked && paper.lockReason ? (
+                  <Text style={styles.paperMeta}>{paper.lockReason}</Text>
                 ) : null}
               </StudentCard>
             </Pressable>
@@ -647,6 +674,12 @@ export default function CompetitiveExamScreen() {
     }
   };
 
+  // The phone's back button goes up one level here too, not out of the screen.
+  useDrillBack([activePaper, adaptiveOpen, topic, subExam].filter(Boolean).length, () => {
+    if (activePaper) setActivePaper(null);
+    else back();
+  });
+
   return (
     <StudentScaffold
       title="Competitive Exam"
@@ -777,6 +810,7 @@ const useStyles = makeStyles((p) => ({
 
   paperName: { flex: 1, fontSize: TYPE.heading, fontWeight: '700', color: SLATE[800] },
   paperMeta: { fontSize: TYPE.caption, color: SLATE[500], marginTop: 3 },
+  lockedPaper: { opacity: 0.6 },
 
   summaryRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: SPACING.sm },
   summaryItem: { fontSize: TYPE.label, fontWeight: '600', color: SLATE[600] },

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useDrillBack } from '../../hooks/useDrillBack';
 import { Ionicons } from '@expo/vector-icons';
 import { DONE, SLATE, SPACING, TYPE, leading } from '../../constants/theme';
 import { usePalette } from '../ui/PaletteContext';
@@ -427,6 +428,8 @@ export default function CodingProScreen() {
     setMatchedClass(null);
     setOpenChapter(null);
   };
+  // The phone's back button goes up one level here too, not out of the screen.
+  useDrillBack([projectPanel, topic, curriculum].filter(Boolean).length, back);
 
   return (
     <StudentScaffold

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Linking, Pressable, ScrollView, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useDrillBack } from '../../hooks/useDrillBack';
 import { Ionicons } from '@expo/vector-icons';
 import { DONE, FEEDBACK, SLATE, SPACING, TYPE, leading } from '../../constants/theme';
 import { usePalette } from '../ui/PaletteContext';
@@ -235,6 +236,9 @@ export default function SkillsEdgeScreen() {
     if (skill) return setSkill(null);
     router.back();
   };
+
+  // The phone's back button goes up one level here too, not out of the screen.
+  useDrillBack([certPanel, module, objective, topic, skill].filter(Boolean).length, back);
 
   const toggleModule = async (moduleId) => {
     try {
