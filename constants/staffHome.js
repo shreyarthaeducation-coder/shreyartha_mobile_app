@@ -88,14 +88,14 @@ const VICE_PRINCIPAL = {
       key: 'assessment',
       label: 'Assessment',
       icon: 'clipboard-outline',
-      itemKeys: ['reports'],
+      itemKeys: ['liveTests', 'reports'],
     },
     {
       // The teacher's pair, as on the web: the notes on their own, beside the Counselling Report.
       key: 'student-support',
       label: 'Student Support',
       icon: 'heart-outline',
-      itemKeys: ['counselling', 'counsellingReport'],
+      itemKeys: ['studentStatus', 'counselling', 'counsellingReport'],
     },
     // Beyond the web sidebar, and beyond anything a teacher can do: a VP is a real leave approver
     // and payroll admin. Grouped well away from the personal three, on purpose.
@@ -200,7 +200,7 @@ const SHREYARTHA_TEACHER = {
       key: 'student-support',
       label: 'Student Support',
       icon: 'heart-outline',
-      itemKeys: ['counselling', 'counsellorReport'],
+      itemKeys: ['studentStatus', 'counselling', 'counsellorReport'],
     },
     {
       key: 'personal',
@@ -326,10 +326,17 @@ const COUNSELOR = {
       itemKeys: ['attendance'],
     },
     {
+      // As the web's Assessment & Examination group: Live Test Rooms for any class (10 Oct 2026).
+      key: 'assessment',
+      label: 'Assessment & Examination',
+      icon: 'clipboard-outline',
+      itemKeys: ['liveTests'],
+    },
+    {
       key: 'student-support',
       label: 'Student Support',
       icon: 'heart-outline',
-      itemKeys: ['counselling', 'counsellorReport', 'faceToFace'],
+      itemKeys: ['studentStatus', 'counselling', 'counsellorReport', 'faceToFace'],
     },
     {
       key: 'personal',
@@ -456,7 +463,7 @@ const SHREYARTHA_COUNCELLOR = {
       key: 'student-support',
       label: 'Student Support',
       icon: 'heart-outline',
-      itemKeys: ['counselling', 'counsellorReport', 'faceToFace', 'queries'],
+      itemKeys: ['studentStatus', 'counselling', 'counsellorReport', 'faceToFace', 'queries'],
     },
     {
       key: 'personal',
@@ -617,7 +624,7 @@ const PRINCIPAL = {
       // `manageStudents` (the roster a school puts in) sits beside `students` (the queue of people
       // who signed themselves up) on purpose — they are the two ways a child arrives, and a
       // principal looking for one will look where the other is.
-      itemKeys: ['overview', 'staff', 'classes', 'manageStudents', 'students', 'linkedColleges'],
+      itemKeys: ['overview', 'staff', 'classes', 'manageStudents', 'students', 'studentStatus', 'linkedColleges'],
     },
     {
       key: 'academics',
@@ -625,7 +632,7 @@ const PRINCIPAL = {
       icon: 'school-outline',
       // Grading scales belong next to Test and Examination: they are what the marks recorded there
       // are turned into.
-      itemKeys: ['reports', 'gradeManagement', 'reportCardAreas', 'reportCardGrades', 'academicIqAliases', 'languageProAliases', 'codingProAliases'],
+      itemKeys: ['liveTests', 'reports', 'gradeManagement', 'reportCardAreas', 'reportCardGrades', 'academicIqAliases', 'languageProAliases', 'codingProAliases'],
     },
     {
       key: 'staffOps',

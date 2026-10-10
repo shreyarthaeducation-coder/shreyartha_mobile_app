@@ -47,6 +47,8 @@ import MarksGrid, { grid } from './marks/MarksGrid';
 import ScanPanel from './marks/ScanPanel';
 import ScanResultPanel from './marks/ScanResultPanel';
 import PaperReviewPanel from './marks/PaperReviewPanel';
+import StudentSearchBar from '../shared/StudentSearchBar';
+import { useStudentSearch } from '../../../utils/studentSearch';
 
 /**
  * Enter/Edit Marks for one exam — the website's two marks grids (ExamMarksGrid, one total per
@@ -270,6 +272,7 @@ export default function MarksSheet({ visible, exam, onClose, onSaved, onChanged,
   }, [visible, exam?.id, perQuestion, fail, reloadKey]);
 
   const students = useMemo(() => sheet?.students || [], [sheet]);
+  const studentSearch = useStudentSearch(students);
   const questions = sheet?.questions || [];
   const sets = setNumbers(sheet);
   const practicalOutOf = perQuestion ? null : sheet?.practicalMaxMarks ?? null;
@@ -1189,11 +1192,12 @@ export default function MarksSheet({ visible, exam, onClose, onSaved, onChanged,
                 onCancel={() => setReview(null)}
               />
 
+              {students.length > 0 ? <StudentSearchBar search={studentSearch} /> : null}
               {perQuestion ? (
                 // One table per paper. A student sits one set, so they appear in one table; the Set
                 // cell on their row is how a teacher says which paper they were handed.
                 sets.map((set) => {
-                  const here = students.filter((s) => setOfStudent(s.studentId) === set);
+                  const here = studentSearch.results.filter((s) => setOfStudent(s.studentId) === set);
                   const boxes = columnsFor(set);
                   return (
                     <View key={set}>
@@ -1214,7 +1218,7 @@ export default function MarksSheet({ visible, exam, onClose, onSaved, onChanged,
                   );
                 })
               ) : (
-                <MarksGrid students={students} columns={totalColumns} />
+                <MarksGrid students={studentSearch.results} columns={totalColumns} />
               )}
             </>
           )}

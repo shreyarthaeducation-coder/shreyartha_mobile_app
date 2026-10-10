@@ -41,3 +41,22 @@ export async function fetchStudentStatus(studentId, signal) {
 export function toggleTopicEnabled({ studentId, topicId, enabled }) {
   return staffApi.post(`${BASE}/toggle-enable`, { studentId, topicId, enabled });
 }
+
+/* ── Bulk enable for whole sections (10 Oct 2026) ─────────────────────────── */
+// "Set exactly these tests": ticked open, unticked closed, for every student of the chosen
+// sections. Backend: psychometric/service/PsychometricBulkEnableService.java.
+
+/** The class's tests, its sections and how many students have each test open now. */
+export function fetchBulkEnableOptions(classId, signal) {
+  return staffApi.get(`${BASE}/bulk-enable/options`, { params: { classId }, signal });
+}
+
+/** What applying would do. Writes nothing. Body: `{ sectionIds, psychometricClassId, openTopicIds }`. */
+export function previewBulkEnable(body, signal) {
+  return staffApi.post(`${BASE}/bulk-enable/preview`, body, { signal });
+}
+
+/** Ticked tests open, unticked closed, for every student of the chosen sections. */
+export function applyBulkEnable(body) {
+  return staffApi.post(`${BASE}/bulk-enable`, body);
+}

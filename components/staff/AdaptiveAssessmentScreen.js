@@ -27,6 +27,8 @@ import {
 } from '../../services/teacher/adaptiveService';
 import TopicBankSheet from './adaptive/TopicBankSheet';
 import AdaptiveReport from './adaptive/AdaptiveReport';
+import StudentSearchBar from './shared/StudentSearchBar';
+import { useStudentSearch } from '../../utils/studentSearch';
 
 /**
  * Native My Adaptive Assessment.
@@ -98,6 +100,7 @@ export default function AdaptiveAssessmentScreen({ homeRoute = '/teacher' }) {
     enabled: reportReady && tab === 'report',
     initialData: [],
   });
+  const studentSearch = useStudentSearch(students);
 
   const topicsFetcher = useCallback(
     (signal) =>
@@ -305,7 +308,8 @@ export default function AdaptiveAssessmentScreen({ homeRoute = '/teacher' }) {
           />
         ) : null}
 
-        {roster.map((s) => {
+        <StudentSearchBar search={studentSearch} />
+        {studentSearch.results.map((s) => {
           const standing = standingFor(s.studentId);
           const active = student?.studentId === s.studentId;
           return (

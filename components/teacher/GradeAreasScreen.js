@@ -12,6 +12,8 @@ import {
   removeGradeField,
   saveGrades,
 } from '../../services/teacher/gradeAreaService';
+import StudentSearchBar from '../staff/shared/StudentSearchBar';
+import { useStudentSearch } from '../../utils/studentSearch';
 
 /**
  * Scholastics / Co-Scholastics / Additional Skills — the website's GradeAreas, one screen for all
@@ -32,6 +34,7 @@ export default function GradeAreasScreen({ category, homeRoute = '/teacher' }) {
   const [sections, setSections] = useState(null);
   const [sectionId, setSectionId] = useState(null);
   const [sheet, setSheet] = useState(null);
+  const studentSearch = useStudentSearch(sheet?.students);
   const [fieldId, setFieldId] = useState(null);
   const [loading, setLoading] = useState(false);
   const [edits, setEdits] = useState({});
@@ -296,7 +299,8 @@ export default function GradeAreasScreen({ category, homeRoute = '/teacher' }) {
                             <Ionicons name="trash-outline" size={17} color={FEEDBACK.errorText} />
                           </Pressable>
                         </View>
-                        {sheet.students.map((s) => {
+                        <StudentSearchBar search={studentSearch} />
+                        {studentSearch.results.map((s) => {
                           const changed = key(fieldId, s.studentId) in edits;
                           return (
                             <View key={s.studentId} style={styles.row}>

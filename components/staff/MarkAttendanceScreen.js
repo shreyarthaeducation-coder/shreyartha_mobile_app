@@ -34,6 +34,8 @@ import {
 } from '../../services/teacher/attendanceService';
 import { addDays, formatLongDate, isSunday, parseIsoDate, todayIso } from '../../utils/dates';
 import { makeStyles } from '../../utils/makeStyles';
+import StudentSearchBar from './shared/StudentSearchBar';
+import { useStudentSearch } from '../../utils/studentSearch';
 
 /**
  * Native Mark Attendance — class attendance for one date at a time.
@@ -177,6 +179,7 @@ export default function MarkAttendanceScreen({
 
   const students = useMemo(() => (Array.isArray(sheet?.students) ? sheet.students : []), [sheet]);
   const listData = ready ? students : [];
+  const studentSearch = useStudentSearch(listData);
 
   // Seed the edit map from the server whenever the sheet or the date changes.
   //
@@ -404,11 +407,12 @@ export default function MarkAttendanceScreen({
           and the list stays put. Only a load with nothing to show falls through to listBody(). */}
       {error && students.length > 0 ? <Text style={styles.notice}>{error}</Text> : null}
 
+      {listData.length > 0 ? <StudentSearchBar search={studentSearch} /> : null}
       <FlatList
         style={styles.list}
         // Not `students` directly: a scope reset leaves the previous class's sheet in memory, and
         // rendering it under a picker that says nothing is selected would show the wrong roster.
-        data={listData}
+        data={studentSearch.results}
         keyExtractor={(item) => String(item.studentId)}
         renderItem={({ item, index }) => (
           <StudentRow
@@ -456,7 +460,7 @@ export default function MarkAttendanceScreen({
             style={({ pressed }) => [styles.bulkBtn, pressed && styles.pressed]}
             accessibilityRole="button"
           >
-            <Text style={[styles.bulkText, { color: FEEDBACK.successText }]}>All present</Text>
+            <Text style={[styles.bulkText, { color: FEEDBACK.successText }]}>{`All ${students.length} present`}</Text>
           </Pressable>
           <Pressable
             onPress={() => setAll(ATTENDANCE_STATUS.ABSENT)}
@@ -464,7 +468,7 @@ export default function MarkAttendanceScreen({
             style={({ pressed }) => [styles.bulkBtn, pressed && styles.pressed]}
             accessibilityRole="button"
           >
-            <Text style={[styles.bulkText, { color: FEEDBACK.errorText }]}>All absent</Text>
+            <Text style={[styles.bulkText, { color: FEEDBACK.errorText }]}>{`All ${students.length} absent`}</Text>
           </Pressable>
           <Pressable
             onPress={save}

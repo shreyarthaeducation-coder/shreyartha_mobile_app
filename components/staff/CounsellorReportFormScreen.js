@@ -18,6 +18,8 @@ import {
   parseReportForm,
 } from '../../constants/counsellorReportConfig';
 import { makeStyles } from '../../utils/makeStyles';
+import StudentSearchBar from './shared/StudentSearchBar';
+import { useStudentSearch } from '../../utils/studentSearch';
 
 /**
  * Counsellor Report — the AUTHORING side, for both counsellor portals.
@@ -92,6 +94,7 @@ export default function CounsellorReportFormScreen({ homeRoute = '/teacher', api
     { enabled: !!leaf, initialData: [] },
   );
   const roster = students || [];
+  const studentSearch = useStudentSearch(roster);
 
   const openStudent = async (next) => {
     setStudent(next);
@@ -335,7 +338,8 @@ export default function CounsellorReportFormScreen({ homeRoute = '/teacher', api
                 <Text style={styles.rosterTitle}>
                   {roster.length} student{roster.length === 1 ? '' : 's'}
                 </Text>
-                {roster.map((s) => (
+                <StudentSearchBar search={studentSearch} />
+                {studentSearch.results.map((s) => (
                   <Pressable
                     key={s.studentId}
                     onPress={() => openStudent(s)}

@@ -13,6 +13,8 @@ import {
   fetchStudentPsychometric,
 } from '../../services/teacher/counsellingService';
 import { makeStyles } from '../../utils/makeStyles';
+import StudentSearchBar from '../staff/shared/StudentSearchBar';
+import { useStudentSearch } from '../../utils/studentSearch';
 
 /**
  * The Counselling Report's Psychometric Result tab, for teachers: class → section → student, then
@@ -62,6 +64,7 @@ export default function StudentPsychometricScreen({ embedded = false, printRoute
     initialData: { students: [], sessions: {} },
   });
   const students = roster?.students || [];
+  const studentSearch = useStudentSearch(students);
 
   const resultFetcher = useCallback(
     (signal) => fetchStudentPsychometric(student.studentId, signal),
@@ -145,7 +148,8 @@ export default function StudentPsychometricScreen({ embedded = false, printRoute
                 showsHorizontalScrollIndicator={false}
                 contentContainerStyle={styles.strip}
               >
-                {students.map((s) => {
+                <StudentSearchBar search={studentSearch} />
+                {studentSearch.results.map((s) => {
                   const active = student?.studentId === s.studentId;
                   return (
                     <Pressable

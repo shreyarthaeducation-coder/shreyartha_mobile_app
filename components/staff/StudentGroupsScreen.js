@@ -37,6 +37,8 @@ import {
   saveShreya01Groups,
   removeShreya01GroupAssignment,
 } from '../../services/teacher/groupService';
+import StudentSearchBar from './shared/StudentSearchBar';
+import { useStudentSearch } from '../../utils/studentSearch';
 
 /**
  * Native Student Groups — sort a class into the four ability bands, per subject.
@@ -212,6 +214,7 @@ export default function StudentGroupsScreen({
   } = useStaffResource(groupsFetcher, { enabled: canReadGroups, initialData: [] });
 
   const roster = students || [];
+  const studentSearch = useStudentSearch(roster);
   const groupRows = useMemo(() => (canReadGroups ? groups || [] : []), [groups, canReadGroups]);
 
   // Existing assignments pre-fill the Create tab, so a teacher edits rather than starts over.
@@ -395,10 +398,11 @@ export default function StudentGroupsScreen({
     return (
       <FlatList
         style={styles.list}
-        data={roster}
+        data={studentSearch.results}
         keyExtractor={(item) => String(item.id)}
         ListHeaderComponent={
           <View style={styles.createHeader}>
+            <StudentSearchBar search={studentSearch} />
             {isAllSubjects ? (
               <View style={styles.infoBanner}>
                 <Ionicons name="information-circle" size={18} color={PALETTE.primaryDark} />

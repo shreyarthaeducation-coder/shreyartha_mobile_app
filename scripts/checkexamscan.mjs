@@ -420,7 +420,7 @@ const WIRING = [
     test: (s) => s.sheet.includes('...columnsFor(set).map((column) => ({')
       && s.sheet.includes('title: column.label,')
       && s.sheet.includes('<MarksGrid students={here} columns={questionColumns(set)} />')
-      && s.sheet.includes('<MarksGrid students={students} columns={totalColumns} />')
+      && s.sheet.includes('<MarksGrid students={studentSearch.results} columns={totalColumns} />')
       && s.grid.includes('{column.title}') && s.grid.includes('{column.sub ? ('),
   },
   {

@@ -15,6 +15,8 @@ import {
 import { normaliseDoubtImage } from '../../utils/doubtImage';
 import { DuplicateStudentsCard, StudentMergeSheet } from '../staff/shared/StudentMerge';
 import { pickImage, takePhoto } from '../../utils/filePicker';
+import StudentSearchBar from '../staff/shared/StudentSearchBar';
+import { useStudentSearch } from '../../utils/studentSearch';
 
 /**
  * Student Management for a class teacher — the website's TeacherStudentManagement.
@@ -44,6 +46,7 @@ export default function TeacherStudentManagementScreen({ homeRoute = '/teacher' 
   const { toast, showToast } = useToast();
   const [scope, setScope] = useState(EMPTY_SCOPE);
   const [students, setStudents] = useState([]);
+  const studentSearch = useStudentSearch(students);
   const [duplicates, setDuplicates] = useState([]);
   const [loading, setLoading] = useState(false);
   const [editing, setEditing] = useState(null);
@@ -211,7 +214,8 @@ export default function TeacherStudentManagementScreen({ homeRoute = '/teacher' 
         <ScrollView style={styles.list} contentContainerStyle={styles.listContent}>
           <DuplicateStudentsCard duplicates={duplicates} onReview={openMerge} />
 
-          {students.map((s) => (
+          <StudentSearchBar search={studentSearch} />
+          {studentSearch.results.map((s) => (
             <Card key={s.studentId}>
               <View style={styles.studentRow}>
                 {s.formalPhotoUrl ? (

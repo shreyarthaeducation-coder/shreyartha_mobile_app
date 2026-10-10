@@ -11,6 +11,8 @@ import {
 // The report body itself is shared with the parent panel, which renders the same ten sections
 // with no picker at all. See counsellor/ReportBody.js.
 import ReportBody from './counsellor/ReportBody';
+import StudentSearchBar from './shared/StudentSearchBar';
+import { useStudentSearch } from '../../utils/studentSearch';
 
 /**
  * Native Counsellor Report — read-only.
@@ -90,6 +92,7 @@ export default function CounsellorReportScreen({
   );
 
   const students = roster?.students || [];
+  const studentSearch = useStudentSearch(students);
   const reportList = useMemo(() => (student ? reports || [] : []), [reports, student]);
 
   return (
@@ -176,7 +179,8 @@ export default function CounsellorReportScreen({
                 showsHorizontalScrollIndicator={false}
                 contentContainerStyle={styles.strip}
               >
-                {students.map((s) => {
+                <StudentSearchBar search={studentSearch} />
+                {studentSearch.results.map((s) => {
                   const active = student?.studentId === s.studentId;
                   return (
                     <Pressable

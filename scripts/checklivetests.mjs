@@ -29,6 +29,11 @@ const FILES = {
   layout: 'app/teacher/_layout.js',
   menu: 'constants/teacherMenu.js',
   index: 'components/staff/index.js',
+  // 10 Oct 2026: principal, vice principal and school counsellor host too.
+  staffRoute: 'app/staff/[role]/live-tests.js',
+  staffLayout: 'app/staff/[role]/_layout.js',
+  staffMenu: 'constants/staffRoles.js',
+  staffHome: 'constants/staffHome.js',
 };
 
 const load = () =>
@@ -152,7 +157,7 @@ const ASSERTIONS = [
   {
     name: 'Remove toggles, and is not offered for a merged result',
     test: (s) =>
-      s.screen.includes('setParticipantRemoved(roomId, p.id, !p.removed)') && s.screen.includes('{!p.merged ? ('),
+      s.screen.includes('setParticipantRemoved(roomId, p.id, !p.removed)') && s.screen.includes('{!p.merged && !readOnly ? ('),
   },
   {
     name: 'Merge all sends no list — the server merges everyone it is sure of — and asks first',
@@ -173,7 +178,7 @@ const ASSERTIONS = [
   },
   {
     name: 'merging is offered only after the test has ended',
-    test: (s) => s.screen.includes('{ended ? <MergePanel roomId={roomId}'),
+    test: (s) => s.screen.includes('{ended && !readOnly ? (\n        <MergePanel roomId={roomId}'),
   },
   {
     name: 'the screen is reachable: route, stack entry, menu tile and export',
@@ -187,7 +192,7 @@ const ASSERTIONS = [
   {
     name: 'the results file is fetched with the teacher\'s login as a CSV and handed to the share sheet',
     test: (s) =>
-      s.screen.includes("await downloadAndShare(liveTestCsvEndpoint(roomId), liveTestCsvName(room), 'text/csv');") &&
+      s.screen.includes("readOnly ? schoolLiveTestCsvEndpoint(roomId) : liveTestCsvEndpoint(roomId),\n        liveTestCsvName(room),\n        'text/csv',") &&
       s.service.includes('export const liveTestCsvEndpoint = (roomId) => `${BASE}/${roomId}/results.csv`;') &&
       s.screen.includes('onPress={shareFile}'),
   },
@@ -230,7 +235,7 @@ const ASSERTIONS = [
     name: 'a report is offered for every kind of test, once it has ended, for a paper with answers',
     test: (s) =>
       s.screen.includes('{ended && !p.removed && p.answeredCount > 0 ? (') &&
-      s.screen.includes('const detail = await fetchLiveTestParticipant(roomId, participant.id);') &&
+      s.screen.includes(': fetchLiveTestParticipant(roomId, participant.id));') &&
       s.screen.includes('if (room.graded === false) {') &&
       s.screen.includes('setReport({ student, marked: detail });') &&
       s.screen.includes('{report.marked ? <MarkedReport room={room} detail={report.marked} /> : null}') &&
@@ -376,6 +381,48 @@ const ASSERTIONS = [
         h.LIVE_TEST_TYPES.map((t) => t.value).join() === 'MOCK,PRACTICE,TOPIC_QUIZ,PSYCHOMETRIC,ADAPTIVE';
     },
   },
+  {
+    name: 'the principal, vice principal and school counsellor reach Live Test Rooms; nobody else on that route',
+    test: (s) =>
+      s.staffRoute.includes("const HOSTS = ['principal', 'vice_principal', 'counselor'];") &&
+      s.staffRoute.includes('if (!HOSTS.includes(roleKey)) return null;') &&
+      s.staffLayout.includes('<Stack.Screen name="live-tests" />') &&
+      ['principal', 'vice_principal', 'counselor'].every((role) =>
+        s.staffMenu.includes(`{ key: 'liveTests', label: 'Live Test Rooms', icon: 'easel-outline', native: '/staff/${role}/live-tests' },`)) &&
+      !s.staffMenu.includes("native: '/staff/shreyartha_councellor/live-tests'"),
+  },
+  {
+    name: 'each of their homes shows the tile',
+    test: (s) =>
+      s.staffHome.includes("itemKeys: ['liveTests', 'reports'],") &&
+      s.staffHome.includes("itemKeys: ['liveTests'],") &&
+      s.staffHome.includes("itemKeys: ['liveTests', 'reports', 'gradeManagement',"),
+  },
+  {
+    name: 'only the principal and vice principal follow every room of the school',
+    test: (s) =>
+      s.staffRoute.includes("const OVERSIGHT = ['principal', 'vice_principal'];") &&
+      s.staffRoute.includes('oversight={OVERSIGHT.includes(roleKey)}') &&
+      s.service.includes('export const fetchSchoolLiveTestRooms = (signal) => staffApi.get(`${BASE}/school-rooms`, { signal });') &&
+      s.service.includes('export const fetchSchoolLiveTestRoom = (roomId, signal) => staffApi.get(`${BASE}/school-rooms/${roomId}`, { signal });'),
+  },
+  {
+    name: 'a room of someone else opens read-only: school endpoints, no controls, no merging, no removing',
+    test: (s) =>
+      s.screen.includes("onPress={() => (school && !room.mine ? onFollow(room) : onOpen(room))}") &&
+      s.screen.includes("onFollow={(room) => setView({ name: 'room', roomId: room.id, readOnly: true })}") &&
+      s.screen.includes('(readOnly ? fetchSchoolLiveTestRoom(roomId, signal) : fetchLiveTestRoom(roomId, signal))') &&
+      s.screen.includes('? fetchSchoolLiveTestParticipant(roomId, participant.id)') &&
+      s.screen.includes('{!ended && !readOnly ? (') &&
+      s.screen.includes('Hosted by <Text style={styles.strong}>'),
+  },
+  {
+    name: 'the school tab hides New room and the list switches source',
+    test: (s) =>
+      s.screen.includes('{school ? null : <Button label="New room"') &&
+      s.screen.includes('(school ? fetchSchoolLiveTestRooms(signal) : fetchLiveTestRooms(signal))') &&
+      s.screen.includes('}, [school]);'),
+  },
 ];
 
 // [what breaks, which file, from, to]
@@ -398,7 +445,20 @@ const MUTATIONS = [
   ['the replace choice is dropped', 'screen', 'mergeLiveTestResults(roomId, { ...options, replaceExisting })', 'mergeLiveTestResults(roomId, options)'],
   ['a single merge sends no id', 'screen', 'merge({ participantIds: [r.id] },', 'merge({},'],
   ['a child with a problem can still be merged', 'screen', '{r.matchedStudentId && !r.attention ? (', '{r.matchedStudentId ? ('],
-  ['merging offered while the test runs', 'screen', '{ended ? <MergePanel roomId={roomId}', '{<MergePanel roomId={roomId}'],
+  ['merging offered while the test runs', 'screen', '{ended && !readOnly ? (\n        <MergePanel roomId={roomId}', '{!readOnly ? (\n        <MergePanel roomId={roomId}'],
+  ['merging offered on a followed room', 'screen', '{ended && !readOnly ? (\n        <MergePanel roomId={roomId}', '{ended ? (\n        <MergePanel roomId={roomId}'],
+  ['a Shreyartha counsellor reaches the route', 'staffRoute', "const HOSTS = ['principal', 'vice_principal', 'counselor'];", "const HOSTS = ['principal', 'vice_principal', 'counselor', 'shreyartha_councellor'];"],
+  ['any role reaches the route', 'staffRoute', '  if (!HOSTS.includes(roleKey)) return null; // the Shreyartha roles do not host rooms\n', ''],
+  ['the counsellor follows the whole school', 'staffRoute', "const OVERSIGHT = ['principal', 'vice_principal'];", "const OVERSIGHT = ['principal', 'vice_principal', 'counselor'];"],
+  ['the stack entry is missing for staff', 'staffLayout', '      <Stack.Screen name="live-tests" />\n', ''],
+  ['the principal has no tile', 'staffMenu', "      { key: 'liveTests', label: 'Live Test Rooms', icon: 'easel-outline', native: '/staff/principal/live-tests' },\n", ''],
+  ['the counsellor home leaves it out', 'staffHome', "      itemKeys: ['liveTests'],\n", "      itemKeys: [],\n"],
+  ['a followed room uses the host endpoint', 'screen', '(readOnly ? fetchSchoolLiveTestRoom(roomId, signal) : fetchLiveTestRoom(roomId, signal))', 'fetchLiveTestRoom(roomId, signal)'],
+  ['a followed room shows Start and Stop', 'screen', '{!ended && !readOnly ? (', '{!ended ? ('],
+  ['a followed room offers Remove', 'screen', '{!p.merged && !readOnly ? (', '{!p.merged ? ('],
+  ['every school room opens as the host', 'screen', "onPress={() => (school && !room.mine ? onFollow(room) : onOpen(room))}", 'onPress={() => onOpen(room)}'],
+  ['the school list is the host list', 'screen', '(school ? fetchSchoolLiveTestRooms(signal) : fetchLiveTestRooms(signal))', 'fetchLiveTestRooms(signal)'],
+  ['New room offered on the school tab', 'screen', '{school ? null : <Button label="New room"', '{<Button label="New room"'],
   ['the menu tile is gone', 'menu', "native: '/teacher/live-tests' },", "native: '/teacher/reports' },"],
   ['the stack entry is gone', 'layout', '        <Stack.Screen name="live-tests" />\n', ''],
   ['the countdown drops its minutes', 'service', "return h > 0 ? `${h}:${pad(m)}:${pad(s % 60)}` : `${m}:${pad(s % 60)}`;", "return `${pad(s % 60)}`;"],
@@ -407,7 +467,7 @@ const MUTATIONS = [
   ['the level reached is dropped', 'service', "const level = p.finalLevel ? ` · reached ${levelName(p.finalLevel)}` : '';", "const level = '';"],
   ['removed children are shared', 'service', '    .filter((p) => !p.removed)\n', ''],
   ['adaptive is not offered', 'service', "  { value: 'ADAPTIVE', label: 'Adaptive assessment' },\n", ''],
-  ['the results file is fetched as a PDF', 'screen', "liveTestCsvName(room), 'text/csv');", 'liveTestCsvName(room));'],
+  ['the results file is fetched as a PDF', 'screen', "        liveTestCsvName(room),\n        'text/csv',\n", "        liveTestCsvName(room),\n"],
   ['the file button does nothing', 'screen', 'onPress={shareFile}', 'onPress={() => {}}'],
   ['blank answers are scored', 'service', '    if (row.answer) answers[row.id] = row.answer;', '    answers[row.id] = row.answer;'],
   ['the scored fields are dropped', 'service', '      skillsMeasured: row.skillsMeasured,\n', ''],

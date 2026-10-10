@@ -10,6 +10,8 @@ import {
   fetchCategorySheet,
   filledIn,
 } from '../../../services/admin/gradeAreaAdminService';
+import StudentSearchBar from '../shared/StudentSearchBar';
+import { useStudentSearch } from '../../../utils/studentSearch';
 
 /**
  * Report Card Grades — the website's GradeAreaGrades: what the teachers have graded, section by
@@ -29,6 +31,7 @@ export default function ReportCardGradesScreen({ homeRoute }) {
   const [sections, setSections] = useState([]);
   const [selected, setSelected] = useState(null);
   const [sheet, setSheet] = useState(null);
+  const studentSearch = useStudentSearch(sheet?.students);
   const [loading, setLoading] = useState(false);
   const [loadingSheet, setLoadingSheet] = useState(false);
 
@@ -173,7 +176,8 @@ export default function ReportCardGradesScreen({ homeRoute }) {
                     {progress.done < progress.cells ? ` — ${progress.cells - progress.done} still empty` : ' — complete'}
                   </Text>
                 ) : null}
-                {sheet.students.map((st) => (
+                <StudentSearchBar search={studentSearch} />
+                {studentSearch.results.map((st) => (
                   <Card key={st.studentId}>
                     <Text style={styles.studentName}>
                       {st.studentName}

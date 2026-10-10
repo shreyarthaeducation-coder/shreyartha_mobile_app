@@ -202,6 +202,8 @@ export default function StaffRoleLayout() {
       <Stack.Screen name="adaptive-assessment" />
       {/* Vice principal: the teacher exam screen, on a route the other shells don't use. */}
       <Stack.Screen name="reports" />
+      <Stack.Screen name="live-tests" />
+      <Stack.Screen name="student-status" />
       {/* Principal (and later the Shreyartha admin): the admin-flavoured pages. */}
       <Stack.Screen name="overview" />
       <Stack.Screen name="linked-colleges" />

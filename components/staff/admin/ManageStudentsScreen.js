@@ -40,6 +40,8 @@ import {
 import { normaliseDoubtImage } from '../../../utils/doubtImage';
 import { pickFile, pickImage, takePhoto } from '../../../utils/filePicker';
 import { makeStyles } from '../../../utils/makeStyles';
+import StudentSearchBar from '../shared/StudentSearchBar';
+import { useStudentSearch } from '../../../utils/studentSearch';
 
 /**
  * Manage Students — a school's own roster, per academic year and section, and the spreadsheet
@@ -120,6 +122,7 @@ export default function ManageStudentsScreen({ homeRoute, apiBase }) {
     useStaffResource(rosterLoader);
 
   const students = useMemo(() => (Array.isArray(roster) ? roster : roster?.students || []), [roster]);
+  const studentSearch = useStudentSearch(students);
 
   // ── students in no section ────────────────────────────────────────────────
   // Quietly: a school with nothing stranded sees nothing, and a failure must not take the roster down.
@@ -440,7 +443,8 @@ export default function ManageStudentsScreen({ homeRoute, apiBase }) {
           <View style={styles.headRow}>
             <CardTitle>{students.length} student{students.length === 1 ? '' : 's'}</CardTitle>
           </View>
-          {students.map((s) => (
+          <StudentSearchBar search={studentSearch} />
+          {studentSearch.results.map((s) => (
             // The roster row is SectionRosterRow: studentId and studentName. It used to be read as
             // `id` and `fullName`, which the server does not send — every name showed as "—".
             <View key={s.studentId ?? s.enrollmentId ?? `${s.studentName}-${s.email}`} style={styles.studentRow}>

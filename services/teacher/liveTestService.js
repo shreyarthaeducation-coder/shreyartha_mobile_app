@@ -68,6 +68,13 @@ export const setParticipantMatch = (roomId, participantId, studentId) =>
 /** No `participantIds` = everyone the server is sure of, in one request. */
 export const mergeLiveTestResults = (roomId, options = {}) => staffApi.post(`${BASE}/${roomId}/merge`, options);
 
+// Every room of the school, read-only — principal, vice principal and school admin (10 Oct 2026).
+export const fetchSchoolLiveTestRooms = (signal) => staffApi.get(`${BASE}/school-rooms`, { signal });
+export const fetchSchoolLiveTestRoom = (roomId, signal) => staffApi.get(`${BASE}/school-rooms/${roomId}`, { signal });
+export const fetchSchoolLiveTestParticipant = (roomId, participantId, signal) =>
+  staffApi.get(`${BASE}/school-rooms/${roomId}/participants/${participantId}`, { signal });
+export const schoolLiveTestCsvEndpoint = (roomId) => `${BASE}/school-rooms/${roomId}/results.csv`;
+
 // ── Pure helpers (shared by the screen and its checker) ─────────────────────
 
 export const LIVE_TEST_TYPES = [

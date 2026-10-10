@@ -73,6 +73,9 @@ export const STAFF_ROLE_CONFIG = {
       // "Wellness Groups" shares nothing with the teacher's "Create Group" — it is the
       // wellbeing-survey index screen. Same slot, different feature entirely.
       { key: 'groups', label: 'Wellness Groups', icon: 'people-outline', native: '/staff/counselor/groups' },
+      // Any class of the school (10 Oct 2026), as the web's Assessment & Examination group.
+      { key: 'liveTests', label: 'Live Test Rooms', icon: 'easel-outline', native: '/staff/counselor/live-tests' },
+      { key: 'studentStatus', label: 'Student Status', icon: 'podium-outline', native: '/staff/counselor/student-status' },
       { key: 'counselling', label: 'Counselling Needs and Notes', icon: 'chatbubbles-outline', native: '/staff/counselor/counselling' },
       { key: 'counsellorReport', label: 'Counsellor Report', icon: 'reader-outline', native: '/staff/counselor/counsellor-report' },
       // The face-to-face room. Also the centre FAB's destination — a tile as well, because the
@@ -139,6 +142,7 @@ export const STAFF_ROLE_CONFIG = {
       // The roster. Sits on /api/school-admin and names PRINCIPAL in its own guard, so it does not
       // lean on the role hierarchy — as does Grade Management, now a group further down.
       { key: 'manageStudents', label: 'Manage Students', icon: 'person-add-outline', native: '/staff/principal/manage-students' },
+      { key: 'studentStatus', label: 'Student Status', icon: 'podium-outline', native: '/staff/principal/student-status' },
       { key: 'classes', label: 'Class Management', icon: 'school-outline', native: '/staff/principal/classes' },
       { key: 'linkedColleges', label: 'Linked Colleges', icon: 'business-outline', native: '/staff/principal/linked-colleges' },
       // "… Management", not "… Aliases": the web renamed all three when it grouped the sidebar, and
@@ -148,6 +152,8 @@ export const STAFF_ROLE_CONFIG = {
       { key: 'codingProAliases', label: 'Coding Pro Management', icon: 'code-slash-outline', native: '/staff/principal/coding-pro-aliases' },
       // Deliberately NOT /reports: that route is the VP's teacher exam screen. The admin screen
       // owns exam records (create / edit / publish-to-parents), which a teacher cannot do.
+      // Any class of the school, plus every room of the school read-only (10 Oct 2026).
+      { key: 'liveTests', label: 'Live Test Rooms', icon: 'easel-outline', native: '/staff/principal/live-tests' },
       { key: 'reports', label: 'Test & Examination', icon: 'clipboard-outline', native: '/staff/principal/admin-reports' },
       { key: 'gradeManagement', label: 'Grade Management', icon: 'ribbon-outline', native: '/staff/principal/grade-management' },
       // The report card's graded areas with no exam behind them (web 352164f): set up for every
@@ -210,7 +216,9 @@ export const STAFF_ROLE_CONFIG = {
       { key: 'homework', label: 'Assign Home Work, My Resources', icon: 'document-text-outline', native: '/staff/vice_principal/homework' },
       { key: 'liveClasses', label: 'Live Classes', icon: 'videocam-outline', native: '/staff/vice_principal/live-classes' },
       { key: 'syllabus', label: 'Syllabus Completion', icon: 'list-outline', native: '/staff/vice_principal/syllabus' },
+      { key: 'liveTests', label: 'Live Test Rooms', icon: 'easel-outline', native: '/staff/vice_principal/live-tests' },
       { key: 'reports', label: 'Test and Examination', icon: 'clipboard-outline', native: '/staff/vice_principal/reports' },
+      { key: 'studentStatus', label: 'Student Status', icon: 'podium-outline', native: '/staff/vice_principal/student-status' },
       { key: 'counselling', label: 'Counselling Needs and Notes', icon: 'chatbubbles-outline', native: '/staff/vice_principal/counselling' },
       // The teacher's Counselling Report (Psychometric Result + Counsellor Report tabs), beside the
       // notes in Student Support — as on the web since 1 Oct 2026.
@@ -311,6 +319,7 @@ export const STAFF_ROLE_CONFIG = {
       { key: 'selfAttendance', label: 'Self Attendance', icon: 'time-outline', native: '/staff/shreyartha_councellor/self-attendance' },
       { key: 'attendance', label: 'Mark Attendance', icon: 'checkbox-outline', native: '/staff/shreyartha_councellor/attendance' },
       { key: 'groups', label: 'Wellness Groups', icon: 'people-outline', native: '/staff/shreyartha_councellor/groups' },
+      { key: 'studentStatus', label: 'Student Status', icon: 'podium-outline', native: '/staff/shreyartha_councellor/student-status' },
       { key: 'counselling', label: 'Counselling Needs and Notes', icon: 'chatbubbles-outline', native: '/staff/shreyartha_councellor/counselling' },
       { key: 'counsellorReport', label: 'Counsellor Report', icon: 'reader-outline', native: '/staff/shreyartha_councellor/counsellor-report' },
       { key: 'faceToFace', label: 'Face-to-Face Counselling', icon: 'mic-outline', native: '/staff/shreyartha_councellor/face-to-face' },
@@ -400,6 +409,7 @@ export const STAFF_ROLE_CONFIG = {
       { key: 'homework', label: 'Homework', icon: 'document-text-outline', native: '/staff/shreyartha_teacher/homework' },
       { key: 'resources', label: 'Resources', icon: 'folder-open-outline', native: '/staff/shreyartha_teacher/resources' },
       { key: 'syllabus', label: 'Syllabus Completion', icon: 'list-outline', native: '/staff/shreyartha_teacher/syllabus' },
+      { key: 'studentStatus', label: 'Student Status', icon: 'podium-outline', native: '/staff/shreyartha_teacher/student-status' },
       { key: 'counselling', label: 'Counselling Needs and Notes', icon: 'chatbubbles-outline', native: '/staff/shreyartha_teacher/counselling' },
       { key: 'counsellorReport', label: 'Counsellor Report', icon: 'reader-outline', native: '/staff/shreyartha_teacher/counsellor-report' },
       // Beyond the web sidebar, and the only one of the four panels to get it: the adaptive

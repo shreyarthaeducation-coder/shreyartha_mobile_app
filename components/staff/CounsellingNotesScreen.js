@@ -35,6 +35,8 @@ import {
 } from '../../constants/counsellingConfig';
 import { formatLongDate, isSunday } from '../../utils/dates';
 import { makeStyles } from '../../utils/makeStyles';
+import StudentSearchBar from './shared/StudentSearchBar';
+import { useStudentSearch } from '../../utils/studentSearch';
 
 /**
  * Native Counselling Needs and Notes.
@@ -155,6 +157,7 @@ export default function CounsellingNotesScreen({
   });
 
   const students = roster?.students || [];
+  const studentSearch = useStudentSearch(students);
   const sessions = roster?.sessions || {};
 
   const dates = useMemo(() => {
@@ -360,6 +363,7 @@ export default function CounsellingNotesScreen({
             />
           ) : null}
 
+          {scopeReady && !rosterLoading && !student && students.length > 0 ? <StudentSearchBar search={studentSearch} /> : null}
           {!scopeReady ? (
             <EmptyState
               icon="people-outline"
@@ -385,7 +389,7 @@ export default function CounsellingNotesScreen({
           ) : student ? (
             renderStudentMonth()
           ) : (
-            students.map((s) => {
+            studentSearch.results.map((s) => {
               const total = totalFor(s.studentId);
               return (
                 <Pressable

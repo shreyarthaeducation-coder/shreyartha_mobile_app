@@ -17,6 +17,7 @@ import {
 } from '../ui';
 import useStaffResource from '../../hooks/useStaffResource';
 import PsychometricSheet from './counsellor/PsychometricSheet';
+import BulkEnableSheet from './counsellor/BulkEnableSheet';
 import { attendanceClassesLoaderFor } from '../../services/teacher/attendanceService';
 import {
   RISK_ORDER,
@@ -31,6 +32,8 @@ import {
 import { makeStyles } from '../../utils/makeStyles';
 import { useRouter } from 'expo-router';
 import { PsychometricPrintLink } from '../shared/BulkPsychometricPrintScreen';
+import StudentSearchBar from './shared/StudentSearchBar';
+import { useStudentSearch } from '../../utils/studentSearch';
 
 /**
  * Wellness Groups — the counsellor's wellbeing-survey screen, both portals.
@@ -61,6 +64,7 @@ export default function WellnessGroupsScreen({
   const [scope, setScope] = useState(schoolScoped ? EMPTY_SCHOOL_SCOPE : EMPTY_SCOPE);
   const [student, setStudent] = useState(null);
   const [psychometricFor, setPsychometricFor] = useState(null);
+  const [bulkOpen, setBulkOpen] = useState(false);
   const [busyIndex, setBusyIndex] = useState(null);
 
   const { toast, showToast } = useToast();
@@ -87,6 +91,7 @@ export default function WellnessGroupsScreen({
     revalidate,
   } = useStaffResource(indicesFetcher, { enabled: ready, initialData: [] });
   const students = rows || [];
+  const studentSearch = useStudentSearch(students);
 
   // The open sheet must reflect edits, so read it back out of the freshest list rather than
   // holding a stale copy in state.
@@ -151,6 +156,20 @@ export default function WellnessGroupsScreen({
         />
       )}
 
+      {/* Open or close psychometric tests for whole sections at once (10 Oct 2026). */}
+      {scope.classId ? (
+        <Pressable
+          onPress={() => setBulkOpen(true)}
+          style={({ pressed }) => [styles.bulkBtn, { borderColor: PALETTE.primary, backgroundColor: PALETTE.tint }, pressed && styles.pressed]}
+          accessibilityRole="button"
+        >
+          <Ionicons name="options-outline" size={18} color={PALETTE.primaryDark} />
+          <Text style={[styles.bulkText, { color: PALETTE.primaryDark }]}>
+            Psychometric tests for Class {scope.className}
+          </Text>
+        </Pressable>
+      ) : null}
+
       {!ready ? (
         <EmptyState
           icon="people-outline"
@@ -179,7 +198,8 @@ export default function WellnessGroupsScreen({
             })}
           </View>
 
-          {students.map((s) => {
+          <StudentSearchBar search={studentSearch} />
+          {studentSearch.results.map((s) => {
             const level = worstLevel(s);
             const meta = riskMeta(level);
             const count = Object.keys(s.indices || {}).length;
@@ -289,6 +309,14 @@ export default function WellnessGroupsScreen({
         onClose={() => setPsychometricFor(null)}
         showToast={showToast}
       />
+
+      <BulkEnableSheet
+        visible={bulkOpen}
+        classId={scope.classId}
+        initialSectionId={scope.sectionId}
+        onClose={() => setBulkOpen(false)}
+        showToast={showToast}
+      />
     </ScreenScaffold>
   );
 }
@@ -340,5 +368,18 @@ const useStyles = makeStyles((p) => ({
     backgroundColor: SLATE[100],
   },
   revertText: { fontSize: TYPE.label, fontWeight: '600', color: SLATE[600] },
+  bulkBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.sm,
+    alignSelf: 'flex-start',
+    borderWidth: 1,
+    borderRadius: 10,
+    paddingVertical: 9,
+    paddingHorizontal: SPACING.md,
+    marginTop: SPACING.sm,
+    minHeight: 44,
+  },
+  bulkText: { fontSize: TYPE.label, fontWeight: '700' },
   pressed: { opacity: 0.72 },
 }));

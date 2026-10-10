@@ -17,6 +17,10 @@ import {
   createLiveTestRoom,
   enrolParticipant,
   extendLiveTest,
+  fetchSchoolLiveTestParticipant,
+  fetchSchoolLiveTestRoom,
+  fetchSchoolLiveTestRooms,
+  schoolLiveTestCsvEndpoint,
   fetchAcademicTree,
   fetchLiveTestClasses,
   fetchLiveTestMatches,
@@ -43,6 +47,8 @@ import {
   startLiveTest,
   stopLiveTest,
 } from '../../services/teacher/liveTestService';
+import StudentSearchBar from './shared/StudentSearchBar';
+import { useStudentSearch } from '../../utils/studentSearch';
 
 const POLL_MS = 3000;
 const STATUS = { LOBBY: 'Waiting to start', RUNNING: 'Running now', ENDED: 'Ended' };
@@ -66,7 +72,7 @@ const STATUS = { LOBBY: 'Waiting to start', RUNNING: 'Running now', ENDED: 'Ende
  * share sheet rather than downloaded, and a psychometric report opens with the app's own report
  * renderer (the one the student panel uses) rather than the website's six wide-page components.
  */
-export default function LiveTestRoomsScreen({ homeRoute }) {
+export default function LiveTestRoomsScreen({ homeRoute, oversight = false }) {
   const [view, setView] = useState({ name: 'list' });
   const { toast, showToast } = useToast();
 
@@ -87,10 +93,11 @@ export default function LiveTestRoomsScreen({ homeRoute }) {
     return (
       <Room
         roomId={view.roomId}
+        readOnly={!!view.readOnly}
         homeRoute={homeRoute}
         toast={toast}
         showToast={showToast}
-        onBack={() => setView({ name: 'list' })}
+        onBack={() => setView({ name: 'list', school: !!view.readOnly })}
       />
     );
   }
@@ -98,31 +105,40 @@ export default function LiveTestRoomsScreen({ homeRoute }) {
     <RoomList
       homeRoute={homeRoute}
       toast={toast}
+      oversight={oversight}
+      initialSchool={!!view.school}
       onCreate={() => setView({ name: 'create' })}
       onOpen={(room) => setView({ name: 'room', roomId: room.id })}
+      onFollow={(room) => setView({ name: 'room', roomId: room.id, readOnly: true })}
     />
   );
 }
 
 // ─── List ────────────────────────────────────────────────────────────────────
 
-function RoomList({ homeRoute, toast, onCreate, onOpen }) {
+/**
+ * @param oversight principal / vice principal: a second tab with every room of the school, opened
+ *                  read-only (only the host runs a room).
+ */
+function RoomList({ homeRoute, toast, oversight, initialSchool, onCreate, onOpen, onFollow }) {
   const styles = useStyles();
   const palette = usePalette();
   const [rooms, setRooms] = useState(null);
   const [error, setError] = useState('');
   const [refreshing, setRefreshing] = useState(false);
+  const [school, setSchool] = useState(oversight && initialSchool);
 
   const load = useCallback((signal) => {
-    return fetchLiveTestRooms(signal)
+    setRooms(null);
+    return (school ? fetchSchoolLiveTestRooms(signal) : fetchLiveTestRooms(signal))
       .then((r) => {
         setRooms(Array.isArray(r) ? r : []);
         setError('');
       })
       .catch((e) => {
-        if (e?.name !== 'AbortError') setError(e?.message || 'Could not load your rooms.');
+        if (e?.name !== 'AbortError') setError(e?.message || 'Could not load the rooms.');
       });
-  }, []);
+  }, [school]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -145,18 +161,40 @@ function RoomList({ homeRoute, toast, onCreate, onOpen }) {
       toast={toast}
     >
       <Text style={styles.intro}>
-        Run a test for a whole class without student logins. Students open one link in a browser, type their name,
-        class and roll number, and the test starts for everyone when you press Start.
+        Run a test for a whole class together. Students open one link in a browser and sign in — or type their
+        name, class and roll number if they cannot — and the test starts for everyone when you press Start.
       </Text>
-      <Button label="New room" icon="add" onPress={onCreate} color={palette.primaryDark} />
+      {oversight ? (
+        <View style={styles.tabs} accessibilityRole="tablist">
+          {[
+            [false, 'My rooms'],
+            [true, 'All rooms in school'],
+          ].map(([value, label]) => (
+            <Pressable
+              key={label}
+              onPress={() => setSchool(value)}
+              accessibilityRole="tab"
+              accessibilityState={{ selected: school === value }}
+              style={[styles.tab, school === value && { borderBottomColor: palette.primaryDark }]}
+            >
+              <Text style={[styles.tabText, school === value && { color: palette.primaryDark }]}>{label}</Text>
+            </Pressable>
+          ))}
+        </View>
+      ) : null}
+      {school ? null : <Button label="New room" icon="add" onPress={onCreate} color={palette.primaryDark} />}
 
       {(rooms || []).length === 0 ? (
-        <EmptyState icon="easel-outline" title="No rooms yet" message="Open a room to host your first test." />
+        <EmptyState
+          icon="easel-outline"
+          title="No rooms yet"
+          message={school ? 'No rooms have been opened in your school yet.' : 'Open a room to host your first test.'}
+        />
       ) : (
         (rooms || []).map((room) => (
           <Pressable
             key={room.id}
-            onPress={() => onOpen(room)}
+            onPress={() => (school && !room.mine ? onFollow(room) : onOpen(room))}
             accessibilityRole="button"
             accessibilityLabel={`${room.title}, ${room.classLabel}, ${STATUS[room.status] || room.status}`}
             style={({ pressed }) => [pressed && styles.pressed]}
@@ -169,6 +207,7 @@ function RoomList({ homeRoute, toast, onCreate, onOpen }) {
               <Text style={styles.muted}>
                 {room.classLabel} · {room.testTypeLabel} · {room.participantCount ?? 0} students
               </Text>
+              {school ? <Text style={styles.muted}>Hosted by {room.mine ? 'you' : room.teacherName}</Text> : null}
             </Card>
           </Pressable>
         ))
@@ -426,7 +465,8 @@ function CreateRoom({ homeRoute, toast, onCancel, onCreated }) {
 
 // ─── One room ────────────────────────────────────────────────────────────────
 
-function Room({ roomId, homeRoute, toast, showToast, onBack }) {
+/** @param readOnly a room of the school followed by the principal or vice principal: no controls. */
+function Room({ roomId, readOnly = false, homeRoute, toast, showToast, onBack }) {
   const styles = useStyles();
   const palette = usePalette();
   const [room, setRoom] = useState(null);
@@ -435,12 +475,15 @@ function Room({ roomId, homeRoute, toast, showToast, onBack }) {
   const [secondsLeft, setSecondsLeft] = useState(null);
   const [report, setReport] = useState(null);
   const deadline = useRef(null);
+  const studentSearch = useStudentSearch(room?.participants);
 
   /** A psychometric child's report, built on the phone from the answers the room saved. */
   const openReport = async (participant) => {
     setBusy(`report-${participant.id}`);
     try {
-      const detail = await fetchLiveTestParticipant(roomId, participant.id);
+      const detail = await (readOnly
+        ? fetchSchoolLiveTestParticipant(roomId, participant.id)
+        : fetchLiveTestParticipant(roomId, participant.id));
       const student = { name: participant.name, class: participant.className };
       if (room.graded === false) {
         // One report for the session: a body per test the child answered, each scored on its own.
@@ -462,7 +505,11 @@ function Room({ roomId, homeRoute, toast, showToast, onBack }) {
   const shareFile = async () => {
     setBusy('csv');
     try {
-      await downloadAndShare(liveTestCsvEndpoint(roomId), liveTestCsvName(room), 'text/csv');
+      await downloadAndShare(
+        readOnly ? schoolLiveTestCsvEndpoint(roomId) : liveTestCsvEndpoint(roomId),
+        liveTestCsvName(room),
+        'text/csv',
+      );
     } catch (e) {
       showToast(e?.message || 'The results file could not be prepared.', 'error');
     } finally {
@@ -478,7 +525,7 @@ function Room({ roomId, homeRoute, toast, showToast, onBack }) {
 
   const load = useCallback(
     (signal) =>
-      fetchLiveTestRoom(roomId, signal)
+      (readOnly ? fetchSchoolLiveTestRoom(roomId, signal) : fetchLiveTestRoom(roomId, signal))
         .then((r) => {
           apply(r);
           setError('');
@@ -486,7 +533,7 @@ function Room({ roomId, homeRoute, toast, showToast, onBack }) {
         .catch((e) => {
           if (e?.name !== 'AbortError') setError(e?.message || 'Could not load this room.');
         }),
-    [roomId, apply],
+    [roomId, apply, readOnly],
   );
 
   // Poll while the room is open; once it has ended nothing changes by itself.
@@ -589,6 +636,15 @@ function Room({ roomId, homeRoute, toast, showToast, onBack }) {
         <StatusPill status={room.status} />
       </View>
 
+      {readOnly ? (
+        <Card>
+          <Text style={styles.body}>
+            Hosted by <Text style={styles.strong}>{room.teacherName || 'another member of staff'}</Text>. You can follow
+            it and see the results; only the host can start, stop or merge it.
+          </Text>
+        </Card>
+      ) : null}
+
       {running ? (
         <View style={[styles.clock, secondsLeft != null && secondsLeft <= 60 && styles.clockLow]}>
           <Text style={styles.clockText}>{secondsLeft == null ? 'No time limit' : `${clock(secondsLeft)} left`}</Text>
@@ -615,7 +671,7 @@ function Room({ roomId, homeRoute, toast, showToast, onBack }) {
         </Card>
       ) : null}
 
-      {!ended ? (
+      {!ended && !readOnly ? (
         <Card>
           <Text style={styles.body}>
             <Text style={styles.strong}>{present.length}</Text> {present.length === 1 ? 'student has' : 'students have'} joined
@@ -654,16 +710,17 @@ function Room({ roomId, homeRoute, toast, showToast, onBack }) {
       ) : null}
 
       <Text style={styles.section}>{ended ? 'Results' : lobby ? 'Who has joined' : 'Progress'}</Text>
+      {everyone.length > 0 ? <StudentSearchBar search={studentSearch} /> : null}
       {everyone.length === 0 ? (
         <EmptyState icon="people-outline" title="Nobody has joined yet" message="Share the link above with your class." />
       ) : (
-        everyone.map((p, index) => (
+        studentSearch.results.map((p, index) => (
           <Card key={p.id} style={[styles.person, p.removed && styles.personRemoved]}>
             <View style={styles.rowBetween}>
               <Text style={styles.personName}>
                 {index + 1}. {p.name}
               </Text>
-              {!p.merged ? (
+              {!p.merged && !readOnly ? (
                 <Pressable
                   onPress={() => run('remove', () => setParticipantRemoved(roomId, p.id, !p.removed))}
                   disabled={!!busy}
@@ -734,7 +791,9 @@ function Room({ roomId, homeRoute, toast, showToast, onBack }) {
         </>
       ) : null}
 
-      {ended ? <MergePanel roomId={roomId} graded={room.graded !== false} showToast={showToast} onMerged={() => load()} /> : null}
+      {ended && !readOnly ? (
+        <MergePanel roomId={roomId} graded={room.graded !== false} showToast={showToast} onMerged={() => load()} />
+      ) : null}
     </ScreenScaffold>
   );
 }
@@ -1051,6 +1110,9 @@ function Button({ label, icon, onPress, busy = false, disabled = false, secondar
 }
 
 const useStyles = makeStyles(() => ({
+  tabs: { flexDirection: 'row', gap: SPACING.sm, marginBottom: SPACING.md, borderBottomWidth: 1, borderBottomColor: SLATE[200] },
+  tab: { paddingVertical: SPACING.sm, paddingHorizontal: SPACING.md, borderBottomWidth: 3, borderBottomColor: 'transparent' },
+  tabText: { fontSize: TYPE.label, fontWeight: '700', color: SLATE[600] },
   intro: { fontSize: TYPE.body, lineHeight: leading(TYPE.body), color: SLATE[700], marginBottom: SPACING.sm },
   body: { fontSize: TYPE.body, lineHeight: leading(TYPE.body), color: SLATE[700], marginTop: SPACING.xs },
   strong: { fontWeight: '800', color: SLATE[900] },

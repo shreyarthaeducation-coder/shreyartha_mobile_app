@@ -29,6 +29,8 @@ import {
 } from '../../services/teacher/studentAnalyticsService';
 import { pickAttachment, formatFileSize } from '../../utils/filePicker';
 import { todayIso } from '../../utils/dates';
+import StudentSearchBar from './shared/StudentSearchBar';
+import { useStudentSearch } from '../../utils/studentSearch';
 
 /**
  * Native My Students Analytics — the last WebView surface in the teacher panel.
@@ -90,6 +92,7 @@ export default function StudentAnalyticsScreen({ homeRoute = '/teacher' }) {
   );
 
   const students = roster || [];
+  const studentSearch = useStudentSearch(students);
 
   const gapCounts = analytics?.learningGaps || {};
   const topicsByLevel = analytics?.topicsByLevel || {};
@@ -189,7 +192,8 @@ export default function StudentAnalyticsScreen({ homeRoute = '/teacher' }) {
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.strip}
         >
-          {students.map((s) => {
+          <StudentSearchBar search={studentSearch} />
+          {studentSearch.results.map((s) => {
             const active = student?.id === s.id;
             return (
               <Pressable

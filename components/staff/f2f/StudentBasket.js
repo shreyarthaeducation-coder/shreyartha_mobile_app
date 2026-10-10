@@ -6,6 +6,8 @@ import { usePalette } from '../../ui/PaletteContext';
 import { makeStyles } from '../../../utils/makeStyles';
 import { Card, EmptyState, TextField } from '../../ui';
 import { fetchReportStudents, fetchReportTree } from '../../../services/counsellor/reportService';
+import StudentSearchBar from '../shared/StudentSearchBar';
+import { useStudentSearch } from '../../../utils/studentSearch';
 
 /**
  * Who the session is for — the screen that stands between "open the room" and a live session.
@@ -35,6 +37,7 @@ export default function StudentBasket({ portal, isWalkIn, busy, error, onStart }
   const [treeError, setTreeError] = useState('');
   const [openLeaf, setOpenLeaf] = useState(null);
   const [roster, setRoster] = useState([]);
+  const studentSearch = useStudentSearch(roster);
   const [rosterLoading, setRosterLoading] = useState(false);
   /** studentId → {studentId, name, schoolId}. A map so re-ticking a leaf cannot duplicate. */
   const [basket, setBasket] = useState({});
@@ -204,12 +207,13 @@ export default function StudentBasket({ portal, isWalkIn, busy, error, onStart }
           <Text style={styles.title}>
             {`Class ${openLeaf.className} · ${openLeaf.schoolName}`}
           </Text>
+          {!rosterLoading && roster.length > 0 ? <StudentSearchBar search={studentSearch} /> : null}
           {rosterLoading ? (
             <Text style={styles.body}>Loading students…</Text>
           ) : roster.length === 0 ? (
             <EmptyState message="No students in this class." />
           ) : (
-            roster.map((s) => {
+            studentSearch.results.map((s) => {
               const id = String(s.studentId);
               const ticked = !!basket[id];
               return (

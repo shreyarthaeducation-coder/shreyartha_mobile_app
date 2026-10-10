@@ -79,6 +79,8 @@ export const TEACHER_WORKSPACE_GROUPS = [
     label: 'Student Support',
     icon: 'heart-outline',
     items: [
+      // 10 Oct 2026, as on the web: how far each student of my sections has got.
+      { key: 'studentStatus', label: 'Student Status', icon: 'podium-outline', native: '/teacher/student-status' },
       // As on the web since 1 Oct 2026: Counselling Needs and Notes on its own, beside the Counselling
       // Report (Psychometric Result + Counsellor Report tabs). `/teacher/counsellor-report` and
       // `?tab=notes` redirect.

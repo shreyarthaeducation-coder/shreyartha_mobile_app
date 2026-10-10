@@ -66,11 +66,13 @@ const SRC = {
  * Counselling Report, which keeps the psychometric result and the counsellor report as its two tabs.
  *
  * 5 Oct 2026: `liveTests` (Live Test Rooms) added under Assessment, as on the website the same day.
+ *
+ * 10 Oct 2026: `studentStatus` (Student Status) added under Student Support, as on the website.
  */
 const ORIGINAL_KEYS = [
   'attendance', 'studentManagement', 'resources', 'homework', 'liveClasses', 'syllabus',
   'reports', 'scholastics', 'coScholastics', 'additionalSkills', 'adaptiveAssessment', 'liveTests',
-  'groups', 'counselling', 'counsellingReport',
+  'groups', 'studentStatus', 'counselling', 'counsellingReport',
   'profile', 'myCalendar', 'upskill',
   'selfAttendance', 'leave', 'payroll',
 ].sort();

@@ -32,6 +32,8 @@ import {
   updateStructure,
 } from '../../../services/admin/schoolFeeAdminService';
 import { fetchStudents } from '../../../services/admin/studentService';
+import StudentSearchBar from '../shared/StudentSearchBar';
+import { useStudentSearch } from '../../../utils/studentSearch';
 
 /**
  * Fee Management — the school-admin side of school fees.
@@ -136,6 +138,7 @@ export default function FeeManagementScreen({ homeRoute = '/staff/principal', ap
   const [structureForm, setStructureForm] = useState(EMPTY_STRUCTURE);
   const [assigning, setAssigning] = useState(null);
   const [students, setStudents] = useState([]);
+  const studentSearch = useStudentSearch(students);
   const [selectedStudents, setSelectedStudents] = useState([]);
 
   // Records
@@ -842,8 +845,9 @@ export default function FeeManagementScreen({ homeRoute = '/staff/principal', ap
         submitting={saving}
         fullHeight
       >
+        {students.length > 0 ? <StudentSearchBar search={studentSearch} /> : null}
         {students.length ? (
-          students.map((s) => {
+          studentSearch.results.map((s) => {
             const picked = selectedStudents.includes(s.userId);
             return (
               <Pressable
