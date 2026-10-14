@@ -17,3 +17,12 @@ export function fetchStudentStatusScope(signal) {
 export function fetchStudentStatusTable(sectionId, node, signal) {
   return staffApi.get(`${BASE}/sections/${sectionId}`, { params: { node: node || 'overview' }, signal });
 }
+
+/**
+ * One student of the section, gathered for charts ("View insights", 14 Oct 2026):
+ * `{ student, areas, exams, syllabus, progress, understanding }`. 404 when the student is not on
+ * the section's roster; 403 outside this member of staff's scope.
+ */
+export function fetchStudentInsights(sectionId, studentId, signal) {
+  return staffApi.get(`${BASE}/sections/${sectionId}/students/${studentId}/insights`, { signal });
+}

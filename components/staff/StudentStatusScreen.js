@@ -9,6 +9,7 @@ import { LEGEND, STATES, findSection, flattenScope, parentNode, searchableRows, 
 import { useStudentSearch } from '../../utils/studentSearch';
 import { useDrillBack } from '../../hooks/useDrillBack';
 import StudentSearchBar from './shared/StudentSearchBar';
+import StudentInsightsSheet from './StudentInsightsSheet';
 import { makeStyles } from '../../utils/makeStyles';
 
 /** How a cell of each state is painted. */
@@ -42,6 +43,8 @@ export default function StudentStatusScreen({ homeRoute = '/teacher' }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [reload, setReload] = useState(0);
+  // The student whose insights are open ("View insights", 14 Oct 2026), if any.
+  const [insightsFor, setInsightsFor] = useState(null);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -227,6 +230,16 @@ export default function StudentStatusScreen({ homeRoute = '/teacher' }) {
                   <View style={styles.cardHead}>
                     <Text style={styles.roll}>{row.rollNumber || '—'}</Text>
                     <Text style={styles.name}>{row.name}</Text>
+                    <Pressable
+                      onPress={() => setInsightsFor(row)}
+                      style={({ pressed }) => [styles.insightsBtn, pressed && styles.insightsBtnPressed]}
+                      hitSlop={6}
+                      accessibilityRole="button"
+                      accessibilityLabel={`View insights for ${row.name}`}
+                    >
+                      <Ionicons name="stats-chart" size={14} color="#3730a3" />
+                      <Text style={styles.insightsText}>View insights</Text>
+                    </Pressable>
                   </View>
                   {table.columns.map((c) => {
                     const cell = row.cells?.[c.key];
@@ -250,6 +263,7 @@ export default function StudentStatusScreen({ homeRoute = '/teacher' }) {
           )}
         </>
       ) : null}
+      <StudentInsightsSheet sectionId={sectionId} student={insightsFor} onClose={() => setInsightsFor(null)} />
     </ScreenScaffold>
   );
 }
@@ -310,7 +324,13 @@ const useStyles = makeStyles(() => ({
   legendText: { fontSize: TYPE.caption, color: SLATE[600] },
   muted: { fontSize: TYPE.label, color: SLATE[500], marginVertical: SPACING.md },
   card: { borderWidth: 1, borderColor: SLATE[200], borderRadius: 12, padding: SPACING.md, marginBottom: SPACING.sm, backgroundColor: '#fff' },
-  cardHead: { flexDirection: 'row', alignItems: 'baseline', gap: SPACING.sm, marginBottom: 6 },
+  cardHead: { flexDirection: 'row', alignItems: 'center', gap: SPACING.sm, marginBottom: 6 },
+  insightsBtn: {
+    flexDirection: 'row', alignItems: 'center', gap: 4, marginLeft: 'auto',
+    paddingHorizontal: 10, paddingVertical: 6, borderRadius: 999, backgroundColor: '#eef2ff', borderWidth: 1, borderColor: '#c7d2fe',
+  },
+  insightsBtnPressed: { backgroundColor: '#e0e7ff' },
+  insightsText: { fontSize: TYPE.caption, fontWeight: '700', color: '#3730a3' },
   roll: { fontSize: TYPE.caption, fontWeight: '700', color: SLATE[500], minWidth: 24 },
   name: { flex: 1, fontSize: TYPE.body, fontWeight: '700', color: SLATE[800] },
   cellRow: { flexDirection: 'row', alignItems: 'center', gap: SPACING.sm, paddingVertical: 5, borderTopWidth: 1, borderTopColor: SLATE[100] },
