@@ -10,6 +10,7 @@ import {
   formatDuration,
   levelLabel,
 } from '../../services/teacher/adaptiveService';
+import { remarkRows } from '../../services/student/understandingScoring';
 
 /**
  * One adaptive attempt's full analysis — shared by the STUDENT and the TEACHER.
@@ -42,6 +43,41 @@ const BREAKDOWN_TABS = [
 ];
 
 const pct = (v) => Math.round(Number(v) || 0);
+
+/** The colour of each band's edge and status text: green, blue, amber, red. */
+const BAND_COLOR = {
+  mastery: FEEDBACK.successText,
+  proficient: '#1d4ed8',
+  partial: FEEDBACK.warningText,
+  critical: FEEDBACK.errorText,
+};
+
+/**
+ * What the breakdown says, row by row (16 Oct 2026): Test Your Understanding's status and remark per
+ * Bloom's level, and a remark per skill. The Adaptive Assessment replaces Test Your Understanding in
+ * Academic IQ, and the website's report (AdaptiveReportCharts showRemarks) shows the same.
+ */
+function RemarkList({ rows, kind }) {
+  const styles = useStyles();
+  const items = remarkRows(rows, kind);
+  if (items.length === 0) return null;
+  return (
+    <View style={styles.remarks} accessibilityLabel={kind === 'blooms' ? "Bloom's level remarks" : 'Skill remarks'}>
+      {items.map((r) => (
+        <View key={r.tag} style={[styles.remark, { borderLeftColor: BAND_COLOR[r.band] }]}>
+          <View style={styles.remarkHead}>
+            <Text style={styles.remarkLabel}>{r.label}</Text>
+            <Text style={styles.remarkScore}>
+              {r.correct}/{r.total} · {r.percentage}%
+            </Text>
+          </View>
+          <Text style={[styles.remarkStatus, { color: BAND_COLOR[r.band] }]}>{r.status}</Text>
+          <Text style={styles.remarkText}>{r.remark}</Text>
+        </View>
+      ))}
+    </View>
+  );
+}
 
 function Tile({ label, value, note, highlight }) {
   const styles = useStyles();
@@ -217,6 +253,11 @@ export default function AdaptiveReportBody({ report, showQuestions = true }) {
               : 'None of the questions in this attempt carry a skill tag.'
           }
         />
+        <RemarkList
+          key={breakdown}
+          rows={breakdown === 'blooms' ? report.bloomsBreakdown : report.skillBreakdown}
+          kind={breakdown === 'blooms' ? 'blooms' : 'skills'}
+        />
       </View>
 
       {showQuestions && (report.questionScores || []).length > 0 ? (
@@ -312,6 +353,20 @@ const useStyles = makeStyles((p) => ({
   timeValue: { minWidth: 38, textAlign: 'right', fontSize: TYPE.caption, fontWeight: '700', color: SLATE[600] },
 
   breakdown: { marginTop: SPACING.md },
+  remarks: { marginTop: SPACING.md, gap: SPACING.sm },
+  remark: {
+    borderWidth: 1,
+    borderColor: SLATE[200],
+    borderLeftWidth: 4,
+    borderRadius: 10,
+    padding: SPACING.sm,
+    backgroundColor: '#fff',
+  },
+  remarkHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', gap: SPACING.sm },
+  remarkLabel: { fontSize: TYPE.body, fontWeight: '700', color: SLATE[900], flexShrink: 1 },
+  remarkScore: { fontSize: TYPE.caption, color: SLATE[500] },
+  remarkStatus: { fontSize: TYPE.label, fontWeight: '700', marginTop: 2 },
+  remarkText: { fontSize: TYPE.label, lineHeight: leading(TYPE.label), color: SLATE[700], marginTop: 4 },
   empty: { fontSize: TYPE.label, color: SLATE[500], fontStyle: 'italic', marginTop: SPACING.sm },
 
   qCard: {

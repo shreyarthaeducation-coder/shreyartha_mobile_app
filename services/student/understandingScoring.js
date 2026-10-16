@@ -193,3 +193,52 @@ const BLOOMS_REMARKS = {
 export function bloomsRemark(level, percentage) {
   return BLOOMS_REMARKS[level]?.[masteryBand(percentage)] || 'No remark available for this level.';
 }
+
+/**
+ * A remark for a skill tag, built from its name (16 Oct 2026). Skills had no remark text anywhere;
+ * these are the website's (frontendmain student/testrunner/bloomsRemarks.js), word for word.
+ */
+export function skillRemark(skill, percentage) {
+  const name = String(skill || 'this skill').trim() || 'this skill';
+  switch (masteryBand(Number(percentage) || 0)) {
+    case 'mastery':
+      return `Excellent ${name}. You answered every ${name} question in this assessment correctly.`;
+    case 'proficient':
+      return `You are good at ${name}. A little more practice with harder questions will take you to mastery.`;
+    case 'partial':
+      return `You handle some ${name} questions well, but not consistently yet. Regular practice will make this skill dependable.`;
+    default:
+      return `${name} questions were difficult for you in this assessment. Go back over the worked examples and practise more ${name} questions.`;
+  }
+}
+
+/**
+ * One remark per row of an adaptive report's breakdown ({tag, correct, total, percentage}), as the
+ * Adaptive Assessment shows them now that it replaces Test Your Understanding in Academic IQ
+ * (16 Oct 2026). Rows the test never asked about (total 0) are left out — they would read "Critical
+ * Gap" for something that was not tested.
+ *
+ * @param kind 'blooms' | 'skills'
+ */
+export function remarkRows(rows, kind) {
+  return (rows || [])
+    .filter((r) => r && Number(r.total) > 0)
+    .map((r) => {
+      const raw = Number(r.percentage) || 0;
+      // The band from the unrounded figure (99.6% is not Mastery), then one value that sits in it,
+      // so the status, the remark and the band can never disagree.
+      const band = raw >= 100 ? 'mastery' : raw >= 80 ? 'proficient' : raw >= 50 ? 'partial' : 'critical';
+      const inBand = { mastery: 100, proficient: 80, partial: 50, critical: 0 }[band];
+      const label = kind === 'blooms' ? normalizeBloomsLevel(r.tag) : r.tag;
+      return {
+        tag: r.tag,
+        label,
+        percentage: Math.round(raw),
+        correct: r.correct,
+        total: r.total,
+        band,
+        status: masteryStatus(inBand),
+        remark: kind === 'blooms' ? bloomsRemark(label, inBand) : skillRemark(r.tag, inBand),
+      };
+    });
+}

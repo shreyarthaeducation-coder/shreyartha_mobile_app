@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Linking, Pressable, ScrollView, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -15,7 +15,9 @@ import { SOURCES } from '../../../services/student/doubtService';
 import AiActionBar from '../ai/AiActionBar';
 import UnderstandingTest from '../skillsedge/UnderstandingTest';
 import MyReflection from './MyReflection';
+import AdaptiveRunner from './AdaptiveRunner';
 import useStudentAccess from '../../../hooks/useStudentAccess';
+import useAdaptiveSession from '../../../hooks/useAdaptiveSession';
 import { ACCESS } from '../../../services/student/accessService';
 import {
   CONTENT_TABS,
@@ -24,7 +26,10 @@ import {
   fetchTopicContent,
   fetchTree,
   fetchUnderstandingQuestions,
+  fetchUniversalAvailability,
   resolveClassSubjects,
+  stopUniversalAttempt,
+  universalAdaptiveEngine,
 } from '../../../services/student/academicIqService';
 
 /**
@@ -44,6 +49,20 @@ import {
  * Jyora and Shreya Speak are wired (`AiActionBar`). **Doubt Resolution is still out of scope** —
  * it is a staged multi-step flow with camera and screenshot capture, deferred to its own pass.
  */
+
+/**
+ * Test Your Understanding is hidden in Academic IQ since 16 Oct 2026, as on the website: the Adaptive
+ * Assessment takes its tab (every Practice Zone question of the topic, a report by Bloom's level and
+ * skill with TYU's remarks). The test is kept, behind this switch, so it can come back.
+ */
+const SHOW_TEST_YOUR_UNDERSTANDING = false;
+
+const MODES = [
+  { key: 'content', label: 'Resources' },
+  { key: 'adaptive', label: 'Adaptive Assessment' },
+  ...(SHOW_TEST_YOUR_UNDERSTANDING ? [{ key: 'understanding', label: 'Test Yourself' }] : []),
+  { key: 'reflection', label: 'My Reflection' },
+];
 
 export default function ResourcesScreen({ source = 'school' }) {
   const styles = useStyles();
@@ -69,7 +88,48 @@ export default function ResourcesScreen({ source = 'school' }) {
   const [content, setContent] = useState(null);
   const [contentLoading, setContentLoading] = useState(false);
   const [tab, setTab] = useState(CONTENT_TABS[0].key);
-  const [mode, setMode] = useState('content'); // content | understanding | reflection
+  const [mode, setMode] = useState('content'); // content | adaptive | understanding | reflection
+
+  // The Adaptive Assessment, run exactly as Practice Zone runs it: the server owns the ladder and
+  // decides when the pool is exhausted, so there is no client-side cap ('server' protocol).
+  const [adaptiveOpen, setAdaptiveOpen] = useState(false);
+  const [availability, setAvailability] = useState(null);
+  const attemptIdRef = useRef(null);
+  const adaptive = useAdaptiveSession({
+    ...universalAdaptiveEngine(topic?.id, attemptIdRef),
+    protocol: 'server',
+  });
+
+  const leaveAdaptive = () => {
+    // Tell the server the attempt is over; leaving does not depend on it succeeding.
+    if (attemptIdRef.current) stopUniversalAttempt(attemptIdRef.current).catch(() => {});
+    adaptive.leave();
+    setAdaptiveOpen(false);
+  };
+
+  /** Stop and still show the report so far, as Practice Zone's "finish early" does. */
+  const finishAdaptiveEarly = async () => {
+    if (!attemptIdRef.current) return leaveAdaptive();
+    try {
+      adaptive.finishWith(await stopUniversalAttempt(attemptIdRef.current));
+    } catch (e) {
+      showToast(e?.message || 'Could not finish the assessment.', 'error');
+    }
+    return undefined;
+  };
+
+  // Whether the topic has questions for it; checked when the tab is opened.
+  useEffect(() => {
+    if (mode !== 'adaptive' || !topic?.id) return undefined;
+    const controller = new AbortController();
+    setAvailability(null);
+    fetchUniversalAvailability(topic.id, controller.signal)
+      .then((a) => setAvailability(a || { available: false }))
+      .catch((e) => {
+        if (e?.name !== 'AbortError' && e?.name !== 'CanceledError') setAvailability({ available: false });
+      });
+    return () => controller.abort();
+  }, [mode, topic?.id]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -118,6 +178,7 @@ export default function ResourcesScreen({ source = 'school' }) {
       showToast('Upgrade your plan to open this topic.', 'error');
       return;
     }
+    if (adaptiveOpen) leaveAdaptive();
     setTopic({ ...t, subjectName, chapterName });
     setTab(CONTENT_TABS[0].key);
     setMode('content');
@@ -193,14 +254,57 @@ export default function ResourcesScreen({ source = 'school' }) {
     );
   };
 
-  const renderTopic = () => (
+  const renderAdaptiveStart = () => {
+    if (availability === null) {
+      return <ActivityIndicator size="large" color={palette.primary} style={styles.loader} />;
+    }
+    if (availability.available === false) {
+      return (
+        <StudentCard>
+          <StudentCardTitle>Adaptive Assessment</StudentCardTitle>
+          <StudentNote>No assessment questions are available for this topic yet.</StudentNote>
+        </StudentCard>
+      );
+    }
+    return (
+      <StudentCard>
+        <StudentCardTitle>Adaptive Assessment</StudentCardTitle>
+        <StudentNote>
+          Questions from every Practice Zone level of this topic, getting harder or easier as you
+          answer. At the end you get a report by Bloom's level and skill, with a remark on each.
+        </StudentNote>
+        <Pressable
+          onPress={() => {
+            setAdaptiveOpen(true);
+            adaptive.begin();
+          }}
+          style={({ pressed }) => [styles.adaptiveBtn, pressed && styles.pressed]}
+          accessibilityRole="button"
+        >
+          <Ionicons name="flash-outline" size={18} color={palette.onPrimary} />
+          <Text style={styles.adaptiveText}>Start the adaptive assessment</Text>
+        </Pressable>
+      </StudentCard>
+    );
+  };
+
+  const renderTopic = () =>
+    adaptiveOpen ? (
+      <AdaptiveRunner
+        session={adaptive}
+        title="Adaptive Assessment"
+        subtitle={topic.name}
+        onExit={leaveAdaptive}
+        onFinishEarly={finishAdaptiveEarly}
+      />
+    ) : (
+      renderTopicTabs()
+    );
+
+  const renderTopicTabs = () => (
     <>
       <View style={styles.modeRow}>
-        {[
-          { key: 'content', label: 'Resources' },
-          { key: 'understanding', label: 'Test Yourself' },
-          { key: 'reflection', label: 'My Reflection' },
-        ].map((m) => {
+        {MODES.map((m) => {
           const on = mode === m.key;
           return (
             <Pressable
@@ -216,7 +320,9 @@ export default function ResourcesScreen({ source = 'school' }) {
         })}
       </View>
 
-      {mode === 'understanding' ? (
+      {mode === 'adaptive' ? (
+        renderAdaptiveStart()
+      ) : mode === 'understanding' ? (
         <UnderstandingTest
           key={`u-${topic.id}`}
           moduleId={topic.id}
@@ -384,9 +490,11 @@ export default function ResourcesScreen({ source = 'school' }) {
       {topic ? (
         <Pressable
           onPress={() => {
+            if (adaptiveOpen) return leaveAdaptive();
             setTopic(null);
             setContent(null);
             setMode('content');
+            return undefined;
           }}
           style={({ pressed }) => [styles.crumb, pressed && styles.pressed]}
           accessibilityRole="button"
@@ -421,6 +529,18 @@ export default function ResourcesScreen({ source = 'school' }) {
 
 const useStyles = makeStyles((p) => ({
   loader: { marginVertical: SPACING.xl },
+  // As Practice Zone's "Take the adaptive assessment" (16 Oct 2026).
+  adaptiveBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 12,
+    borderRadius: 12,
+    backgroundColor: p.primaryDark,
+    marginTop: SPACING.md,
+  },
+  adaptiveText: { fontSize: TYPE.body, fontWeight: '700', color: '#ffffff' },
   emptyInline: { fontSize: TYPE.label, color: SLATE[500], paddingVertical: 6, paddingLeft: 4 },
 
   header: {
