@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Image,
@@ -76,7 +76,14 @@ export default function UpskillScreen({ homeRoute = '/teacher' }) {
     return () => controller.abort();
   }, []);
 
+  // One Mark Complete request at a time: a double tap used to send two toggles.
+  const [completing, setCompleting] = useState(false);
+  const completingRef = useRef(false);
+
   const toggleComplete = async (moduleId) => {
+    if (completingRef.current) return;
+    completingRef.current = true;
+    setCompleting(true);
     try {
       const res = await toggleUpskillModuleComplete(moduleId);
       setDone((prev) => {
@@ -87,6 +94,9 @@ export default function UpskillScreen({ homeRoute = '/teacher' }) {
       });
     } catch (e) {
       showToast(e?.message || 'Could not update Mark Complete.', 'error');
+    } finally {
+      completingRef.current = false;
+      setCompleting(false);
     }
   };
 
@@ -447,12 +457,14 @@ export default function UpskillScreen({ homeRoute = '/teacher' }) {
             {renderModuleBody(moduleDetail)}
             <Pressable
               onPress={() => toggleComplete(moduleTarget.id)}
+              disabled={completing}
               style={({ pressed }) => [
                 styles.completeBtn,
                 done.has(moduleTarget.id) && styles.completeOn,
-                pressed && styles.pressed,
+                (pressed || completing) && styles.pressed,
               ]}
               accessibilityRole="button"
+              accessibilityState={{ busy: completing, disabled: completing }}
             >
               <Ionicons
                 name={done.has(moduleTarget.id) ? 'checkmark-circle' : 'ellipse-outline'}

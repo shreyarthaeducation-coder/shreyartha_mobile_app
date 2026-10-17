@@ -27,10 +27,17 @@ function decodeBase64Url(input) {
   return out;
 }
 
-/** Who is signed in on this phone, from the student's token — a shared device never mixes drafts. */
+/**
+ * Who is signed in on this phone, from the student's token — a shared device never mixes drafts.
+ * A staff sign-in counts too (teachers sit Upskill tests on this runner since 18 Oct 2026). Quotes or
+ * a "Bearer " prefix on a stored token do not matter: only the middle, payload part is read.
+ */
 export async function currentUserTag() {
   try {
-    const token = (await AsyncStorage.getItem('studentToken')) || (await AsyncStorage.getItem('userToken')) || '';
+    const token =
+      (await AsyncStorage.getItem('studentToken')) ||
+      (await AsyncStorage.getItem('userToken')) ||
+      String((await AsyncStorage.getItem('schoolUserToken')) || '');
     const payload = token.split('.')[1];
     if (!payload) return 'guest';
     return JSON.parse(decodeBase64Url(payload)).sub || 'guest';
