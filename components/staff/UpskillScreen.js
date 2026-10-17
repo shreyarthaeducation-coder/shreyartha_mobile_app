@@ -10,27 +10,37 @@ import {
   View,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { PORTALS, SLATE, SPACING, TYPE, leading } from '../../constants/theme';
+import { DONE, PORTALS, SLATE, SPACING, TYPE, leading } from '../../constants/theme';
 import { Card, EmptyState, FormSheet, ScreenScaffold, useToast } from '../ui';
 import RichText from '../RichText';
 import useStaffResource from '../../hooks/useStaffResource';
+import UnderstandingTest from '../student/skillsedge/UnderstandingTest';
 import {
   MODULE_TYPE,
+  fetchCompletedModules,
   fetchHiddenNodes,
   fetchLearningObjectives,
   fetchModule,
   fetchModules,
+  fetchSubSkillAssessment,
   fetchSubSkills,
   fetchUpskillChapters,
+  fetchUpskillQuestions,
+  moduleAttachments,
   moduleKind,
+  toggleUpskillModuleComplete,
   visible,
 } from '../../services/teacher/upskillService';
 
 /**
  * Native Upskill Your Self — the Teacher Skills Edge reader.
  *
- * Chapter cards → sub-skill chips → objective accordion → modules → module detail.
- * Read-only; there is no progress tracking in this feature.
+ * Chapter cards → sub-skill chips (Learning Objectives | Assessment) → objective accordion →
+ * modules → module sheet (Content | Test Your Understanding, Mark Complete).
+ *
+ * Works like the student Skills Edge (18 Oct 2026): a module has a Video, an Image and a PDF; tests
+ * reuse the student `UnderstandingTest` with the teacher endpoints and are marked on the phone,
+ * never saved. Mark Complete is saved per staff member.
  */
 
 const PALETTE = PORTALS.school;
@@ -52,8 +62,33 @@ export default function UpskillScreen({ homeRoute = '/teacher' }) {
   const [moduleTarget, setModuleTarget] = useState(null);
   const [moduleDetail, setModuleDetail] = useState(null);
   const [moduleLoading, setModuleLoading] = useState(false);
+  const [moduleTab, setModuleTab] = useState('content');
+  const [subSkillTab, setSubSkillTab] = useState('objectives');
+  const [done, setDone] = useState(new Set());
 
   const { toast, showToast } = useToast();
+
+  useEffect(() => {
+    const controller = new AbortController();
+    fetchCompletedModules(controller.signal)
+      .then((ids) => setDone(new Set(ids)))
+      .catch(() => {});
+    return () => controller.abort();
+  }, []);
+
+  const toggleComplete = async (moduleId) => {
+    try {
+      const res = await toggleUpskillModuleComplete(moduleId);
+      setDone((prev) => {
+        const next = new Set(prev);
+        if (res?.completed) next.add(moduleId);
+        else next.delete(moduleId);
+        return next;
+      });
+    } catch (e) {
+      showToast(e?.message || 'Could not update Mark Complete.', 'error');
+    }
+  };
 
   const hiddenFetcher = useCallback((signal) => fetchHiddenNodes(signal), []);
   const { data: hidden } = useStaffResource(hiddenFetcher, { initialData: null });
@@ -107,6 +142,7 @@ export default function UpskillScreen({ homeRoute = '/teacher' }) {
    */
   const openModule = useCallback(
     async (module) => {
+      setModuleTab('content');
       setModuleTarget(module);
       setModuleDetail(null);
       setModuleLoading(true);
@@ -124,38 +160,32 @@ export default function UpskillScreen({ homeRoute = '/teacher' }) {
   );
 
   const renderModuleBody = (mod) => {
-    const kind = moduleKind(mod);
-    const url = mod.s3Url;
+    // Video, Image and PDF side by side, as students have them; an old single file stands in.
+    const attachments = moduleAttachments(mod);
 
     return (
       <>
         {mod.textContent ? <RichText html={mod.textContent} /> : null}
 
-        {kind === MODULE_TYPE.IMAGE && url ? (
-          <Image source={{ uri: url }} style={styles.image} resizeMode="contain" />
-        ) : null}
-
-        {kind === MODULE_TYPE.VIDEO && url ? (
-          <Pressable
-            onPress={() => openUrl(url)}
-            style={({ pressed }) => [styles.mediaBtn, pressed && styles.pressed]}
-            accessibilityRole="button"
-          >
-            <Ionicons name="play-circle-outline" size={20} color="#ffffff" />
-            <Text style={styles.mediaText}>Play video</Text>
-          </Pressable>
-        ) : null}
-
-        {kind === MODULE_TYPE.PDF && url ? (
-          <Pressable
-            onPress={() => openUrl(url)}
-            style={({ pressed }) => [styles.mediaBtn, pressed && styles.pressed]}
-            accessibilityRole="button"
-          >
-            <Ionicons name="document-text-outline" size={20} color="#ffffff" />
-            <Text style={styles.mediaText}>Open PDF</Text>
-          </Pressable>
-        ) : null}
+        {attachments.map(({ kind, url }) =>
+          kind === MODULE_TYPE.IMAGE ? (
+            <Image key={kind} source={{ uri: url }} style={styles.image} resizeMode="contain" />
+          ) : (
+            <Pressable
+              key={kind}
+              onPress={() => openUrl(url)}
+              style={({ pressed }) => [styles.mediaBtn, pressed && styles.pressed]}
+              accessibilityRole="button"
+            >
+              <Ionicons
+                name={kind === MODULE_TYPE.VIDEO ? 'play-circle-outline' : 'document-text-outline'}
+                size={20}
+                color="#ffffff"
+              />
+              <Text style={styles.mediaText}>{kind === MODULE_TYPE.VIDEO ? 'Play video' : 'Open PDF'}</Text>
+            </Pressable>
+          ),
+        )}
 
         {/* The web never renders linkUrl, so a LINK module there just says "coming soon". */}
         {mod.linkUrl ? (
@@ -171,7 +201,7 @@ export default function UpskillScreen({ homeRoute = '/teacher' }) {
           </Pressable>
         ) : null}
 
-        {!mod.textContent && !url && !mod.linkUrl ? (
+        {!mod.textContent && attachments.length === 0 && !mod.linkUrl ? (
           <Text style={styles.empty}>This module has no content yet.</Text>
         ) : null}
       </>
@@ -205,6 +235,7 @@ export default function UpskillScreen({ homeRoute = '/teacher' }) {
                 setChapter(c);
                 setSubSkill(null);
                 setOpenObjective(null);
+                setSubSkillTab('objectives');
               }}
               style={({ pressed }) => [pressed && styles.pressed]}
               accessibilityRole="button"
@@ -268,6 +299,7 @@ export default function UpskillScreen({ homeRoute = '/teacher' }) {
                   onPress={() => {
                     setSubSkill(s);
                     setOpenObjective(null);
+                    setSubSkillTab('objectives');
                   }}
                   style={({ pressed }) => [
                     styles.chip,
@@ -288,7 +320,27 @@ export default function UpskillScreen({ homeRoute = '/teacher' }) {
       </View>
 
       <ScrollView style={styles.list} contentContainerStyle={styles.listContent}>
-        {objectivesLoading ? (
+        {subSkill ? (
+          <TabRow
+            tabs={[
+              { key: 'objectives', label: 'Learning Objectives' },
+              { key: 'assessment', label: 'Assessment' },
+            ]}
+            value={subSkillTab}
+            onChange={setSubSkillTab}
+          />
+        ) : null}
+
+        {subSkill && subSkillTab === 'assessment' ? (
+          // Keyed on the sub-skill so switching starts a fresh attempt.
+          <UnderstandingTest
+            key={`assessment-${subSkill.id}`}
+            moduleId={subSkill.id}
+            loadQuestions={fetchSubSkillAssessment}
+            showToast={showToast}
+            aiTools={false}
+          />
+        ) : objectivesLoading ? (
           <ActivityIndicator size="large" color={PALETTE.primary} style={styles.loader} />
         ) : objectiveList.length === 0 ? (
           <EmptyState
@@ -338,6 +390,14 @@ export default function UpskillScreen({ homeRoute = '/teacher' }) {
                           <Text style={styles.moduleTitle} numberOfLines={2}>
                             {mod.title || `Module ${mod.moduleOrder || index + 1}`}
                           </Text>
+                          {done.has(mod.id) ? (
+                            <Ionicons
+                              name="checkmark-circle"
+                              size={18}
+                              color={DONE}
+                              accessibilityLabel="Completed"
+                            />
+                          ) : null}
                           <Ionicons name="chevron-forward" size={17} color={SLATE[400]} />
                         </Pressable>
                       );
@@ -360,13 +420,75 @@ export default function UpskillScreen({ homeRoute = '/teacher' }) {
         }}
         fullHeight
       >
-        {moduleLoading ? (
+        {moduleTarget ? (
+          <TabRow
+            tabs={[
+              { key: 'content', label: 'Content' },
+              { key: 'understanding', label: 'Test Your Understanding' },
+            ]}
+            value={moduleTab}
+            onChange={setModuleTab}
+          />
+        ) : null}
+
+        {moduleTarget && moduleTab === 'understanding' ? (
+          // Keyed on the module so switching modules restarts the test.
+          <UnderstandingTest
+            key={`tyu-${moduleTarget.id}`}
+            moduleId={moduleTarget.id}
+            loadQuestions={fetchUpskillQuestions}
+            showToast={showToast}
+            aiTools={false}
+          />
+        ) : moduleLoading ? (
           <ActivityIndicator size="large" color={PALETTE.primary} style={styles.loader} />
         ) : moduleDetail ? (
-          renderModuleBody(moduleDetail)
+          <>
+            {renderModuleBody(moduleDetail)}
+            <Pressable
+              onPress={() => toggleComplete(moduleTarget.id)}
+              style={({ pressed }) => [
+                styles.completeBtn,
+                done.has(moduleTarget.id) && styles.completeOn,
+                pressed && styles.pressed,
+              ]}
+              accessibilityRole="button"
+            >
+              <Ionicons
+                name={done.has(moduleTarget.id) ? 'checkmark-circle' : 'ellipse-outline'}
+                size={19}
+                color="#ffffff"
+              />
+              <Text style={styles.completeText}>
+                {done.has(moduleTarget.id) ? 'Completed' : 'Mark as complete'}
+              </Text>
+            </Pressable>
+          </>
         ) : null}
       </FormSheet>
     </ScreenScaffold>
+  );
+}
+
+/** Two pill tabs, as the student Skills Edge draws them. */
+function TabRow({ tabs, value, onChange }) {
+  return (
+    <View style={styles.tabRow}>
+      {tabs.map((t) => {
+        const on = value === t.key;
+        return (
+          <Pressable
+            key={t.key}
+            onPress={() => onChange(t.key)}
+            style={({ pressed }) => [styles.tab, on && styles.tabOn, pressed && styles.pressed]}
+            accessibilityRole="tab"
+            accessibilityState={{ selected: on }}
+          >
+            <Text style={[styles.tabText, on && styles.tabTextOn]}>{t.label}</Text>
+          </Pressable>
+        );
+      })}
+    </View>
   );
 }
 
@@ -440,6 +562,34 @@ const styles = StyleSheet.create({
     borderColor: SLATE[200],
   },
   linkText: { flex: 1, fontSize: TYPE.body, color: PALETTE.primaryDark, fontWeight: '600' },
+
+  tabRow: { flexDirection: 'row', gap: 7, marginBottom: SPACING.md },
+  tab: {
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: 9,
+    paddingHorizontal: 10,
+    borderRadius: 999,
+    backgroundColor: SLATE[100],
+    borderWidth: 1,
+    borderColor: SLATE[200],
+  },
+  tabOn: { backgroundColor: PALETTE.primary, borderColor: PALETTE.primary },
+  tabText: { fontSize: TYPE.label, fontWeight: '600', color: SLATE[600] },
+  tabTextOn: { color: PALETTE.onPrimary },
+
+  completeBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    marginTop: SPACING.lg,
+    paddingVertical: 13,
+    borderRadius: 12,
+    backgroundColor: PALETTE.primary,
+  },
+  completeOn: { backgroundColor: DONE },
+  completeText: { fontSize: TYPE.heading, fontWeight: '700', color: '#ffffff' },
 
   pressed: { opacity: 0.72 },
 });

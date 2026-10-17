@@ -58,6 +58,9 @@ export default function UnderstandingTest({
   topicName = '',
   subjectName = '',
   chapterName = '',
+  // Shreya Speak and "More like this" call student endpoints, so a teacher's Upskill test (which
+  // reuses this component, 18 Oct 2026) turns them off rather than showing buttons that 403.
+  aiTools = true,
 }) {
   const styles = useStyles();
   const palette = usePalette();
@@ -191,7 +194,7 @@ export default function UnderstandingTest({
         }
         submitted={submitted}
         onSubmit={submit}
-        renderQuestionSlot={(question) => (
+        renderQuestionSlot={aiTools ? (question) => (
           <View style={styles.qActions}>
             <ShreyaSpeakButton
               compact
@@ -212,7 +215,7 @@ export default function UnderstandingTest({
               chapterName={chapterName}
             />
           </View>
-        )}
+        ) : undefined}
       />
 
       {submitted ? (

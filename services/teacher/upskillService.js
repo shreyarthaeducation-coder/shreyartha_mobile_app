@@ -2,8 +2,10 @@
 // Mirrors: frontendmain/src/School/Teacher/pages/TeacherUpskill.js
 // Backend: teacherskillsedge/controller/TeacherSkillsEdgeController.java
 //
-// A read-only content reader: chapters → sub-skills → learning objectives → modules. There is no
-// progress tracking anywhere in this feature.
+// Chapters → sub-skills → learning objectives → modules. Since 18 Oct 2026 it works like the
+// student Skills Edge: a module has a Video, an Image and a PDF, Test Your Understanding and Mark
+// Complete, and a sub-skill has an Assessment. Tests are marked on the phone and never saved; only
+// Mark Complete is stored (per staff member).
 //
 // NOTE the endpoint prefix is `/api/teacher-skillsedge/`, which does NOT contain `/teacher/` with
 // both slashes — under the old `apiService` token rule that fell through to the student token.
@@ -115,6 +117,49 @@ export async function fetchHiddenNodes(signal, tree = 'TEACHER_SKILLS_EDGE') {
 
 export const visible = (hidden, entityType, list) =>
   (list || []).filter((item) => !hidden?.[entityType]?.has(Number(item.id)));
+
+/**
+ * A module's attachments, in the order students see them: Video, Image, PDF.
+ *
+ * Read from the three slots (presigned on the module detail). A module whose file was uploaded
+ * before the slots existed and not yet copied into one falls back to that single file.
+ *
+ * @returns {Array<{ kind: 'VIDEO'|'IMAGE'|'PDF', url: string }>}
+ */
+export function moduleAttachments(module) {
+  const slots = [
+    { kind: MODULE_TYPE.VIDEO, url: module?.videoUrl },
+    { kind: MODULE_TYPE.IMAGE, url: module?.imageUrl },
+    { kind: MODULE_TYPE.PDF, url: module?.pdfUrl },
+  ].filter((s) => !!s.url);
+  if (slots.length > 0) return slots;
+  const kind = moduleKind(module);
+  const legacy = [MODULE_TYPE.VIDEO, MODULE_TYPE.IMAGE, MODULE_TYPE.PDF].includes(kind) ? kind : null;
+  return legacy && module?.s3Url ? [{ kind: legacy, url: module.s3Url }] : [];
+}
+
+/** Test Your Understanding: a module's questions (lettered A–D, with their answers). */
+export async function fetchUpskillQuestions(moduleId) {
+  const res = await staffApi.get(`${BASE}/understanding/${moduleId}/questions`);
+  return Array.isArray(res) ? res : [];
+}
+
+/** A sub-skill's Assessment: up to 25 questions sampled across its modules. */
+export async function fetchSubSkillAssessment(subSkillId) {
+  const res = await staffApi.get(`${BASE}/understanding/subskill/${subSkillId}/assessment`);
+  return Array.isArray(res) ? res : [];
+}
+
+/** Ids of the modules this staff member has marked complete. */
+export async function fetchCompletedModules(signal) {
+  const res = await staffApi.get(`${BASE}/modules/completed`, { signal });
+  return Array.isArray(res) ? res.map(Number) : [];
+}
+
+/** Ticks or unticks a module. @returns {Promise<{ moduleId, completed: boolean }>} */
+export function toggleUpskillModuleComplete(moduleId) {
+  return staffApi.post(`${BASE}/modules/${moduleId}/toggle-complete`);
+}
 
 /**
  * What kind of content a module actually is.
