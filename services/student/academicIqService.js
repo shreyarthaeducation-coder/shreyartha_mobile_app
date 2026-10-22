@@ -101,6 +101,7 @@ export const CONTENT_TABS = [
   { key: 'handwrittenNotes', label: 'Handwritten Notes' },
   { key: 'importanceForBoard', label: 'Importance for Board' },
   { key: 'difficultConcept', label: 'Difficult Concept', media: true },
+  { key: 'labActivity', label: 'Lab Activity', media: true },
 ];
 
 /** Understanding questions for a topic. SINGULAR `/api/student/`. */
