@@ -83,17 +83,19 @@ export async function fetchPersonalizedSubjects(signal) {
 }
 
 /**
- * Topic content — six tabs, all optional, three of them with their own media.
- * `{ lessonPlan, topicExplanation, realLifeRelevance, handwrittenNotes, importanceForBoard,
+ * Topic content — five tabs, all optional, three of them with their own media.
+ * `{ topicExplanation, realLifeRelevance, handwrittenNotes, importanceForBoard,
  *    difficultConcept, …VideoUrl, …ImageUrl }`
  */
 export function fetchTopicContent(topicId, signal) {
   return studentApi.get(`/api/academiciq/topic/${topicId}/content`, { signal });
 }
 
-/** The six content tabs in the web's order; labels verbatim. */
+/**
+ * The content tabs in the web's order; labels verbatim. No Lesson Plan: it is the teacher's, and the
+ * server no longer sends it to students (Ramanuj Sir, 21 Oct 2026).
+ */
 export const CONTENT_TABS = [
-  { key: 'lessonPlan', label: 'Lesson Plan' },
   { key: 'topicExplanation', label: 'Topic Explanation', media: true },
   { key: 'realLifeRelevance', label: 'Real Life Relevance', media: true },
   { key: 'handwrittenNotes', label: 'Handwritten Notes' },
