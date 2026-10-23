@@ -53,8 +53,9 @@ export default function ParentPendingScreen() {
           </View>
         ))}
 
+        {/* Buying a plan for the child does not wait for verification (24 Oct 2026). */}
         <Pressable
-          onPress={() => router.push('/parent/change-password')}
+          onPress={() => router.push('/parent/plans')}
           style={({ pressed }) => [
             styles.primaryBtn,
             { backgroundColor: palette.primary },
@@ -62,7 +63,15 @@ export default function ParentPendingScreen() {
           ]}
           accessibilityRole="button"
         >
-          <Text style={styles.primaryText}>Change Password</Text>
+          <Text style={styles.primaryText}>Buy a plan for your child</Text>
+        </Pressable>
+
+        <Pressable
+          onPress={() => router.push('/parent/change-password')}
+          style={({ pressed }) => [styles.outlineBtn, { borderColor: palette.primary }, pressed && styles.pressed]}
+          accessibilityRole="button"
+        >
+          <Text style={[styles.outlineText, { color: palette.primary }]}>Change Password</Text>
         </Pressable>
 
         <Pressable
@@ -114,6 +123,14 @@ const useStyles = makeStyles((p) => ({
     alignItems: 'center',
   },
   primaryText: { color: '#ffffff', fontWeight: '700', fontSize: TYPE.heading },
+  outlineBtn: {
+    marginTop: SPACING.sm,
+    borderRadius: 10,
+    borderWidth: 1.5,
+    paddingVertical: 12,
+    alignItems: 'center',
+  },
+  outlineText: { fontWeight: '700', fontSize: TYPE.heading },
   ghostBtn: { marginTop: SPACING.sm, paddingVertical: 12, alignItems: 'center' },
   ghostText: { color: SLATE[500], fontWeight: '700', fontSize: TYPE.heading },
   pressed: { opacity: 0.75 },

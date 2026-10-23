@@ -247,6 +247,28 @@ export default function FeesScreen() {
           </Card>
         ))
       )}
+
+      {/* Plans for my child (24 Oct 2026): inside Fees, the payments screen, rather than a new home
+          tile — the home screens keep their design. The checkout is the website's, in the WebView. */}
+      <Text style={styles.sectionTitle}>Learning plans</Text>
+      <Card style={styles.row}>
+        <View style={styles.rowHead}>
+          <Ionicons name="star-outline" size={20} color={palette.primaryDark} />
+          <Text style={styles.rowTitle}>Plans for your child</Text>
+        </View>
+        <Text style={styles.planText}>
+          Buy or upgrade a plan for your child. If your child has no account yet, you can create their login as
+          you pay.
+        </Text>
+        <Pressable
+          onPress={() => router.push('/parent/plans')}
+          style={({ pressed }) => [styles.payBtn, { backgroundColor: palette.primary }, pressed && styles.pressed]}
+          accessibilityRole="button"
+        >
+          <Text style={styles.payText}>See plans</Text>
+          <Ionicons name="open-outline" size={17} color="#ffffff" />
+        </Pressable>
+      </Card>
     </ScreenScaffold>
   );
 }
@@ -294,6 +316,7 @@ const useStyles = makeStyles((p) => ({
     marginBottom: SPACING.sm,
   },
   muted: { fontSize: TYPE.body, color: SLATE[500], fontStyle: 'italic' },
+  planText: { fontSize: TYPE.body, color: SLATE[600], lineHeight: leading(TYPE.body), marginTop: 6 },
   refusal: { fontSize: TYPE.body, color: SLATE[600], lineHeight: leading(TYPE.body) },
   row: { marginBottom: SPACING.sm },
   rowHead: { flexDirection: 'row', alignItems: 'center', gap: 8 },

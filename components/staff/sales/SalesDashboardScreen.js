@@ -67,11 +67,16 @@ export default function SalesDashboardScreen({ homeRoute = '/staff/sales' }) {
 
   const totalSchools = Number(analysis?.totalSchools) || 0;
 
-  // ProgressBar takes 0-100. The incentive threshold is the one number a rep checks most, and it
-  // was rendering as an empty bar on this panel until that was fixed.
-  const collected = Number(incentive.collectedInr || 0);
-  const threshold = Number(incentive.thresholdInr || 0);
-  const incentivePercent = threshold > 0 ? Math.min(100, (collected / threshold) * 100) : 0;
+  // Annexure B (24 Oct 2026): this month's slab incentive. The bar is progress through the current
+  // slab — from its floor to the point the next rate starts — so it fills as the next slab nears.
+  // ProgressBar takes 0-100.
+  const month = data?.incentiveMonth || null;
+  const eligible = Number(month?.eligibleInr || 0);
+  const currentShare = (month?.breakdown || [])[month?.currentSlab ?? 0] || {};
+  const slabFloor = Number(currentShare.fromInr || 0);
+  const slabCeiling = currentShare.upToInr == null ? null : Number(currentShare.upToInr);
+  const incentivePercent =
+    slabCeiling == null ? 100 : Math.min(100, Math.max(0, ((eligible - slabFloor) / (slabCeiling - slabFloor)) * 100));
 
   const months = useMemo(
     () => (Array.isArray(data?.monthlyRevenue) ? data.monthlyRevenue : []),
@@ -158,15 +163,21 @@ export default function SalesDashboardScreen({ homeRoute = '/staff/sales' }) {
 
       <Card>
         <CardTitle>Incentive progress</CardTitle>
-        <Text style={styles.cardNote}>{incentive.financialYearLabel || ''}</Text>
+        <Text style={styles.cardNote}>
+          {month
+            ? `${month.monthLabel} · fully paid sales ${inr(eligible)} · incentive ${inr(month.incentiveInr)}`
+            : ''}
+        </Text>
         <ProgressBar value={incentivePercent} />
         <View style={styles.progressLabels}>
-          <Text style={styles.meta}>{inr(collected)}</Text>
-          <Text style={styles.meta}>{inr(threshold)}</Text>
+          <Text style={styles.meta}>{`${Number(month?.currentRatePercent || 0)}% slab`}</Text>
+          <Text style={styles.meta}>
+            {month?.nextRatePercent == null ? 'Top slab' : `${inr(month?.toNextSlabInr)} to ${Number(month.nextRatePercent)}%`}
+          </Text>
         </View>
-        {incentive.qualified ? (
+        {month && Number(month.incentiveInr) > 0 ? (
           <View style={styles.chipRow}>
-            <StatusChip label="Qualified" tone="success" />
+            <StatusChip label="Earning this month" tone="success" />
           </View>
         ) : null}
       </Card>

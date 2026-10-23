@@ -74,3 +74,23 @@ export function htmlToText(html) {
 }
 
 export default htmlToText;
+
+/**
+ * A plan's details as lines (24 Oct 2026): the admin now writes them in a rich text editor, so a list
+ * arrives as `<ul><li>…</li></ul>`. `htmlToText` would run every item into one sentence; this keeps
+ * one line per paragraph or list item. Older plain-text details split on newlines and bullets, as the
+ * website always has.
+ */
+export function htmlToLines(html) {
+  if (!html) return [];
+  const text = String(html);
+  if (!/<[a-z][\s\S]*>/i.test(text)) {
+    return text.split(/\n|•/).map((s) => s.trim()).filter(Boolean);
+  }
+  return text
+    .replace(/<\s*br\s*\/?\s*>/gi, '\n')
+    .replace(/<\/\s*(p|div|li|tr|h[1-6]|blockquote)\s*>/gi, '\n')
+    .split('\n')
+    .map((line) => htmlToText(line))
+    .filter(Boolean);
+}

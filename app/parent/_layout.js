@@ -47,11 +47,14 @@ const PALETTE = PORTALS.parent;
  *   /parent/change-password       genuinely works before verification — `ParentAccountController`
  *                                 is the one endpoint that names UNVERIFIED_PARENT — and the
  *                                 pending screen's own button pushes here.
+ *   /parent/plans                 buying a plan for the child (24 Oct 2026): `/api/parent/plans`
+ *                                 accepts UNVERIFIED_PARENT, and paying does not verify the account.
  */
 const UNVERIFIED_OK = new Set([
   '/parent',
   '/parent/pending-verification',
   '/parent/change-password',
+  '/parent/plans',
 ]);
 
 export default function ParentLayout() {

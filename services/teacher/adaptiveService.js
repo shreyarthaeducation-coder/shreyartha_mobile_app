@@ -216,6 +216,17 @@ export async function fetchAttempts({ sectionId, subjectId, studentId, topicId }
   return Array.isArray(res) ? res : [];
 }
 
+/**
+ * The class report for one topic's adaptive assessment (24 Oct 2026): the test class report, built on
+ * each student's latest completed attempt. Same shape as the Live Test Room and exam class reports.
+ */
+export function fetchAdaptiveClassReport({ sectionId, subjectId, topicId }, signal) {
+  return staffApi.get('/api/teacher/practice-questions/reports/class-report', {
+    params: { sectionId, subjectId, topicId },
+    signal,
+  });
+}
+
 export function fetchAttemptAnalysis(attemptId, signal) {
   return staffApi.get(
     `/api/teacher/practice-questions/reports/attempts/${attemptId}/analysis`,

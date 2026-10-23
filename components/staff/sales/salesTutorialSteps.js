@@ -64,9 +64,9 @@ export const TUTORIAL_STEPS = [
     icon: 'trophy',
     title: 'My Incentive — how you get paid',
     body:
-      'You earn nothing until your collected, ex-GST revenue for the financial year crosses your '
-      + 'threshold. Once it does, your rate applies to EVERYTHING you have collected that year — '
-      + 'not just the amount above the threshold. The simulator shows what one more deal is worth.',
+      'Each month, your sales that are paid in full (ex-GST) earn the slabs slab by slab: 3% on the '
+      + 'first ₹30 lakh, 6% on the next ₹30 lakh, then 9%, 12% and 15%. A sale counts in the month its '
+      + 'full payment comes in. Your manager verifies the month, then HQ approves and pays it.',
   },
   {
     key: 'reports',

@@ -17,6 +17,7 @@ import { fetchChapters } from '../../services/teacher/resourceService';
 import {
   REMARK_TIER,
   adaptiveClassesLoader,
+  fetchAdaptiveClassReport,
   fetchAdaptiveStudents,
   fetchAttempts,
   fetchEnabledTopics,
@@ -27,6 +28,7 @@ import {
 } from '../../services/teacher/adaptiveService';
 import TopicBankSheet from './adaptive/TopicBankSheet';
 import AdaptiveReport from './adaptive/AdaptiveReport';
+import ClassTestReportView from '../shared/ClassTestReportView';
 import StudentSearchBar from './shared/StudentSearchBar';
 import { useStudentSearch } from '../../utils/studentSearch';
 
@@ -35,6 +37,8 @@ import { useStudentSearch } from '../../utils/studentSearch';
  *
  * Question Bank: pick a topic, decide whether students get the company question set or yours.
  * View Report: leaderboards and per-attempt analysis.
+ * Class Report (24 Oct 2026): the test class report for one topic — summary, top and bottom five,
+ * hardest questions, top-vs-class-vs-bottom — as on the website.
  *
  * The chapter → topic accordion and `fetchChapters` are both reused from the Homework tab — same
  * curriculum endpoint, same alias handling (render `displayName`).
@@ -45,6 +49,7 @@ const PALETTE = PORTALS.school;
 const TABS = [
   { value: 'bank', label: 'Question Bank', icon: 'library-outline' },
   { value: 'report', label: 'View Report', icon: 'bar-chart-outline' },
+  { value: 'class', label: 'Class Report', icon: 'people-outline' },
 ];
 
 export default function AdaptiveAssessmentScreen({ homeRoute = '/teacher' }) {
@@ -56,6 +61,7 @@ export default function AdaptiveAssessmentScreen({ homeRoute = '/teacher' }) {
   const [topicTarget, setTopicTarget] = useState(null);
 
   const [standingTopicId, setStandingTopicId] = useState(null);
+  const [classTopicId, setClassTopicId] = useState(null);
   const [student, setStudent] = useState(null);
   const [attempt, setAttempt] = useState(null);
 
@@ -110,8 +116,8 @@ export default function AdaptiveAssessmentScreen({ homeRoute = '/teacher' }) {
       ),
     [reportScope.sectionId, reportScope.subjectId],
   );
-  const { data: standingTopics } = useStaffResource(topicsFetcher, {
-    enabled: reportReady && tab === 'report',
+  const { data: standingTopics, loading: topicsLoading } = useStaffResource(topicsFetcher, {
+    enabled: reportReady && (tab === 'report' || tab === 'class'),
     initialData: [],
   });
 
@@ -149,6 +155,27 @@ export default function AdaptiveAssessmentScreen({ homeRoute = '/teacher' }) {
   const { data: attempts, loading: attemptsLoading } = useStaffResource(attemptsFetcher, {
     enabled: !!(reportReady && student?.studentId),
     initialData: [],
+  });
+
+  // ── class report ──────────────────────────────────────────────────────────
+  const classTopic =
+    (standingTopics || []).find((t) => t.topicId === classTopicId) || (standingTopics || [])[0] || null;
+  const classReportFetcher = useCallback(
+    (signal) =>
+      fetchAdaptiveClassReport(
+        { sectionId: reportScope.sectionId, subjectId: reportScope.subjectId, topicId: classTopic?.topicId },
+        signal,
+      ),
+    [reportScope.sectionId, reportScope.subjectId, classTopic?.topicId],
+  );
+  const {
+    data: classReport,
+    loading: classReportLoading,
+    error: classReportError,
+    reload: reloadClassReport,
+  } = useStaffResource(classReportFetcher, {
+    enabled: !!(reportReady && tab === 'class' && classTopic?.topicId),
+    initialData: null,
   });
 
   const standingFor = useCallback(
@@ -422,6 +449,70 @@ export default function AdaptiveAssessmentScreen({ homeRoute = '/teacher' }) {
     );
   };
 
+  const renderClassReport = () => {
+    if (!reportReady) {
+      return (
+        <View style={styles.fill}>
+          <EmptyState
+            icon="school-outline"
+            title="Choose a class and subject"
+            message="Pick an academic year, class, section and subject to see the class report."
+          />
+        </View>
+      );
+    }
+    if (topicsLoading) {
+      return (
+        <View style={styles.centered}>
+          <ActivityIndicator size="large" color={PALETTE.primary} />
+        </View>
+      );
+    }
+    if ((standingTopics || []).length === 0) {
+      return (
+        <View style={styles.fill}>
+          <EmptyState
+            icon="people-outline"
+            title="No class report yet"
+            message="No completed adaptive assessments for this subject yet."
+          />
+        </View>
+      );
+    }
+    return (
+      <ScrollView style={styles.list} contentContainerStyle={styles.listContent}>
+        <Select
+          label="Topic"
+          value={classTopic?.topicId}
+          options={(standingTopics || []).map((t) => ({
+            value: t.topicId,
+            label: t.topicName || `Topic ${t.topicId}`,
+          }))}
+          onChange={setClassTopicId}
+        />
+        {classReportLoading ? (
+          <ActivityIndicator size="large" color={PALETTE.primary} style={styles.inlineLoader} />
+        ) : classReportError ? (
+          <EmptyState
+            icon="alert-circle-outline"
+            title="Couldn't load the class report"
+            message={classReportError}
+            actionLabel="Try again"
+            onAction={reloadClassReport}
+          />
+        ) : classReport ? (
+          <ClassTestReportView
+            report={classReport}
+            paperLabel="Question level"
+            onOpenStudent={(row) =>
+              setAttempt({ attemptId: row.link.attemptId, topicName: classReport.topic?.name, totalAnswered: row.outOf })
+            }
+          />
+        ) : null}
+      </ScrollView>
+    );
+  };
+
   return (
     <ScreenScaffold
       title="My Adaptive Assessment"
@@ -446,7 +537,7 @@ export default function AdaptiveAssessmentScreen({ homeRoute = '/teacher' }) {
         />
       </View>
 
-      {tab === 'bank' ? renderBank() : renderReport()}
+      {tab === 'bank' ? renderBank() : tab === 'class' ? renderClassReport() : renderReport()}
 
       <TopicBankSheet
         visible={!!topicTarget}

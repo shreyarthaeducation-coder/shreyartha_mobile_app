@@ -12,7 +12,7 @@ import {
   streamLabel,
 } from '../../services/partner/plansService';
 import { formatRupees } from '../../utils/currency';
-import htmlToText from '../../utils/htmlToText';
+import { htmlToLines } from '../../utils/htmlToText';
 
 /**
  * Plans for Students — the admin-managed custom plans a partner quotes to families.
@@ -102,7 +102,7 @@ export default function PartnerPlansScreen({ homeRoute = '/partner' }) {
             />
           ) : (
             visible.map((plan) => {
-              const details = htmlToText(plan.details || '');
+              const details = htmlToLines(plan.details || '');
               return (
                 <Card key={plan.id}>
                   {plan.imageUrl ? (
@@ -147,7 +147,13 @@ export default function PartnerPlansScreen({ homeRoute = '/partner' }) {
                     </View>
                   ) : null}
 
-                  {details ? <Text style={styles.details}>{details}</Text> : null}
+                  {details.length > 0 ? (
+                    <View style={styles.detailsList}>
+                      {details.map((line, i) => (
+                        <Text key={i} style={styles.details}>{`✓  ${line}`}</Text>
+                      ))}
+                    </View>
+                  ) : null}
                 </Card>
               );
             })
@@ -179,5 +185,6 @@ const useStyles = makeStyles((p) => ({
     marginTop: SPACING.sm,
   },
   partnerBadgeText: { fontSize: TYPE.caption, fontWeight: '700', color: p.primaryDark },
-  details: { fontSize: TYPE.label, color: SLATE[600], marginTop: SPACING.sm, lineHeight: leading(TYPE.label) },
+  detailsList: { marginTop: SPACING.sm, gap: 4 },
+  details: { fontSize: TYPE.label, color: SLATE[600], lineHeight: leading(TYPE.label) },
 }));

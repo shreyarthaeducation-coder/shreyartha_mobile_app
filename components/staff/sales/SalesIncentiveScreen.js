@@ -1,78 +1,70 @@
 import { useCallback, useMemo, useState } from 'react';
 import { Text, View } from 'react-native';
 import { SLATE, SPACING, TYPE, leading } from '../../../constants/theme';
-import {
-  Card,
-  CardTitle,
-  EmptyState,
-  InfoRow,
-  ProgressBar,
-  ScreenScaffold,
-  Select,
-  StatusChip,
-  TextField,
-} from '../../ui';
+import { Card, CardTitle, EmptyState, InfoRow, ScreenScaffold, Select, StatusChip, TextField } from '../../ui';
 import { usePalette } from '../../ui/PaletteContext';
 import makeStyles from '../../../utils/makeStyles';
 import useStaffResource from '../../../hooks/useStaffResource';
-import {
-  INCENTIVE_STATUS_TONE,
-  fetchIncentiveLedger,
-  fetchIncentiveSummary,
-  fetchIncentiveYears,
-} from '../../../services/sales/salesService';
-import { humanise, inr, shortDate } from './salesFormat';
+import { INCENTIVE_STATUS_TONE, fetchIncentiveMonth, fetchIncentiveMonths } from '../../../services/sales/salesService';
+import { inr, shortDate } from './salesFormat';
 
 /**
- * My Incentive.
+ * My Incentive — Annexure B (24 Oct 2026), as on the website's page.
  *
- * The screen leads with what crossing the threshold is WORTH rather than with how far away it is,
- * because under the retroactive rule those are wildly different numbers: a rep ₹1L short is not
- * ₹10,000 away from their first payout, they are one deal away from ₹2,00,000. Showing only the
- * gap would understate the incentive the company is actually offering.
+ * Each month's fully paid, ex-GST sales earn the slabs slab by slab, like income tax: 3% on the first
+ * 30 lakh, 6% on the next 30 lakh, and so on. A sale counts in the month its full payment is
+ * recorded; a part-paid or unpaid one waits, and is listed with the reason.
  */
+
+/** What each ledger status means to the rep, in the order an incentive moves through them. */
+const STATUS_LABEL = {
+  PENDING: 'Pending verification',
+  VERIFIED: 'Verified by manager',
+  APPROVED: 'Approved by HQ',
+  PAID: 'Paid',
+  REVERSED: 'Adjustment',
+};
+
+/** The same slab-wise sum as the server's SalesIncentiveSlabs — for the "what if" box only. */
+function slabIncentive(slabs, amount) {
+  const sales = Math.max(0, Number(amount || 0));
+  let total = 0;
+  let current = 0;
+  (slabs || []).forEach((s, i) => {
+    const floor = Number(s.fromInr || 0);
+    const ceiling = s.upToInr == null ? Infinity : Number(s.upToInr);
+    if (sales > floor) {
+      total += ((Math.min(sales, ceiling) - floor) * Number(s.ratePercent || 0)) / 100;
+      current = i;
+    }
+  });
+  return { incentive: Math.round(total * 100) / 100, currentSlab: current };
+}
+
 export default function SalesIncentiveScreen({ homeRoute = '/staff/sales' }) {
   const palette = usePalette();
   const styles = useStyles();
-  const [fy, setFy] = useState(null);
+  const [month, setMonth] = useState(null);
   const [simulate, setSimulate] = useState('');
 
-  const yearsFetcher = useCallback((signal) => fetchIncentiveYears(signal), []);
-  const { data: yearsData } = useStaffResource(yearsFetcher);
-  const years = useMemo(() => (Array.isArray(yearsData) ? yearsData : []), [yearsData]);
-  const activeFy = fy ?? years[0] ?? null;
+  const monthsFetcher = useCallback((signal) => fetchIncentiveMonths(signal), []);
+  const { data: monthsData } = useStaffResource(monthsFetcher);
+  const months = useMemo(() => (Array.isArray(monthsData) ? monthsData : []), [monthsData]);
+  const activeMonth = month ?? months[0]?.month ?? '';
 
-  const summaryFetcher = useCallback(
-    (signal) => fetchIncentiveSummary(activeFy, signal),
-    [activeFy],
-  );
-  const {
-    data: summary,
-    loading,
-    error,
-    refreshing,
-    reload,
-    refresh,
-  } = useStaffResource(summaryFetcher);
+  const pageFetcher = useCallback((signal) => fetchIncentiveMonth(activeMonth, signal), [activeMonth]);
+  const { data: page, loading, error, refreshing, reload, refresh } = useStaffResource(pageFetcher);
 
-  const ledgerFetcher = useCallback((signal) => fetchIncentiveLedger(activeFy, signal), [activeFy]);
-  const { data: ledgerData } = useStaffResource(ledgerFetcher);
-  const ledger = useMemo(() => (Array.isArray(ledgerData) ? ledgerData : []), [ledgerData]);
-
-  const collected = Number(summary?.collectedInr || 0);
-  const threshold = Number(summary?.thresholdInr || 0);
-  const rate = Number(summary?.ratePercent || 0);
-  const earned = Number(summary?.earnedInr || 0);
-  // A PERCENTAGE, not a fraction. ProgressBar clamps to 0-100 and sets `width: ${pct}%`, so the
-  // old `Math.min(1, …)` rendered a rep halfway to their threshold as a 0.5%-wide bar — visually
-  // empty, on the single most motivating number in the panel.
-  const progressPercent = threshold > 0 ? Math.min(100, (collected / threshold) * 100) : 0;
+  const slabs = page?.slabs || [];
+  const breakdown = page?.breakdown || [];
+  const ledger = page?.ledger || [];
+  const counted = page?.countedDeals || [];
+  const waiting = page?.notCountedDeals || [];
+  const nextRate = page?.nextRatePercent;
 
   const extra = Number(simulate || 0);
-  const projected = collected + extra;
-  const projectedQualified = projected >= threshold;
-  const projectedEarning = projectedQualified ? (projected * rate) / 100 : 0;
-  const projectedDelta = projectedEarning - earned;
+  const projected = slabIncentive(slabs, Number(page?.eligibleInr || 0) + extra);
+  const projectedDelta = projected.incentive - Number(page?.incentiveInr || 0);
 
   return (
     <ScreenScaffold
@@ -84,109 +76,143 @@ export default function SalesIncentiveScreen({ homeRoute = '/staff/sales' }) {
       refreshing={refreshing}
       onRefresh={refresh}
     >
-      {years.length > 1 ? (
+      {months.length > 1 ? (
         <Select
           variant="chip"
-          value={activeFy}
-          options={years.map((y) => ({
-            value: y,
-            label: `FY ${y}-${String((y + 1) % 100).padStart(2, '0')}`,
-          }))}
-          onChange={setFy}
-          style={styles.yearPicker}
+          value={activeMonth}
+          options={months.map((m) => ({ value: m.month, label: m.label }))}
+          onChange={setMonth}
+          style={styles.monthPicker}
         />
       ) : null}
 
-      <Card>
-        {/* CardTitle takes CHILDREN — `title=`/`subtitle=` props are ignored and render an empty
-            line. The secondary line is a sibling Text, which is what every correct caller does. */}
-        <CardTitle>{summary?.financialYearLabel || 'This year'}</CardTitle>
-        <Text style={styles.meta}>
-          {`Your rate is ${rate}% on collected, ex-GST revenue`}
-        </Text>
-        <ProgressBar value={progressPercent} />
-        <View style={styles.progressLabels}>
-          <Text style={styles.meta}>{inr(collected)}</Text>
-          <Text style={styles.meta}>{inr(threshold)}</Text>
-        </View>
-
-        {summary?.qualified ? (
-          <View style={styles.qualified}>
-            <StatusChip label="Qualified" tone="success" />
-            <Text style={styles.body}>
-              {`You have earned ${inr(earned)} at ${rate}% on everything collected this year.`}
-            </Text>
-          </View>
-        ) : (
+      {page && !page.monthly ? (
+        <Card>
           <Text style={styles.body}>
-            {`${inr(summary?.remainingToThresholdInr)} more collected revenue unlocks `}
-            <Text style={[styles.strong, { color: palette.primaryDark }]}>
-              {inr(summary?.unlockValueInr)}
-            </Text>
-            {` on what you have already banked — rising to ${inr(summary?.payoutAtThresholdInr)} at the threshold itself. Nothing is payable until you cross it.`}
+            {`${page.monthLabel} is before the monthly slabs began${page.schemeStart ? ` (${page.schemeStart})` : ''}; its incentive was worked out under the earlier financial-year rule.`}
           </Text>
+        </Card>
+      ) : null}
+
+      <Card>
+        <CardTitle>{page?.monthLabel || 'This month'}</CardTitle>
+        <Text style={styles.meta}>
+          Fully paid sales (ex-GST) earn the slabs slab by slab: every part of the month&apos;s sales earns its own
+          slab&apos;s rate.
+        </Text>
+        <InfoRow label="Eligible sales" value={inr(page?.eligibleInr)} />
+        <InfoRow label="Incentive this month" value={inr(page?.incentiveInr)} />
+        <InfoRow
+          label="Current slab"
+          value={`${Number(page?.currentRatePercent || 0)}% · ${(slabs[page?.currentSlab] || {}).label || ''}`}
+        />
+        <Text style={[styles.body, { color: palette.primaryDark }]}>
+          {nextRate == null
+            ? 'You are in the top slab: every further rupee paid in full this month earns the top rate.'
+            : `${inr(page?.toNextSlabInr)} more paid in full this month and the rest earns ${Number(nextRate)}%.`}
+        </Text>
+      </Card>
+
+      <Card>
+        <CardTitle>How this month is worked out</CardTitle>
+        {breakdown.map((b, i) => {
+          const reached = Number(b.salesInr || 0) > 0;
+          const current = i === page?.currentSlab;
+          return (
+            <View key={b.label} style={[styles.slabRow, current && reached && { backgroundColor: palette.tint }]}>
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.slabLabel, current && reached && styles.strong]}>{b.label}</Text>
+                <Text style={styles.meta}>
+                  {reached ? `${inr(b.salesInr)} at ${Number(b.ratePercent)}%` : `${Number(b.ratePercent)}%`}
+                </Text>
+              </View>
+              <Text style={styles.slabAmount}>{reached ? inr(b.incentiveInr) : '—'}</Text>
+            </View>
+          );
+        })}
+        <View style={styles.slabTotal}>
+          <Text style={styles.strongBody}>Total</Text>
+          <Text style={styles.strongBody}>{inr(page?.incentiveInr)}</Text>
+        </View>
+      </Card>
+
+      {page?.monthly ? (
+        <Card>
+          <CardTitle>What if another sale is paid in full this month?</CardTitle>
+          <TextField
+            label="Sale value, ex-GST"
+            value={simulate}
+            onChangeText={(v) => setSimulate(v.replace(/\D/g, ''))}
+            keyboardType="number-pad"
+            placeholder="500000"
+          />
+          {extra > 0 ? (
+            <Text style={styles.body}>
+              {`The month would reach ${inr(Number(page?.eligibleInr || 0) + extra)}, earning ${inr(projected.incentive)} — ${inr(projectedDelta)} more, in the ${Number((slabs[projected.currentSlab] || {}).ratePercent || 0)}% slab.`}
+            </Text>
+          ) : null}
+        </Card>
+      ) : null}
+
+      <Card>
+        <CardTitle>Sales counted this month</CardTitle>
+        {counted.length === 0 ? (
+          <Text style={styles.meta}>{`No sale was paid in full in ${page?.monthLabel || 'this month'}.`}</Text>
+        ) : (
+          counted.map((d) => (
+            <View key={d.id} style={styles.ledgerRow}>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.ledgerNote}>{d.schoolName || `Sale #${d.id}`}</Text>
+                <Text style={styles.meta}>{`#${d.id} · paid in full ${shortDate(d.collectedAt)}`}</Text>
+              </View>
+              <Text style={styles.ledgerAmount}>{inr(d.baseAmountInr)}</Text>
+            </View>
+          ))
         )}
       </Card>
 
       <Card>
-        <CardTitle>Payouts</CardTitle>
-        <InfoRow label="Earned this year" value={inr(earned)} />
-        <InfoRow label="Pending approval" value={inr(summary?.pendingInr)} />
-        <InfoRow label="Approved" value={inr(summary?.approvedInr)} />
-        <InfoRow label="Paid" value={inr(summary?.paidInr)} />
-      </Card>
-
-      <Card>
-        <CardTitle>What if I collect a bit more?</CardTitle>
-        <Text style={styles.meta}>Enter an amount to see where it takes you.</Text>
-        <TextField
-          label="Additional collection, ex-GST"
-          value={simulate}
-          onChangeText={(v) => setSimulate(v.replace(/\D/g, ''))}
-          keyboardType="number-pad"
-          placeholder="500000"
-        />
-        {extra > 0 ? (
-          <Text style={styles.body}>
-            {projectedQualified
-              ? `Collecting another ${inr(extra)} takes you to ${inr(projected)}. Your incentive would be ${inr(projectedEarning)} — an increase of ${inr(projectedDelta)}.`
-              : `Collecting another ${inr(extra)} takes you to ${inr(projected)} — still ${inr(threshold - projected)} short of the threshold, so the incentive stays at ${inr(0)}.`}
-          </Text>
-        ) : null}
-      </Card>
-
-      <Card>
-        <CardTitle>Ledger</CardTitle>
+        <CardTitle>Not counted yet</CardTitle>
         <Text style={styles.meta}>
-          A correction appends an adjustment rather than editing history, so the rows always sum to
-          what you are owed.
+          No incentive is paid on a pending, part-paid or unpaid sale. Each counts in the month its full payment is
+          received.
+        </Text>
+        {waiting.length === 0 ? (
+          <Text style={[styles.meta, styles.spaced]}>Nothing waiting.</Text>
+        ) : (
+          waiting.map((d) => (
+            <View key={d.id} style={styles.ledgerRow}>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.ledgerNote}>{d.schoolName || `Sale #${d.id}`}</Text>
+                <Text style={styles.meta}>{d.reason}</Text>
+              </View>
+              <Text style={styles.ledgerAmount}>{inr(d.baseAmountInr)}</Text>
+            </View>
+          ))
+        )}
+      </Card>
+
+      <Card>
+        <CardTitle>{`Ledger · ${page?.monthLabel || ''}`}</CardTitle>
+        <Text style={styles.meta}>
+          Your reporting manager verifies the month&apos;s incentive, then HQ approves and pays it. A correction adds
+          an adjustment row rather than changing an old one.
         </Text>
         {ledger.length === 0 ? (
-          <EmptyState
-            icon="trophy-outline"
-            title="Nothing accrued yet"
-            message="Incentive appears here once your collected revenue crosses the threshold."
-          />
+          <EmptyState icon="trophy-outline" title="Nothing booked yet" message="Incentive appears here once a sale is paid in full." />
         ) : (
           ledger.map((row) => (
             <View key={row.id} style={styles.ledgerRow}>
               <View style={{ flex: 1 }}>
                 <Text style={styles.ledgerNote}>{row.note || '—'}</Text>
-                <Text style={styles.meta}>
-                  {`${shortDate(row.createdAt)} · ${Number(row.ratePercent)}% of ${inr(row.cumulativeCollectedInr)}`}
-                </Text>
+                <Text style={styles.meta}>{`${shortDate(row.createdAt)} · month's sales ${inr(row.cumulativeCollectedInr)}`}</Text>
               </View>
               <View style={styles.ledgerRight}>
-                <Text
-                  style={[
-                    styles.ledgerAmount,
-                    Number(row.commissionInr) < 0 && styles.negative,
-                  ]}
-                >
+                <Text style={[styles.ledgerAmount, Number(row.commissionInr) < 0 && styles.negative]}>
                   {inr(row.commissionInr)}
                 </Text>
                 <StatusChip
-                  label={humanise(row.status)}
+                  label={STATUS_LABEL[row.status] || row.status}
                   tone={INCENTIVE_STATUS_TONE[row.status] || 'neutral'}
                 />
               </View>
@@ -194,21 +220,40 @@ export default function SalesIncentiveScreen({ homeRoute = '/staff/sales' }) {
           ))
         )}
       </Card>
+
+      {(page?.paymentConditions || []).length > 0 ? (
+        <Card>
+          <CardTitle>Payment and eligibility conditions</CardTitle>
+          {page.paymentConditions.map((c, i) => (
+            <Text key={c} style={styles.body}>{`${i + 1}. ${c}`}</Text>
+          ))}
+          {page.generalConditions ? <Text style={[styles.meta, styles.spaced]}>{page.generalConditions}</Text> : null}
+        </Card>
+      ) : null}
     </ScreenScaffold>
   );
 }
 
 const useStyles = makeStyles(() => ({
-  yearPicker: { alignSelf: 'flex-start', marginBottom: SPACING.sm },
-  progressLabels: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 6,
-  },
-  meta: { fontSize: TYPE.label, color: SLATE[500] },
+  monthPicker: { alignSelf: 'flex-start', marginBottom: SPACING.sm },
+  meta: { fontSize: TYPE.label, color: SLATE[500], lineHeight: leading(TYPE.label) },
+  spaced: { marginTop: SPACING.sm },
   body: { fontSize: TYPE.body, color: SLATE[600], lineHeight: leading(TYPE.body), marginTop: SPACING.sm },
   strong: { fontWeight: '800' },
-  qualified: { flexDirection: 'row', alignItems: 'center', gap: SPACING.sm, marginTop: SPACING.sm },
+  strongBody: { fontSize: TYPE.body, fontWeight: '800', color: SLATE[800] },
+  slabRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.sm,
+    paddingVertical: SPACING.sm,
+    paddingHorizontal: 6,
+    borderRadius: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: SLATE[100],
+  },
+  slabLabel: { fontSize: TYPE.body, color: SLATE[700] },
+  slabAmount: { fontSize: TYPE.heading, fontWeight: '700', color: SLATE[800] },
+  slabTotal: { flexDirection: 'row', justifyContent: 'space-between', paddingTop: SPACING.sm, paddingHorizontal: 6 },
   ledgerRow: {
     flexDirection: 'row',
     alignItems: 'center',

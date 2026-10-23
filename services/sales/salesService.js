@@ -193,6 +193,15 @@ export function fetchIncentiveLedger(financialYear, signal) {
   return staffApi.get(`${BASE}/incentive/ledger${buildQuery({ financialYear })}`, { signal });
 }
 
+/** Annexure B (24 Oct 2026): one month, slab-wise. month = "YYYY-MM"; blank = this month. */
+export function fetchIncentiveMonth(month, signal) {
+  return staffApi.get(`${BASE}/incentive/month${buildQuery({ month })}`, { signal });
+}
+
+export function fetchIncentiveMonths(signal) {
+  return staffApi.get(`${BASE}/incentive/months`, { signal });
+}
+
 export function fetchIncentiveYears(signal) {
   return staffApi.get(`${BASE}/incentive/years`, { signal });
 }
@@ -266,6 +275,8 @@ export const DEAL_STATUS_TONE = {
 
 export const INCENTIVE_STATUS_TONE = {
   PENDING: 'warning',
+  // Checked by the reporting manager; HQ approves after (24 Oct 2026).
+  VERIFIED: 'info',
   APPROVED: 'info',
   PAID: 'success',
   REVERSED: 'error',

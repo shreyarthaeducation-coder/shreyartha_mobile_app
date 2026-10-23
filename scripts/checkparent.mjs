@@ -56,6 +56,19 @@ const SRC = {
   redirectPsychometric: 'app/parent/assessment-results.js',
   redirectNotes: 'app/parent/counselor-notes.js',
   redirectReport: 'app/parent/counsellor-report.js',
+  // Plans for my child (24 Oct 2026): one level in, never a home tile.
+  plansRoute: 'app/parent/plans.js',
+  parentLayout: 'app/parent/_layout.js',
+  pendingScreen: 'components/parent/ParentPendingScreen.js',
+};
+
+/**
+ * Web sidebar items that are deliberately NOT home tiles in the app. Home screens keep their design
+ * (the user's rule, 30 Sep 2026): a web feature with no app tile gets an entry one level in. Each one
+ * listed here is asserted below to be reachable where it says.
+ */
+const NOT_A_HOME_TILE = {
+  plans: 'inside School Fees, and on the pending-verification screen',
 };
 
 let failures = 0;
@@ -238,17 +251,32 @@ function assertions(menu, calendar, layoutSrc, src, fee, chatbot, routeNames, ta
   // ── 1. the menu still mirrors the web sidebar ─────────────────────────────
   const web = webSidebarItems();
   // Eight since Assessment Results, Counselor Notes and Counsellor Report became the three tabs of
-  // one Counselling Report item (29 Sep 2026); ten before that, with Notifications.
-  if (web.length !== 8) bad(`web sidebar extractor found ${web.length} items, expected 8`);
+  // one Counselling Report item (29 Sep 2026); ten before that, with Notifications. Report Card
+  // (web, 15 Oct 2026) and Plans for my child (24 Oct 2026) made it ten again.
+  if (web.length !== 10) bad(`web sidebar extractor found ${web.length} items, expected 10`);
 
   // "home" is deliberately absent: the tile grid IS home, and its header already shows the child
-  // card that page renders. Everything else must be present, in order.
-  const expected = web.filter((i) => i.key !== 'home');
+  // card that page renders. So is everything in NOT_A_HOME_TILE. Everything else must be present,
+  // in order.
+  const expected = web.filter((i) => i.key !== 'home' && !NOT_A_HOME_TILE[i.key]);
   const gotKeys = PARENT_MENU.map((i) => i.key).join(',');
   const wantKeys = expected.map((i) => i.key).join(',');
   if (gotKeys !== wantKeys) {
     bad(`menu keys/order differ.\n      app: ${gotKeys}\n      web: ${wantKeys}`);
   }
+  // ── 1b. Plans for my child: reachable one level in, even before verification ─
+  for (const key of Object.keys(NOT_A_HOME_TILE)) {
+    if (PARENT_MENU.some((i) => i.key === key)) bad(`"${key}" became a home tile — it belongs ${NOT_A_HOME_TILE[key]}`);
+  }
+  if (!/path=\{`\$\{PARENT_BASE\}\/plans`\}/.test(src.plansRoute)) {
+    bad('app/parent/plans.js no longer opens the website\'s parent plans page');
+  }
+  if (!/UNVERIFIED_OK = new Set\(\[[\s\S]*'\/parent\/plans'[\s\S]*\]\)/.test(src.parentLayout)) {
+    bad('/parent/plans is gated behind verification — an unverified parent may buy a plan (as on the web)');
+  }
+  if (!/router\.push\('\/parent\/plans'\)/.test(src.feesScreen)) bad('School Fees lost its way in to Plans for my child');
+  if (!/router\.push\('\/parent\/plans'\)/.test(src.pendingScreen)) bad('the pending screen lost its Buy a plan button');
+
   if (PARENT_MENU.some((i) => i.key === 'home')) {
     bad('a "home" tile is back on the home screen — it navigates to the card already above it');
   }
@@ -737,6 +765,26 @@ function assertions(menu, calendar, layoutSrc, src, fee, chatbot, routeNames, ta
 }
 
 const MUTATIONS = [
+  {
+    name: 'Plans for my child gated behind verification',
+    src: (k, s) => (k === 'parentLayout' ? s.replace("  '/parent/plans',\n", '') : s),
+  },
+  {
+    name: 'School Fees loses the way in to Plans for my child',
+    src: (k, s) => (k === 'feesScreen' ? s.replace("router.push('/parent/plans')", "router.push('/parent/fees')") : s),
+  },
+  {
+    name: 'the pending screen loses its Buy a plan button',
+    src: (k, s) => (k === 'pendingScreen' ? s.replace("router.push('/parent/plans')", "router.push('/parent')") : s),
+  },
+  {
+    name: 'Plans for my child added as a home tile',
+    menu: (s) =>
+      s.replace(
+        "export const PARENT_MENU = [",
+        "export const PARENT_MENU = [\n  { key: 'plans', label: 'Plans for my child', icon: 'star-outline', native: '/parent/plans' },",
+      ),
+  },
   {
     name: 'a tile pointed at a route file that does not exist',
     menu: (s) => s.replace("native: '/parent/counselling-report'", "native: '/parent/nowhere'"),
