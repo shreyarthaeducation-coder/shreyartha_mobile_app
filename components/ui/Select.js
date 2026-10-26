@@ -3,6 +3,7 @@ import { FlatList, Modal, Pressable, StyleSheet, Text, TextInput, View } from 'r
 import { Ionicons } from '@expo/vector-icons';
 import { FEEDBACK, SLATE, SPACING, TYPE } from '../../constants/theme';
 import { usePalette } from './PaletteContext';
+import { bottomPadding, useModalBottomInset } from '../shared/BottomInsetGuard';
 
 /**
  * Bottom-sheet select, in two shapes:
@@ -34,6 +35,7 @@ export default function Select({
   palette: paletteProp,
   style,
 }) {
+  const bottomInset = useModalBottomInset();
   const contextPalette = usePalette();
   // Explicit prop wins; otherwise the surrounding portal palette (teal by default).
   const palette = paletteProp || contextPalette;
@@ -110,7 +112,7 @@ export default function Select({
       <Modal visible={open} transparent animationType="slide" onRequestClose={close}>
         <Pressable style={styles.backdrop} onPress={close}>
           {/* Swallow taps on the sheet so they don't reach the backdrop and close it. */}
-          <Pressable style={styles.sheet} onPress={() => {}}>
+          <Pressable style={[styles.sheet, bottomPadding(styles.sheet, bottomInset)]} onPress={() => {}}>
             <View style={styles.handle} />
             <Text style={styles.sheetTitle}>{label || 'Select an option'}</Text>
 

@@ -107,6 +107,11 @@ export function fetchSubjectOverview({ sectionId, subjectId }, signal) {
 // per-question marking, otherwise flat marks. Add the first question to an exam and its marks
 // screen silently changes shape.
 
+/** How the class did in one exam (22 Oct 2026) — the ClassTestReport shape. */
+export function fetchExamClassReport(examId, signal) {
+  return staffApi.get(`/api/teacher/reports/exams/${examId}/class-report`, { signal });
+}
+
 export function fetchMarksSheet(examId, signal) {
   return staffApi.get(`/api/teacher/reports/exams/${examId}/marks-sheet`, { signal });
 }

@@ -35,12 +35,11 @@ export const STUDENT_SECTIONS = [
     "sectionKey": "academic-iq",
     "routeSuffix": "/academic-iq",
     "overview": "**Academic IQ** is your subject-wise learning hub, designed to sharpen your academic skills.",
-    "functionality": "Access curated resources aligned to your school curriculum, practise with topic-wise exercises, and dive into competitive exam preparation — all in one place.",
+    "functionality": "Access curated resources aligned to your school curriculum and practise with topic-wise exercises — all in one place.",
     "services": [
       "Personalized Resources",
       "School Resources",
-      "Practice Zone",
-      "Competitive Exam Prep access"
+      "Practice Zone"
     ]
   },
   {

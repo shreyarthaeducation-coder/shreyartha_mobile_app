@@ -39,6 +39,7 @@ import {
 } from '../../services/teacher/groupService';
 import StudentSearchBar from './shared/StudentSearchBar';
 import { useStudentSearch } from '../../utils/studentSearch';
+import { bottomPadding, useModalBottomInset } from '../shared/BottomInsetGuard';
 
 /**
  * Native Student Groups — sort a class into the four ability bands, per subject.
@@ -115,10 +116,11 @@ function LevelButtons({ selected, disabled, onPick }) {
 
 /** Bottom sheet used by the View tab to move one student to another band. */
 function LevelSheet({ visible, studentName, current, onPick, onClose }) {
+  const bottomInset = useModalBottomInset();
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <Pressable style={styles.backdrop} onPress={onClose}>
-        <Pressable style={styles.sheet} onPress={() => {}}>
+        <Pressable style={[styles.sheet, bottomPadding(styles.sheet, bottomInset)]} onPress={() => {}}>
           <View style={styles.handle} />
           <Text style={styles.sheetTitle} numberOfLines={1}>
             {studentName}

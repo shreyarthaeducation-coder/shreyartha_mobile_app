@@ -285,8 +285,10 @@ async function assertions(mutate) {
   }
   // Repository reuse, defensive copy, cap.
   if (!/findByModule_IdIn\(/.test(s.seQRepo)) bad('SkillsEdgeUnderstandingQuestionRepository has no findByModule_IdIn');
-  if (!/findModuleIdsByTopicIds\(\s*List\.of\(\s*topicId\s*\)\s*\)/.test(s.seSvc)) {
-    bad('the assessment does not reuse the existing findModuleIdsByTopicIds traversal');
+  // Since 18 Oct 2026 (9b47617) the traversal also returns each module's objective, so hidden and
+  // locked content can be filtered out before the bank is sampled; it is still the existing walk.
+  if (!/findModuleAndObjectiveIdsByTopicId\(\s*topicId\s*\)[\s\S]{0,200}include\.test\(/.test(s.seSvc)) {
+    bad('the assessment does not reuse the existing module traversal, filtered by what the student may see');
   }
   if (!/new ArrayList<>\(\s*questionRepository\.findByModule_IdIn\(/.test(s.seSvc)) {
     bad('the question list is shuffled without a defensive copy — repository results are not guaranteed mutable');

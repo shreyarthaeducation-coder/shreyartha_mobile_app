@@ -7,6 +7,7 @@ import {
 import { useRouter } from 'expo-router';
 import { COLORS, SLATE, SPACING, TYPE, leading } from '../../constants/theme';
 import { api } from '../../services/apiService';
+import { bottomPadding, useModalBottomInset } from '../../components/shared/BottomInsetGuard';
 
 // Mirrors src/components/Chatbot/chatbotData.js from frontendmain
 const CHATBOT_DATA = [
@@ -151,6 +152,7 @@ const STEP = {
 const CHATBOT_IMAGE = require('../../assets/images/Chatbot.png');
 
 export default function SupportScreen() {
+  const bottomInset = useModalBottomInset();
   const router = useRouter();
   const [chatOpen, setChatOpen] = useState(false);
   const [step, setStep] = useState(STEP.GREETING);
@@ -398,7 +400,7 @@ export default function SupportScreen() {
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         >
           <View style={styles.overlay}>
-            <View style={styles.chatContainer}>
+            <View style={[styles.chatContainer, bottomPadding(styles.chatContainer, bottomInset)]}>
               {/* Header */}
               <View style={styles.chatHeader}>
                 <View style={styles.chatHeaderLeft}>

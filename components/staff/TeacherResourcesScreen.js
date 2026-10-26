@@ -59,6 +59,7 @@ import {
   toIsoDate,
   todayIso,
 } from '../../utils/dates';
+import { bottomPadding, useModalBottomInset } from '../shared/BottomInsetGuard';
 
 /**
  * Native Homework + My Teaching Resources.
@@ -262,6 +263,7 @@ export default function TeacherResourcesScreen({
   scopeKind = 'classSection',
   schoolsEndpoint,
 }) {
+  const bottomInset = useModalBottomInset();
   const tabs = TABS[group] || TABS.homework;
   const schoolScoped = scopeKind === 'schoolClass';
 
@@ -1021,7 +1023,7 @@ export default function TeacherResourcesScreen({
         onRequestClose={() => setCalendarOpen(false)}
       >
         <Pressable style={styles.backdrop} onPress={() => setCalendarOpen(false)}>
-          <Pressable style={styles.sheet} onPress={() => {}}>
+          <Pressable style={[styles.sheet, bottomPadding(styles.sheet, bottomInset)]} onPress={() => {}}>
             <View style={styles.handle} />
             <MonthNavigator
               year={calendarMonth.year}

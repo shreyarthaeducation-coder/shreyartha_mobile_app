@@ -492,7 +492,8 @@ const WIRING = [
     name: 'no Pressable wraps a sheet\'s scrolling body — the backdrop sits behind the card',
     test: (s) => !s.formSheet.includes('onPress={() => {}}')
       && s.formSheet.includes('style={StyleSheet.absoluteFill}\n          onPress={onClose}')
-      && s.formSheet.includes('<View style={[styles.sheet, fullHeight && styles.sheetFull]}>'),
+      // The card is a View (a bottom inset joined its style on 26 Oct 2026 — the View is the point).
+      && s.formSheet.includes('<View style={[styles.sheet, fullHeight && styles.sheetFull'),
   },
   {
     name: "a question's maths never takes the touch that should scroll the list",
@@ -573,7 +574,7 @@ const MUTATIONS = [
   ['a save failure is only toasted', 'sheet', "fail(e?.message || 'Could not save the marks.');", "showToast?.(e?.message || 'Could not save the marks.', 'error');"],
   ['the sheet shows no toast', 'formSheet', '<Toast message={toast.message} tone={toast.tone} />', 'null'],
   ['the scaffold hands no toast down', 'scaffold', '<SheetToastContext.Provider value={toast || null}>', '<SheetToastContext.Provider value={null}>'],
-  ['the card swallows taps around the scroll again', 'formSheet', '<View style={[styles.sheet, fullHeight && styles.sheetFull]}>', '<Pressable style={[styles.sheet, fullHeight && styles.sheetFull]} onPress={() => {}}>'],
+  ['the card swallows taps around the scroll again', 'formSheet', '<View style={[styles.sheet, fullHeight && styles.sheetFull', '<Pressable onPress={() => {}} style={[styles.sheet, fullHeight && styles.sheetFull'],
   ['maths takes the touch', 'questionHtml', 'pointerEvents="none">\n      <WebView', '>\n      <WebView'],
   ['the result names no mismatch', 'result', 'const mismatch = sheetMismatch(res.header, student);', 'const mismatch = null;'],
   ['every blank practical box erases a mark', 'sheet', "clearPractical: practical === '' && hadPractical,", "clearPractical: practical === '',"],

@@ -35,6 +35,24 @@ export function addAreasToSections(category, academicYearId, fieldNames, section
   return staffApi.post(`${BASE}/${category}/fields/bulk`, { academicYearId, fieldNames, sectionIds });
 }
 
+/**
+ * What renaming or removing an area in these sections would touch:
+ * `{ sections, grades, clashes }` — clashes being sections that already have `newName`.
+ */
+export function areaImpact(category, fieldName, newName, sectionIds) {
+  return staffApi.post(`${BASE}/${category}/fields/impact`, { fieldName, newName: newName || null, sectionIds });
+}
+
+/** Renames an area in these sections; where one already has `newName` they merge. `{ renamed, merged, gradesMoved }`. */
+export function renameArea(category, fieldName, newName, sectionIds) {
+  return staffApi.put(`${BASE}/${category}/fields/rename`, { fieldName, newName, sectionIds });
+}
+
+/** Removes an area — and the grades under it — from these sections. `{ removed }`. */
+export function deleteArea(category, fieldName, sectionIds) {
+  return staffApi.post(`${BASE}/${category}/fields/delete`, { fieldName, sectionIds });
+}
+
 /** One section's grid, read-only here: `{ className, sectionName, fields, students[{ grades }] }`. */
 export function fetchCategorySheet(category, sectionId, signal) {
   return staffApi.get(`${BASE}/${category}/sheet`, { params: { sectionId }, signal });

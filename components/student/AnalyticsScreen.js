@@ -1,5 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
+import { SLATE, TYPE } from '../../constants/theme';
 import StudentScaffold from './StudentScaffold';
 import { StudentCard, StudentCardTitle } from './StudentCard';
 import AnalyticsBody from './analytics/AnalyticsBody';
@@ -84,6 +87,25 @@ export default function AnalyticsScreen() {
         onToggleExam={toggleExam}
         mockTests={mockTests}
       />
+      {/* As on the website (22 Oct 2026): every adaptive test with its marks, on a page of its own. */}
+      <Pressable
+        onPress={() => router.push('/student/adaptive-performance')}
+        style={({ pressed }) => [pressed && styles.pressed]}
+        accessibilityRole="button"
+      >
+        <StudentCard>
+          <View style={styles.linkRow}>
+            <Text style={styles.linkText}>My Adaptive Performance</Text>
+            <Ionicons name="chevron-forward" size={18} color={SLATE[400]} />
+          </View>
+        </StudentCard>
+      </Pressable>
     </StudentScaffold>
   );
 }
+
+const styles = StyleSheet.create({
+  linkRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  linkText: { fontSize: TYPE.body, fontWeight: '700', color: SLATE[800] },
+  pressed: { opacity: 0.72 },
+});

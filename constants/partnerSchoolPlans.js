@@ -243,11 +243,11 @@ export const PARTNER_SCHOOL_PLANS = [
     "revenueTable": [
       {
         "stakeholder": "Partnering School Institution",
-        "share": "25% of net subscription collections"
+        "share": "As per agreement with Shreyartha"
       },
       {
         "stakeholder": "Channel Partner / Network Manager",
-        "share": "25% of net subscription collections"
+        "share": "As per agreement with Shreyartha"
       },
       {
         "stakeholder": "Shreyartha.ai Ecosystem",

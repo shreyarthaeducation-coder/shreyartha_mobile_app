@@ -5,6 +5,7 @@ import { SLATE, SPACING, TOUCH, TYPE } from '../../constants/theme';
 import { usePalette } from '../ui/PaletteContext';
 import { makeStyles } from '../../utils/makeStyles';
 import { useLanguage } from '../../context/LanguageContext';
+import { bottomPadding, useModalBottomInset } from './BottomInsetGuard';
 
 /**
  * Change Language — the control the student panel has never had.
@@ -46,6 +47,7 @@ import { useLanguage } from '../../context/LanguageContext';
  */
 
 export default function LanguagePicker({ compact = false, tone = 'dark' }) {
+  const bottomInset = useModalBottomInset();
   const styles = useStyles();
   const palette = usePalette();
   const { language, supportedLanguages, setLanguage, isTranslating } = useLanguage();
@@ -112,7 +114,7 @@ export default function LanguagePicker({ compact = false, tone = 'dark' }) {
       <Modal visible={open} transparent animationType="slide" onRequestClose={close}>
         <Pressable style={styles.backdrop} onPress={close}>
           {/* Swallow taps on the sheet so they don't reach the backdrop and close it. */}
-          <Pressable style={[styles.sheet, light && styles.sheetLight]} onPress={() => {}}>
+          <Pressable style={[styles.sheet, light && styles.sheetLight, bottomPadding(styles.sheet, bottomInset)]} onPress={() => {}}>
             <View style={[styles.handle, light && styles.handleLight]} />
             <Text style={[styles.sheetTitle, light && styles.sheetTitleLight]}>Choose your language</Text>
             <Text style={[styles.sheetNote, light && styles.sheetNoteLight]}>

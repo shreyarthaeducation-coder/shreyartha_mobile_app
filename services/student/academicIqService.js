@@ -229,6 +229,16 @@ export const universalAdaptiveEngine = (topicId, attemptIdRef) => ({
     }),
 });
 
+/**
+ * Every adaptive test this student has taken — alone or in a Live Test Room — newest first, with
+ * marks, accuracy, level reached, rank in class and time (My Adaptive Performance, 22 Oct 2026).
+ */
+export function fetchMyAdaptiveAttempts(signal) {
+  return studentApi
+    .get('/api/student/universal-adaptive/my-attempts', { signal })
+    .then((r) => (Array.isArray(r) ? r : []));
+}
+
 /** The finished analysis for an attempt, if the summary needs re-reading after the fact. */
 export function fetchUniversalReport(attemptId, signal) {
   return studentApi.get(`/api/student/universal-adaptive/attempt/${attemptId}/report`, { signal });

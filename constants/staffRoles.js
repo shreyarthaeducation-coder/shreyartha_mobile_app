@@ -209,6 +209,7 @@ export const STAFF_ROLE_CONFIG = {
       { key: 'profile', label: 'My Profile', icon: 'person-circle-outline', native: '/staff/vice_principal/profile' },
       { key: 'selfAttendance', label: 'Self Attendance', icon: 'time-outline', native: '/staff/vice_principal/self-attendance' },
       { key: 'attendance', label: 'Mark Attendance', icon: 'checkbox-outline', native: '/staff/vice_principal/attendance' },
+      { key: 'schoolResources', label: 'School Resources', icon: 'library-outline', native: '/staff/vice_principal/school-resources' },
       { key: 'groups', label: 'Create Group', icon: 'people-outline', native: '/staff/vice_principal/groups' },
       // One tile, four tabs. The website's single entry reaches only Assign + Submitted because
       // it renders AssignHomework without a `group` prop; ours honours the label. See

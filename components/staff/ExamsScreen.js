@@ -21,6 +21,9 @@ import {
 import MarksSheet from './exams/MarksSheet';
 import QuestionsSheet from './exams/QuestionsSheet';
 import ExamAnalysisSheet from './exams/ExamAnalysisSheet';
+import ClassTestReportView from '../shared/ClassTestReportView';
+import { FormSheet } from '../ui';
+import { fetchExamClassReport } from '../../services/teacher/examService';
 
 /**
  * Native Test and Examination.
@@ -50,6 +53,17 @@ export default function ExamsScreen({ homeRoute = '/teacher' }) {
   const [questionsExam, setQuestionsExam] = useState(null);
   const [student, setStudent] = useState(null);
   const [analysis, setAnalysis] = useState(null);
+  // One exam's class report, as the website's pop-up: { exam, data?, error? } while open.
+  const [classReport, setClassReport] = useState(null);
+
+  const openClassReport = async (exam) => {
+    setClassReport({ exam });
+    try {
+      setClassReport({ exam, data: await fetchExamClassReport(exam.id) });
+    } catch (e) {
+      setClassReport({ exam, error: e?.message || 'The class report could not be loaded.' });
+    }
+  };
 
   const { toast, showToast } = useToast();
 
@@ -234,6 +248,15 @@ export default function ExamsScreen({ homeRoute = '/teacher' }) {
                   Enter/Edit Marks
                 </Text>
               </Pressable>
+              <Pressable
+                onPress={() => openClassReport(exam)}
+                disabled={!exam.resultsEnteredCount}
+                style={({ pressed }) => [styles.actionBtn, !exam.resultsEnteredCount && styles.disabledBtn, pressed && styles.pressed]}
+                accessibilityRole="button"
+              >
+                <Ionicons name="stats-chart-outline" size={17} color={PALETTE.primaryDark} />
+                <Text style={styles.actionText}>Class report</Text>
+              </Pressable>
             </View>
           </Card>
         ))}
@@ -408,6 +431,21 @@ export default function ExamsScreen({ homeRoute = '/teacher' }) {
         onClose={() => setAnalysis(null)}
         showToast={showToast}
       />
+
+      <FormSheet
+        visible={!!classReport}
+        title={classReport ? `Class report — ${classReport.exam.examName}` : 'Class report'}
+        onClose={() => setClassReport(null)}
+        fullHeight
+      >
+        {classReport?.data ? (
+          <ClassTestReportView report={classReport.data} />
+        ) : classReport?.error ? (
+          <Text style={styles.examStat}>{classReport.error}</Text>
+        ) : (
+          <ActivityIndicator color={PALETTE.primary} />
+        )}
+      </FormSheet>
     </ScreenScaffold>
   );
 }
@@ -441,9 +479,12 @@ const styles = StyleSheet.create({
   examStats: { flexDirection: 'row', flexWrap: 'wrap', gap: SPACING.md, marginTop: SPACING.sm },
   examStat: { fontSize: TYPE.label, color: SLATE[500], fontWeight: '600' },
 
-  examActions: { flexDirection: 'row', gap: SPACING.sm, marginTop: SPACING.md },
+  // Wraps: three actions do not fit one row on a narrow phone.
+  examActions: { flexDirection: 'row', flexWrap: 'wrap', gap: SPACING.sm, marginTop: SPACING.md },
+  disabledBtn: { opacity: 0.45 },
   actionBtn: {
     flex: 1,
+    minWidth: 128,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
@@ -455,6 +496,7 @@ const styles = StyleSheet.create({
   },
   actionBtnPrimary: {
     flex: 1.3,
+    minWidth: 128,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',

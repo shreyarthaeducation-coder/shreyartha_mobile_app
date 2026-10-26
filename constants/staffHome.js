@@ -82,7 +82,7 @@ const VICE_PRINCIPAL = {
       label: 'Classroom',
       icon: 'easel-outline',
       // Create Group sits with the classroom work, as in the web's Teaching & Academics (1 Oct 2026).
-      itemKeys: ['attendance', 'groups', 'homework', 'liveClasses', 'syllabus'],
+      itemKeys: ['attendance', 'schoolResources', 'groups', 'homework', 'liveClasses', 'syllabus'],
     },
     {
       key: 'assessment',

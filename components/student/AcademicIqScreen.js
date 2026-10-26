@@ -60,6 +60,14 @@ const SECTIONS = [
     route: '/student/practice-zone',
   },
   {
+    // 22 Oct 2026, as on the website: every adaptive test taken, with its marks and report.
+    key: 'adaptivePerformance',
+    title: 'My Adaptive Performance',
+    subtitle: 'Every adaptive test you have taken, with the marks and the full report.',
+    icon: 'stats-chart-outline',
+    route: '/student/adaptive-performance',
+  },
+  {
     key: 'competitive',
     title: 'Competitive Exam',
     subtitle: 'Resources, practice and mock tests for entrance exams.',

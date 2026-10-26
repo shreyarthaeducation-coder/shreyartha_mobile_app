@@ -47,6 +47,7 @@ export const TEACHER_WORKSPACE_GROUPS = [
     items: [
       { key: 'studentManagement', label: 'Student Management', icon: 'id-card-outline', native: '/teacher/student-management' },
       { key: 'attendance', label: 'Mark Attendance', icon: 'checkbox-outline', native: '/teacher/attendance' },
+      { key: 'schoolResources', label: 'School Resources', icon: 'library-outline', native: '/teacher/school-resources' },
       { key: 'resources', label: 'My Teaching Resources', icon: 'folder-open-outline', native: '/teacher/resources' },
       // Here since 1 Oct 2026, as on the web (Teaching & Academics): Student Support is now the two
       // counselling tiles only.

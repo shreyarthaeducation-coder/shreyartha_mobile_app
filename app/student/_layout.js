@@ -92,6 +92,7 @@ export default function StudentLayout() {
           <Stack.Screen name="academic-iq" />
           <Stack.Screen name="academic-iq-resources" />
           <Stack.Screen name="practice-zone" />
+          <Stack.Screen name="adaptive-performance" />
           <Stack.Screen name="competitive-exam" />
           <Stack.Screen name="coding-pro" />
           <Stack.Screen name="language-pro" />

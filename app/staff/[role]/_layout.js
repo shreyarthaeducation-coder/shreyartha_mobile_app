@@ -196,6 +196,7 @@ export default function StaffRoleLayout() {
       <Stack.Screen name="homework" />
       <Stack.Screen name="resources" />
       <Stack.Screen name="syllabus" />
+      <Stack.Screen name="school-resources" />
       <Stack.Screen name="subjects" />
       <Stack.Screen name="upskill" />
       {/* Shreyartha teacher only — the wrapper returns null for every other role. */}

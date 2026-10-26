@@ -140,7 +140,8 @@ export default function ResourceViewerScreen({ resource, onClose, chapterName = 
 
   return (
     <Modal visible animationType="slide" onRequestClose={onClose}>
-      <SafeAreaView style={styles.safe} edges={['top', 'left', 'right']}>
+      {/* Bottom too: a Modal is its own edge-to-edge window, outside the app's BottomInsetGuard. */}
+      <SafeAreaView style={styles.safe} edges={['top', 'left', 'right', 'bottom']}>
         <View style={styles.header}>
           <Text style={styles.headerTitle} numberOfLines={1}>
             📖 {resource?.title || 'My Resource'}

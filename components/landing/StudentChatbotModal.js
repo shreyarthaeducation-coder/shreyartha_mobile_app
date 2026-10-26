@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { TYPE, leading } from '../../constants/theme';
+import { bottomPadding, useModalBottomInset } from '../shared/BottomInsetGuard';
 
 const STUDENT_SECTIONS = [
   {
@@ -35,7 +36,6 @@ const STUDENT_SECTIONS = [
       'Personalized Resources',
       'School Resources',
       'Practice Zone',
-      'Competitive Exam Prep access',
     ],
   },
   {
@@ -131,6 +131,7 @@ const GREETING = {
 };
 
 export default function StudentChatbotModal({ visible, onClose, onBook }) {
+  const bottomInset = useModalBottomInset();
   const router = useRouter();
   const scrollRef = useRef(null);
   const [messages, setMessages] = useState([GREETING]);
@@ -267,7 +268,7 @@ export default function StudentChatbotModal({ visible, onClose, onBook }) {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
         <View style={styles.overlay}>
-          <View style={styles.chatContainer}>
+          <View style={[styles.chatContainer, bottomPadding(styles.chatContainer, bottomInset)]}>
             <View style={styles.chatHeader}>
               <View style={styles.chatHeaderLeft}>
                 <View style={styles.avatarCircle}>

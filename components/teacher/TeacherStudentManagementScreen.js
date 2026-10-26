@@ -14,6 +14,7 @@ import {
 } from '../../services/teacher/studentDirectoryService';
 import { normaliseDoubtImage } from '../../utils/doubtImage';
 import { DuplicateStudentsCard, StudentMergeSheet } from '../staff/shared/StudentMerge';
+import ClassReportCardsPanel from './ClassReportCardsPanel';
 import { pickImage, takePhoto } from '../../utils/filePicker';
 import StudentSearchBar from '../staff/shared/StudentSearchBar';
 import { useStudentSearch } from '../../utils/studentSearch';
@@ -254,6 +255,9 @@ export default function TeacherStudentManagementScreen({ homeRoute = '/teacher' 
               </View>
             </Card>
           ))}
+
+          {/* The class teacher's own report cards, under the class list as on the website. */}
+          <ClassReportCardsPanel sectionId={sectionId} academicYearId={scope.academicYearId} showToast={showToast} />
         </ScrollView>
       )}
 

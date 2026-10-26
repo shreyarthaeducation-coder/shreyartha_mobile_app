@@ -5,6 +5,7 @@ import { SLATE, SPACING, TYPE, leading } from '../../../constants/theme';
 import { usePalette } from '../../ui/PaletteContext';
 import makeStyles from '../../../utils/makeStyles';
 import { TUTORIAL_STEPS } from './salesTutorialSteps';
+import { bottomPadding, useModalBottomInset } from '../../shared/BottomInsetGuard';
 
 /**
  * The Sales walkthrough, as a full-screen sheet.
@@ -26,6 +27,7 @@ export default function SalesTutorialSheet({ visible, onDismiss, replay = false 
   useEffect(() => {
     if (visible) setIndex(0);
   }, [visible]);
+  const bottomInset = useModalBottomInset();
 
   if (!visible) return null;
 
@@ -67,7 +69,7 @@ export default function SalesTutorialSheet({ visible, onDismiss, replay = false 
           ))}
         </View>
 
-        <View style={styles.actions}>
+        <View style={[styles.actions, bottomPadding(styles.actions, bottomInset)]}>
           <Pressable
             onPress={() => setIndex((i) => Math.max(i - 1, 0))}
             disabled={index === 0}

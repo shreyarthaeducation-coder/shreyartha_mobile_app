@@ -28,6 +28,7 @@ import { stopActiveAudio } from '../../utils/audioController';
 import { latestShreyaTurn } from '../../utils/latestShreyaTurn';
 import { useLanguage } from '../../context/LanguageContext';
 import { languageCodeOf } from '../../utils/languageCode';
+import { bottomPadding, useModalBottomInset } from '../shared/BottomInsetGuard';
 
 
 /**
@@ -157,6 +158,7 @@ export default function ShreyaChatSheet({
    */
   config,
 }) {
+  const bottomInset = useModalBottomInset();
   const styles = useStyles();
   const palette = usePalette();
   const router = useRouter();
@@ -516,7 +518,7 @@ export default function ShreyaChatSheet({
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
         <View style={styles.overlay}>
-          <View style={styles.sheet}>
+          <View style={[styles.sheet, bottomPadding(styles.sheet, bottomInset)]}>
             {/* Two rows, as on the website: title + ×, then subtitle + Shreya Speak — the one place
                 read-aloud lives for this chat. */}
             <View style={styles.header}>

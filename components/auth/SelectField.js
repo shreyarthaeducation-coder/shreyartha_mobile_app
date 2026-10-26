@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { FEEDBACK, SLATE, SPACING, TYPE } from '../../constants/theme';
+import { bottomPadding, useModalBottomInset } from '../shared/BottomInsetGuard';
 
 /**
  * Dropdown replacement built as a bottom-sheet modal.
@@ -27,6 +28,7 @@ export default function SelectField({
   error,
   placeholder = 'Select…',
 }) {
+  const bottomInset = useModalBottomInset();
   const [open, setOpen] = useState(false);
   const selected = options.find((o) => o.value === value);
 
@@ -60,7 +62,7 @@ export default function SelectField({
         onRequestClose={() => setOpen(false)}
       >
         <Pressable style={styles.backdrop} onPress={() => setOpen(false)}>
-          <Pressable style={styles.sheet} onPress={(e) => e.stopPropagation()}>
+          <Pressable style={[styles.sheet, bottomPadding(styles.sheet, bottomInset)]} onPress={(e) => e.stopPropagation()}>
             <View style={styles.sheetHandle} />
             <Text style={styles.sheetTitle}>{label || 'Select an option'}</Text>
 

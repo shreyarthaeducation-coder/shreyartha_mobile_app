@@ -71,6 +71,11 @@ export const mergeLiveTestResults = (roomId, options = {}) => staffApi.post(`${B
 // Every room of the school, read-only — principal, vice principal and school admin (10 Oct 2026).
 export const fetchSchoolLiveTestRooms = (signal) => staffApi.get(`${BASE}/school-rooms`, { signal });
 export const fetchSchoolLiveTestRoom = (roomId, signal) => staffApi.get(`${BASE}/school-rooms/${roomId}`, { signal });
+
+/** How the class did in an ended room (22 Oct 2026) — the ClassTestReport shape. Host / school view. */
+export const fetchLiveTestClassReport = (roomId, signal) => staffApi.get(`${BASE}/${roomId}/class-report`, { signal });
+export const fetchSchoolLiveTestClassReport = (roomId, signal) =>
+  staffApi.get(`${BASE}/school-rooms/${roomId}/class-report`, { signal });
 export const fetchSchoolLiveTestParticipant = (roomId, participantId, signal) =>
   staffApi.get(`${BASE}/school-rooms/${roomId}/participants/${participantId}`, { signal });
 export const schoolLiveTestCsvEndpoint = (roomId) => `${BASE}/school-rooms/${roomId}/results.csv`;

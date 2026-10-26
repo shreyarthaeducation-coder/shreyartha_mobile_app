@@ -3,6 +3,7 @@ import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { SHADOWS, SLATE, SPACING, TYPE } from '../../constants/theme';
 import { usePalette } from './PaletteContext';
+import { bottomPadding, useModalBottomInset } from '../shared/BottomInsetGuard';
 
 /**
  * Month + year selector: `‹ August 2026 ›` with the label opening a picker sheet.
@@ -33,6 +34,7 @@ export default function MonthNavigator({
   palette: paletteProp,
   disabled = false,
 }) {
+  const bottomInset = useModalBottomInset();
   const contextPalette = usePalette();
   // Explicit prop wins; otherwise the surrounding portal palette (teal by default).
   const palette = paletteProp || contextPalette;
@@ -90,7 +92,7 @@ export default function MonthNavigator({
       <Modal visible={open} transparent animationType="fade" onRequestClose={() => setOpen(false)}>
         <Pressable style={styles.backdrop} onPress={() => setOpen(false)}>
           {/* Swallow taps on the sheet itself so they don't close it. */}
-          <Pressable style={styles.sheet} onPress={() => {}}>
+          <Pressable style={[styles.sheet, bottomPadding(styles.sheet, bottomInset)]} onPress={() => {}}>
             <Text style={styles.sheetTitle}>Year</Text>
             <View style={styles.chipRow}>
               {years.map((y) => {

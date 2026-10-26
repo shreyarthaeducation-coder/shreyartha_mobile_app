@@ -36,6 +36,7 @@ import { addDays, formatLongDate, isSunday, parseIsoDate, todayIso } from '../..
 import { makeStyles } from '../../utils/makeStyles';
 import StudentSearchBar from './shared/StudentSearchBar';
 import { useStudentSearch } from '../../utils/studentSearch';
+import { bottomPadding, useModalBottomInset } from '../shared/BottomInsetGuard';
 
 /**
  * Native Mark Attendance — class attendance for one date at a time.
@@ -135,6 +136,7 @@ export default function MarkAttendanceScreen({
   scopeKind = 'classSection',
   schoolsEndpoint,
 }) {
+  const bottomInset = useModalBottomInset();
   const styles = useStyles();
   const PALETTE = usePalette();
   const schoolScoped = scopeKind === 'schoolClass';
@@ -496,7 +498,7 @@ export default function MarkAttendanceScreen({
         onRequestClose={() => setCalendarOpen(false)}
       >
         <Pressable style={styles.backdrop} onPress={() => setCalendarOpen(false)}>
-          <Pressable style={styles.sheet} onPress={() => {}}>
+          <Pressable style={[styles.sheet, bottomPadding(styles.sheet, bottomInset)]} onPress={() => {}}>
             <View style={styles.handle} />
             <MonthNavigator
               year={period.year}

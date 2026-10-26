@@ -6,6 +6,7 @@ import * as SplashScreen from "expo-splash-screen";
 import { AuthProvider } from "../context/AuthContext";
 import { LanguageProvider } from "../context/LanguageContext";
 import { SubscriptionProvider } from "../context/SubscriptionContext";
+import BottomInsetGuard from "../components/shared/BottomInsetGuard";
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
@@ -48,76 +49,78 @@ export default function RootLayout() {
       <LanguageProvider>
         <SubscriptionProvider>
           <StatusBar style="dark" />
-          {/*
-            freezeOnBlur: screens beneath a pushed one are frozen (react-freeze). Without it the
-            landing page's TextInputs (search bar, contact form) stay live under a login screen
-            and Android's focus search can hand them focus during the keyboard's re-layout —
-            which blurs the login field and instantly closes the keyboard.
-          */}
-          <Stack screenOptions={{ headerShown: false, freezeOnBlur: true }}>
-            {/* Tab navigation group */}
-            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+          <BottomInsetGuard>
+            {/*
+              freezeOnBlur: screens beneath a pushed one are frozen (react-freeze). Without it the
+              landing page's TextInputs (search bar, contact form) stay live under a login screen
+              and Android's focus search can hand them focus during the keyboard's re-layout —
+              which blurs the login field and instantly closes the keyboard.
+            */}
+            <Stack screenOptions={{ headerShown: false, freezeOnBlur: true }}>
+              {/* Tab navigation group */}
+              <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
 
-            {/* Auth screens */}
-            {/* The single sign-in gate. login-select is now the REGISTER picker behind it. */}
-            <Stack.Screen name="auth/sign-in" />
-            <Stack.Screen name="auth/login-select" />
-            <Stack.Screen name="auth/student-login" />
-            <Stack.Screen
-              name="auth/school-login"
-              options={{ headerShown: false }}
-            />
-            {/* The second staff door. Same screen as school-login with a different variant, but it
-                must be registered in its own right or the route resolves to nothing. */}
-            <Stack.Screen
-              name="auth/employee-login"
-              options={{ headerShown: false }}
-            />
-            <Stack.Screen
-              name="auth/parent-login"
-              options={{ headerShown: false }}
-            />
-            <Stack.Screen
-              name="auth/partner-login"
-              options={{ headerShown: false }}
-            />
-            <Stack.Screen
-              name="auth/forgot-password"
-              options={{ headerShown: false }}
-            />
+              {/* Auth screens */}
+              {/* The single sign-in gate. login-select is now the REGISTER picker behind it. */}
+              <Stack.Screen name="auth/sign-in" />
+              <Stack.Screen name="auth/login-select" />
+              <Stack.Screen name="auth/student-login" />
+              <Stack.Screen
+                name="auth/school-login"
+                options={{ headerShown: false }}
+              />
+              {/* The second staff door. Same screen as school-login with a different variant, but it
+                  must be registered in its own right or the route resolves to nothing. */}
+              <Stack.Screen
+                name="auth/employee-login"
+                options={{ headerShown: false }}
+              />
+              <Stack.Screen
+                name="auth/parent-login"
+                options={{ headerShown: false }}
+              />
+              <Stack.Screen
+                name="auth/partner-login"
+                options={{ headerShown: false }}
+              />
+              <Stack.Screen
+                name="auth/forgot-password"
+                options={{ headerShown: false }}
+              />
 
-            {/* Individual service pages */}
-            <Stack.Screen
-              name="pages/[slug]"
-              options={{ headerShown: false }}
-            />
+              {/* Individual service pages */}
+              <Stack.Screen
+                name="pages/[slug]"
+                options={{ headerShown: false }}
+              />
 
-            {/* Native student panel (tab group) */}
-            <Stack.Screen name="student" options={{ headerShown: false }} />
+              {/* Native student panel (tab group) */}
+              <Stack.Screen name="student" options={{ headerShown: false }} />
 
-            {/* Native teacher panel (route group) */}
-            <Stack.Screen name="teacher" options={{ headerShown: false }} />
+              {/* Native teacher panel (route group) */}
+              <Stack.Screen name="teacher" options={{ headerShown: false }} />
 
-            {/* Native staff shells for the other school roles (config-driven route group). The only
-                route under app/staff/ is the dynamic [role] folder — there is no app/staff/_layout.js
-                — so this child is named "staff/[role]". Plain "staff" names nothing and Expo Router
-                warns "No route named staff exists". */}
-            <Stack.Screen name="staff/[role]" options={{ headerShown: false }} />
+              {/* Native staff shells for the other school roles (config-driven route group). The only
+                  route under app/staff/ is the dynamic [role] folder — there is no app/staff/_layout.js
+                  — so this child is named "staff/[role]". Plain "staff" names nothing and Expo Router
+                  warns "No route named staff exists". */}
+              <Stack.Screen name="staff/[role]" options={{ headerShown: false }} />
 
-            {/* Legacy dashboard redirect screens */}
-            <Stack.Screen
-              name="dashboard/student"
-              options={{ headerShown: false }}
-            />
-            <Stack.Screen
-              name="dashboard/parent"
-              options={{ headerShown: false }}
-            />
-            <Stack.Screen
-              name="dashboard/partner"
-              options={{ headerShown: false }}
-            />
-          </Stack>
+              {/* Legacy dashboard redirect screens */}
+              <Stack.Screen
+                name="dashboard/student"
+                options={{ headerShown: false }}
+              />
+              <Stack.Screen
+                name="dashboard/parent"
+                options={{ headerShown: false }}
+              />
+              <Stack.Screen
+                name="dashboard/partner"
+                options={{ headerShown: false }}
+              />
+            </Stack>
+          </BottomInsetGuard>
         </SubscriptionProvider>
       </LanguageProvider>
     </AuthProvider>

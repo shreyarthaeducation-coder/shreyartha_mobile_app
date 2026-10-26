@@ -68,6 +68,8 @@ const SRC = {
  * 5 Oct 2026: `liveTests` (Live Test Rooms) added under Assessment, as on the website the same day.
  *
  * 10 Oct 2026: `studentStatus` (Student Status) added under Student Support, as on the website.
+ *
+ * 26 Oct 2026: `schoolResources` (School Resources) added under Classroom, as on the website on 22 Oct.
  */
 const ORIGINAL_KEYS = [
   'attendance', 'studentManagement', 'resources', 'homework', 'liveClasses', 'syllabus',
@@ -75,6 +77,7 @@ const ORIGINAL_KEYS = [
   'groups', 'studentStatus', 'counselling', 'counsellingReport',
   'profile', 'myCalendar', 'upskill',
   'selfAttendance', 'leave', 'payroll',
+  'schoolResources',
 ].sort();
 
 let failures = 0;

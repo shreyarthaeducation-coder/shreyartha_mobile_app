@@ -101,6 +101,7 @@ export default function TeacherLayout() {
         <Stack.Screen name="homework" />
         <Stack.Screen name="resources" />
         <Stack.Screen name="syllabus" />
+        <Stack.Screen name="school-resources" />
         <Stack.Screen name="live-classes" />
         <Stack.Screen name="reports" />
         {/* The report card's graded areas with no exam behind them — the website's three tabs

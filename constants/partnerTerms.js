@@ -32,7 +32,7 @@ export const PARTNER_TERMS = [
     {
       type: 'ul',
       items: [
-      { lead: "Normal Partner:", text: "25% commission on the student-paid amount, after the 10% student discount applied via the Partner's referral code." },
+      { lead: "Normal Partner:", text: "commission on the student-paid amount at the rate agreed with Shreyartha and shown on the Partner dashboard, after the student discount applied via the Partner's referral code." },
       { lead: "School (B2B) payouts:", text: "released within 3 (three) business days of successful school onboarding and first invoice collection." },
       { lead: "Direct-to-consumer (B2C) payouts:", text: "released within 15 (fifteen) business days of the end of the refund window for the qualifying transaction." },
       { lead: "TDS:", text: "applicable tax deducted at source under the Income-tax Act, 1961 will be withheld from every payout. A Form 16A certificate will be issued each quarter." },

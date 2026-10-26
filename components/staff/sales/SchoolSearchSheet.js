@@ -16,6 +16,7 @@ import useDebouncedValue from '../../../hooks/useDebouncedValue';
 import useStaffResource from '../../../hooks/useStaffResource';
 import { createLead, searchSchools } from '../../../services/sales/salesService';
 import { formatGrades } from './salesFormat';
+import { bottomPadding, useModalBottomInset } from '../../shared/BottomInsetGuard';
 
 /**
  * Pick the school you are standing outside — from every school the TEAM has entered, not just
@@ -39,6 +40,7 @@ import { formatGrades } from './salesFormat';
  * @param onSelect  ({ leadId, schoolName, city, pincode, … }) => void
  */
 export default function SchoolSearchSheet({ visible, onClose, onSelect }) {
+  const bottomInset = useModalBottomInset();
   const palette = usePalette();
   const [query, setQuery] = useState('');
   const [adding, setAdding] = useState(false);
@@ -108,7 +110,7 @@ export default function SchoolSearchSheet({ visible, onClose, onSelect }) {
     <Modal visible={visible} transparent animationType="slide" onRequestClose={close}>
       <Pressable style={styles.backdrop} onPress={close}>
         {/* Swallow taps on the sheet so they don't reach the backdrop and close it. */}
-        <Pressable style={styles.sheet} onPress={() => {}}>
+        <Pressable style={[styles.sheet, bottomPadding(styles.sheet, bottomInset)]} onPress={() => {}}>
           <View style={styles.handle} />
           <Text style={styles.sheetTitle}>Find the school</Text>
 

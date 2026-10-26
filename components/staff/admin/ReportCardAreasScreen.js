@@ -1,15 +1,18 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { SLATE, SPACING, TYPE } from '../../../constants/theme';
-import { Card, EmptyState, ScreenScaffold, SegmentedTabs, TextField, useToast } from '../../ui';
+import { FEEDBACK, SLATE, SPACING, TYPE } from '../../../constants/theme';
+import { Card, EmptyState, FormSheet, ScreenScaffold, SegmentedTabs, TextField, useToast } from '../../ui';
 import { usePalette } from '../../ui/PaletteContext';
 import { defaultAcademicYear, fetchAcademicYears } from '../../../services/teacher/scopeService';
 import {
   REPORT_CARD_TABS,
   addAreasToSections,
+  areaImpact,
+  deleteArea,
   fetchCategorySections,
   fetchNamesInUse,
+  renameArea,
 } from '../../../services/admin/gradeAreaAdminService';
 
 /**
@@ -20,6 +23,10 @@ import {
  * which is the difference between one action and forty. Each section shows how many areas it
  * already has, so the ones that were missed are visible. Adding is idempotent — an area a section
  * already has is left alone. Grades themselves are the teachers' to enter.
+ *
+ * An area already used can be renamed or removed (the website, 22 Oct 2026) — in the sections
+ * chosen below, the same picker an add uses, so "G.K." can go from Class 5 while 5C keeps it. The
+ * sheet says what will be touched before anything is.
  */
 export default function ReportCardAreasScreen({ homeRoute }) {
   const PALETTE = usePalette();
@@ -33,6 +40,11 @@ export default function ReportCardAreasScreen({ homeRoute }) {
   const [names, setNames] = useState('');
   const [chosen, setChosen] = useState([]);
   const [saving, setSaving] = useState(false);
+  // The area being renamed or removed ({ fieldName, mode }), and what that would touch.
+  const [editing, setEditing] = useState(null);
+  const [newName, setNewName] = useState('');
+  const [impact, setImpact] = useState(null);
+  const [working, setWorking] = useState(false);
 
   useEffect(() => {
     let alive = true;
@@ -117,6 +129,58 @@ export default function ReportCardAreasScreen({ homeRoute }) {
     }
   };
 
+  const askImpact = async (fieldName, renameTo) => {
+    try {
+      setImpact(await areaImpact(tab, fieldName, renameTo, chosen));
+    } catch (e) {
+      setImpact(null);
+      showToast(e?.message || 'Could not work out what that would touch.', 'error');
+    }
+  };
+
+  const openEditor = (fieldName, mode) => {
+    setEditing({ fieldName, mode });
+    setNewName(mode === 'rename' ? fieldName : '');
+    setImpact(null);
+    askImpact(fieldName, null);
+  };
+
+  const closeEditor = () => {
+    setEditing(null);
+    setImpact(null);
+    setNewName('');
+  };
+
+  const applyEdit = async () => {
+    if (!editing) return;
+    const to = newName.trim();
+    if (editing.mode === 'rename' && !to) return;
+    setWorking(true);
+    try {
+      if (editing.mode === 'rename') {
+        const res = await renameArea(tab, editing.fieldName, to, chosen);
+        showToast(
+          `Renamed in ${res?.renamed ?? 0} section(s)` +
+            (res?.merged
+              ? `, merged into "${to}" in ${res.merged} more` +
+                (res?.gradesMoved ? ` (${res.gradesMoved} grade(s) carried over)` : '')
+              : '') +
+            '.',
+          'success',
+        );
+      } else {
+        const res = await deleteArea(tab, editing.fieldName, chosen);
+        showToast(`Removed "${editing.fieldName}" from ${res?.removed ?? 0} section(s).`, 'success');
+      }
+      closeEditor();
+      await load();
+    } catch (e) {
+      showToast(e?.message || `Could not ${editing.mode === 'rename' ? 'rename' : 'remove'} that area.`, 'error');
+    } finally {
+      setWorking(false);
+    }
+  };
+
   const addName = (name) => {
     if (fieldNames.some((n) => n.toLowerCase() === name.toLowerCase())) return;
     setNames((prev) => (prev.trim() ? `${prev.trim()}\n${name}` : name));
@@ -168,14 +232,41 @@ export default function ReportCardAreasScreen({ homeRoute }) {
               />
               {namesInUse.length ? (
                 <>
-                  <Text style={styles.label}>Already used in the school — tap to add</Text>
+                  <Text style={styles.label}>Already used in the school — tap to add, or rename / remove it</Text>
                   <View style={styles.chips}>
                     {namesInUse.map((n) => (
-                      <Pressable key={n} onPress={() => addName(n)} style={styles.chip}>
-                        <Text style={styles.chipText}>＋ {n}</Text>
-                      </Pressable>
+                      <View key={n} style={styles.knownRow}>
+                        <Pressable onPress={() => addName(n)} style={styles.chip}>
+                          <Text style={styles.chipText}>＋ {n}</Text>
+                        </Pressable>
+                        <Pressable
+                          onPress={() => openEditor(n, 'rename')}
+                          disabled={!chosen.length}
+                          hitSlop={6}
+                          style={[styles.knownAct, !chosen.length && styles.disabled]}
+                          accessibilityRole="button"
+                          accessibilityLabel={`Rename ${n}`}
+                        >
+                          <Ionicons name="create-outline" size={17} color={SLATE[600]} />
+                        </Pressable>
+                        <Pressable
+                          onPress={() => openEditor(n, 'delete')}
+                          disabled={!chosen.length}
+                          hitSlop={6}
+                          style={[styles.knownAct, !chosen.length && styles.disabled]}
+                          accessibilityRole="button"
+                          accessibilityLabel={`Delete ${n}`}
+                        >
+                          <Ionicons name="trash-outline" size={17} color={FEEDBACK.errorText} />
+                        </Pressable>
+                      </View>
                     ))}
                   </View>
+                  {!chosen.length ? (
+                    <Text style={styles.hint}>
+                      Choose the sections below to rename or delete an area — it changes only where you say.
+                    </Text>
+                  ) : null}
                 </>
               ) : null}
             </Card>
@@ -235,6 +326,47 @@ export default function ReportCardAreasScreen({ homeRoute }) {
           </>
         )}
       </ScrollView>
+
+      <FormSheet
+        visible={!!editing}
+        title={editing ? `${editing.mode === 'rename' ? 'Rename' : 'Delete'} “${editing.fieldName}”` : ''}
+        onClose={closeEditor}
+        onSubmit={applyEdit}
+        submitting={working}
+        submitDisabled={impact == null || impact.sections === 0 || (editing?.mode === 'rename' && !newName.trim())}
+        submitLabel={editing?.mode === 'rename' ? 'Rename' : `Delete from ${impact?.sections ?? 0} section(s)`}
+      >
+        {/* Said before it happens: one row here can be forty in the database, with grades under them. */}
+        <Text style={styles.impact}>
+          {impact == null
+            ? 'Counting…'
+            : impact.sections === 0
+              ? `None of the ${chosen.length} section(s) you chose has this area.`
+              : `In ${impact.sections} of the ${chosen.length} section(s) you chose` +
+                (impact.grades ? `, with ${impact.grades} grade(s) recorded against it.` : ', with no grades against it yet.')}
+        </Text>
+        {editing?.mode === 'rename' ? (
+          <>
+            <TextField
+              label="New name"
+              value={newName}
+              onChangeText={setNewName}
+              onBlur={() => editing && askImpact(editing.fieldName, newName.trim())}
+              maxLength={100}
+            />
+            {impact?.clashes > 0 ? (
+              <Text style={styles.warn}>
+                {impact.clashes} of those section(s) already have an area called “{newName.trim()}”. They will be merged
+                into it — grades move across except where that area already has one, which is kept.
+              </Text>
+            ) : null}
+          </>
+        ) : (
+          <Text style={styles.warn}>
+            This removes it from those sections, with the grades recorded against it. It cannot be undone.
+          </Text>
+        )}
+      </FormSheet>
     </ScreenScaffold>
   );
 }
@@ -248,6 +380,18 @@ const styles = StyleSheet.create({
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
   chip: { paddingVertical: 6, paddingHorizontal: 10, borderRadius: 999, borderWidth: 1, borderColor: SLATE[200], backgroundColor: '#ffffff' },
   chipText: { fontSize: TYPE.label, fontWeight: '700', color: SLATE[600] },
+  knownRow: { flexDirection: 'row', alignItems: 'center', gap: 2 },
+  knownAct: { padding: 5 },
+  hint: { fontSize: TYPE.caption, color: SLATE[500], marginTop: 6 },
+  impact: { fontSize: TYPE.body, color: SLATE[700], marginBottom: SPACING.sm },
+  warn: {
+    fontSize: TYPE.label,
+    color: FEEDBACK.warningText,
+    backgroundColor: FEEDBACK.warningBg,
+    borderRadius: 8,
+    padding: SPACING.sm,
+    marginTop: SPACING.sm,
+  },
   multiline: { height: 96, textAlignVertical: 'top' },
   selectRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   link: { fontSize: TYPE.label, fontWeight: '700' },

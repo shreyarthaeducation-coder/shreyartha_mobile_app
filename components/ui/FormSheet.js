@@ -15,6 +15,7 @@ import { SHADOWS, SLATE, SPACING, TYPE } from '../../constants/theme';
 import { usePalette } from './PaletteContext';
 import SheetToastContext from './SheetToastContext';
 import Toast from './Toast';
+import { bottomPadding, useModalBottomInset } from '../shared/BottomInsetGuard';
 
 /**
  * Full-height sheet for create/edit forms — the native replacement for the web's `ResizableModal`.
@@ -50,6 +51,7 @@ export default function FormSheet({
   palette: paletteProp,
   children,
 }) {
+  const bottomInset = useModalBottomInset();
   const contextPalette = usePalette();
   const toast = useContext(SheetToastContext);
   // Explicit prop wins; otherwise the surrounding portal palette (teal by default).
@@ -68,7 +70,7 @@ export default function FormSheet({
           accessibilityLabel="Close"
         />
         <Body style={[styles.bodyWrap, fullHeight && styles.bodyWrapFull]} {...bodyProps}>
-          <View style={[styles.sheet, fullHeight && styles.sheetFull]}>
+          <View style={[styles.sheet, fullHeight && styles.sheetFull, bottomPadding(styles.sheet, bottomInset)]}>
             <View style={styles.header}>
               <View style={styles.headerText}>
                 <Text style={styles.title} numberOfLines={1}>

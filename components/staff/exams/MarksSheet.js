@@ -353,12 +353,61 @@ export default function MarksSheet({ visible, exam, onClose, onSaved, onChanged,
     setReloadKey((k) => k + 1);
   };
 
-  const markAll = (status) => {
+  /** How many of this student's question boxes hold a mark. */
+  const marksEnteredFor = (studentId) =>
+    Object.values(edits[studentId]?.marks || {}).filter((v) => v !== '' && v != null).length;
+
+  /**
+   * Asks before an action rubs out marks entered question by question, naming who (the website's
+   * QuestionMarksGrid / ExamMarksGrid, 24 Oct 2026). Each action is still allowed — it is only no
+   * longer silent. Resolves false when the teacher says no.
+   */
+  const agreedToLose = (names, what) =>
+    new Promise((resolve) => {
+      if (names.length === 0) {
+        resolve(true);
+        return;
+      }
+      const named = `${names.slice(0, 5).join(', ')}${names.length > 5 ? ', …' : ''}`;
+      Alert.alert(
+        'Marks will be removed',
+        `${named} ${names.length === 1 ? 'has' : 'have'} marks entered question by question.
+
+${what}`,
+        [
+          { text: 'Cancel', style: 'cancel', onPress: () => resolve(false) },
+          { text: 'Continue', style: 'destructive', onPress: () => resolve(true) },
+        ],
+        { cancelable: true, onDismiss: () => resolve(false) },
+      );
+    });
+
+  /** One student's Present / Absent. Absent on a marked paper asks first, then empties it. */
+  const pickStatus = async (student, status) => {
+    if (perQuestion && status === EXAM_STATUS.ABSENT && marksEnteredFor(student.studentId) > 0) {
+      const agreed = await agreedToLose(
+        [student.studentName || 'This student'],
+        'A child marked absent did not sit the paper, so saving removes those marks.',
+      );
+      if (!agreed) return;
+      patch(student.studentId, { status, marks: {}, totalTyped: '' });
+      return;
+    }
+    patch(student.studentId, { status });
+  };
+
+  const markAll = async (status) => {
+    const absent = status === EXAM_STATUS.ABSENT;
+    if (absent && perQuestion) {
+      // One tap, the whole class: the marked papers are worth naming before they go.
+      const marked = students.filter((s) => marksEnteredFor(s.studentId) > 0).map((s) => s.studentName);
+      if (!(await agreedToLose(marked, 'Marking everyone absent removes those marks.'))) return;
+    }
     touched.current = true;
     setEdits((prev) => {
       const next = { ...prev };
       students.forEach((s) => {
-        next[s.studentId] = { ...next[s.studentId], status };
+        next[s.studentId] = { ...next[s.studentId], status, ...(absent && perQuestion ? { marks: {}, totalTyped: '' } : {}) };
       });
       return next;
     });
@@ -720,6 +769,9 @@ export default function MarksSheet({ visible, exam, onClose, onSaved, onChanged,
    * The rows a save would send. Question by question: those worth saving. One total: those that
    * changed, and never a blank present row.
    */
+  // How many of the one-total sheet's totals rest on a breakdown it cannot show.
+  const markedByQuestionCount = students.filter((student) => student.markedByQuestion).length;
+
   const rowsToSave = () =>
     perQuestion
       ? students.filter((student) => worthSaving(student, edits[student.studentId]))
@@ -735,6 +787,21 @@ export default function MarksSheet({ visible, exam, onClose, onSaved, onChanged,
     if (toSave.length === 0) {
       fail('Nothing to save yet — enter a mark, or mark someone absent.');
       return;
+    }
+    if (!perQuestion) {
+      // This screen shows one number per child and nothing of the question marks behind it, so a
+      // save that would remove them asks first. A save that changes none asks nothing.
+      const losing = toSave
+        .filter((student) => student.markedByQuestion)
+        .map((student) => {
+          const entry = edits[student.studentId] || {};
+          if (entry.status === EXAM_STATUS.ABSENT) return `${student.studentName} (marked absent)`;
+          if (String(entry.marksObtained ?? '').trim() === '') return `${student.studentName} (total cleared)`;
+          return null;
+        })
+        .filter(Boolean);
+      const what = `Saving removes every question mark behind ${losing.length === 1 ? 'that total' : 'those totals'}, and they would have to be entered again question by question.`;
+      if (!(await agreedToLose(losing, what))) return;
     }
     if (!perQuestion) {
       for (const student of toSave) {
@@ -859,7 +926,7 @@ export default function MarksSheet({ visible, exam, onClose, onSaved, onChanged,
     title: 'Status',
     width: 80,
     render: (s) => (
-      <StatusToggle status={edits[s.studentId]?.status} onPick={(status) => patch(s.studentId, { status })} />
+      <StatusToggle status={edits[s.studentId]?.status} onPick={(status) => pickStatus(s, status)} />
     ),
   };
 
@@ -1105,6 +1172,13 @@ export default function MarksSheet({ visible, exam, onClose, onSaved, onChanged,
                 </>
               ) : null}
 
+              {!perQuestion && markedByQuestionCount > 0 ? (
+                <Text style={styles.hint}>
+                  {markedByQuestionCount === 1 ? 'One of these totals was' : `${markedByQuestionCount} of these totals were`}{' '}
+                  entered question by question. Editing a total here keeps the questions behind it — clearing one, or
+                  marking that child absent, removes them.
+                </Text>
+              ) : null}
               <View style={styles.toolRow}>
                 <LinkButton icon="checkmark-done-outline" label="Mark all present" onPress={() => markAll(EXAM_STATUS.PRESENT)} />
                 <LinkButton icon="close-circle-outline" label="Mark all absent" onPress={() => markAll(EXAM_STATUS.ABSENT)} />

@@ -5,6 +5,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { WebView } from 'react-native-webview';
 import { FEEDBACK, PORTALS, SLATE, SPACING, TYPE } from '../../../../constants/theme';
 import { API_BASE_URL } from '../../../../services/apiService';
+import { bottomPadding, useModalBottomInset } from '../../../shared/BottomInsetGuard';
 
 /**
  * The website's own rich-text editor (TipTap: formatting, tables, KaTeX maths, pictures), opened
@@ -31,6 +32,7 @@ true;
 `;
 
 export default function RichTextEditorSheet({ visible, title, initialHtml, placeholder, onDone, onClose }) {
+  const bottomInset = useModalBottomInset();
   const [token, setToken] = useState(undefined);
   const [ready, setReady] = useState(false);
   const [failed, setFailed] = useState(false);
@@ -56,7 +58,7 @@ export default function RichTextEditorSheet({ visible, title, initialHtml, place
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <View style={styles.backdrop}>
-        <View style={styles.sheet}>
+        <View style={[styles.sheet, bottomPadding(styles.sheet, bottomInset)]}>
           <View style={styles.header}>
             <View style={styles.headerText}>
               <Text style={styles.title} numberOfLines={1}>

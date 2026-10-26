@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, Pressable, Share, Switch, Text, TextInput, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { FEEDBACK, SLATE, SPACING, TYPE, leading } from '../../constants/theme';
-import { Card, CardTitle, EmptyState, ScreenScaffold, Select, useToast } from '../ui';
+import { Card, CardTitle, EmptyState, FormSheet, ScreenScaffold, Select, useToast } from '../ui';
 import { usePalette } from '../ui/PaletteContext';
 import { makeStyles } from '../../utils/makeStyles';
 import { downloadAndShare } from '../../utils/downloadFile';
@@ -18,6 +18,8 @@ import {
   enrolParticipant,
   extendLiveTest,
   fetchSchoolLiveTestParticipant,
+  fetchLiveTestClassReport,
+  fetchSchoolLiveTestClassReport,
   fetchSchoolLiveTestRoom,
   fetchSchoolLiveTestRooms,
   schoolLiveTestCsvEndpoint,
@@ -48,6 +50,7 @@ import {
   stopLiveTest,
 } from '../../services/teacher/liveTestService';
 import StudentSearchBar from './shared/StudentSearchBar';
+import ClassTestReportView from '../shared/ClassTestReportView';
 import { useStudentSearch } from '../../utils/studentSearch';
 
 const POLL_MS = 3000;
@@ -474,8 +477,21 @@ function Room({ roomId, readOnly = false, homeRoute, toast, showToast, onBack })
   const [busy, setBusy] = useState('');
   const [secondsLeft, setSecondsLeft] = useState(null);
   const [report, setReport] = useState(null);
+  // How the class did, once the room has ended (the website's Class report tab, 22 Oct 2026).
+  const [classReport, setClassReport] = useState(null); // { data?, error? } while the sheet is open
   const deadline = useRef(null);
   const studentSearch = useStudentSearch(room?.participants);
+
+  /** Fetches the class report into the sheet, from the host's or the school's endpoint. */
+  const openClassReport = async () => {
+    setClassReport({});
+    try {
+      const data = await (readOnly ? fetchSchoolLiveTestClassReport(roomId) : fetchLiveTestClassReport(roomId));
+      setClassReport({ data });
+    } catch (e) {
+      setClassReport({ error: e?.message || 'The class report could not be loaded.' });
+    }
+  };
 
   /** A psychometric child's report, built on the phone from the answers the room saved. */
   const openReport = async (participant) => {
@@ -709,6 +725,10 @@ function Room({ roomId, readOnly = false, homeRoute, toast, showToast, onBack })
         </Card>
       ) : null}
 
+      {ended && present.length > 0 ? (
+        <Button label="Class report" icon="stats-chart-outline" onPress={openClassReport} disabled={!!busy} />
+      ) : null}
+
       <Text style={styles.section}>{ended ? 'Results' : lobby ? 'Who has joined' : 'Progress'}</Text>
       {everyone.length > 0 ? <StudentSearchBar search={studentSearch} /> : null}
       {everyone.length === 0 ? (
@@ -794,6 +814,25 @@ function Room({ roomId, readOnly = false, homeRoute, toast, showToast, onBack })
       {ended && !readOnly ? (
         <MergePanel roomId={roomId} graded={room.graded !== false} showToast={showToast} onMerged={() => load()} />
       ) : null}
+
+      <FormSheet visible={!!classReport} title="Class report" subtitle={room.title} onClose={() => setClassReport(null)} fullHeight>
+        {classReport?.data ? (
+          <ClassTestReportView
+            report={classReport.data}
+            // A name opens that student's own room report, as on the website.
+            onOpenStudent={(row) => {
+              const p = (room?.participants || []).find((x) => x.id === row.link?.participantId);
+              if (!p) return;
+              setClassReport(null);
+              openReport(p);
+            }}
+          />
+        ) : classReport?.error ? (
+          <Text style={styles.muted}>{classReport.error}</Text>
+        ) : (
+          <ActivityIndicator color={palette.primary} />
+        )}
+      </FormSheet>
     </ScreenScaffold>
   );
 }
