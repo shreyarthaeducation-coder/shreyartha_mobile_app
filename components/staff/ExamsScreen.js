@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { FEEDBACK, PORTALS, SLATE, SPACING, TYPE } from '../../constants/theme';
 import {
   Card,
+  DateTimeField,
   EMPTY_SCOPE,
   EmptyState,
   ScopePicker,
@@ -24,6 +25,7 @@ import ExamAnalysisSheet from './exams/ExamAnalysisSheet';
 import ClassTestReportView from '../shared/ClassTestReportView';
 import { FormSheet } from '../ui';
 import { fetchExamClassReport } from '../../services/teacher/examService';
+import { saveExamDate } from '../../services/teacher/classAnalysisService';
 
 /**
  * Native Test and Examination.
@@ -66,6 +68,20 @@ export default function ExamsScreen({ homeRoute = '/teacher' }) {
   };
 
   const { toast, showToast } = useToast();
+
+  /**
+   * The day this subject's paper was written (28 Oct 2026) — the DATE row of the class teacher's
+   * class analysis. Exams are the admin's; the date is the one thing about one its teacher sets.
+   */
+  const changeExamDate = async (exam, value) => {
+    try {
+      await saveExamDate(exam.id, value ? String(value).slice(0, 10) : null);
+      showToast(value ? 'Exam date saved.' : 'Exam date removed.', 'success');
+      revalidateOverview();
+    } catch (e) {
+      showToast(e?.message || 'Could not save the exam date.', 'error');
+    }
+  };
 
   const examReady = !!(examScope.sectionId && examScope.subjectId);
   const reportReady = !!(reportScope.sectionId && reportScope.subjectId);
@@ -226,6 +242,14 @@ export default function ExamsScreen({ homeRoute = '/teacher' }) {
               </Text>
               <Text style={styles.examStat}>{exam.resultsEnteredCount ?? 0} results entered</Text>
             </View>
+
+            <DateTimeField
+              label="Exam date"
+              mode="date"
+              clearable
+              value={exam.examDate ? `${exam.examDate}T00:00:00` : null}
+              onChange={(value) => changeExamDate(exam, value)}
+            />
 
             <View style={styles.examActions}>
               <Pressable

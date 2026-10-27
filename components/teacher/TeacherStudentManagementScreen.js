@@ -15,6 +15,7 @@ import {
 import { normaliseDoubtImage } from '../../utils/doubtImage';
 import { DuplicateStudentsCard, StudentMergeSheet } from '../staff/shared/StudentMerge';
 import ClassReportCardsPanel from './ClassReportCardsPanel';
+import ClassAnalysisPanel from './ClassAnalysisPanel';
 import { pickImage, takePhoto } from '../../utils/filePicker';
 import StudentSearchBar from '../staff/shared/StudentSearchBar';
 import { useStudentSearch } from '../../utils/studentSearch';
@@ -258,6 +259,9 @@ export default function TeacherStudentManagementScreen({ homeRoute = '/teacher' 
 
           {/* The class teacher's own report cards, under the class list as on the website. */}
           <ClassReportCardsPanel sectionId={sectionId} academicYearId={scope.academicYearId} showToast={showToast} />
+
+          {/* One exam across every subject, as the school's marks sheet (28 Oct 2026). */}
+          <ClassAnalysisPanel sectionId={sectionId} academicYearId={scope.academicYearId} showToast={showToast} />
         </ScrollView>
       )}
 
