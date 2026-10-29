@@ -70,6 +70,10 @@ const SRC = {
  * 10 Oct 2026: `studentStatus` (Student Status) added under Student Support, as on the website.
  *
  * 26 Oct 2026: `schoolResources` (School Resources) added under Classroom, as on the website on 22 Oct.
+ *
+ * 29 Oct 2026: `classAnalysis` (Class Analysis) added under Classroom beside Student Management, as
+ * on the website the same day — the class teacher's marks sheet left Student Management for a tab
+ * of its own.
  */
 const ORIGINAL_KEYS = [
   'attendance', 'studentManagement', 'resources', 'homework', 'liveClasses', 'syllabus',
@@ -77,7 +81,7 @@ const ORIGINAL_KEYS = [
   'groups', 'studentStatus', 'counselling', 'counsellingReport',
   'profile', 'myCalendar', 'upskill',
   'selfAttendance', 'leave', 'payroll',
-  'schoolResources',
+  'schoolResources', 'classAnalysis',
 ].sort();
 
 let failures = 0;

@@ -57,6 +57,16 @@ export function scoreBatch(students) {
   return { items, skipped };
 }
 
+/**
+ * Staff: one student's reports to view on screen (29 Oct 2026) — the same batch endpoint and scoring
+ * as printing, so the graphs a class teacher sees are the ones the print and the student's own page
+ * show. Returns the scored items, one per assessment answered; none when nothing is answered yet.
+ */
+export async function fetchStudentReports(apiBase, studentId, signal) {
+  const batch = await staffApi.post(apiBase, { studentIds: [studentId] }, { signal });
+  return scoreBatch(batch).items;
+}
+
 /** Staff: print the chosen students. */
 export async function printStudentsReports(apiBase, studentIds) {
   const batch = await staffApi.post(apiBase, { studentIds });

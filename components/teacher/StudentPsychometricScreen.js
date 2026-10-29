@@ -14,6 +14,7 @@ import {
 } from '../../services/teacher/counsellingService';
 import { makeStyles } from '../../utils/makeStyles';
 import StudentSearchBar from '../staff/shared/StudentSearchBar';
+import StudentPsychometricGraphs from './StudentPsychometricGraphs';
 import { useStudentSearch } from '../../utils/studentSearch';
 
 /**
@@ -182,11 +183,18 @@ export default function StudentPsychometricScreen({ embedded = false, printRoute
                 // The server's own reason, e.g. "Student does not belong to your school".
                 <EmptyState icon="alert-circle-outline" title="Not available" message={resultError} />
               ) : (
-                <PsychometricResultCards
-                  statementTitle="Personal Statement"
-                  statement={result?.personalStatement || ''}
-                  psych={result}
-                />
+                <>
+                  <PsychometricResultCards
+                    statementTitle="Personal Statement"
+                    statement={result?.personalStatement || ''}
+                    psych={result}
+                  />
+                  {/* The graphs themselves, as on the website (29 Oct 2026): any answered topic has
+                      a report, not only a finished set. */}
+                  {(result?.completedCount || 0) > 0 || result?.hasCompletedAssessment ? (
+                    <StudentPsychometricGraphs key={student.studentId} studentId={student.studentId} />
+                  ) : null}
+                </>
               )}
             </>
           )}
