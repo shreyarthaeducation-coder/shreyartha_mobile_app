@@ -2,6 +2,7 @@ import { useCallback, useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { PORTALS, SLATE, SPACING, TYPE } from '../../constants/theme';
 import { EmptyState, EMPTY_SCHOOL_SCOPE, SchoolClassPicker, ScreenScaffold, Select } from '../ui';
+import PsychometricMark, { psychometricTint } from '../shared/PsychometricMark';
 import useStaffResource from '../../hooks/useStaffResource';
 import {
   fetchCounsellingClasses,
@@ -188,6 +189,9 @@ export default function CounsellorReportScreen({
                       onPress={() => setStudent(active ? null : s)}
                       style={({ pressed }) => [
                         styles.studentChip,
+                        // Green once they have taken a psychometric test, red before (30 Oct 2026).
+                        psychometricTint(s),
+                        { flexDirection: 'row', alignItems: 'center' },
                         active && { backgroundColor: PALETTE.tint, borderColor: PALETTE.primary },
                         pressed && styles.pressed,
                       ]}
@@ -200,6 +204,7 @@ export default function CounsellorReportScreen({
                       >
                         {s.studentName}
                       </Text>
+                      <PsychometricMark student={s} />
                     </Pressable>
                   );
                 })}

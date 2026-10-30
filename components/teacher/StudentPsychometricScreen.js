@@ -15,6 +15,7 @@ import {
 import { makeStyles } from '../../utils/makeStyles';
 import StudentSearchBar from '../staff/shared/StudentSearchBar';
 import StudentPsychometricGraphs from './StudentPsychometricGraphs';
+import PsychometricMark, { psychometricTint } from '../shared/PsychometricMark';
 import { useStudentSearch } from '../../utils/studentSearch';
 
 /**
@@ -158,6 +159,9 @@ export default function StudentPsychometricScreen({ embedded = false, printRoute
                       onPress={() => setStudent(active ? null : s)}
                       style={({ pressed }) => [
                         styles.studentChip,
+                        // Green once they have taken a psychometric test, red before (30 Oct 2026).
+                        psychometricTint(s),
+                        { flexDirection: 'row', alignItems: 'center' },
                         active && { backgroundColor: palette.tint, borderColor: palette.primary },
                         pressed && styles.pressed,
                       ]}
@@ -170,6 +174,7 @@ export default function StudentPsychometricScreen({ embedded = false, printRoute
                       >
                         {s.studentName}
                       </Text>
+                      <PsychometricMark student={s} />
                     </Pressable>
                   );
                 })}

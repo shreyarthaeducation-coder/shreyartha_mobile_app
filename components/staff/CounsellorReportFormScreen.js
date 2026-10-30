@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { SLATE, SPACING, TYPE } from '../../constants/theme';
 import { usePalette } from '../../components/ui/PaletteContext';
 import { EmptyState, ScreenScaffold, StatusChip, useToast } from '../ui';
+import PsychometricMark, { psychometricTint } from '../shared/PsychometricMark';
 import useStaffResource from '../../hooks/useStaffResource';
 import ReportFormSheet from './counsellor/ReportFormSheet';
 import {
@@ -343,11 +344,15 @@ export default function CounsellorReportFormScreen({ homeRoute = '/teacher', api
                   <Pressable
                     key={s.studentId}
                     onPress={() => openStudent(s)}
-                    style={({ pressed }) => [styles.studentRow, pressed && styles.pressed]}
+                    // Green once they have taken a psychometric test, red before (30 Oct 2026).
+                    style={({ pressed }) => [styles.studentRow, psychometricTint(s), pressed && styles.pressed]}
                     accessibilityRole="button"
                   >
                     <View style={styles.studentText}>
-                      <Text style={styles.studentName}>{s.studentName}</Text>
+                      <View style={styles.nameLine}>
+                        <Text style={styles.studentName}>{s.studentName}</Text>
+                        <PsychometricMark student={s} />
+                      </View>
                       {s.rollNumber ? (
                         <Text style={styles.studentMeta}>Roll {s.rollNumber}</Text>
                       ) : null}
@@ -440,6 +445,7 @@ const useStyles = makeStyles((p) => ({
   },
   studentText: { flex: 1 },
   studentName: { fontSize: TYPE.heading, fontWeight: '600', color: SLATE[800] },
+  nameLine: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap' },
   studentMeta: { fontSize: TYPE.caption, color: SLATE[500], marginTop: 1 },
   pressed: { opacity: 0.72 },
 }));
