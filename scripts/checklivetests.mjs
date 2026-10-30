@@ -125,21 +125,30 @@ const ASSERTIONS = [
     },
   },
   {
-    name: 'Start asks first, and is off until a student has joined',
-    test: (s) => {
-      return s.screen.includes('onPress={confirmStart}') &&
-        s.screen.includes('disabled={!!busy || present.length === 0}') &&
-        s.screen.includes("Alert.alert('Start the test?'") &&
-        !s.screen.includes("onPress={() => run('start'") &&
-        s.screen.includes("{ text: 'Start the test', onPress: () => run('start', () => startLiveTest(roomId), 'The test has started.') },");
-    },
+    // 30 Oct 2026: rooms start themselves — each student starts as they join. No Start anywhere.
+    name: 'there is no Start: a student starts the test by joining',
+    test: (s) =>
+      !s.screen.includes('startLiveTest') &&
+      !s.screen.includes('Start the test') &&
+      !s.screen.includes('Start becomes available') &&
+      s.screen.includes('Each student starts the test as soon as they join'),
   },
   {
-    name: 'Stop asks first',
+    name: 'Close the session asks first, and says who is still writing',
     test: (s) =>
-      s.screen.includes('onPress={confirmStop}') &&
-      s.screen.includes("Alert.alert('Stop the test now?'") &&
+      s.screen.includes('onPress={confirmClose}') &&
+      s.screen.includes("'Close this session?',") &&
+      s.screen.includes('the ${writing} student(s) still writing have their saved answers collected and marked.') &&
       !s.screen.includes("onPress={() => run('stop'"),
+  },
+  {
+    name: 'each student shows their own status and their own time left',
+    test: (s) =>
+      s.screen.includes("if (p.finished) return p.submitted ? 'Submitted' : 'Time up — collected';") &&
+      s.screen.includes("return p.secondsLeft != null ? `Writing · ${clock(p.secondsLeft)} left` : 'Writing';") &&
+      s.screen.includes('${studentStatus(p, running)} · answered ${p.answeredCount}') &&
+      // One clock for the whole room only in a room started the old way.
+      s.screen.includes('{running && !selfPaced ? ('),
   },
   {
     name: 'the room is polled while open and left alone once it has ended',
@@ -218,11 +227,11 @@ const ASSERTIONS = [
       s.screen.includes("{testType !== 'ADAPTIVE' ? (\n          <>\n            <Button label=\"Add this to the session\""),
   },
   {
-    name: 'what is sent is the list plus a paper picked but not yet added, with the teacher\'s late-entry choice',
+    name: 'what is sent is the list plus a paper picked but not yet added, with no late-entry choice (nobody is late)',
     test: (s) =>
       s.screen.includes('const chosen = canAdd ? [...papers, { sourceId, level: pickLevel }] : papers;') &&
-      s.screen.includes('await createLiveTestRoom(roomPayload({ sectionId, testType, papers: chosen, durationMinutes: limit, lateEntry })),') &&
-      s.screen.includes('onValueChange={setLateEntry}'),
+      s.screen.includes('await createLiveTestRoom(roomPayload({ sectionId, testType, papers: chosen, durationMinutes: limit })),') &&
+      !s.screen.includes('setLateEntry'),
   },
   {
     name: 'every student shows how they came in, and whether their result is already on their profile',
@@ -432,9 +441,10 @@ const MUTATIONS = [
   ['a public room client appears in the app', 'service', "const BASE = '/api/teacher/live-tests';", "const BASE = '/api/teacher/live-tests';\nconst PUBLIC = '/api/public/live-test';"],
   ['the room link points at the API', 'service', '`${SITE}/room/${code}`', '`${SITE}/api/room/${code}`'],
   ['the preview forgets the section', 'service', 'if (sectionId) params.sectionId = sectionId;', ''],
-  ['Start stops asking', 'screen', 'onPress={confirmStart}', "onPress={() => run('start', () => startLiveTest(roomId), 'The test has started.')}"],
-  ['Start is on with an empty room', 'screen', 'disabled={!!busy || present.length === 0}', 'disabled={!!busy}'],
-  ['Stop stops asking', 'screen', 'onPress={confirmStop}', "onPress={() => run('stop', () => stopLiveTest(roomId), 'The test has ended.')}"],
+  ['Close stops asking', 'screen', 'onPress={confirmClose}', "onPress={() => run('stop', () => stopLiveTest(roomId), 'The session is closed.')}"],
+  ['a time-up paper reads as submitted', 'screen', "p.submitted ? 'Submitted' : 'Time up — collected'", "'Submitted'"],
+  ['the room clock comes back for every room', 'screen', '{running && !selfPaced ? (', '{running ? ('],
+  ['a Start button comes back', 'screen', '          <Button label="Close the session"', '          <Button label="Start the test" onPress={() => {}} />\n          <Button label="Close the session"'],
   ['an ended room keeps polling', 'screen', 'if (ended) return () => controller.abort();', ''],
   ['the poll timer is never cleared', 'screen', '      clearInterval(timer);\n    };\n  }, [load, ended]);', '    };\n  }, [load, ended]);'],
   ['the countdown trusts the phone', 'screen', 'Date.now() + next.secondsLeft * 1000', 'Date.now() + 60 * 1000'],
@@ -480,7 +490,7 @@ const MUTATIONS = [
   ['more than six papers', 'screen', 'if (papers.length >= MAX_PAPERS) {', 'if (false) {'],
   ['the list survives a change of kind', 'screen', "    setMinutes('');\n    // A session is one kind of test: changing the kind starts the list again.\n    setPapers([]);", "    setMinutes('');"],
   ['a picked paper is forgotten unless added', 'screen', 'const chosen = canAdd ? [...papers, { sourceId, level: pickLevel }] : papers;', 'const chosen = papers;'],
-  ['late entry is always off', 'screen', 'papers: chosen, durationMinutes: limit, lateEntry })', 'papers: chosen, durationMinutes: limit, lateEntry: false })'],
+  ['a late-entry choice comes back', 'screen', 'papers: chosen, durationMinutes: limit })', 'papers: chosen, durationMinutes: limit, lateEntry })'],
   ['how a student came in is not shown', 'screen', '<Text style={styles.badgeText}>{joinLabel(p)}</Text>', '<Text style={styles.badgeText}>Student</Text>'],
   ['a failed save is hidden', 'screen', '{p.autoSaveError ? <Text style={styles.hint}>Not saved yet: {p.autoSaveError}</Text> : null}', ''],
   ['a report is offered while the test runs', 'screen', '{ended && !p.removed && p.answeredCount > 0 ? (', '{!p.removed && p.answeredCount > 0 ? ('],

@@ -46,7 +46,6 @@ import {
   setParticipantMatch,
   setParticipantRemoved,
   setRoomLocked,
-  startLiveTest,
   stopLiveTest,
 } from '../../services/teacher/liveTestService';
 import StudentSearchBar from './shared/StudentSearchBar';
@@ -54,7 +53,16 @@ import ClassTestReportView from '../shared/ClassTestReportView';
 import { useStudentSearch } from '../../utils/studentSearch';
 
 const POLL_MS = 3000;
-const STATUS = { LOBBY: 'Waiting to start', RUNNING: 'Running now', ENDED: 'Ended' };
+// Rooms start themselves (30 Oct 2026): an open room waits for its first student, not for Start.
+const STATUS = { LOBBY: 'Open · nobody yet', RUNNING: 'Open', ENDED: 'Closed' };
+
+/** Where one student is — the website's studentStatus: writing (own time left), handed in, or out of time. */
+export function studentStatus(p, running) {
+  if (p.removed) return 'Removed';
+  if (p.finished) return p.submitted ? 'Submitted' : 'Time up — collected';
+  if (!running) return 'Waiting';
+  return p.secondsLeft != null ? `Writing · ${clock(p.secondsLeft)} left` : 'Writing';
+}
 
 /**
  * Live Test Rooms — host a test for a whole class with no student logins.
@@ -164,8 +172,9 @@ function RoomList({ homeRoute, toast, oversight, initialSchool, onCreate, onOpen
       toast={toast}
     >
       <Text style={styles.intro}>
-        Run a test for a whole class together. Students open one link in a browser and sign in — or type their
-        name, class and roll number if they cannot — and the test starts for everyone when you press Start.
+        Share one link with a class. Each student opens it in a browser, signs in — or types their name, class
+        and roll number if they cannot — and starts the test straight away, at home or in school. The room stays
+        open until you close it.
       </Text>
       {oversight ? (
         <View style={styles.tabs} accessibilityRole="tablist">
@@ -233,7 +242,6 @@ function CreateRoom({ homeRoute, toast, onCancel, onCreated }) {
   const [sourceId, setSourceId] = useState(null);
   const [level, setLevel] = useState('BASIC');
   const [minutes, setMinutes] = useState('');
-  const [lateEntry, setLateEntry] = useState(false);
   // The papers of the session, in the order they will be sat. Empty = just the one being picked.
   const [papers, setPapers] = useState([]);
   const [preview, setPreview] = useState(null);
@@ -347,7 +355,7 @@ function CreateRoom({ homeRoute, toast, onCancel, onCreated }) {
     setError('');
     try {
       onCreated(
-        await createLiveTestRoom(roomPayload({ sectionId, testType, papers: chosen, durationMinutes: limit, lateEntry })),
+        await createLiveTestRoom(roomPayload({ sectionId, testType, papers: chosen, durationMinutes: limit })),
       );
     } catch (e) {
       setError(e?.message || 'The room could not be opened.');
@@ -434,15 +442,10 @@ function CreateRoom({ homeRoute, toast, onCancel, onCreated }) {
               : 'Leave blank for no limit; you can stop the test yourself at any time.'}
         </Text>
 
-        <View style={styles.switchRow}>
-          <Text style={styles.switchLabel}>Let students join after the test has started</Text>
-          <Switch
-            value={lateEntry}
-            onValueChange={setLateEntry}
-            trackColor={{ true: palette.primary }}
-            accessibilityLabel="Let students join after the test has started"
-          />
-        </View>
+        {/* Rooms start themselves (30 Oct 2026): nobody is "late", so there is no late-entry choice. */}
+        <Text style={styles.hint}>
+          Each student starts the test the moment they join{minutes ? `, with their own ${minutes}-minute timer` : ''}.
+        </Text>
 
         {preview ? (
           <Text style={[styles.preview, (preview.error || preview.questionCount === 0) && styles.previewBad]}>
@@ -625,17 +628,21 @@ function Room({ roomId, readOnly = false, homeRoute, toast, showToast, onBack })
   const running = room.status === 'RUNNING';
   const submittedCount = present.filter((p) => p.finished).length;
 
-  const confirmStart = () =>
-    Alert.alert('Start the test?', `It begins on all ${present.length} student screens at once.`, [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Start the test', onPress: () => run('start', () => startLiveTest(roomId), 'The test has started.') },
-    ]);
+  // Every room started since 30 Oct 2026; false only for one started the old way, with one deadline.
+  const selfPaced = room.selfPaced !== false;
+  const writing = present.length - submittedCount;
 
-  const confirmStop = () =>
-    Alert.alert('Stop the test now?', 'It ends for everyone. Answers saved so far are collected and marked.', [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Stop the test', style: 'destructive', onPress: () => run('stop', () => stopLiveTest(roomId), 'The test has ended.') },
-    ]);
+  const confirmClose = () =>
+    Alert.alert(
+      'Close this session?',
+      writing > 0
+        ? `Nobody else can join, and the ${writing} student(s) still writing have their saved answers collected and marked.`
+        : 'Nobody else can join.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Close the session', style: 'destructive', onPress: () => run('stop', () => stopLiveTest(roomId), 'The session is closed.') },
+      ],
+    );
 
   return (
     <ScreenScaffold title={room.title} fallbackRoute={homeRoute} toast={toast}>
@@ -656,12 +663,12 @@ function Room({ roomId, readOnly = false, homeRoute, toast, showToast, onBack })
         <Card>
           <Text style={styles.body}>
             Hosted by <Text style={styles.strong}>{room.teacherName || 'another member of staff'}</Text>. You can follow
-            it and see the results; only the host can start, stop or merge it.
+            it and see the results; only the host can close or merge it.
           </Text>
         </Card>
       ) : null}
 
-      {running ? (
+      {running && !selfPaced ? (
         <View style={[styles.clock, secondsLeft != null && secondsLeft <= 60 && styles.clockLow]}>
           <Text style={styles.clockText}>{secondsLeft == null ? 'No time limit' : `${clock(secondsLeft)} left`}</Text>
         </View>
@@ -691,7 +698,7 @@ function Room({ roomId, readOnly = false, homeRoute, toast, showToast, onBack })
         <Card>
           <Text style={styles.body}>
             <Text style={styles.strong}>{present.length}</Text> {present.length === 1 ? 'student has' : 'students have'} joined
-            {running ? ` · ${submittedCount} submitted` : ''}
+            {` · ${submittedCount} finished`}
           </Text>
           <View style={styles.switchRow}>
             <Text style={styles.switchLabel}>Lock the room (nobody else can join)</Text>
@@ -703,25 +710,20 @@ function Room({ roomId, readOnly = false, homeRoute, toast, showToast, onBack })
               accessibilityLabel="Lock the room"
             />
           </View>
-          {lobby ? (
-            <>
-              <Button
-                label="Start the test"
-                icon="play"
-                onPress={confirmStart}
-                busy={busy === 'start'}
-                disabled={!!busy || present.length === 0}
-                color={palette.primaryDark}
-              />
-              {present.length === 0 ? <Text style={styles.hint}>Start becomes available once a student has joined.</Text> : null}
-            </>
+          {room.durationMinutes || (running && !selfPaced && secondsLeft != null) ? (
+            <Button
+              label="+ 5 minutes"
+              onPress={() => run('extend', () => extendLiveTest(roomId, 5), '5 minutes added for everyone still writing.')}
+              disabled={!!busy}
+              secondary
+            />
           ) : null}
-          {running ? (
-            <>
-              <Button label="+ 5 minutes" onPress={() => run('extend', () => extendLiveTest(roomId, 5), '5 minutes added.')} disabled={!!busy} secondary />
-              <Button label="Stop the test" icon="stop" onPress={confirmStop} busy={busy === 'stop'} disabled={!!busy} color={FEEDBACK.errorText} />
-            </>
-          ) : null}
+          <Button label="Close the session" icon="stop" onPress={confirmClose} busy={busy === 'stop'} disabled={!!busy} color={FEEDBACK.errorText} />
+          <Text style={styles.hint}>
+            Each student starts the test as soon as they join
+            {room.durationMinutes ? `, with their own ${room.durationMinutes}-minute timer,` : ''} and hands it in with
+            Submit. Close the session when you have collected enough.
+          </Text>
         </Card>
       ) : null}
 
@@ -760,11 +762,7 @@ function Room({ roomId, readOnly = false, homeRoute, toast, showToast, onBack })
             <Text style={styles.body}>
               {ended
                 ? resultLine(room, p)
-                : p.removed
-                  ? 'Removed'
-                  : lobby
-                    ? 'Waiting'
-                    : `${p.finished ? 'Submitted' : 'Writing'} · answered ${p.answeredCount}${room.adaptive ? '' : ` of ${room.questionCount}`}`}
+                : `${studentStatus(p, running)} · answered ${p.answeredCount}${room.adaptive ? '' : ` of ${room.questionCount}`}`}
             </Text>
             <View style={styles.badges}>
               <View style={[styles.badge, p.signedIn ? (p.inClass === false ? styles.badgeOther : styles.badgeIn) : styles.badgeGuest]}>
