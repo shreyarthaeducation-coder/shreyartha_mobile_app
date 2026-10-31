@@ -104,6 +104,7 @@ export function classAnalysisHtml(report) {
     .join('');
   const anyPartial = (report?.students || []).some((s) => Object.values(s.marks || {}).some(isPartial));
   const notes = [
+    ...(report?.notes || []),
     ...((report?.exams || []).length > 1 ? [`Marks added across: ${report.exams.join(', ')}.`] : []),
     ...(anyPartial ? ['† no mark in one or more of the exams added (absent or not entered).'] : []),
   ]

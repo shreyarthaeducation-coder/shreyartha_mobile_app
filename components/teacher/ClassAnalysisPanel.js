@@ -37,7 +37,7 @@ const FILES = [
 /**
  * The class teacher's class analysis (28 Oct 2026; choices 29 Oct) — the website's
  * ClassAnalysisReport: the exams and subjects she ticks, laid out as the school's paper sheet. Several
- * exams, or Total, add up subject by subject, out of their Full Marks added. Nothing loads until
+ * exams, or Total, add up subject by subject, each out of what it counts for on the report card. Nothing loads until
  * "Generate report". Roll and name stay put while the subjects scroll sideways; the sheet shares as
  * a PDF, Excel, Word or CSV.
  *
@@ -184,7 +184,7 @@ export default function ClassAnalysisPanel({ sectionId, showToast }) {
     <Card>
       <Text style={styles.title}>Class analysis</Text>
       <Text style={styles.note}>
-        Tick exams and subjects, then generate. Several exams add up subject by subject, out of their Full Marks added.
+        Tick exams and subjects, then generate. Several exams add up subject by subject, each out of what it counts for on the report card.
       </Text>
 
       <View style={styles.pickerHead}>
@@ -254,7 +254,7 @@ export default function ClassAnalysisPanel({ sectionId, showToast }) {
 
           {report.warnings?.length ? (
             <View style={styles.warnings}>
-              <Text style={styles.warningsTitle}>Full Marks to check with the school admin</Text>
+              <Text style={styles.warningsTitle}>Marks to check</Text>
               {report.warnings.map((w) => (
                 <Text key={w} style={styles.warningText}>• {w}</Text>
               ))}
@@ -325,6 +325,9 @@ export default function ClassAnalysisPanel({ sectionId, showToast }) {
                 </View>
               </ScrollView>
             </View>
+            {(report.notes || []).map((n) => (
+              <Text key={n} style={styles.footnote}>{n}</Text>
+            ))}
             <Text style={styles.footnote}>
               {report.exams?.length > 1 ? `Marks added across: ${report.exams.join(', ')}. ` : ''}
               {anyPartial ? '† no mark in one or more of the exams added. ' : ''}A blank is a subject with no mark
