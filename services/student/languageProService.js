@@ -128,6 +128,17 @@ export const shreyaEnglish = {
     studentApi.post(`/api/student/shreya-english/chapters/${chapterId}/evaluate`, {}),
 
   levelUp: () => studentApi.post('/api/student/shreya-english/level-up', {}),
+
+  // ── Speaking Challenge, Vocabulary, Translation (1 Nov 2026) — as on the website ──
+  /** The chapter's challenge for this student: their cast, the lines, the vocabulary, the languages. */
+  speaking: (chapterId, signal) =>
+    studentApi.get(`/api/student/shreya-english/chapters/${chapterId}/speaking`, { signal }),
+  /** The passage line by line in the student's language — for meaning only. */
+  translation: (chapterId, lang) =>
+    studentApi.get(`/api/student/shreya-english/chapters/${chapterId}/translation?lang=${encodeURIComponent(lang)}`),
+  /** One reading of the challenge: per line, each word's state. */
+  submitSpeaking: (chapterId, lines) =>
+    studentApi.post(`/api/student/shreya-english/chapters/${chapterId}/speaking/attempt`, { lines }),
 };
 
 /* ── Phonetics — VERSIONED `/api/v1/phonetics/` ────────────────────────── */

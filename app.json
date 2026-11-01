@@ -46,6 +46,14 @@
       "expo-router",
       "expo-asset",
       "expo-audio",
+      [
+        "expo-speech-recognition",
+        {
+          "microphonePermission": "Shreyartha uses your microphone for audio features in learning modules and to let you ask Shreya your questions by voice.",
+          "speechRecognitionPermission": "Shreyartha turns your reading into text as you speak, so your words light up as you read.",
+          "androidSpeechServicePackages": ["com.google.android.googlequicksearchbox"]
+        }
+      ],
       "expo-font",
       "expo-sharing",
       [

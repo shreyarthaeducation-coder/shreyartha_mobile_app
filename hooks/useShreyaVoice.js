@@ -135,14 +135,15 @@ export default function useShreyaVoice({ language = TTS_LANGUAGE, gender = 'fema
   }, []);
 
   /** Speak a line; resolves when it finishes (or immediately if it cannot). */
+  // `{ voice }` (1 Nov 2026): a Learn with Shreya character's own voice for this line.
   const speak = useCallback(
-    async (text) => {
+    async (text, { voice } = {}) => {
       if (!text || !text.trim()) return;
       const epoch = (epochRef.current += 1);
       setError('');
 
       try {
-        const uri = await synthesizeToFile(text, { language, gender, client });
+        const uri = await synthesizeToFile(text, { language, gender, client, voice });
         if (!uri || epochRef.current !== epoch) return;
 
         await unload();
@@ -193,9 +194,9 @@ export default function useShreyaVoice({ language = TTS_LANGUAGE, gender = 'fema
 
   /** Warm the cache for a line we are about to need. Failures are irrelevant. */
   const prefetch = useCallback(
-    (text) => {
+    (text, { voice } = {}) => {
       if (!text || !text.trim()) return;
-      synthesizeToFile(text, { language, gender, client }).catch(() => {});
+      synthesizeToFile(text, { language, gender, client, voice }).catch(() => {});
     },
     [language, gender, client],
   );

@@ -95,9 +95,9 @@ async function ensureTtsDir() {
 }
 
 /** Filenames must be filesystem-safe and stable, so the same line is only synthesised once. */
-const cacheKey = (text, language, gender) => {
+const cacheKey = (text, language, gender, voice) => {
   let hash = 0;
-  const seed = `${language}|${gender}|${text}`;
+  const seed = voice ? `${voice}|${text}` : `${language}|${gender}|${text}`;
   for (let i = 0; i < seed.length; i += 1) {
     hash = (hash * 31 + seed.charCodeAt(i)) | 0;
   }
@@ -112,7 +112,8 @@ const cacheKey = (text, language, gender) => {
  */
 export async function synthesizeToFile(
   text,
-  { language = TTS_LANGUAGE, gender = 'female', client = studentApi } = {},
+  // `voice`: a Learn with Shreya character's own voice, e.g. 'SHRI_JUNIOR' (1 Nov 2026).
+  { language = TTS_LANGUAGE, gender = 'female', client = studentApi, voice } = {},
 ) {
   if (!text || !text.trim()) return null;
   await ensureTtsDir();
@@ -120,12 +121,12 @@ export async function synthesizeToFile(
   // `client` exists because read-aloud is no longer student-only. A parent, teacher or partner
   // screen passes services/shared/ttsClient, which sends THEIR token and — unlike studentApi —
   // never logs anyone out when the voice service refuses. Students keep studentApi by default.
-  const res = await client.post('/api/v1/translate/tts', { text, language, gender });
+  const res = await client.post('/api/v1/translate/tts', { text, language, gender, ...(voice ? { voice } : {}) });
   if (!res?.audioContent) throw new Error('The voice service returned no audio.');
 
   // `audioFormat` is a container name ("MP3"), not an extension — lowercase it and default sanely.
   const ext = String(res.audioFormat || 'mp3').toLowerCase().replace(/[^a-z0-9]/g, '') || 'mp3';
-  const uri = `${TTS_DIR}${cacheKey(text, language, gender)}.${ext}`;
+  const uri = `${TTS_DIR}${cacheKey(text, language, gender, voice)}.${ext}`;
 
   const existing = await FileSystem.getInfoAsync(uri);
   if (!existing.exists) {

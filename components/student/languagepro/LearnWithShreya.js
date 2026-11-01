@@ -6,12 +6,13 @@ import { Ionicons } from '@expo/vector-icons';
 import { DONE, SLATE, SPACING, TYPE, leading } from '../../../constants/theme';
 import { usePalette } from '../../ui/PaletteContext';
 import { makeStyles } from '../../../utils/makeStyles';
-import { useToast } from '../../ui';
+import { SegmentedTabs, useToast } from '../../ui';
 import StudentScaffold from '../StudentScaffold';
 import { StudentCard, StudentCardTitle } from '../StudentCard';
 import LevelMap from './LevelMap';
 import PlacementAssessment from './PlacementAssessment';
 import ShreyaChapterScreen from './ShreyaChapterScreen';
+import SpeakingChallengeScreen from './speaking/SpeakingChallengeScreen';
 import { shreyaEnglish } from '../../../services/student/languageProService';
 
 /**
@@ -33,7 +34,9 @@ export default function LearnWithShreya() {
   const [profile, setProfile] = useState(null);
   const [tree, setTree] = useState(null);
   const [progress, setProgress] = useState(null);
-  const [view, setView] = useState('loading'); // loading|greeting|placement|map|level|chapter|error
+  const [view, setView] = useState('loading'); // loading|greeting|placement|map|level|chapter|speaking|error
+  // A chapter opens as the call with Shreya or as the Speaking Challenge (1 Nov 2026).
+  const [mode, setMode] = useState('call');
   const [activeLevel, setActiveLevel] = useState(null);
   const [activeDayId, setActiveDayId] = useState(null);
   const [activeChapterId, setActiveChapterId] = useState(null);
@@ -133,17 +136,30 @@ export default function LearnWithShreya() {
     const days = levelNode?.days || [];
     if (activeDay) {
       const chapters = activeDay.chapters || [];
-      return chapters.length === 0 ? (
-        <StudentCard>
-          <Text style={styles.body}>No chapters in this day yet.</Text>
-        </StudentCard>
-      ) : (
-        chapters.map((c) => (
+      if (chapters.length === 0) {
+        return (
+          <StudentCard>
+            <Text style={styles.body}>No chapters in this day yet.</Text>
+          </StudentCard>
+        );
+      }
+      return [
+        <SegmentedTabs
+          key="modes"
+          options={[
+            { value: 'call', label: 'Call with Shreya', icon: 'call-outline' },
+            { value: 'speaking', label: 'Speaking Challenge', icon: 'people-outline' },
+          ]}
+          value={mode}
+          onChange={setMode}
+          style={styles.modeTabs}
+        />,
+        ...chapters.map((c) => (
           <Pressable
             key={c.id}
             onPress={() => {
               setActiveChapterId(c.id);
-              setView('chapter');
+              setView(mode === 'speaking' ? 'speaking' : 'chapter');
             }}
             style={({ pressed }) => [pressed && styles.pressed]}
             accessibilityRole="button"
@@ -160,8 +176,8 @@ export default function LearnWithShreya() {
               </View>
             </StudentCard>
           </Pressable>
-        ))
-      );
+        )),
+      ];
     }
 
     return days.length === 0 ? (
@@ -192,7 +208,7 @@ export default function LearnWithShreya() {
   };
 
   const back = () => {
-    if (view === 'chapter') return exitChapter();
+    if (view === 'chapter' || view === 'speaking') return exitChapter();
     if (view === 'level') {
       if (activeDayId) {
         setActiveDayId(null);
@@ -207,7 +223,7 @@ export default function LearnWithShreya() {
   };
 
   // The phone's back button goes up one level here too, not out of the screen.
-  useDrillBack(view === 'chapter' ? 3 : view === 'level' ? (activeDayId ? 2 : 1) : 0, back);
+  useDrillBack(view === 'chapter' || view === 'speaking' ? 3 : view === 'level' ? (activeDayId ? 2 : 1) : 0, back);
 
   const trail = [activeLevel, activeDay?.name].filter(Boolean).join(' › ');
 
@@ -268,6 +284,9 @@ export default function LearnWithShreya() {
           showToast={showToast}
         />
       ) : null}
+      {view === 'speaking' ? (
+        <SpeakingChallengeScreen key={activeChapterId} chapterId={activeChapterId} showToast={showToast} />
+      ) : null}
     </StudentScaffold>
   );
 }
@@ -306,6 +325,8 @@ const useStyles = makeStyles((p) => ({
     letterSpacing: 0.5,
     marginBottom: SPACING.sm,
   },
+
+  modeTabs: { marginBottom: SPACING.md },
 
   row: { flexDirection: 'row', alignItems: 'center', gap: SPACING.sm },
   rowTitle: { flex: 1, fontSize: TYPE.heading, fontWeight: '700', color: SLATE[800] },
