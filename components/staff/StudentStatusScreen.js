@@ -10,6 +10,7 @@ import { useStudentSearch } from '../../utils/studentSearch';
 import { useDrillBack } from '../../hooks/useDrillBack';
 import StudentSearchBar from './shared/StudentSearchBar';
 import StudentInsightsSheet from './StudentInsightsSheet';
+import SectionPie from './SectionPie';
 import { makeStyles } from '../../utils/makeStyles';
 
 /** How a cell of each state is painted. */
@@ -204,6 +205,8 @@ export default function StudentStatusScreen({ homeRoute = '/teacher' }) {
                     {c.label}{c.drill ? ' ▸' : ''}
                   </Text>
                   <Text style={styles.columnSummary}>{summaryText(summaries[c.key])}</Text>
+                  {/* Who has completed it and who is left (31 Oct 2026); tap for the larger chart. */}
+                  <SectionPie summary={summaries[c.key]} label={c.label} />
                 </Pressable>
               ))}
             </View>

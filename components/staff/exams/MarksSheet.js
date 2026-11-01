@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, Pressable, Text, TextInput, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { FEEDBACK, SLATE } from '../../../constants/theme';
+import { FEEDBACK, SLATE, TYPE } from '../../../constants/theme';
 import { FormSheet } from '../../ui';
 import {
   EXAM_STATUS,
@@ -49,6 +49,8 @@ import ScanResultPanel from './marks/ScanResultPanel';
 import PaperReviewPanel from './marks/PaperReviewPanel';
 import StudentSearchBar from '../shared/StudentSearchBar';
 import { useStudentSearch } from '../../../utils/studentSearch';
+import { fillCounts, flatFillState, questionFillState } from '../../../utils/marksFillState';
+import { FILL_TINT } from './marks/MarksGrid';
 
 /**
  * Enter/Edit Marks for one exam — the website's two marks grids (ExamMarksGrid, one total per
@@ -1080,6 +1082,12 @@ ${what}`,
   ];
 
   const setOfStudent = (id) => edits[id]?.questionSet || 1;
+
+  /** Green entered, amber partly, red left, grey absent — read from the sheet as it stands. */
+  const fillStateOf = (student) =>
+    perQuestion
+      ? questionFillState(edits[student.studentId], paperItems(sheet?.questions, setOfStudent(student.studentId)))
+      : flatFillState(edits[student.studentId], practicalOutOf != null);
   const savedCount = sheet ? rowsToSave().length : 0;
   const outOfLine =
     sets.length > 1
@@ -1267,6 +1275,8 @@ ${what}`,
               />
 
               {students.length > 0 ? <StudentSearchBar search={studentSearch} /> : null}
+              {/* Who is entered and who is left, for the whole class (31 Oct 2026). */}
+              {students.length > 0 ? <FillLine counts={fillCounts(students.map(fillStateOf))} /> : null}
               {perQuestion ? (
                 // One table per paper. A student sits one set, so they appear in one table; the Set
                 // cell on their row is how a teacher says which paper they were handed.
@@ -1286,13 +1296,13 @@ ${what}`,
                           Nobody is on Set {set} yet. Move a student here with the Set cell on their row.
                         </Text>
                       ) : (
-                        <MarksGrid students={here} columns={questionColumns(set)} />
+                        <MarksGrid students={here} columns={questionColumns(set)} fillStateOf={fillStateOf} />
                       )}
                     </View>
                   );
                 })
               ) : (
-                <MarksGrid students={studentSearch.results} columns={totalColumns} />
+                <MarksGrid students={studentSearch.results} columns={totalColumns} fillStateOf={fillStateOf} />
               )}
             </>
           )}
@@ -1301,3 +1311,31 @@ ${what}`,
     </FormSheet>
   );
 }
+
+/** The line above the marks: how many students are entered, partly entered, left and absent. */
+function FillLine({ counts }) {
+  const items = [
+    ['done', '✓', 'entered'],
+    ['partial', '◐', 'partly'],
+    ['left', '✗', 'left to fill'],
+    ['absent', '–', 'absent'],
+  ].filter(([key]) => key !== 'partial' || counts.partial > 0);
+  return (
+    <View style={fillLine.row} accessibilityLabel={items.map(([key, , text]) => `${counts[key]} ${text}`).join(', ')}>
+      {items.map(([key, mark, text]) => (
+        <View key={key} style={[fillLine.chip, { backgroundColor: FILL_TINT[key].bg, borderColor: FILL_TINT[key].bar }]}>
+          <Text style={[fillLine.text, { color: SLATE[800] }]}>
+            {mark} <Text style={fillLine.strong}>{counts[key]}</Text> {text}
+          </Text>
+        </View>
+      ))}
+    </View>
+  );
+}
+
+const fillLine = {
+  row: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginVertical: 8 },
+  chip: { borderWidth: 1, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4 },
+  text: { fontSize: TYPE.label },
+  strong: { fontWeight: '800' },
+};

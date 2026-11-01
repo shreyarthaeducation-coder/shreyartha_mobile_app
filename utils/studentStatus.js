@@ -30,6 +30,27 @@ export function summaryText(summary) {
   return `${done} of ${total} done`;
 }
 
+/**
+ * A column's pie (31 Oct 2026), as on the website: completed, started, not started — out of the
+ * students it applies to. The server's `started` already counts those who are done. Null when the
+ * column applies to nobody in the section.
+ */
+export function pieSlices(summary) {
+  if (!summary || !summary.total) return null;
+  const total = summary.total;
+  const done = Math.min(Math.max(summary.done || 0, 0), total);
+  const started = Math.min(Math.max((summary.started || 0) - done, 0), total - done);
+  return {
+    total,
+    left: total - done,
+    slices: [
+      { key: 'done', label: 'Completed', count: done },
+      { key: 'started', label: 'Started', count: started },
+      { key: 'none', label: 'Not started', count: total - done - started },
+    ],
+  };
+}
+
 /** The roster rows as the search helper reads them (name, roll number). */
 export function searchableRows(table) {
   return (table?.students || []).map((row) => ({ ...row, studentName: row.name }));

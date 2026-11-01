@@ -9,13 +9,25 @@ import { PALETTE } from './marksParts';
  * row it is. The header cells are what the website's <th>s say: "Q1" over "/5", "Total" over "/40".
  * Each column is `{ key, title, sub?, width, render(student, index) }`; every row is the same height
  * so the two halves line up.
+ *
+ * `fillStateOf(student)`, when given, colours each row by who still needs marks (31 Oct 2026):
+ * green entered, amber partly, red left, grey absent — utils/marksFillState.
  */
+
+/** Row tints and the strong mark down the name, as the website's marks grids have them. */
+export const FILL_TINT = {
+  done: { bg: '#f0fdf4', bar: '#16a34a' },
+  partial: { bg: '#fffbeb', bar: '#f59e0b' },
+  left: { bg: '#fef2f2', bar: '#dc2626' },
+  absent: { bg: '#f8fafc', bar: '#94a3b8' },
+};
 
 export const ROW_HEIGHT = 54;
 const HEAD_HEIGHT = 46;
 const NAME_WIDTH = 138;
 
-export default function MarksGrid({ students, columns }) {
+export default function MarksGrid({ students, columns, fillStateOf }) {
+  const tint = (student) => (fillStateOf ? FILL_TINT[fillStateOf(student)] : null);
   return (
     <View style={grid.table}>
       <View style={grid.frozen}>
@@ -23,7 +35,14 @@ export default function MarksGrid({ students, columns }) {
           <Text style={grid.headText}>Student</Text>
         </View>
         {students.map((student, index) => (
-          <View key={student.studentId} style={[grid.cell, grid.nameCell]}>
+          <View
+            key={student.studentId}
+            style={[
+              grid.cell,
+              grid.nameCell,
+              tint(student) && { backgroundColor: tint(student).bg, borderLeftWidth: 4, borderLeftColor: tint(student).bar },
+            ]}
+          >
             <Text style={grid.name} numberOfLines={2}>
               <Text style={grid.index}>{index + 1}. </Text>
               {student.studentName}
@@ -55,7 +74,7 @@ export default function MarksGrid({ students, columns }) {
             ))}
           </View>
           {students.map((student, index) => (
-            <View key={student.studentId} style={grid.row}>
+            <View key={student.studentId} style={[grid.row, tint(student) && { backgroundColor: tint(student).bg }]}>
               {columns.map((column) => (
                 <View key={column.key} style={[grid.cell, { width: column.width }]}>
                   {column.render(student, index)}
