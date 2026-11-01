@@ -12,6 +12,7 @@ import { parseWordScores } from '../../phonetics/wordScores';
 import { READ, alignWords, settledMistakes, withAzureVerdict } from '../../../../utils/shreyaAlign';
 import { StudentCard } from '../../StudentCard';
 import CharacterCard from './CharacterCard';
+import VocabText from './VocabText';
 
 const clean = (word) => String(word).replace(/^[^A-Za-z0-9']+|[^A-Za-z0-9']+$/g, '');
 const WHAT = { SKIPPED: 'missed', WRONG: 'said differently', MISPRONOUNCED: 'not quite right' };
@@ -359,7 +360,8 @@ export default function SpeakingPanel({ data, castByKey, say, stopVoice, showToa
                 color={r ? (ok ? FEEDBACK.successText : FEEDBACK.errorText) : SLATE[400]}
               />
               <Text style={[styles.scriptText, i === index && styles.scriptCurrent]}>
-                <Text style={styles.metaName}>{l.speaker}:</Text> {l.text}
+                {/* The script list, not the line being read: its vocabulary in category colours. */}
+                <Text style={styles.metaName}>{l.speaker}:</Text> <VocabText text={l.text} vocabulary={data.vocabulary} />
               </Text>
             </Pressable>
           );
