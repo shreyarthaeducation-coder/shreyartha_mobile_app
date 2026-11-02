@@ -1,37 +1,53 @@
-import { useEffect, useRef } from 'react';
-import { Animated, Image, Text, View } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { AccessibilityInfo, Animated, Image, Text, View } from 'react-native';
 import { SLATE, TYPE } from '../../../../constants/theme';
 import { CAST_IMAGES } from '../../../../constants/shreyaSpeaking';
 import { makeStyles } from '../../../../utils/makeStyles';
 
 /**
  * One of the cast (1 Nov 2026): their portrait for the student's band — or their initial in their
- * colour until the pictures are in — with a name badge. While they speak the card lifts and pulses
- * and a bubble shows what they are saying.
+ * colour until the pictures are in — with a name badge. While they speak the card lifts, a soft
+ * ring in their own colour breathes around the portrait (2 Nov 2026, the website's glow), and a
+ * bubble shows what they are saying. With the phone's Reduce Motion on, the ring stays still.
  */
 export default function CharacterCard({ character, band, speaking, bubble }) {
   const styles = useStyles();
   const pulse = useRef(new Animated.Value(0)).current;
+  const [reduceMotion, setReduceMotion] = useState(false);
 
   useEffect(() => {
-    if (!speaking) {
+    let live = true;
+    AccessibilityInfo.isReduceMotionEnabled()
+      .then((on) => live && setReduceMotion(!!on))
+      .catch(() => {});
+    const sub = AccessibilityInfo.addEventListener('reduceMotionChanged', (on) => setReduceMotion(!!on));
+    return () => {
+      live = false;
+      sub?.remove?.();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!speaking || reduceMotion) {
       pulse.stopAnimation();
       pulse.setValue(0);
       return undefined;
     }
     const loop = Animated.loop(
       Animated.sequence([
-        Animated.timing(pulse, { toValue: 1, duration: 450, useNativeDriver: true }),
-        Animated.timing(pulse, { toValue: 0, duration: 450, useNativeDriver: true }),
+        Animated.timing(pulse, { toValue: 1, duration: 700, useNativeDriver: true }),
+        Animated.timing(pulse, { toValue: 0, duration: 700, useNativeDriver: true }),
       ]),
     );
     loop.start();
     return () => loop.stop();
-  }, [speaking, pulse]);
+  }, [speaking, reduceMotion, pulse]);
 
   const image = (CAST_IMAGES[band] || {})[character.key];
   const colour = character.colour;
-  const scale = pulse.interpolate({ inputRange: [0, 1], outputRange: [1.04, 1.1] });
+  const scale = pulse.interpolate({ inputRange: [0, 1], outputRange: [1.04, 1.07] });
+  const ringScale = pulse.interpolate({ inputRange: [0, 1], outputRange: [1.08, 1.22] });
+  const ringOpacity = pulse.interpolate({ inputRange: [0, 1], outputRange: [0.45, 0.15] });
 
   return (
     <View style={styles.card} accessibilityLabel={`${character.name}, ${character.role}`}>
@@ -42,11 +58,21 @@ export default function CharacterCard({ character, band, speaking, bubble }) {
           </Text>
         </View>
       ) : null}
+      {speaking ? (
+        <Animated.View
+          pointerEvents="none"
+          style={[
+            styles.ring,
+            { backgroundColor: colour },
+            reduceMotion ? styles.ringStill : { opacity: ringOpacity, transform: [{ translateY: -4 }, { scale: ringScale }] },
+          ]}
+        />
+      ) : null}
       <Animated.View
         style={[
           styles.portrait,
           { borderColor: colour },
-          speaking && { transform: [{ translateY: -4 }, { scale }] },
+          speaking && { transform: [{ translateY: -4 }, { scale: reduceMotion ? 1.04 : scale }] },
         ]}
       >
         {image ? (
@@ -67,6 +93,9 @@ export default function CharacterCard({ character, band, speaking, bubble }) {
 
 const useStyles = makeStyles(() => ({
   card: { width: 64, alignItems: 'center' },
+  // The glow: a disc in the character's colour behind the portrait, the same size, breathing out.
+  ring: { position: 'absolute', top: 0, width: 56, height: 56, borderRadius: 28 },
+  ringStill: { opacity: 0.3, transform: [{ translateY: -4 }, { scale: 1.14 }] },
   portrait: {
     width: 56,
     height: 56,
