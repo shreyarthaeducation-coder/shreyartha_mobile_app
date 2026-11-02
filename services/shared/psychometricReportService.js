@@ -76,11 +76,12 @@ export async function printStudentsReports(apiBase, studentIds) {
   return { printed: items.length, skipped };
 }
 
-/** Parent: every completed report of their child. */
-export async function printChildReports() {
-  const batch = await parentApi.get('/api/parent/psychometric-reports');
-  const { items } = scoreBatch(batch);
-  if (items.length === 0) return { printed: 0 };
-  await printPsychometricBatch(items);
-  return { printed: items.length };
+/**
+ * Parent: the child's reports, scored — fetched once by the psychometric card for both its Preview
+ * and its Download (2 Nov 2026).
+ */
+export async function fetchChildReportItems(signal) {
+  const batch = await parentApi.get('/api/parent/psychometric-reports', { signal });
+  const child = (batch || [])[0];
+  return { childName: child?.name || '', items: scoreBatch(batch).items };
 }
