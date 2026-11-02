@@ -17,14 +17,27 @@ export const CATEGORY_STYLE = {
 export const STUDENT_KEYS = ['SHRI', 'SHREYA', 'DARSH', 'KRISH'];
 
 /**
- * The cast's portraits, by band and character key. Empty until the two cast pictures are cropped
- * into `assets/shreya-cast/{junior,senior}/<key>.png` — a `require` has to name a file that exists,
- * so each entry is added with its file. Until then the card draws the character's initial in their
- * colour.
+ * The cast's portraits, by band and character key (3 Nov 2026): cropped from the school's two cast
+ * pictures — JUNIOR for classes 1-5, SENIOR for class 6 up — into
+ * `assets/shreya-cast/{junior,senior}/<key>.png`, 256 × 256, the same files as the website's
+ * `public/shreya-cast`. The band is the one the server sends with the challenge, worked out from the
+ * student's own class. A key with no picture here still gets its initial in its colour.
  */
 export const CAST_IMAGES = {
-  JUNIOR: {},
-  SENIOR: {},
+  JUNIOR: {
+    SONIA: require('../assets/shreya-cast/junior/sonia.png'),
+    SHRI: require('../assets/shreya-cast/junior/shri.png'),
+    SHREYA: require('../assets/shreya-cast/junior/shreya.png'),
+    DARSH: require('../assets/shreya-cast/junior/darsh.png'),
+    KRISH: require('../assets/shreya-cast/junior/krish.png'),
+  },
+  SENIOR: {
+    SONIA: require('../assets/shreya-cast/senior/sonia.png'),
+    SHRI: require('../assets/shreya-cast/senior/shri.png'),
+    SHREYA: require('../assets/shreya-cast/senior/shreya.png'),
+    DARSH: require('../assets/shreya-cast/senior/darsh.png'),
+    KRISH: require('../assets/shreya-cast/senior/krish.png'),
+  },
 };
 
 /** Word states from `utils/shreyaAlign`, as the line draws them. */
