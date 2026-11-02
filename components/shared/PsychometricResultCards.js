@@ -28,6 +28,8 @@ export default function PsychometricResultCards({
   statement,
   psych,
   psychFailed = false,
+  // Rendered inside the psychometric card, under the status — the parent's Preview and Download.
+  children,
 }) {
   const styles = useStyles();
   const palette = usePalette();
@@ -87,6 +89,7 @@ export default function PsychometricResultCards({
                     : 'Psychometric assessment not yet completed by the student.'}
                 </Text>
               </View>
+              {children}
             </>
           )}
         </Card>

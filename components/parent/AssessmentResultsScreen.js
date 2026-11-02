@@ -1,16 +1,15 @@
-import { useCallback, useState } from 'react';
-import { Alert } from 'react-native';
+import { useCallback } from 'react';
 import { ScreenScaffold } from '../ui';
 import PsychometricResultCards from '../shared/PsychometricResultCards';
 import useStaffResource from '../../hooks/useStaffResource';
 import { parentApi } from '../../services/parentApi';
 import { fetchPersonalStatement, fetchPsychometric } from '../../services/parent/insightsService';
-import { printChildReports } from '../../services/shared/psychometricReportService';
-import { PsychometricPrintLink } from '../shared/BulkPsychometricPrintScreen';
+import ParentReportActions from './ParentReportActions';
 
 /**
  * The Counselling Report's Psychometric Result tab (formerly the Assessment Results screen): the
- * child's personal statement and psychometric completion.
+ * child's personal statement and psychometric completion, with Preview and Download in the
+ * psychometric card.
  *
  * Two independent reads, settled separately: a child with no personal statement is normal, and the
  * psychometric call can refuse for a non-school child. `Promise.all` would lose both cards to
@@ -32,21 +31,6 @@ export default function AssessmentResultsScreen({ embedded = false }) {
     initialData: null,
   });
 
-  // Every report the child has completed, as one PDF (1 Oct 2026). A parent has one linked child.
-  const [printing, setPrinting] = useState(false);
-  const printAll = async () => {
-    if (printing) return;
-    setPrinting(true);
-    try {
-      const { printed } = await printChildReports();
-      if (!printed) Alert.alert('Nothing to print yet', 'No psychometric assessment has been completed yet.');
-    } catch (e) {
-      Alert.alert('Could not print', e?.message || 'The reports could not be printed.');
-    } finally {
-      setPrinting(false);
-    }
-  };
-
   return (
     <ScreenScaffold
       title="Assessment Results"
@@ -59,15 +43,14 @@ export default function AssessmentResultsScreen({ embedded = false }) {
       onRefresh={refresh}
       selectableReadAloud
     >
-      <PsychometricPrintLink
-        label={printing ? 'Preparing reports…' : 'Print all reports'}
-        onPress={printAll}
-      />
       <PsychometricResultCards
         statement={data?.statement?.data || ''}
         psych={data?.psychometric?.data}
         psychFailed={!!data?.psychometric?.error}
-      />
+      >
+        {/* Preview and Download in the card itself (2 Nov 2026), once a test is done. */}
+        {data?.psychometric?.data?.completedCount > 0 ? <ParentReportActions /> : null}
+      </PsychometricResultCards>
     </ScreenScaffold>
   );
 }

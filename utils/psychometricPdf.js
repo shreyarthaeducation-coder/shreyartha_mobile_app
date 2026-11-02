@@ -330,3 +330,15 @@ export async function printPsychometricBatch(items) {
   if (!items || items.length === 0) throw new Error('There is nothing to print.');
   return renderCoverAndShare(buildBatchReportHtml(items), 'Psychometric Reports');
 }
+
+/**
+ * Shares a report PDF already made in this session again (2 Nov 2026) — a second Download is then
+ * instant. False when the file is gone (the cache was cleared), so the caller builds it afresh.
+ */
+export async function reshareReportPdf(uri, dialogTitle = 'Psychometric Reports') {
+  if (!uri) return false;
+  const info = await FileSystem.getInfoAsync(uri);
+  if (!info.exists || !(await Sharing.isAvailableAsync())) return false;
+  await Sharing.shareAsync(uri, { mimeType: 'application/pdf', dialogTitle, UTI: 'com.adobe.pdf' });
+  return true;
+}
