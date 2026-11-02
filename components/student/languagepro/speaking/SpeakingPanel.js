@@ -255,6 +255,8 @@ export default function SpeakingPanel({ data, castByKey, say, stopVoice, showToa
   const lineColour = (castByKey[line.character] || castByKey.SONIA)?.colour || SLATE[300];
   const statusNote = {
     unavailable: 'Voice checking isn’t available on this phone. Please try later.',
+    // A build of the app from before the Speaking Challenge: it has no speech recogniser in it.
+    'needs-update': 'Reading aloud needs the latest version of the app. Please update it — Hear it, Words and Meaning work already.',
     denied: 'Please allow the microphone so Shreya can hear you read.',
     error: reading.error,
   }[reading.status];
@@ -313,7 +315,7 @@ export default function SpeakingPanel({ data, castByKey, say, stopVoice, showToa
               label={current ? 'Read again' : 'Read it'}
               icon="mic"
               onPress={read}
-              disabled={scoring}
+              disabled={scoring || reading.status === 'needs-update'}
             />
           )}
         </View>
