@@ -1,13 +1,17 @@
 import { useEffect, useRef } from 'react';
-import { Animated, Image, Text, View } from 'react-native';
+import { Animated, Easing, Image, Text, View } from 'react-native';
 import { SLATE, TYPE } from '../../../../constants/theme';
 import { CAST_IMAGES } from '../../../../constants/shreyaSpeaking';
 import { makeStyles } from '../../../../utils/makeStyles';
 
 /**
  * One of the cast (1 Nov 2026): their portrait for the student's band — or their initial in their
- * colour until the pictures are in — with a name badge. While they speak the card lifts and pulses
- * and a bubble shows what they are saying.
+ * colour until the pictures are in — with a name badge. While they speak the card lifts and
+ * breathes, a soft ring in their colour swells behind the portrait (2 Nov 2026, as the website's
+ * glow), and a bubble shows what they are saying.
+ *
+ * One loop drives both, on the native driver. It is stopped and reset the moment they stop speaking
+ * and when the card goes away, so no loop outlives its character.
  */
 export default function CharacterCard({ character, band, speaking, bubble }) {
   const styles = useStyles();
@@ -19,19 +23,25 @@ export default function CharacterCard({ character, band, speaking, bubble }) {
       pulse.setValue(0);
       return undefined;
     }
+    const breathe = { duration: 800, easing: Easing.inOut(Easing.ease), useNativeDriver: true };
     const loop = Animated.loop(
       Animated.sequence([
-        Animated.timing(pulse, { toValue: 1, duration: 450, useNativeDriver: true }),
-        Animated.timing(pulse, { toValue: 0, duration: 450, useNativeDriver: true }),
+        Animated.timing(pulse, { toValue: 1, ...breathe }),
+        Animated.timing(pulse, { toValue: 0, ...breathe }),
       ]),
     );
     loop.start();
-    return () => loop.stop();
+    return () => {
+      loop.stop();
+      pulse.setValue(0);
+    };
   }, [speaking, pulse]);
 
   const image = (CAST_IMAGES[band] || {})[character.key];
   const colour = character.colour;
-  const scale = pulse.interpolate({ inputRange: [0, 1], outputRange: [1.04, 1.1] });
+  const scale = pulse.interpolate({ inputRange: [0, 1], outputRange: [1.03, 1.07] });
+  const ringScale = pulse.interpolate({ inputRange: [0, 1], outputRange: [1.08, 1.32] });
+  const ringOpacity = pulse.interpolate({ inputRange: [0, 1], outputRange: [0.35, 0.12] });
 
   return (
     <View style={styles.card} accessibilityLabel={`${character.name}, ${character.role}`}>
@@ -42,18 +52,20 @@ export default function CharacterCard({ character, band, speaking, bubble }) {
           </Text>
         </View>
       ) : null}
-      <Animated.View
-        style={[
-          styles.portrait,
-          { borderColor: colour },
-          speaking && { transform: [{ translateY: -4 }, { scale }] },
-        ]}
-      >
-        {image ? (
-          <Image source={image} style={styles.image} />
-        ) : (
-          <Text style={[styles.initial, { color: colour }]}>{character.name.charAt(0)}</Text>
-        )}
+      <Animated.View style={[styles.portraitWrap, speaking && { transform: [{ translateY: -4 }, { scale }] }]}>
+        {speaking ? (
+          <Animated.View
+            pointerEvents="none"
+            style={[styles.ring, { backgroundColor: colour, opacity: ringOpacity, transform: [{ scale: ringScale }] }]}
+          />
+        ) : null}
+        <View style={[styles.portrait, { borderColor: colour }]}>
+          {image ? (
+            <Image source={image} style={styles.image} />
+          ) : (
+            <Text style={[styles.initial, { color: colour }]}>{character.name.charAt(0)}</Text>
+          )}
+        </View>
       </Animated.View>
       <View style={[styles.badge, { backgroundColor: colour }]}>
         <Text style={styles.badgeText} numberOfLines={1}>
@@ -67,6 +79,9 @@ export default function CharacterCard({ character, band, speaking, bubble }) {
 
 const useStyles = makeStyles(() => ({
   card: { width: 64, alignItems: 'center' },
+  // The portrait's own size, so the ring behind it changes nothing around the card.
+  portraitWrap: { width: 56, height: 56, alignItems: 'center', justifyContent: 'center' },
+  ring: { position: 'absolute', width: 56, height: 56, borderRadius: 28 },
   portrait: {
     width: 56,
     height: 56,
