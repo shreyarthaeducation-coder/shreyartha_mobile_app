@@ -1,19 +1,37 @@
 import { useEffect, useRef, useState } from 'react';
-import { AccessibilityInfo, Animated, Image, Text, View } from 'react-native';
+import { AccessibilityInfo, Animated, Easing, Image, Pressable, Text, View } from 'react-native';
 import { SLATE, TYPE } from '../../../../constants/theme';
 import { CAST_IMAGES } from '../../../../constants/shreyaSpeaking';
 import { makeStyles } from '../../../../utils/makeStyles';
 
 /**
  * One of the cast (1 Nov 2026): their portrait for the student's band — or their initial in their
- * colour until the pictures are in — with a name badge. While they speak the card lifts, a soft
- * ring in their own colour breathes around the portrait (2 Nov 2026, the website's glow), and a
- * bubble shows what they are saying. With the phone's Reduce Motion on, the ring stays still.
+ * colour — with a name badge. The website's CharacterCard, alive the same way (3 Nov 2026):
+ * - idle      — floats gently, every card a little out of step (`order`);
+ * - tapped    — `onTap`: a hop, then the screen has them introduce themselves;
+ * - speaking  — a soft ring in their colour breathes behind them, the portrait bobs, and sound bars
+ *               rise and fall under it; a bubble shows what they say;
+ * - listening — the student is reading their line: a dashed ring turns around them;
+ * - cheering  — the line was read with no mistake: two jumps and a star.
+ * With the phone's Reduce Motion on, nothing moves: the rings stand still instead.
  */
-export default function CharacterCard({ character, band, speaking, bubble }) {
+export default function CharacterCard({
+  character,
+  band,
+  speaking = false,
+  listening = false,
+  cheering = false,
+  bubble,
+  order = 0,
+  onTap,
+}) {
   const styles = useStyles();
-  const pulse = useRef(new Animated.Value(0)).current;
   const [reduceMotion, setReduceMotion] = useState(false);
+  const float = useRef(new Animated.Value(0)).current;
+  const pulse = useRef(new Animated.Value(0)).current;
+  const jump = useRef(new Animated.Value(0)).current;
+  const spin = useRef(new Animated.Value(0)).current;
+  const star = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     let live = true;
@@ -27,6 +45,27 @@ export default function CharacterCard({ character, band, speaking, bubble }) {
     };
   }, []);
 
+  // Idle: a slow float, started a little later for each card so they are never in step.
+  useEffect(() => {
+    if (reduceMotion || speaking) {
+      float.stopAnimation();
+      float.setValue(0);
+      return undefined;
+    }
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(float, { toValue: 1, duration: 1700, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
+        Animated.timing(float, { toValue: 0, duration: 1700, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
+      ]),
+    );
+    const start = setTimeout(() => loop.start(), order * 450);
+    return () => {
+      clearTimeout(start);
+      loop.stop();
+    };
+  }, [reduceMotion, speaking, order, float]);
+
+  // Speaking: the breathing ring, the bob and the sound bars all ride one pulse.
   useEffect(() => {
     if (!speaking || reduceMotion) {
       pulse.stopAnimation();
@@ -35,44 +74,96 @@ export default function CharacterCard({ character, band, speaking, bubble }) {
     }
     const loop = Animated.loop(
       Animated.sequence([
-        Animated.timing(pulse, { toValue: 1, duration: 700, useNativeDriver: true }),
-        Animated.timing(pulse, { toValue: 0, duration: 700, useNativeDriver: true }),
+        Animated.timing(pulse, { toValue: 1, duration: 400, useNativeDriver: true }),
+        Animated.timing(pulse, { toValue: 0, duration: 400, useNativeDriver: true }),
       ]),
     );
     loop.start();
     return () => loop.stop();
   }, [speaking, reduceMotion, pulse]);
 
+  // Listening: the dashed ring turns.
+  useEffect(() => {
+    if (!listening || reduceMotion) {
+      spin.stopAnimation();
+      spin.setValue(0);
+      return undefined;
+    }
+    const loop = Animated.loop(
+      Animated.timing(spin, { toValue: 1, duration: 6000, easing: Easing.linear, useNativeDriver: true }),
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [listening, reduceMotion, spin]);
+
+  // Cheering: two jumps and a star that pops in.
+  useEffect(() => {
+    if (!cheering) {
+      star.setValue(0);
+      return undefined;
+    }
+    if (reduceMotion) {
+      star.setValue(1);
+      return undefined;
+    }
+    const hopOnce = Animated.sequence([
+      Animated.timing(jump, { toValue: 1, duration: 300, easing: Easing.out(Easing.quad), useNativeDriver: true }),
+      Animated.timing(jump, { toValue: 0, duration: 300, easing: Easing.in(Easing.quad), useNativeDriver: true }),
+    ]);
+    const run = Animated.parallel([
+      Animated.sequence([hopOnce, hopOnce]),
+      Animated.spring(star, { toValue: 1, friction: 4, useNativeDriver: true }),
+    ]);
+    run.start();
+    return () => run.stop();
+  }, [cheering, reduceMotion, jump, star]);
+
+  const tap = () => {
+    if (!onTap) return;
+    if (!reduceMotion) {
+      Animated.sequence([
+        Animated.timing(jump, { toValue: 1, duration: 180, easing: Easing.out(Easing.quad), useNativeDriver: true }),
+        Animated.spring(jump, { toValue: 0, friction: 4, useNativeDriver: true }),
+      ]).start();
+    }
+    onTap(character);
+  };
+
   const image = (CAST_IMAGES[band] || {})[character.key];
   const colour = character.colour;
-  const scale = pulse.interpolate({ inputRange: [0, 1], outputRange: [1.04, 1.07] });
+  const lift = Animated.add(
+    float.interpolate({ inputRange: [0, 1], outputRange: [0, -3] }),
+    jump.interpolate({ inputRange: [0, 1], outputRange: [0, -12] }),
+  );
+  const bob = pulse.interpolate({ inputRange: [0, 1], outputRange: [1.03, 1.07] });
   const ringScale = pulse.interpolate({ inputRange: [0, 1], outputRange: [1.08, 1.22] });
   const ringOpacity = pulse.interpolate({ inputRange: [0, 1], outputRange: [0.45, 0.15] });
+  const rotate = spin.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '360deg'] });
+  const label = `${character.name}, ${character.role}${speaking ? ', speaking' : listening ? ', listening' : ''}`;
 
-  return (
-    <View style={styles.card} accessibilityLabel={`${character.name}, ${character.role}`}>
-      {bubble ? (
-        <View style={[styles.bubble, { borderColor: colour }]}>
-          <Text style={styles.bubbleText} numberOfLines={3}>
-            {bubble}
-          </Text>
-        </View>
-      ) : null}
+  const portrait = (
+    <Animated.View style={[styles.holder, { transform: [{ translateY: lift }] }]}>
       {speaking ? (
         <Animated.View
           pointerEvents="none"
           style={[
-            styles.ring,
+            styles.glow,
             { backgroundColor: colour },
-            reduceMotion ? styles.ringStill : { opacity: ringOpacity, transform: [{ translateY: -4 }, { scale: ringScale }] },
+            reduceMotion ? styles.glowStill : { opacity: ringOpacity, transform: [{ scale: ringScale }] },
           ]}
+        />
+      ) : null}
+      {listening && !speaking ? (
+        <Animated.View
+          pointerEvents="none"
+          style={[styles.listen, { borderColor: colour }, !reduceMotion && { transform: [{ rotate }] }]}
         />
       ) : null}
       <Animated.View
         style={[
           styles.portrait,
           { borderColor: colour },
-          speaking && { transform: [{ translateY: -4 }, { scale: reduceMotion ? 1.04 : scale }] },
+          speaking && { transform: [{ scale: reduceMotion ? 1.04 : bob }] },
         ]}
       >
         {image ? (
@@ -81,6 +172,51 @@ export default function CharacterCard({ character, band, speaking, bubble }) {
           <Text style={[styles.initial, { color: colour }]}>{character.name.charAt(0)}</Text>
         )}
       </Animated.View>
+      {cheering ? (
+        <Animated.Text style={[styles.star, { transform: [{ scale: star }] }]} accessible={false}>
+          ⭐
+        </Animated.Text>
+      ) : null}
+    </Animated.View>
+  );
+
+  return (
+    <View style={styles.card} accessibilityLabel={label}>
+      {bubble ? (
+        <View style={[styles.bubble, { borderColor: colour }]}>
+          <Text style={styles.bubbleText} numberOfLines={3}>
+            {bubble}
+          </Text>
+        </View>
+      ) : null}
+      {onTap ? (
+        <Pressable onPress={tap} accessibilityRole="button" accessibilityLabel={`Say hello to ${character.name}`} hitSlop={6}>
+          {portrait}
+        </Pressable>
+      ) : (
+        portrait
+      )}
+      <View style={styles.wave} accessible={false}>
+        {[0, 1, 2, 3].map((i) => (
+          <Animated.View
+            key={i}
+            style={[
+              styles.bar,
+              { backgroundColor: colour, opacity: speaking ? 1 : 0 },
+              speaking && !reduceMotion && {
+                transform: [
+                  {
+                    scaleY: pulse.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: i % 2 === 0 ? [0.4, 1] : [1, 0.4],
+                    }),
+                  },
+                ],
+              },
+            ]}
+          />
+        ))}
+      </View>
       <View style={[styles.badge, { backgroundColor: colour }]}>
         <Text style={styles.badgeText} numberOfLines={1}>
           {character.name}
@@ -93,9 +229,19 @@ export default function CharacterCard({ character, band, speaking, bubble }) {
 
 const useStyles = makeStyles(() => ({
   card: { width: 64, alignItems: 'center' },
-  // The glow: a disc in the character's colour behind the portrait, the same size, breathing out.
-  ring: { position: 'absolute', top: 0, width: 56, height: 56, borderRadius: 28 },
-  ringStill: { opacity: 0.3, transform: [{ translateY: -4 }, { scale: 1.14 }] },
+  holder: { width: 56, height: 56, alignItems: 'center', justifyContent: 'center' },
+  // Speaking: a disc in the character's colour behind the portrait, breathing out.
+  glow: { position: 'absolute', width: 56, height: 56, borderRadius: 28 },
+  glowStill: { opacity: 0.3, transform: [{ scale: 1.14 }] },
+  // Listening: a dashed ring just outside the portrait.
+  listen: {
+    position: 'absolute',
+    width: 66,
+    height: 66,
+    borderRadius: 33,
+    borderWidth: 2,
+    borderStyle: 'dashed',
+  },
   portrait: {
     width: 56,
     height: 56,
@@ -108,7 +254,10 @@ const useStyles = makeStyles(() => ({
   },
   image: { width: '100%', height: '100%' },
   initial: { fontSize: TYPE.title, fontWeight: '800' },
-  badge: { marginTop: 4, paddingHorizontal: 6, paddingVertical: 1, borderRadius: 999, maxWidth: 64 },
+  star: { position: 'absolute', top: -8, right: -6, fontSize: TYPE.heading },
+  wave: { flexDirection: 'row', alignItems: 'flex-end', gap: 3, height: 10, marginTop: 3 },
+  bar: { width: 3, height: 10, borderRadius: 2 },
+  badge: { marginTop: 2, paddingHorizontal: 6, paddingVertical: 1, borderRadius: 999, maxWidth: 64 },
   badgeText: { fontSize: TYPE.micro, fontWeight: '700', color: '#ffffff' },
   role: { fontSize: TYPE.micro, color: SLATE[500] },
   bubble: {

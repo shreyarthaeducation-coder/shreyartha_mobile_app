@@ -12,10 +12,14 @@ import { parseWordScores } from '../../phonetics/wordScores';
 import { READ, alignWords, settledMistakes, withAzureVerdict } from '../../../../utils/shreyaAlign';
 import { StudentCard } from '../../StudentCard';
 import CharacterCard from './CharacterCard';
+import { coachingLine } from '../../../../utils/shreyaCoaching';
 import VocabText from './VocabText';
 
 const clean = (word) => String(word).replace(/^[^A-Za-z0-9']+|[^A-Za-z0-9']+$/g, '');
 const WHAT = { SKIPPED: 'missed', WRONG: 'said differently', MISPRONOUNCED: 'not quite right' };
+
+/** What a character says when tapped (3 Nov 2026) — the website's words. */
+const greetingOf = (c) => (c.key === 'SONIA' ? `Hello! I'm ${c.name}, your teacher.` : `Hi! I'm ${c.name}.`);
 
 /**
  * The challenge itself on the phone (1 Nov 2026) — the website's `SpeakingTab`.
@@ -47,6 +51,12 @@ export default function SpeakingPanel({ data, castByKey, say, stopVoice, showToa
   const queue = useRef(Promise.resolve());
   const finalisedFor = useRef(null);
   const assessedUri = useRef(null);
+  // A line read with no mistake is cheered once (3 Nov 2026) — after Azure's verdict, which can
+  // still add a mispronounced word, so a character never says "Well done!" and then corrects.
+  const [cheering, setCheering] = useState([]);
+  const cheeredFor = useRef(null);
+  const cheerTimer = useRef(null);
+  useEffect(() => () => clearTimeout(cheerTimer.current), []);
 
   const line = lines[index];
   const reading = useLiveReading();
@@ -91,18 +101,27 @@ export default function SpeakingPanel({ data, castByKey, say, stopVoice, showToa
     [index],
   );
 
-  /** Once the microphone is closed: the line's character says each mistake's word, once. */
+  /**
+   * Once the microphone is closed: the line's character coaches the student — Sonia "Say it like
+   * me", a student "Try to pronounce it like I am doing" — saying the word(s) as they should be
+   * said, each mistake once and those found together in one sentence (utils/shreyaCoaching).
+   */
   const correct = useCallback(
     (mistakes) => {
-      mistakes.forEach((m) => {
+      const fresh = mistakes.filter((m) => {
         const id = `${index}:${m.index}:${m.state}`;
         noticed.current.add(id);
-        if (spoken.current.has(id)) return;
+        if (spoken.current.has(id)) return false;
         spoken.current.add(id);
-        const word = clean(m.display);
-        setNotice(`Oops! “${word}” was ${WHAT[m.state] || 'missed'}. ${whoName} says it:`);
-        speakAs(who, word, `“${word}”`);
+        return true;
       });
+      if (fresh.length === 0) return;
+      const words = fresh.map((m) => clean(m.display));
+      const last = fresh[fresh.length - 1];
+      const quoted = words.map((w) => `“${w}”`).join(', ');
+      setNotice(`Oops! ${quoted} ${fresh.length === 1 ? 'was' : 'were'} ${WHAT[last.state] || 'missed'}. ${whoName} helps:`);
+      const coaching = coachingLine(who, words);
+      speakAs(who, coaching, coaching);
     },
     [index, who, whoName, speakAs],
   );
@@ -141,12 +160,17 @@ export default function SpeakingPanel({ data, castByKey, say, stopVoice, showToa
         setResults((r) => {
           const current = r[at];
           if (!current) return r;
-          return { ...r, [at]: { words: withAzureVerdict(current.words, azureWords), accuracy: scores?.accuracyScore ?? null } };
+          return {
+            ...r,
+            [at]: { words: withAzureVerdict(current.words, azureWords), accuracy: scores?.accuracyScore ?? null, checked: true },
+          };
         });
       })
       .catch(() => {
         // The phone's own marking stands; only the pronunciation scores are missing for this line.
-        if (alive) showToast?.('Pronunciation scores could not be added for that line.', 'error');
+        if (!alive) return;
+        showToast?.('Pronunciation scores could not be added for that line.', 'error');
+        setResults((r) => (r[at] ? { ...r, [at]: { ...r[at], checked: true } } : r));
       })
       .finally(() => {
         if (alive) setScoring(false);
@@ -163,6 +187,23 @@ export default function SpeakingPanel({ data, castByKey, say, stopVoice, showToa
     if (current && !listening) correct(settledMistakes(current.words));
   }, [current, listening, correct]);
 
+  // Every word read well, Azure agreeing: the line's character (everyone, for the chorus) cheers.
+  useEffect(() => {
+    if (!current?.checked || listening || cheeredFor.current === index) return;
+    if (current.words.length === 0 || !current.words.every((w) => w.state === READ)) return;
+    cheeredFor.current = index;
+    setCheering(line.chorus ? STUDENT_KEYS : [line.character]);
+    clearTimeout(cheerTimer.current);
+    cheerTimer.current = setTimeout(() => setCheering([]), 2200);
+    speakAs(who, 'Well done!', '⭐ Well done!');
+  }, [current, listening, index, line, who, speakAs]);
+
+  /** A character tapped: they introduce themselves — not while the microphone is open. */
+  const greet = (c) => {
+    if (listening) return;
+    speakAs(c.key, greetingOf(c), greetingOf(c));
+  };
+
   const forget = (at) => {
     [noticed.current, spoken.current].forEach((set) =>
       [...set].filter((id) => id.startsWith(`${at}:`)).forEach((id) => set.delete(id)),
@@ -174,6 +215,7 @@ export default function SpeakingPanel({ data, castByKey, say, stopVoice, showToa
     setNotice('');
     finalisedFor.current = null;
     assessedUri.current = null;
+    cheeredFor.current = null;
     forget(index);
     setResults((r) => {
       const next = { ...r };
@@ -265,13 +307,17 @@ export default function SpeakingPanel({ data, castByKey, say, stopVoice, showToa
   return (
     <View>
       <View style={styles.cast} accessibilityLabel="The characters">
-        {(data.cast || []).map((c) => (
+        {(data.cast || []).map((c, i) => (
           <CharacterCard
             key={c.key}
             character={c}
             band={data.band}
-            speaking={speaker?.key === c.key || (listening && activeKeys.includes(c.key))}
+            order={i}
+            speaking={speaker?.key === c.key}
+            listening={listening && activeKeys.includes(c.key)}
+            cheering={cheering.includes(c.key)}
             bubble={speaker?.key === c.key ? speaker.bubble : ''}
+            onTap={listening ? undefined : greet}
           />
         ))}
       </View>

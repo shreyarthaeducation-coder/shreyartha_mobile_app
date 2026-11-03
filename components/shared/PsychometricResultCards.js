@@ -28,6 +28,9 @@ export default function PsychometricResultCards({
   statement,
   psych,
   psychFailed = false,
+  // The "completed / not yet completed" line under the bar. The parent's card leaves it out
+  // (3 Nov 2026), as on the website: the n/6 bar already says it.
+  showStatus = true,
   // Rendered inside the psychometric card, under the status — the parent's Preview and Download.
   children,
 }) {
@@ -72,23 +75,25 @@ export default function PsychometricResultCards({
               </Text>
               <ProgressBar value={percent} color={palette.primary} />
 
-              <View style={styles.statusRow}>
-                <Ionicons
-                  name={psych?.hasCompletedAssessment ? 'checkmark-circle' : 'time-outline'}
-                  size={18}
-                  color={psych?.hasCompletedAssessment ? FEEDBACK.successText : SLATE[400]}
-                />
-                <Text
-                  style={[
-                    styles.status,
-                    psych?.hasCompletedAssessment && { color: FEEDBACK.successText },
-                  ]}
-                >
-                  {psych?.hasCompletedAssessment
-                    ? 'Assessment completed. Results are available.'
-                    : 'Psychometric assessment not yet completed by the student.'}
-                </Text>
-              </View>
+              {showStatus ? (
+                <View style={styles.statusRow}>
+                  <Ionicons
+                    name={psych?.hasCompletedAssessment ? 'checkmark-circle' : 'time-outline'}
+                    size={18}
+                    color={psych?.hasCompletedAssessment ? FEEDBACK.successText : SLATE[400]}
+                  />
+                  <Text
+                    style={[
+                      styles.status,
+                      psych?.hasCompletedAssessment && { color: FEEDBACK.successText },
+                    ]}
+                  >
+                    {psych?.hasCompletedAssessment
+                      ? 'Assessment completed. Results are available.'
+                      : 'Psychometric assessment not yet completed by the student.'}
+                  </Text>
+                </View>
+              ) : null}
               {children}
             </>
           )}
