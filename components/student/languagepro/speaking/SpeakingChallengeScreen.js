@@ -48,11 +48,14 @@ export default function SpeakingChallengeScreen({ chapterId, showToast }) {
     return m;
   }, [data]);
 
-  /** Says `text` in a character's voice; the chorus and anyone unknown are Sonia. */
+  /**
+   * Says `text` in a character's voice; the chorus and anyone unknown are Sonia. `options` goes to
+   * the voice (its `onStart`, which the face and Play all use).
+   */
   const say = useCallback(
-    (text, characterKey) => {
+    (text, characterKey, options) => {
       const c = castByKey[characterKey] || castByKey.SONIA;
-      return speak(text, { voice: c?.voice });
+      return speak(text, { ...options, voice: c?.voice });
     },
     [castByKey, speak],
   );

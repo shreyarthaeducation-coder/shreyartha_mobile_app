@@ -40,6 +40,27 @@ export const CAST_IMAGES = {
   },
 };
 
+/**
+ * The talking faces' patch sheets (4 Nov 2026): six mouth shapes side by side, and the closed eyes,
+ * cut from Gemini edits of each portrait. Where they sit is in `constants/shreyaFaceRects`.
+ */
+export const CAST_FACES = {
+  JUNIOR: {
+    SONIA: { mouth: require('../assets/shreya-cast/junior/sonia-mouth.png'), blink: require('../assets/shreya-cast/junior/sonia-blink.png') },
+    SHRI: { mouth: require('../assets/shreya-cast/junior/shri-mouth.png'), blink: require('../assets/shreya-cast/junior/shri-blink.png') },
+    SHREYA: { mouth: require('../assets/shreya-cast/junior/shreya-mouth.png'), blink: require('../assets/shreya-cast/junior/shreya-blink.png') },
+    DARSH: { mouth: require('../assets/shreya-cast/junior/darsh-mouth.png'), blink: require('../assets/shreya-cast/junior/darsh-blink.png') },
+    KRISH: { mouth: require('../assets/shreya-cast/junior/krish-mouth.png'), blink: require('../assets/shreya-cast/junior/krish-blink.png') },
+  },
+  SENIOR: {
+    SONIA: { mouth: require('../assets/shreya-cast/senior/sonia-mouth.png'), blink: require('../assets/shreya-cast/senior/sonia-blink.png') },
+    SHRI: { mouth: require('../assets/shreya-cast/senior/shri-mouth.png'), blink: require('../assets/shreya-cast/senior/shri-blink.png') },
+    SHREYA: { mouth: require('../assets/shreya-cast/senior/shreya-mouth.png'), blink: require('../assets/shreya-cast/senior/shreya-blink.png') },
+    DARSH: { mouth: require('../assets/shreya-cast/senior/darsh-mouth.png'), blink: require('../assets/shreya-cast/senior/darsh-blink.png') },
+    KRISH: { mouth: require('../assets/shreya-cast/senior/krish-mouth.png'), blink: require('../assets/shreya-cast/senior/krish-blink.png') },
+  },
+};
+
 /** Word states from `utils/shreyaAlign`, as the line draws them. */
 export const WORD_TINT = {
   READ: { color: '#15803d' },

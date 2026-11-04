@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { createAudioPlayer } from 'expo-audio';
-import { TTS_LANGUAGE, synthesizeToFile } from '../services/student/speechService';
+import { TTS_LANGUAGE, synthesizeToFile, timingFor } from '../services/student/speechService';
 import { registerActiveAudio, releaseActiveAudio } from '../utils/audioController';
 
 /**
@@ -47,11 +47,18 @@ export default function useShreyaVoice({ language = TTS_LANGUAGE, gender = 'fema
   const soundRef = useRef(null);
   // The playbackStatusUpdate subscription belonging to the current player.
   const subscriptionRef = useRef(null);
+  // Ends the wait in `speak()` for the current clip. A stopped clip never sends `didJustFinish`, so
+  // without this a stop left `speak()` pending for good — and the Speaking Challenge, which queues
+  // each line behind the last, fell silent for the rest of the chapter (found 4 Nov 2026).
+  const finishRef = useRef(null);
   // Bumped on every stop and on unmount, so a slow synthesis cannot start playing into a screen
   // that has moved on — or over a recording that has since begun.
   const epochRef = useRef(0);
 
   const unload = useCallback(async () => {
+    const finish = finishRef.current;
+    finishRef.current = null;
+    finish?.();
     const player = soundRef.current;
     soundRef.current = null;
     const subscription = subscriptionRef.current;
@@ -136,8 +143,10 @@ export default function useShreyaVoice({ language = TTS_LANGUAGE, gender = 'fema
 
   /** Speak a line; resolves when it finishes (or immediately if it cannot). */
   // `{ voice }` (1 Nov 2026): a Learn with Shreya character's own voice for this line.
+  // `{ onStart }` (4 Nov 2026): called with the player and the line's word timing as it starts to
+  // play, so a character's face can follow the clip (`player.currentTime`), or Play all can stop it.
   const speak = useCallback(
-    async (text, { voice } = {}) => {
+    async (text, { voice, onStart } = {}) => {
       if (!text || !text.trim()) return;
       const epoch = (epochRef.current += 1);
       setError('');
@@ -164,6 +173,7 @@ export default function useShreyaVoice({ language = TTS_LANGUAGE, gender = 'fema
         setPaused(false);
 
         await new Promise((resolve) => {
+          finishRef.current = resolve;
           // Kept on the subscription so `unload()` can detach it; a listener left attached to a
           // removed player is what leaks one clip's worth of state per line spoken.
           subscriptionRef.current = player.addListener('playbackStatusUpdate', (status) => {
@@ -175,6 +185,8 @@ export default function useShreyaVoice({ language = TTS_LANGUAGE, gender = 'fema
             return undefined;
           });
           player.play();
+          // After play(), as on the website: the face follows a clip that is already playing.
+          onStart?.(player, timingFor(uri));
         });
       } catch (e) {
         // Still non-blocking — a lesson must never stall over audio — but no longer INVISIBLE.

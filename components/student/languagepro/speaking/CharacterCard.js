@@ -1,8 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
 import { AccessibilityInfo, Animated, Easing, Image, Pressable, Text, View } from 'react-native';
 import { SLATE, TYPE } from '../../../../constants/theme';
-import { CAST_IMAGES } from '../../../../constants/shreyaSpeaking';
+import { CAST_FACES, CAST_IMAGES } from '../../../../constants/shreyaSpeaking';
+import { FACES } from '../../../../constants/shreyaFaceRects';
+import useTalkingFace from '../../../../hooks/useTalkingFace';
 import { makeStyles } from '../../../../utils/makeStyles';
+import { MOUTHS } from '../../../../utils/shreyaVisemes';
 
 /**
  * One of the cast (1 Nov 2026): their portrait for the student's band — or their initial in their
@@ -14,6 +17,13 @@ import { makeStyles } from '../../../../utils/makeStyles';
  * - listening — the student is reading their line: a dashed ring turns around them;
  * - cheering  — the line was read with no mistake: two jumps and a star.
  * With the phone's Reduce Motion on, nothing moves: the rings stand still instead.
+ *
+ * And they talk (4 Nov 2026), as on the website: while `talk` (the voice's player and the line's
+ * word timing) plays, the portrait's mouth changes shape with the words, and every few seconds they
+ * blink — small patches cut from Gemini edits of the same portrait (`CAST_FACES`), laid where
+ * `constants/shreyaFaceRects` says. A talking face replaces the sound bars and the bob with a slow
+ * nod; Reduce Motion keeps the mouth and the blink (they carry meaning, and barely move) and drops
+ * the nod. A character with no patches keeps the still portrait.
  */
 export default function CharacterCard({
   character,
@@ -23,9 +33,11 @@ export default function CharacterCard({
   cheering = false,
   bubble,
   order = 0,
+  talk = null,
   onTap,
 }) {
   const styles = useStyles();
+  const { mouth, blinking } = useTalkingFace(talk);
   const [reduceMotion, setReduceMotion] = useState(false);
   const float = useRef(new Animated.Value(0)).current;
   const pulse = useRef(new Animated.Value(0)).current;
@@ -130,12 +142,16 @@ export default function CharacterCard({
   };
 
   const image = (CAST_IMAGES[band] || {})[character.key];
+  const sheets = (CAST_FACES[band] || {})[character.key];
+  const rects = FACES[String(band || '').toLowerCase()]?.[character.key.toLowerCase()];
+  const face = image && sheets && rects ? { sheets, rects } : null;
   const colour = character.colour;
   const lift = Animated.add(
     float.interpolate({ inputRange: [0, 1], outputRange: [0, -3] }),
     jump.interpolate({ inputRange: [0, 1], outputRange: [0, -12] }),
   );
   const bob = pulse.interpolate({ inputRange: [0, 1], outputRange: [1.03, 1.07] });
+  const nod = pulse.interpolate({ inputRange: [0, 1], outputRange: ['-2deg', '2deg'] });
   const ringScale = pulse.interpolate({ inputRange: [0, 1], outputRange: [1.08, 1.22] });
   const ringOpacity = pulse.interpolate({ inputRange: [0, 1], outputRange: [0.45, 0.15] });
   const rotate = spin.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '360deg'] });
@@ -163,7 +179,9 @@ export default function CharacterCard({
         style={[
           styles.portrait,
           { borderColor: colour },
-          speaking && { transform: [{ scale: reduceMotion ? 1.04 : bob }] },
+          speaking && {
+            transform: reduceMotion ? [{ scale: 1.04 }] : face ? [{ scale: 1.04 }, { rotate: nod }] : [{ scale: bob }],
+          },
         ]}
       >
         {image ? (
@@ -171,6 +189,12 @@ export default function CharacterCard({
         ) : (
           <Text style={[styles.initial, { color: colour }]}>{character.name.charAt(0)}</Text>
         )}
+        {face ? (
+          <>
+            <Patch rect={face.rects.mouth} size={face.rects.size} source={face.sheets.mouth} cells={MOUTHS.length} cell={mouth ? MOUTHS.indexOf(mouth) : -1} />
+            <Patch rect={face.rects.eyes} size={face.rects.size} source={face.sheets.blink} cells={1} cell={blinking ? 0 : -1} />
+          </>
+        ) : null}
       </Animated.View>
       {cheering ? (
         <Animated.Text style={[styles.star, { transform: [{ scale: star }] }]} accessible={false}>
@@ -202,7 +226,7 @@ export default function CharacterCard({
             key={i}
             style={[
               styles.bar,
-              { backgroundColor: colour, opacity: speaking ? 1 : 0 },
+              { backgroundColor: colour, opacity: speaking && !face ? 1 : 0 },
               speaking && !reduceMotion && {
                 transform: [
                   {
@@ -223,6 +247,32 @@ export default function CharacterCard({
         </Text>
       </View>
       <Text style={styles.role}>{character.role}</Text>
+    </View>
+  );
+}
+
+/**
+ * One face patch over the portrait: a window at `rect` (in the portrait's own pixels, placed in
+ * percent so it fits any card size) onto cell `cell` of a sheet `cells` wide; -1 hides it.
+ */
+function Patch({ rect, size, source, cells, cell }) {
+  return (
+    <View
+      pointerEvents="none"
+      style={{
+        position: 'absolute',
+        left: `${(rect.x / size) * 100}%`,
+        top: `${(rect.y / size) * 100}%`,
+        width: `${(rect.w / size) * 100}%`,
+        height: `${(rect.h / size) * 100}%`,
+        overflow: 'hidden',
+        opacity: cell >= 0 ? 1 : 0,
+      }}
+    >
+      <Image
+        source={source}
+        style={{ position: 'absolute', top: 0, height: '100%', width: `${cells * 100}%`, left: `${-Math.max(0, cell) * 100}%` }}
+      />
     </View>
   );
 }

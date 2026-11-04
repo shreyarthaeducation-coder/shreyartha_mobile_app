@@ -40,7 +40,15 @@ export default function SpeakingPanel({ data, castByKey, say, stopVoice, showToa
   const lines = useMemo(() => data.lines || [], [data]);
   const [index, setIndex] = useState(0);
   const [results, setResults] = useState({});
-  const [speaker, setSpeaker] = useState(null); // {key, bubble}
+  const [speaker, setSpeaker] = useState(null); // {key, bubble, audio, timing}
+  // Play all (as on the website, 4 Nov 2026): whether the lines are being read one after another,
+  // and which run that is — Stop, or any line chosen by hand, starts a new run, and the old one
+  // ends at its next step.
+  const [playing, setPlaying] = useState(false);
+  const playRun = useRef(0);
+  useEffect(() => () => {
+    playRun.current += 1;
+  }, []);
   const [notice, setNotice] = useState('');
   const [scoring, setScoring] = useState(false);
   const [summary, setSummary] = useState(null);
@@ -72,13 +80,25 @@ export default function SpeakingPanel({ data, castByKey, say, stopVoice, showToa
   const who = line ? (line.chorus ? 'SONIA' : line.character) : 'SONIA';
   const whoName = castByKey[who]?.name || 'Sonia';
 
-  /** One character speaks, in turn: corrections queue up rather than talk over one another. */
+  /**
+   * One character speaks, in turn: corrections queue up rather than talk over one another. The
+   * player and the line's word timing go to the speaker's face as the clip starts, so its mouth
+   * moves with the words (4 Nov 2026). Resolves true once said, false when the voice could not be
+   * had — never rejects, so one failed line does not silence every line queued after it.
+   */
   const speakAs = useCallback(
-    (characterKey, text, bubble) => {
+    (characterKey, text, bubble, options) => {
       queue.current = queue.current.then(async () => {
         setSpeaker({ key: characterKey, bubble: bubble || text });
+        const onStart = (audio, timing) => {
+          setSpeaker((s) => (s && s.key === characterKey ? { ...s, audio, timing } : s));
+          options?.onStart?.(audio, timing);
+        };
         try {
-          await say(text, characterKey);
+          await say(text, characterKey, { ...options, onStart });
+          return true;
+        } catch {
+          return false;
         } finally {
           setSpeaker(null);
         }
@@ -87,6 +107,44 @@ export default function SpeakingPanel({ data, castByKey, say, stopVoice, showToa
     },
     [say],
   );
+
+  /** Ends Play all, if it is running, and what is being said. */
+  const stopPlaying = () => {
+    playRun.current += 1;
+    setPlaying(false);
+    stopVoice();
+  };
+
+  /**
+   * Play all: from this line to the last, each in its character's voice, moving on by itself. Stop
+   * ends it at once — a line still being fetched when Stop is pressed is silenced as it starts.
+   */
+  const playAll = async () => {
+    const run = (playRun.current += 1);
+    const stillPlaying = () => playRun.current === run;
+    stopVoice();
+    resetReading();
+    setNotice('');
+    setPlaying(true);
+    for (let i = index; i < lines.length && stillPlaying(); i += 1) {
+      const l = lines[i];
+      setIndex(i);
+      // A Stop while the line was loading already keeps it silent: the voice's stop() moves its
+      // epoch on and the late clip is dropped. This is the belt to that: a stale clip is stopped
+      // with the voice's own stop — never a bare pause(), which on the phone would leave speak()
+      // waiting for a finish that never comes, and every later line queued behind it.
+      const said = await speakAs(l.chorus ? 'SONIA' : l.character, l.text, l.text, {
+        onStart: () => {
+          if (!stillPlaying()) stopVoice();
+        },
+      });
+      if (!said && stillPlaying()) {
+        setNotice("Shreya's voice isn't available right now. Please try again later.");
+        break;
+      }
+    }
+    if (stillPlaying()) setPlaying(false);
+  };
 
   /** Shows each settled mistake once, as it happens. */
   const show = useCallback(
@@ -200,7 +258,7 @@ export default function SpeakingPanel({ data, castByKey, say, stopVoice, showToa
 
   /** A character tapped: they introduce themselves — not while the microphone is open. */
   const greet = (c) => {
-    if (listening) return;
+    if (listening || playing) return;
     speakAs(c.key, greetingOf(c), greetingOf(c));
   };
 
@@ -211,7 +269,7 @@ export default function SpeakingPanel({ data, castByKey, say, stopVoice, showToa
   };
 
   const read = () => {
-    stopVoice();
+    stopPlaying();
     setNotice('');
     finalisedFor.current = null;
     assessedUri.current = null;
@@ -230,7 +288,7 @@ export default function SpeakingPanel({ data, castByKey, say, stopVoice, showToa
   };
 
   const go = (to) => {
-    stopVoice();
+    stopPlaying();
     resetReading();
     setNotice('');
     finalisedFor.current = null;
@@ -238,6 +296,7 @@ export default function SpeakingPanel({ data, castByKey, say, stopVoice, showToa
   };
 
   const finish = async () => {
+    stopPlaying();
     setSaving(true);
     try {
       const payload = lines.map((l, i) => ({
@@ -317,7 +376,8 @@ export default function SpeakingPanel({ data, castByKey, say, stopVoice, showToa
             listening={listening && activeKeys.includes(c.key)}
             cheering={cheering.includes(c.key)}
             bubble={speaker?.key === c.key ? speaker.bubble : ''}
-            onTap={listening ? undefined : greet}
+            talk={speaker?.key === c.key ? speaker : null}
+            onTap={listening || playing ? undefined : greet}
           />
         ))}
       </View>
@@ -353,7 +413,20 @@ export default function SpeakingPanel({ data, castByKey, say, stopVoice, showToa
         ) : null}
 
         <View style={styles.actions}>
-          <Button styles={styles} ghost label="Hear it" icon="play" onPress={hear} disabled={listening} palette={palette} />
+          <Button styles={styles} ghost label="Hear it" icon="play" onPress={hear} disabled={listening || playing} palette={palette} />
+          {playing ? (
+            <Button styles={styles} label="Stop" icon="stop" onPress={stopPlaying} stop />
+          ) : (
+            <Button
+              styles={styles}
+              ghost
+              label="Play all"
+              icon="play-forward"
+              onPress={playAll}
+              disabled={listening}
+              palette={palette}
+            />
+          )}
           {listening ? (
             <Button styles={styles} label="Done" icon="stop" onPress={stopReading} stop />
           ) : (

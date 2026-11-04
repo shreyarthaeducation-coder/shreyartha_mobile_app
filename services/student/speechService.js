@@ -134,7 +134,18 @@ export async function synthesizeToFile(
       encoding: FileSystem.EncodingType.Base64,
     });
   }
+  if (Array.isArray(res.timing) && res.timing.length) TIMINGS.set(uri, res.timing);
   return uri;
+}
+
+/**
+ * When each word of a clip starts, [{word, start}] — a Learn with Shreya character's line only
+ * (4 Nov 2026), so their face can move its mouth with the words. Kept beside the file rather than
+ * returned, so every caller of `synthesizeToFile` still gets just the file.
+ */
+const TIMINGS = new Map();
+export function timingFor(uri) {
+  return TIMINGS.get(uri) || [];
 }
 
 /** Drop the TTS cache — worth calling on logout so one student's audio is not left on disk. */
