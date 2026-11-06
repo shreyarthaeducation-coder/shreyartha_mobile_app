@@ -24,6 +24,11 @@ const APP = path.resolve(HERE, '..');
 
 const GUARDED = [
   { pkg: 'expo-speech-recognition', native: 'ExpoSpeechRecognition', loader: 'hooks/useLiveReading.js' },
+  // Parent push (6 Nov 2026): Expo Go SDK 58 showed "Cannot find native module
+  // 'ExpoTopicSubscriptionModule'" when expo-notifications was required behind a stale Expo Go test.
+  { pkg: 'expo-notifications', native: 'ExpoPushTokenManager', loader: 'services/parent/pushService.js' },
+  { pkg: 'expo-notifications', native: 'ExpoTopicSubscriptionModule', loader: 'services/parent/pushService.js' },
+  { pkg: 'expo-device', native: 'ExpoDevice', loader: 'services/parent/pushService.js' },
 ];
 
 const codeOnly = (text) => text.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
@@ -53,7 +58,12 @@ function check(files) {
       if (name !== loader && required.test(code)) problems.push(`${name}: requires ${pkg}; only ${loader} may load it`);
     }
     const code = codeOnly(files[loader] || '');
-    const lookup = code.indexOf(`requireOptionalNativeModule('${native}')`);
+    // A literal lookup, or the name in a list every entry of which is looked up before the load.
+    let lookup = code.indexOf(`requireOptionalNativeModule('${native}')`);
+    if (lookup < 0 && /requireOptionalNativeModule\(name\)/.test(code)) {
+      const listed = code.indexOf(`'${native}'`);
+      if (listed >= 0) lookup = code.indexOf('requireOptionalNativeModule(name)');
+    }
     const load = code.search(required);
     if (lookup < 0) problems.push(`${loader}: no requireOptionalNativeModule('${native}') before loading ${pkg}`);
     else if (load >= 0 && load < lookup) problems.push(`${loader}: requires ${pkg} before checking the native module is there`);
@@ -80,6 +90,15 @@ const MUTANTS = [
   })],
   ['the optional lookup is removed', (f) => ({
     ...f, 'hooks/useLiveReading.js': f['hooks/useLiveReading.js'].replace(/requireOptionalNativeModule\('ExpoSpeechRecognition'\)/g, 'true'),
+  })],
+  ['the push service requires expo-notifications without probing it', (f) => ({
+    ...f, 'services/parent/pushService.js': f['services/parent/pushService.js'].replace(/requireOptionalNativeModule\(name\)/g, 'true'),
+  })],
+  ['the push service forgets the Android-only module', (f) => ({
+    ...f, 'services/parent/pushService.js': f['services/parent/pushService.js'].replace(/'ExpoTopicSubscriptionModule'/g, "'X'"),
+  })],
+  ['a screen imports expo-notifications', (f) => ({
+    ...f, 'app/parent/x.js': "import * as Notifications from 'expo-notifications';\n",
   })],
 ];
 let selfFail = 0;

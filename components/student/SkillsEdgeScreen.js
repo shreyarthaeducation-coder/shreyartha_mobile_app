@@ -506,6 +506,7 @@ export default function SkillsEdgeScreen() {
         // Keyed on the topic so switching topics starts a fresh attempt rather than carrying the
         // previous topic's answers across — the same reason the module test is keyed.
         <UnderstandingTest
+          reportVariant="skills"
           key={`assessment-${topic.id}`}
           moduleId={topic.id}
           loadQuestions={fetchTopicAssessment}
@@ -679,6 +680,7 @@ export default function SkillsEdgeScreen() {
         // Keyed on the module so switching modules restarts the test rather than carrying
         // the previous module's answers over.
         <UnderstandingTest
+          reportVariant="skills"
           key={module.id}
           moduleId={module.id}
           showToast={showToast}

@@ -77,6 +77,10 @@ export async function loadParentAnalytics() {
     coding: parentApi.get(`${BASE}/coding-progress`),
     skillsProfile: parentApi.get(`${BASE}/skills-profile`),
     skillsProgress: parentApi.get(`${BASE}/skills-module-progress`),
+    // The Skills Edge catalogue (6 Nov 2026) — any signed-in user may read it. With it the screen
+    // turns the child's picked topic ids into names and shows, under each chosen skill, only the
+    // topics the child picked (AnalyticsBody's pickedTopicsOnly) — whatever the server sends.
+    skillsTree: parentApi.get('/api/skillsedge/tree'),
     // Rendered by the parent page's "Academic IQ history" block. The student screen fetches the
     // same data and never shows it — a gap on the student side, not spare weight here.
     iqHistory: parentApi.get(`${BASE}/academic-iq-history`),

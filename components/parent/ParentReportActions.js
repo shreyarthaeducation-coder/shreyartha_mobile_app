@@ -8,6 +8,7 @@ import { SegmentedTabs } from '../ui';
 import PsychometricReport from '../student/psychometric/PsychometricReport';
 import { fetchChildReportItems } from '../../services/shared/psychometricReportService';
 import { printPsychometricBatch, reshareReportPdf } from '../../utils/psychometricPdf';
+import WebReport from '../shared/WebReport';
 
 /**
  * View graphs and Download, inside the parent's psychometric card (2 Nov 2026) — replacing the
@@ -61,7 +62,9 @@ export default function ParentReportActions() {
     }
   };
 
-  return (
+  // The website's own card (6 Nov 2026): its View graphs, its graphs and its PDF. What follows is
+  // only for when the website cannot be reached.
+  const native = (
     <View style={styles.wrap}>
       <View style={styles.row}>
         <Pressable
@@ -112,6 +115,17 @@ export default function ParentReportActions() {
           />
         </>
       ) : null}
+    </View>
+  );
+
+  return (
+    <View style={styles.wrap}>
+      <WebReport
+        kind="psychometric"
+        portal="parent"
+        payload={{ mode: 'graphs', collapsible: true, students: data.batch }}
+        fallback={native}
+      />
     </View>
   );
 }

@@ -142,6 +142,8 @@ export const STAFF_ROLE_CONFIG = {
       // The roster. Sits on /api/school-admin and names PRINCIPAL in its own guard, so it does not
       // lean on the role hierarchy — as does Grade Management, now a group further down.
       { key: 'manageStudents', label: 'Manage Students', icon: 'person-add-outline', native: '/staff/principal/manage-students' },
+      // Parents waiting to be verified, and each section's codes (6 Nov 2026) — the website's order.
+      { key: 'parentManagement', label: 'Parent Management', icon: 'people-circle-outline', native: '/staff/principal/parent-management' },
       { key: 'classes', label: 'Class Management', icon: 'school-outline', native: '/staff/principal/classes' },
       { key: 'linkedColleges', label: 'Linked Colleges', icon: 'business-outline', native: '/staff/principal/linked-colleges' },
       { key: 'studentStatus', label: 'Student Status', icon: 'podium-outline', native: '/staff/principal/student-status' },

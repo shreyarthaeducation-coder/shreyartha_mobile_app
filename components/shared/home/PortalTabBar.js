@@ -43,10 +43,15 @@ import { makeStyles } from '../../../utils/makeStyles';
  * value meaning "unset". `scripts/checkpalette.mjs` is what actually catches it.
  */
 
-/** The student panel's three roots. Support is Speak to Counselor, which is a real screen. */
+/**
+ * The student panel's four roots. Support is Speak to Counselor, which is a real screen. Language
+ * Pro (6 Nov 2026) is the fourth: it opens Language Pro itself, one tap from anywhere on the bar.
+ */
 export const STUDENT_TABS = [
   { key: 'home', label: 'Home', icon: 'home', iconOff: 'home-outline', route: '/student' },
   { key: 'support', label: 'Support', icon: 'headset', iconOff: 'headset-outline', route: '/student/counselor' },
+  // Between Support and Profile (6 Nov 2026), opening Language Pro directly.
+  { key: 'languagePro', label: 'Language Pro', icon: 'language', iconOff: 'language-outline', route: '/student/language-pro' },
   { key: 'profile', label: 'Profile', icon: 'person', iconOff: 'person-outline', route: '/student/profile' },
 ];
 

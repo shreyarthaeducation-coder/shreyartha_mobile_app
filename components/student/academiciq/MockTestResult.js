@@ -6,6 +6,7 @@ import GroupedBars from '../../ui/charts/GroupedBars';
 import SegmentedTabs from '../../ui/SegmentedTabs';
 import RankPredictor from '../RankPredictor';
 import { StudentCard, StudentCardTitle, StudentNote } from '../StudentCard';
+import WebReport from '../../shared/WebReport';
 
 /**
  * What a student sees after submitting a mock test.
@@ -27,7 +28,7 @@ import { StudentCard, StudentCardTitle, StudentNote } from '../StudentCard';
  * app ships through EAS with no over-the-air channel, and a native module would force a store
  * build.
  */
-export default function MockTestResult({ result, paperName }) {
+export default function MockTestResult({ result, paperName, correct, total }) {
   const styles = useStyles();
   const [view, setView] = useState('blooms');
 
@@ -39,63 +40,85 @@ export default function MockTestResult({ result, paperName }) {
   const bloomsRows = bloomsBreakdown.filter((row) => row.total > 0);
   const rows = view === 'blooms' ? bloomsRows : skillBreakdown;
 
-  return (
-    <>
-      <StudentCard>
-        <StudentCardTitle>Mock Test Results{paperName ? ` — ${paperName}` : ''}</StudentCardTitle>
-        <View style={styles.summary}>
-          <View style={styles.stat}>
-            <Text style={styles.statValue}>{Math.round(result.scorePercent ?? 0)}%</Text>
-            <Text style={styles.statLabel}>Score</Text>
-          </View>
-          <View style={styles.stat}>
-            <Text style={styles.statValue}>
-              {result.scoredMarks ?? 0}/{result.totalMarks ?? 0}
-            </Text>
-            <Text style={styles.statLabel}>Marks</Text>
-          </View>
-          <View style={styles.stat}>
-            <Text style={styles.statValue}>{result.status === 'GREEN' ? 'Passed' : 'Keep going'}</Text>
-            <Text style={styles.statLabel}>Result</Text>
-          </View>
-        </View>
-      </StudentCard>
+  // The website's own result (6 Nov 2026) — its summary card, its Bloom's and skill charts and its
+  // rank predictor, from the server's result as the app received it. The native cards below are
+  // what shows without the website.
+  const webPayload = {
+    name: paperName || '',
+    score: {
+      percentage: result.scorePercent ?? 0,
+      correct: correct ?? 0,
+      total: total ?? 0,
+      marks: result.scoredMarks ?? 0,
+      maxMarks: result.totalMarks ?? 0,
+      saved: true,
+      testPredictedRank: result.testPredictedRank,
+      rankPrediction: result.rankPrediction || undefined,
+    },
+    breakdown: { bloomsBreakdown, skillBreakdown },
+  };
 
-      <StudentCard>
-        <StudentCardTitle>
-          {view === 'blooms' ? "Bloom's Taxonomy Breakdown" : 'Skill Set Breakdown'}
-        </StudentCardTitle>
-        <SegmentedTabs
-          options={[
-            { key: 'blooms', label: "Bloom's" },
-            { key: 'skills', label: 'Skills' },
-          ]}
-          value={view}
-          onChange={setView}
-          style={styles.tabs}
-        />
-        {rows.length === 0 ? (
-          <StudentNote>
-            {view === 'blooms'
-              ? "This paper's questions have no Bloom's levels recorded, so there is nothing to break down yet."
-              : 'This paper’s questions have no skills recorded yet.'}
-          </StudentNote>
-        ) : (
-          <GroupedBars rows={rows} studentLabel="You" />
-        )}
-      </StudentCard>
+  return <WebReport kind="mock-test" portal="student" payload={webPayload} fallback={nativeResult()} />;
 
-      {result.rankPrediction || result.testPredictedRank ? (
-        <RankPredictor
-          title="Rank Predictor"
-          predictedRank={result.testPredictedRank ?? result.rankPrediction?.predictedRank}
-          rankRemark={result.rankPrediction?.rankRemark}
-          mockAveragePercent={result.rankPrediction?.mockAveragePercent}
-          mockTestsAttempted={result.rankPrediction?.mockTestsAttempted}
-        />
-      ) : null}
-    </>
-  );
+  function nativeResult() {
+    return (
+      <>
+        <StudentCard>
+          <StudentCardTitle>Mock Test Results{paperName ? ` — ${paperName}` : ''}</StudentCardTitle>
+          <View style={styles.summary}>
+            <View style={styles.stat}>
+              <Text style={styles.statValue}>{Math.round(result.scorePercent ?? 0)}%</Text>
+              <Text style={styles.statLabel}>Score</Text>
+            </View>
+            <View style={styles.stat}>
+              <Text style={styles.statValue}>
+                {result.scoredMarks ?? 0}/{result.totalMarks ?? 0}
+              </Text>
+              <Text style={styles.statLabel}>Marks</Text>
+            </View>
+            <View style={styles.stat}>
+              <Text style={styles.statValue}>{result.status === 'GREEN' ? 'Passed' : 'Keep going'}</Text>
+              <Text style={styles.statLabel}>Result</Text>
+            </View>
+          </View>
+        </StudentCard>
+
+        <StudentCard>
+          <StudentCardTitle>
+            {view === 'blooms' ? "Bloom's Taxonomy Breakdown" : 'Skill Set Breakdown'}
+          </StudentCardTitle>
+          <SegmentedTabs
+            options={[
+              { key: 'blooms', label: "Bloom's" },
+              { key: 'skills', label: 'Skills' },
+            ]}
+            value={view}
+            onChange={setView}
+            style={styles.tabs}
+          />
+          {rows.length === 0 ? (
+            <StudentNote>
+              {view === 'blooms'
+                ? "This paper's questions have no Bloom's levels recorded, so there is nothing to break down yet."
+                : 'This paper’s questions have no skills recorded yet.'}
+            </StudentNote>
+          ) : (
+            <GroupedBars rows={rows} studentLabel="You" />
+          )}
+        </StudentCard>
+
+        {result.rankPrediction || result.testPredictedRank ? (
+          <RankPredictor
+            title="Rank Predictor"
+            predictedRank={result.testPredictedRank ?? result.rankPrediction?.predictedRank}
+            rankRemark={result.rankPrediction?.rankRemark}
+            mockAveragePercent={result.rankPrediction?.mockAveragePercent}
+            mockTestsAttempted={result.rankPrediction?.mockTestsAttempted}
+          />
+        ) : null}
+      </>
+    );
+  }
 }
 
 const useStyles = makeStyles((p) => ({

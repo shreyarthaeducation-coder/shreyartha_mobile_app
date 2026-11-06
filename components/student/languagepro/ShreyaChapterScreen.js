@@ -11,6 +11,7 @@ import useVoiceRecorder from '../../../hooks/useVoiceRecorder';
 import useFreeSpeech from '../../../hooks/useFreeSpeech';
 import useShreyaVoice from '../../../hooks/useShreyaVoice';
 import { htmlToText } from '../../../utils/htmlToText';
+import RichText from '../../RichText';
 import { assessPronunciation } from '../../../services/student/speechService';
 import { shreyaEnglish } from '../../../services/student/languageProService';
 
@@ -190,7 +191,9 @@ export default function ShreyaChapterScreen({ chapterId, onExit, showToast }) {
     const words = parseWordScores(scores?.wordsJson);
     // Before scoring there is nothing to colour — the web colours live, we cannot.
     if (words.length === 0) {
-      return <Text style={styles.passage}>{referenceText}</Text>;
+      // The passage as written — a line per speaker, as the website's teleprompter shows it
+      // (6 Nov 2026). `referenceText` is only what Azure scores against.
+      return <RichText html={chapter?.readingContent} textStyle={styles.passage} />;
     }
     return (
       <View style={styles.passageWrap}>
@@ -208,7 +211,7 @@ export default function ShreyaChapterScreen({ chapterId, onExit, showToast }) {
       <StudentCard>
         <StudentCardTitle>Read this aloud</StudentCardTitle>
         {voice.speaking ? <Text style={styles.speaking}>🔊 Shreya is speaking…</Text> : null}
-        <Text style={styles.passage}>{referenceText}</Text>
+        <RichText html={chapter?.readingContent} textStyle={styles.passage} />
       </StudentCard>
 
       <StudentCard>

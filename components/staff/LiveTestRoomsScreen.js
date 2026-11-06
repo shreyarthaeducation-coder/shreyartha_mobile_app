@@ -7,6 +7,7 @@ import { usePalette } from '../ui/PaletteContext';
 import { makeStyles } from '../../utils/makeStyles';
 import { downloadAndShare } from '../../utils/downloadFile';
 import PsychometricReport from '../student/psychometric/PsychometricReport';
+import WebReport from '../shared/WebReport';
 import { getTopicType, processAssessmentResults } from '../../constants/psychometricScoring';
 import {
   LIVE_TEST_LEVELS,
@@ -508,7 +509,8 @@ function Room({ roomId, readOnly = false, homeRoute, toast, showToast, onBack })
         // One report for the session: a body per test the child answered, each scored on its own.
         const tests = psychometricTests(detail?.parts, detail?.answers, room.title).map((test) => {
           const { questions, answers } = psychometricInput(test.rows);
-          return { ...test, results: processAssessmentResults(questions, answers, test.title) };
+          // Questions and answers kept for the website's report page (6 Nov 2026).
+          return { ...test, questions, answers, results: processAssessmentResults(questions, answers, test.title) };
         });
         setReport({ student, tests });
       } else {
@@ -601,8 +603,27 @@ function Room({ roomId, readOnly = false, homeRoute, toast, showToast, onBack })
           <Ionicons name="chevron-back" size={18} color={palette.primaryDark} />
           <Text style={[styles.backText, { color: palette.primaryDark }]}>Back to the results</Text>
         </Pressable>
-        {report.tests
-          ? report.tests.map((test) => (
+        {report.tests && report.tests.length ? (
+          // The website's own report and PDF (6 Nov 2026); the native one only without the website.
+          <WebReport
+            kind="psychometric"
+            portal="staff"
+            payload={{
+              mode: 'graphs',
+              students: [
+                {
+                  name: report.student?.name,
+                  className: report.student?.class && report.student.class !== 'N/A' ? report.student.class : '',
+                  schoolName: report.student?.school && report.student.school !== 'N/A' ? report.student.school : '',
+                  topics: report.tests.map((test) => ({
+                    topicName: test.title,
+                    questions: test.questions,
+                    answers: Object.entries(test.answers || {}).map(([questionId, answer]) => ({ questionId, answer })),
+                  })),
+                },
+              ],
+            }}
+            fallback={report.tests.map((test) => (
               <View key={test.partNo}>
                 {report.tests.length > 1 ? <Text style={styles.section}>{test.title}</Text> : null}
                 <PsychometricReport
@@ -612,8 +633,9 @@ function Room({ roomId, readOnly = false, homeRoute, toast, showToast, onBack })
                   studentInfo={report.student}
                 />
               </View>
-            ))
-          : null}
+            ))}
+          />
+        ) : null}
         {report.tests && report.tests.length === 0 ? (
           <EmptyState icon="document-outline" title="Nothing to report" message="No questions were answered." />
         ) : null}

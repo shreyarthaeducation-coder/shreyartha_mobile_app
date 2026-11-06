@@ -221,7 +221,7 @@ export default function CompanyAssessmentsScreen() {
               • {rule}
             </Text>
           ))}
-          {[chosen.assessmentInstructions, chosen.instructions].filter(Boolean).map((text) => (
+          {[chosen.assessmentInstructions, chosen.instructions].filter((v, i, all) => v && all.indexOf(v) === i).map((text) => (
             <Text key={text} style={styles.body}>
               {text}
             </Text>

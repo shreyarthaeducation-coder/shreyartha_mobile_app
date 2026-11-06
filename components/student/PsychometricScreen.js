@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Alert, Pressable, ScrollView, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { DONE, SLATE, SPACING, TYPE } from '../../constants/theme';
@@ -34,6 +34,7 @@ import {
 } from '../../services/student/psychometricService';
 import { fetchProfileSection } from '../../services/student/profileService';
 import { downloadPsychometricPdf } from '../../utils/psychometricPdf';
+import WebReport from '../shared/WebReport';
 import { useDrillBack } from '../../hooks/useDrillBack';
 
 /**
@@ -283,6 +284,31 @@ export default function PsychometricScreen() {
     }
   };
 
+  // What the website's report page draws: this test, scored there by the website's own engine.
+  const reportPayload = useMemo(
+    () =>
+      results && topic
+        ? {
+            mode: 'single',
+            students: [
+              {
+                name: studentInfo?.name || 'Student',
+                className: studentInfo?.class && studentInfo.class !== 'N/A' ? studentInfo.class : '',
+                schoolName: studentInfo?.school && studentInfo.school !== 'N/A' ? studentInfo.school : '',
+                topics: [
+                  {
+                    topicName: topic.name,
+                    questions,
+                    answers: Object.entries(answers).map(([questionId, answer]) => ({ questionId, answer })),
+                  },
+                ],
+              },
+            ],
+          }
+        : null,
+    [results, topic, studentInfo, questions, answers],
+  );
+
   const chapters = gate.visible('CHAPTER', classNode?.chapters || []);
   const topics = gate.visible('TOPIC', chapter?.topics || []);
   const answeredCount = Object.keys(answers).length;
@@ -301,27 +327,39 @@ export default function PsychometricScreen() {
               </Text>
             </StudentCard>
           ) : null}
-          <PsychometricReport
-            results={results}
-            topicType={getTopicType(topic?.name)}
-            topicName={topic?.name}
-            studentInfo={studentInfo}
-          />
-          <Pressable
-            onPress={downloadPdf}
-            disabled={downloading}
-            style={({ pressed }) => [styles.download, pressed && styles.pressed, downloading && styles.disabled]}
-            accessibilityRole="button"
-          >
-            {downloading ? (
-              <ActivityIndicator size="small" color={palette.onPrimary} />
-            ) : (
+          {/* The website's own report — its charts, layout and PDF (6 Nov 2026). The native one
+              below is only what shows when the website cannot be reached. */}
+          <WebReport
+            kind="psychometric"
+            portal="student"
+            payload={reportPayload}
+            onClose={() => setResults(null)}
+            fallback={
               <>
-                <Ionicons name="download-outline" size={19} color={palette.onPrimary} />
-                <Text style={styles.primaryText}>Download report</Text>
+                <PsychometricReport
+                  results={results}
+                  topicType={getTopicType(topic?.name)}
+                  topicName={topic?.name}
+                  studentInfo={studentInfo}
+                />
+                <Pressable
+                  onPress={downloadPdf}
+                  disabled={downloading}
+                  style={({ pressed }) => [styles.download, pressed && styles.pressed, downloading && styles.disabled]}
+                  accessibilityRole="button"
+                >
+                  {downloading ? (
+                    <ActivityIndicator size="small" color={palette.onPrimary} />
+                  ) : (
+                    <>
+                      <Ionicons name="download-outline" size={19} color={palette.onPrimary} />
+                      <Text style={styles.primaryText}>Download report</Text>
+                    </>
+                  )}
+                </Pressable>
               </>
-            )}
-          </Pressable>
+            }
+          />
           <Text style={styles.rowSub}>
             Attempt {Math.max(usedAt(topic?.id), 1)} of {attempts.max}. Your report is from your latest attempt.
           </Text>

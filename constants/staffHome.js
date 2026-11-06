@@ -624,7 +624,7 @@ const PRINCIPAL = {
       // `manageStudents` (the roster a school puts in) sits beside `students` (the queue of people
       // who signed themselves up) on purpose — they are the two ways a child arrives, and a
       // principal looking for one will look where the other is.
-      itemKeys: ['overview', 'staff', 'classes', 'manageStudents', 'students', 'studentStatus', 'linkedColleges'],
+      itemKeys: ['overview', 'staff', 'classes', 'manageStudents', 'parentManagement', 'students', 'studentStatus', 'linkedColleges'],
     },
     {
       key: 'academics',

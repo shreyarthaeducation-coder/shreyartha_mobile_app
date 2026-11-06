@@ -20,7 +20,6 @@ const EMPTY_SIGNUP = {
   fullName: '',
   email: '',
   mobile: '',
-  studentMobileOrEmail: '',
   password: '',
   terms: false,
 };
@@ -45,15 +44,21 @@ export default function ParentLoginScreen() {
     const fullName = signup.fullName.trim();
     const email = signup.email.trim();
     const mobile = signup.mobile.trim();
-    const child = signup.studentMobileOrEmail.trim();
 
-    // The web's own checks, in its order, so the same first message surfaces.
-    if (!fullName || !email || !mobile) {
-      setSignupError('Please fill in your name, email and mobile number.');
+    // As the website's parent sign-up (6 Nov 2026): name and mobile required, email OPTIONAL (the
+    // backend keeps a placeholder and the parent signs in with the mobile), and no child field —
+    // the child is linked after signing in, on My Children, with the school's code or the child's
+    // mobile or email.
+    if (!fullName || !mobile) {
+      setSignupError('Please fill in your name and mobile number.');
       return;
     }
-    if (!child) {
-      setSignupError("Please enter your child's mobile number or email.");
+    if (!/^[0-9]{10}$/.test(mobile)) {
+      setSignupError('Please enter a 10-digit mobile number.');
+      return;
+    }
+    if (email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
+      setSignupError('Please enter a valid email address, or leave it blank.');
       return;
     }
     if (!signup.password || signup.password.length < 8) {
@@ -73,7 +78,6 @@ export default function ParentLoginScreen() {
         fullName,
         email,
         mobile,
-        studentMobileOrEmail: child,
         password: signup.password,
       });
       // NO TOKEN COMES BACK — the account waits for admin verification. The message stays on
@@ -113,14 +117,14 @@ export default function ParentLoginScreen() {
               style={styles.logo}
               resizeMode="contain"
             />
-            <Text style={styles.appName}>Shreyartha</Text>
             <Text style={styles.tagline}>Parent Portal</Text>
           </View>
 
           <View style={styles.card}>
             <Text style={styles.cardTitle}>Create a Parent Account</Text>
             <Text style={styles.cardSubtitle}>
-              We will link your account to your child once an admin verifies it
+              Register to connect with your child&apos;s account. After signing in, link your child on My
+              Children with the school&apos;s code, or your child&apos;s mobile or email.
             </Text>
 
             {signupNotice ? (
@@ -137,7 +141,7 @@ export default function ParentLoginScreen() {
                   </View>
                 ) : null}
 
-                <Text style={styles.label}>Full Name</Text>
+                <Text style={styles.label}>Full Name *</Text>
                 <TextInput
                   style={styles.input}
                   value={signup.fullName}
@@ -147,12 +151,13 @@ export default function ParentLoginScreen() {
                   editable={!signupBusy}
                 />
 
-                <Text style={styles.label}>Email</Text>
+                <Text style={styles.label}>Email (optional)</Text>
                 <TextInput
                   style={styles.input}
                   value={signup.email}
                   onChangeText={(email) => patchSignup({ email })}
-                  placeholder="you@example.com"
+                  placeholder="Your email, if you have one"
+                  accessibilityLabel="Email (optional)"
                   placeholderTextColor={SLATE[500]}
                   keyboardType="email-address"
                   autoCapitalize="none"
@@ -160,7 +165,7 @@ export default function ParentLoginScreen() {
                   editable={!signupBusy}
                 />
 
-                <Text style={styles.label}>Mobile Number</Text>
+                <Text style={styles.label}>Mobile Number *</Text>
                 <TextInput
                   style={styles.input}
                   value={signup.mobile}
@@ -171,23 +176,9 @@ export default function ParentLoginScreen() {
                   maxLength={10}
                   editable={!signupBusy}
                 />
+                <Text style={styles.helper}>You sign in with this, or with your email.</Text>
 
-                <Text style={styles.label}>Child&apos;s Mobile or Email</Text>
-                <TextInput
-                  style={styles.input}
-                  value={signup.studentMobileOrEmail}
-                  onChangeText={(studentMobileOrEmail) => patchSignup({ studentMobileOrEmail })}
-                  placeholder="Your child&apos;s registered mobile or email"
-                  placeholderTextColor={SLATE[500]}
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                  editable={!signupBusy}
-                />
-                <Text style={styles.helper}>
-                  This helps us link your account to your child&apos;s profile.
-                </Text>
-
-                <Text style={styles.label}>Password</Text>
+                <Text style={styles.label}>Password *</Text>
                 <TextInput
                   style={styles.input}
                   value={signup.password}
@@ -255,8 +246,7 @@ const styles = StyleSheet.create({
   backText: { color: '#fff', fontWeight: '700', fontSize: TYPE.heading },
   logoContainer: { alignItems: 'center', marginVertical: 28 },
   logo: { width: 190, height: 122, borderRadius: 18 },
-  appName: { color: '#fff', fontSize: TYPE.headline, fontWeight: '800', marginTop: 12 },
-  tagline: { color: 'rgba(255,255,255,0.6)', fontSize: TYPE.body, marginTop: 2 },
+  tagline: { marginTop: 12, color: 'rgba(255,255,255,0.6)', fontSize: TYPE.body },
   card: {
     backgroundColor: '#fff',
     borderRadius: 20,

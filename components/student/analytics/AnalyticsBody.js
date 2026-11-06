@@ -106,6 +106,35 @@ function Expander({ label, open, onPress, right, children, styles }) {
   );
 }
 
+/**
+ * A chosen skill's progress narrowed to the topics the student picked in it (6 Nov 2026), its
+ * totals recounted from those — what the parent's server already sends. The student's own progress
+ * call returns every topic (all seven World Languages for a student who chose one), so My
+ * Analytics narrows it here, resolving the picked topic ids to names through the Skills Edge tree.
+ * Without the tree (the parent portal) or with no topics picked, the progress is shown as it came.
+ */
+export function pickedTopicsOnly(skillName, progress, skillsProfile, skillsTree) {
+  const same = (a, b) => String(a ?? '').trim().toLowerCase() === String(b ?? '').trim().toLowerCase();
+  const pickedEntry = Object.entries(skillsProfile?.selectedTopics || {}).find(([k]) => same(k, skillName));
+  const ids = (pickedEntry?.[1] || []).map(String);
+  const node = (skillsTree || []).find((n) => same(n?.name || n?.title, skillName));
+  if (!ids.length || !node || !progress?.chapters) return progress;
+  const names = (node.topics || []).filter((t) => ids.includes(String(t.id))).map((t) => t.name);
+  if (!names.length) return progress;
+  const chapters = Object.fromEntries(
+    Object.entries(progress.chapters).filter(([ch]) => names.some((n) => same(n, ch))),
+  );
+  const total = Object.values(chapters).reduce((sum, c) => sum + (Number(c?.total) || 0), 0);
+  const completed = Object.values(chapters).reduce((sum, c) => sum + (Number(c?.completed) || 0), 0);
+  return {
+    ...progress,
+    chapters,
+    total,
+    completed,
+    percentage: total > 0 ? Math.round((completed / total) * 100) : 0,
+  };
+}
+
 function StatStrip({ stats, styles }) {
   return (
     <View style={styles.strip}>
@@ -698,48 +727,50 @@ export default function AnalyticsBody({
               </View>
             ) : null}
 
-            {/* Only the skills the student chose (4 Nov 2026), as the website lists them: a server
-                from before the parent endpoint narrowed its answer still sends every skill. */}
-            {skillsProgress && typeof skillsProgress === 'object'
-              ? Object.entries(skillsProgress)
-                  .filter(([, v]) => v && typeof v === 'object')
-                  .filter(([name]) =>
-                    (skillsProfile?.importantSkills || []).some(
-                      (chosen) => String(chosen).trim().toLowerCase() === String(name).trim().toLowerCase(),
-                    ),
-                  )
-                  .map(([name, v]) => (
-                    <View key={name} style={styles.stream}>
-                      <Expander
-                        styles={styles}
-                        label={name}
-                        open={openSkill === name}
-                        onPress={() => toggle(setOpenSkill, openSkill)(name)}
-                        right={
-                          <Text style={styles.metricValue}>
-                            {v.completed ?? 0}/{v.total ?? 0}
+            {/* Only the skills the student chose (4 Nov 2026), and EVERY one of them, in their
+                order — the website walks `importantSkills`, not the progress map (6 Nov 2026):
+                a chosen skill with nothing done yet shows at 0 rather than vanishing, and a skill
+                the student did not choose never shows, whatever the server sends. */}
+            {(skillsProfile?.importantSkills || []).map((name) => {
+              const key = Object.keys(skillsProgress || {}).find(
+                (k) => String(k).trim().toLowerCase() === String(name).trim().toLowerCase(),
+              );
+              const v = pickedTopicsOnly(name, (key && skillsProgress[key]) || {}, skillsProfile, skillsTree);
+              const total = Number(v.total) || 0;
+              const completed = Number(v.completed) || 0;
+              const percent = v.percentage ?? (total > 0 ? Math.round((completed / total) * 100) : 0);
+              return (
+                <View key={name} style={styles.stream}>
+                  <Expander
+                    styles={styles}
+                    label={name}
+                    open={openSkill === name}
+                    onPress={() => toggle(setOpenSkill, openSkill)(name)}
+                    right={
+                      <Text style={styles.metricValue}>
+                        {completed}/{total}
+                      </Text>
+                    }
+                  >
+                    {Object.entries(v.chapters || {}).map(([ch, cv]) => (
+                      <View key={ch} style={styles.stream}>
+                        <View style={styles.streamTop}>
+                          <Text style={styles.metricLabel}>
+                            {cv.completed === cv.total && cv.total > 0 ? '✓ ' : ''}
+                            {ch}
                           </Text>
-                        }
-                      >
-                        {Object.entries(v.chapters || {}).map(([ch, cv]) => (
-                          <View key={ch} style={styles.stream}>
-                            <View style={styles.streamTop}>
-                              <Text style={styles.metricLabel}>
-                                {cv.completed === cv.total && cv.total > 0 ? '✓ ' : ''}
-                                {ch}
-                              </Text>
-                              <Text style={styles.metricValue}>
-                                {cv.completed ?? 0}/{cv.total ?? 0}
-                              </Text>
-                            </View>
-                            <ProgressBar value={cv.percentage ?? 0} />
-                          </View>
-                        ))}
-                      </Expander>
-                      <ProgressBar value={v.percentage ?? 0} />
-                    </View>
-                  ))
-              : null}
+                          <Text style={styles.metricValue}>
+                            {cv.completed ?? 0}/{cv.total ?? 0}
+                          </Text>
+                        </View>
+                        <ProgressBar value={cv.percentage ?? 0} />
+                      </View>
+                    ))}
+                  </Expander>
+                  <ProgressBar value={percent} />
+                </View>
+              );
+            })}
           </>
         ) : (
           <Unavailable forbidden={part('skillsProfile').forbidden} />

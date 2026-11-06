@@ -216,6 +216,7 @@ export default function StaffRoleLayout() {
       <Stack.Screen name="classes" />
       {/* The roster and the grading scales, both on /api/school-admin and Principal-only today. */}
       <Stack.Screen name="manage-students" />
+      <Stack.Screen name="parent-management" />
       <Stack.Screen name="grade-management" />
       {/* The report card's graded areas: set up for the school, and what teachers have graded. */}
       <Stack.Screen name="report-card-areas" />

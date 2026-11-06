@@ -63,8 +63,22 @@ export function scoreBatch(students) {
  * show. Returns the scored items, one per assessment answered; none when nothing is answered yet.
  */
 export async function fetchStudentReports(apiBase, studentId, signal) {
+  return (await fetchStudentBatch(apiBase, studentId, signal)).items;
+}
+
+/**
+ * The same, with the server's batch kept as it came (6 Nov 2026): the website's report page draws
+ * the batch itself, scored by the website's own engine.
+ */
+export async function fetchStudentBatch(apiBase, studentId, signal) {
   const batch = await staffApi.post(apiBase, { studentIds: [studentId] }, { signal });
-  return scoreBatch(batch).items;
+  return { batch: Array.isArray(batch) ? batch : [], items: scoreBatch(batch).items };
+}
+
+/** Staff: the chosen students' batch, unscored — for the website's batch print (6 Nov 2026). */
+export async function fetchStudentsBatch(apiBase, studentIds) {
+  const batch = await staffApi.post(apiBase, { studentIds });
+  return Array.isArray(batch) ? batch : [];
 }
 
 /** Staff: print the chosen students. */
@@ -83,5 +97,6 @@ export async function printStudentsReports(apiBase, studentIds) {
 export async function fetchChildReportItems(signal) {
   const batch = await parentApi.get('/api/parent/psychometric-reports', { signal });
   const child = (batch || [])[0];
-  return { childName: child?.name || '', items: scoreBatch(batch).items };
+  // `batch` as it came, for the website's report page (6 Nov 2026).
+  return { childName: child?.name || '', items: scoreBatch(batch).items, batch: Array.isArray(batch) ? batch : [] };
 }

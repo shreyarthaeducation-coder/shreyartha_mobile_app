@@ -4,11 +4,12 @@ import {
   TouchableOpacity,
   StyleSheet,
   Image,
-  SafeAreaView,
+  ScrollView,
 } from "react-native";
 import { useRouter } from "expo-router";
-import { COLORS, SHADOWS, SPACING, TYPE, leading } from "../../constants/theme";
+import { COLORS, SPACING, TYPE } from "../../constants/theme";
 import { LOGIN_GROUPS } from "../../constants/authPortals";
+import SignupTiles from "../../components/auth/SignupTiles";
 const LOGO = require("../../assets/images/The3CEdge.png");
 
 /**
@@ -25,6 +26,7 @@ const LOGO = require("../../assets/images/The3CEdge.png");
  */
 export default function LoginSelectScreen() {
   const router = useRouter();
+  const registerOptions = LOGIN_GROUPS.find((g) => g.key === "general")?.options ?? [];
 
   return (
     <View style={styles.container}>
@@ -51,41 +53,12 @@ export default function LoginSelectScreen() {
         </Text>
       </View>
 
-      {/* Customer-facing doors only — see the docblock on why `employee` is filtered out here. */}
-      <View style={styles.optionsContainer}>
-        {LOGIN_GROUPS.filter((group) => group.key !== "employee").map((group, _i, shown) => (
-          <View key={group.key} style={styles.group}>
-            {/* A section heading earns its place only when there is more than one section. With the
-                employee group filtered out there is currently one, and a lone "GET STARTED" label
-                under "Select your role to continue" reads as noise. Kept conditional rather than
-                deleted so a second customer group would bring its heading back. */}
-            {shown.length > 1 && <Text style={styles.groupLabel}>{group.label}</Text>}
-            {/* ?tab=signup — this screen is the REGISTER picker now. Signing in no longer asks
-                which role you are; /auth/sign-in resolves it from the credentials. Each page still
-                carries its own login tab, so a deep link keeps working. */}
-            {group.options.map((opt) => (
-              <TouchableOpacity
-                key={opt.key}
-                style={[styles.option, SHADOWS.md]}
-                onPress={() => router.push(`${opt.route}?tab=signup`)}
-                activeOpacity={0.75}
-                accessibilityRole="button"
-                accessibilityLabel={`Register as ${opt.label}`}
-              >
-                <View style={[styles.optionIconBg, { backgroundColor: opt.color }]}>
-                  <Text style={styles.optionIcon}>{opt.icon}</Text>
-                </View>
-                <View style={styles.optionText}>
-                  <Text style={[styles.optionLabel, { color: opt.iconColor }]}>
-                    {opt.label}
-                  </Text>
-                  <Text style={styles.optionSublabel}>{opt.sublabel}</Text>
-                </View>
-                <Text style={[styles.arrow, { color: opt.iconColor }]}>›</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        ))}
+      {/* Two layers of tiles (6 Nov 2026), the same picker as under Sign in: the kind of
+          organisation first, then the role in it. Customer-facing doors only, the general group;
+          see the docblock on why the employee group stays out. ?tab=signup — this is the REGISTER
+          picker; each page still carries its own login tab, so a deep link keeps working. */}
+      <ScrollView contentContainerStyle={styles.optionsContainer}>
+        <SignupTiles options={registerOptions} onPick={(opt) => router.push(`${opt.route}?tab=signup`)} />
         <TouchableOpacity
           style={styles.signInLink}
           activeOpacity={0.75}
@@ -96,7 +69,7 @@ export default function LoginSelectScreen() {
             Already have an account? <Text style={styles.signInLinkStrong}>Sign in</Text>
           </Text>
         </TouchableOpacity>
-      </View>
+      </ScrollView>
     </View>
   );
 }
@@ -153,41 +126,7 @@ const styles = StyleSheet.create({
   optionsContainer: {
     padding: SPACING.lg,
     gap: SPACING.lg,
-    flex: 1,
   },
-  // One group's heading plus its cards. The gap here is tighter than the gap between groups, so
-  // the two sections read as two sections rather than as one list with labels in it.
-  group: { gap: 12 },
-  groupLabel: {
-    fontSize: TYPE.label,
-    fontWeight: "800",
-    letterSpacing: 0.8,
-    textTransform: "uppercase",
-    color: COLORS.textSecondary,
-  },
-  option: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: COLORS.white,
-    padding: SPACING.md,
-    borderRadius: 18,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-  },
-  optionIconBg: {
-    width: 52,
-    height: 52,
-    borderRadius: 14,
-    alignItems: "center",
-    justifyContent: "center",
-    marginRight: SPACING.md,
-    flexShrink: 0,
-  },
-  optionIcon: { fontSize: 26 },
-  optionText: { flex: 1 },
-  optionLabel: { fontSize: TYPE.title, fontWeight: "700", marginBottom: 2 },
-  optionSublabel: { fontSize: TYPE.label, color: COLORS.textSecondary, lineHeight: leading(TYPE.label) },
-  arrow: { fontSize: 26, marginLeft: 8 },
   signInLink: { marginTop: SPACING.md, alignItems: "center", paddingVertical: SPACING.sm },
   signInLinkText: { fontSize: TYPE.body, color: COLORS.textSecondary },
   signInLinkStrong: { fontWeight: "800", color: COLORS.primary },

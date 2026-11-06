@@ -3,6 +3,7 @@ import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { PORTALS, SPACING } from '../../../constants/theme';
 import { FormSheet } from '../../ui';
 import AdaptiveReportBody from '../../shared/AdaptiveReportBody';
+import WebReport from '../../shared/WebReport';
 import { fetchAttemptAnalysis } from '../../../services/teacher/adaptiveService';
 import { captureAndShare } from '../../../utils/shareCapture';
 
@@ -25,6 +26,8 @@ export default function AdaptiveReport({ visible, attempt, onClose, showToast })
   const [report, setReport] = useState(null);
   const [loading, setLoading] = useState(false);
   const [sharing, setSharing] = useState(false);
+  // Whether the website's report is the one on screen (6 Nov 2026) — see WebReport.
+  const [webState, setWebState] = useState('loading');
   const captureRef = useRef(null);
 
   // Kept out of the effect's deps on purpose — the parent passes an inline arrow, so depending on
@@ -78,7 +81,8 @@ export default function AdaptiveReport({ visible, attempt, onClose, showToast })
       subtitle={report?.studentName}
       onClose={onClose}
       headerAction={
-        report ? { icon: 'share-outline', label: 'Share', onPress: share, busy: sharing } : undefined
+        // The website's charts are on screen unless they failed; Share captures the native ones.
+        report && webState === 'failed' ? { icon: 'share-outline', label: 'Share', onPress: share, busy: sharing } : undefined
       }
       fullHeight
     >
@@ -88,7 +92,14 @@ export default function AdaptiveReport({ visible, attempt, onClose, showToast })
         // An opaque ground for the screenshot — captureRef over a transparent view produces a
         // bitmap with whatever happened to be behind it.
         <View ref={captureRef} collapsable={false} style={styles.capture}>
-          <AdaptiveReportBody report={report} />
+          {/* The website's own charts (6 Nov 2026), as the teacher's Detailed Analysis draws them. */}
+          <WebReport
+            kind="adaptive"
+          onStateChange={setWebState}
+            portal="staff"
+            payload={{ view: 'charts', report }}
+            fallback={<AdaptiveReportBody report={report} />}
+          />
         </View>
       )}
     </FormSheet>

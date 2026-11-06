@@ -342,7 +342,10 @@ function assertions({ staffRoles, home, theme, authPortals }, sources) {
   // The picker is linked from the landing's "Login" buttons and the chatbot, all customer paths.
   const landingTextForChoices = () => stripComments(sources.landing || '');
   const loginSelectText = stripComments(sources.loginSelect || '');
-  if (!/LOGIN_GROUPS\s*\.filter\([\s\S]{0,80}?!==\s*["']employee["']/.test(loginSelectText)) {
+  // Either it filters the employee group out, or (6 Nov 2026, the two-layer tiles) it takes the
+  // general group alone by key.
+  if (!/LOGIN_GROUPS\s*\.filter\([\s\S]{0,80}?!==\s*["']employee["']/.test(loginSelectText)
+    && !/LOGIN_GROUPS\s*\.find\(\(?(\w+)\)?\s*=>\s*\1\.key\s*===\s*["']general["']\)/.test(loginSelectText)) {
     bad('the full-screen picker no longer filters out the employee door — it is customer-facing');
   }
   // "Get Started" offers the sign-in gate and the register picker — NOT a list of role doors.
@@ -1094,7 +1097,7 @@ const MUTATIONS = [
     name: 'the full-screen picker offers the employee door again',
     sources: (k, s) =>
       k === 'loginSelect'
-        ? s.replace(/LOGIN_GROUPS\.filter\(\(group\) => group\.key !== "employee"\)/, 'LOGIN_GROUPS')
+        ? s.replace(/LOGIN_GROUPS\.find\(\(g\) => g\.key === "general"\)\?\.options/, 'LOGIN_GROUPS.flatMap((g) => g.options)')
         : s,
     expect: /no longer filters out the employee door/,
   },

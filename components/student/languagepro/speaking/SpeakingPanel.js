@@ -365,24 +365,28 @@ export default function SpeakingPanel({ data, castByKey, say, stopVoice, showToa
 
   return (
     <View>
-      <View style={styles.cast} accessibilityLabel="The characters">
-        {(data.cast || []).map((c, i) => (
-          <CharacterCard
-            key={c.key}
-            character={c}
-            band={data.band}
-            order={i}
-            speaking={speaker?.key === c.key}
-            listening={listening && activeKeys.includes(c.key)}
-            cheering={cheering.includes(c.key)}
-            bubble={speaker?.key === c.key ? speaker.bubble : ''}
-            talk={speaker?.key === c.key ? speaker : null}
-            onTap={listening || playing ? undefined : greet}
-          />
-        ))}
-      </View>
-
       <View style={[styles.lineCard, { borderColor: lineColour }]}>
+        {/* Who says this line, right above it and animated as they speak (6 Nov 2026): the student
+            listens to the character first and reads second. A chorus line shows everyone. */}
+        <View style={styles.speakers} accessibilityLabel="Who says this line">
+          {(data.cast || [])
+            .filter((c) => activeKeys.includes(c.key))
+            .map((c, i) => (
+              <CharacterCard
+                key={c.key}
+                character={c}
+                band={data.band}
+                order={i}
+                large={activeKeys.length === 1}
+                speaking={speaker?.key === c.key}
+                listening={listening}
+                cheering={cheering.includes(c.key)}
+                bubble={speaker?.key === c.key ? speaker.bubble : ''}
+                talk={speaker?.key === c.key ? speaker : null}
+                onTap={listening || playing ? undefined : greet}
+              />
+            ))}
+        </View>
         <Text style={styles.meta}>
           Line {index + 1} of {lines.length} · <Text style={styles.metaName}>{line.speaker}</Text>
           {line.chorus ? ' (everyone together)' : ''}
@@ -515,14 +519,6 @@ function Button({ styles, label, icon, onPress, disabled, ghost, stop, palette }
 
 const useStyles = makeStyles((p) => ({
   body: { fontSize: TYPE.body, color: SLATE[600], lineHeight: leading(TYPE.body) },
-  cast: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'center',
-    gap: SPACING.sm,
-    paddingTop: 56,
-    marginBottom: SPACING.md,
-  },
   lineCard: {
     borderWidth: 2,
     borderRadius: 16,
@@ -530,11 +526,21 @@ const useStyles = makeStyles((p) => ({
     backgroundColor: '#ffffff',
     marginBottom: SPACING.md,
   },
+  // Room above for the speech bubble; the characters are what the line card is about.
+  speakers: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    gap: SPACING.sm,
+    paddingTop: 56,
+    marginBottom: SPACING.sm,
+  },
   meta: { fontSize: TYPE.caption, color: SLATE[600] },
-  metaName: { fontWeight: '700', color: SLATE[800] },
+  // Not bold, and the line itself body size (6 Nov 2026): listening first, reading second.
+  metaName: { fontWeight: '400', color: SLATE[700] },
   line: {
-    fontSize: TYPE.headline,
-    lineHeight: leading(TYPE.headline),
+    fontSize: TYPE.body,
+    lineHeight: leading(TYPE.body),
     color: SLATE[700],
     marginVertical: SPACING.sm,
   },

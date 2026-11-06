@@ -209,7 +209,7 @@ export default function ParentCalendarScreen({ mode = 'attendance', embedded = f
                   {String(event.targetClasses)
                     .split(',')
                     .map((cls) => cls.trim())
-                    .filter(Boolean)
+                    .filter((v, i, all) => v && all.indexOf(v) === i)
                     .map((cls) => (
                       <StatusChip key={cls} label={cls} tone="neutral" />
                     ))}

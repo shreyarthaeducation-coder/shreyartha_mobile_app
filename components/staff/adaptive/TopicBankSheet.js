@@ -352,7 +352,7 @@ export default function TopicBankSheet({ visible, scope, topic, chapter, onClose
       </View>
       {q.bloomsLevel || q.skillSet ? (
         <View style={styles.qMeta}>
-          {[q.bloomsLevel, q.skillSet].filter(Boolean).map((meta) => (
+          {[q.bloomsLevel, q.skillSet].filter((v, i, all) => v && all.indexOf(v) === i).map((meta) => (
             <View key={meta} style={styles.qChip}>
               <Text style={styles.qChipText} numberOfLines={1}>
                 {meta}

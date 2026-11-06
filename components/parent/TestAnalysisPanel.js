@@ -126,6 +126,9 @@ export default function TestAnalysisPanel() {
         onClose={() => setTarget(null)}
         load={(t) => fetchTestAnalysis(t.examId)}
         palette={palette}
+        portal="parent"
+        schoolName={data?.schoolName || ''}
+        schoolLogo={data?.schoolLogo || ''}
         showToast={showToast}
       />
     </ScreenScaffold>

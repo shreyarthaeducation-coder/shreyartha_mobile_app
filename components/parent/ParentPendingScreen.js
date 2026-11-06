@@ -1,4 +1,4 @@
-import { Pressable, Text, View } from 'react-native';
+import { Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -6,6 +6,7 @@ import { SLATE, SPACING, TYPE, leading } from '../../constants/theme';
 import { usePalette } from '../ui/PaletteContext';
 import usePortalLogout from '../../hooks/usePortalLogout';
 import { makeStyles } from '../../utils/makeStyles';
+import { ParentLinkBox } from './MyChildrenScreen';
 
 /**
  * Shown to a parent whose account an admin has not verified yet.
@@ -35,14 +36,14 @@ export default function ParentPendingScreen() {
 
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'left', 'right']}>
-      <View style={styles.body}>
+      <ScrollView contentContainerStyle={styles.body} keyboardShouldPersistTaps="handled">
         <View style={styles.iconWrap}>
           <Ionicons name="hourglass-outline" size={34} color={palette.primaryDark} />
         </View>
         <Text style={styles.title}>Account pending verification</Text>
         <Text style={styles.text}>
-          Your parent account is waiting to be verified and linked to your child’s profile. This is
-          done by the school administrator.
+          Your parent account is waiting to be verified and linked to your child’s profile. Enter the
+          parent code from your child’s school below to do it now, or wait for the school to verify you.
         </Text>
 
         <Text style={styles.listTitle}>Once verified, you will be able to:</Text>
@@ -52,6 +53,14 @@ export default function ParentPendingScreen() {
             <Text style={styles.listText}>{line}</Text>
           </View>
         ))}
+
+        {/* The website's code box for every parent without a child (6 Nov 2026): the parent code
+            from the school links AND verifies at once, so nobody need wait for an admin. */}
+        <Text style={styles.listTitle}>Have a code from the school?</Text>
+        <ParentLinkBox
+          prompt="Enter the parent code from your child's school, or your child's mobile number or email."
+          onLinked={() => router.replace('/parent')}
+        />
 
         <Pressable
           onPress={() => router.push('/parent/change-password')}
@@ -68,14 +77,14 @@ export default function ParentPendingScreen() {
         >
           <Text style={styles.ghostText}>Log out</Text>
         </Pressable>
-      </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }
 
 const useStyles = makeStyles((p) => ({
   safe: { flex: 1, backgroundColor: SLATE[50] },
-  body: { flex: 1, justifyContent: 'center', padding: SPACING.lg },
+  body: { flexGrow: 1, justifyContent: 'center', padding: SPACING.lg },
   iconWrap: {
     width: 68,
     height: 68,

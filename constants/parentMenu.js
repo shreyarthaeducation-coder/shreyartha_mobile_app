@@ -9,11 +9,11 @@
  *     native — an in-app route; rendered as a native screen
  *     path   — a web path opened through a WebView with the session injected
  *
- * ── ONE PARENT, ONE CHILD ────────────────────────────────────────────────────
- * There is no child selector anywhere in this portal and there must not be one. `ParentUser` has a
- * single `linkedStudent` relation, and every `/api/parent/dashboard/*` endpoint resolves that child
- * from the JWT subject — the controller accepts no `studentId` at all, which is exactly what stops
- * one parent reading another's child. `linkedStudentName` is a single scalar in storage.
+ * ── SEVERAL CHILDREN, ONE SHOWING (6 Nov 2026) ───────────────────────────────
+ * A parent may now link several children (My Children). Which one every screen shows is held on
+ * the SERVER (`ParentUser.linkedStudent`, set by PUT /api/parent/children/{id}/select), and every
+ * `/api/parent/dashboard/*` endpoint still resolves that child from the JWT subject — no endpoint
+ * takes a `studentId`, which is what stops one parent reading another's child.
  *
  * ── CHANGE PASSWORD IS NOT A MENU ITEM ───────────────────────────────────────
  * The web puts it in the header, not the sidebar, and so do we — see PARENT_HEADER_ACTIONS.
@@ -22,21 +22,33 @@
 const PARENT_BASE = '/parent/platform/dashboard';
 
 /**
- * ── WHAT THE HOME'S "ALL SECTIONS" GRID HOLDS (4 Nov 2026) ───────────────────
- * The app's own arrangement, no longer a copy of the web sidebar:
- * - **Counselling Report is not a section.** It is the second tab of View Report (the home's quick
- *   action), beside Test & Analysis — what the parent asked for. Search still finds it.
- * - **Attendance and Schedule are one section** with two tabs, as on the website since 3 Nov 2026.
+ * ── WHAT THE HOME'S "ALL SECTIONS" GRID HOLDS (6 Nov 2026) ───────────────────
+ * EVERY feature of the parent login — "all sections should hold all the features". So the grid
+ * repeats what the quick actions and the report card already open (View Report, Notifications,
+ * Payment History) and lists the two halves of View Report — Test & Exam Analysis and Counselling
+ * Report — as sections of their own, opening View Report on that tab.
  * - Home is not a tile: the tile grid IS home.
  * - Plans for my child is hidden from parents, here and on the website.
- * Each tile wears its area's hue (constants/parentColours).
+ * - Change Password is the row under the search box (PARENT_HEADER_ACTIONS), as on the website's header.
+ * Labels are the website sidebar's words where it has the item. Each tile wears its area's hue
+ * (constants/parentColours).
  */
 export const PARENT_MENU = [
+  { key: 'children', label: 'My Children', icon: 'people-outline', native: '/parent/children' },
+  { key: 'view-report', label: 'View Report', icon: 'document-text-outline', native: '/parent/view-report' },
+  { key: 'test-analysis', label: 'Test & Exam Analysis', icon: 'analytics-outline', native: '/parent/view-report?tab=tests' },
+  {
+    key: 'counselling-report',
+    label: 'Counselling Report',
+    icon: 'clipboard-outline',
+    native: '/parent/view-report?tab=counselling',
+  },
   { key: 'academic-progress', label: 'Academic Progress', icon: 'stats-chart-outline', native: '/parent/academic-progress' },
   { key: 'learning-activities', label: 'Learning Activities', icon: 'library-outline', native: '/parent/learning-activities' },
   { key: 'attendance-schedule', label: 'Attendance & Schedule', icon: 'calendar-outline', native: '/parent/attendance-schedule' },
   { key: 'notifications', label: 'Notifications', icon: 'notifications-outline', native: '/parent/notifications' },
   { key: 'fees', label: 'School Fees', icon: 'cash-outline', native: '/parent/fees' },
+  { key: 'payment-history', label: 'Payment History', icon: 'receipt-outline', native: '/parent/fees?tab=history' },
 ];
 
 /** The web renders these in the dashboard header rather than the sidebar. */

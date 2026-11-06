@@ -25,6 +25,7 @@ import { makeStyles } from '../../utils/makeStyles';
  *   create(values), update(item, values), remove(item)   each optional; absent hides the control
  *   formFrom(item)            the edit form's values (default: the record's own keys)
  *   actions                   `[{ key, label, icon, when(item), run(item, values), confirm, done, fields }]`
+ *                             — `confirm` a message, or `confirm(item)` for one naming the record
  *                             — with `fields`, the action opens its own small form first (accepting a
  *                             mentorship request asks for a time) and `run` gets the form's values;
  *                             `fieldsFor(item)` instead when the form depends on the record
@@ -218,7 +219,10 @@ export default function CrudListScreen({
                       <Pressable
                         key={a.key}
                         disabled={busy}
-                        onPress={() => (a.confirm ? confirmThen(a.confirm, go) : go())}
+                        // `confirm` may name the record: a function of it (6 Nov 2026).
+                        onPress={() =>
+                          a.confirm ? confirmThen(typeof a.confirm === 'function' ? a.confirm(item) : a.confirm, go) : go()
+                        }
                         style={({ pressed }) => [styles.action, { borderColor: palette.primary }, pressed && styles.pressed]}
                         accessibilityRole="button"
                       >

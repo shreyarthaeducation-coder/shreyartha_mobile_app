@@ -279,7 +279,7 @@ export default function AdaptiveReportBody({ report, showQuestions = true }) {
               </View>
               <Text style={styles.qText}>{q.questionText}</Text>
               <View style={styles.qMeta}>
-                {[levelLabel(q.testLevel), q.bloomsLevel, q.skillSet].filter(Boolean).map((meta) => (
+                {[levelLabel(q.testLevel), q.bloomsLevel, q.skillSet].filter((v, i, all) => v && all.indexOf(v) === i).map((meta) => (
                   <View key={meta} style={styles.qChip}>
                     <Text style={styles.qChipText} numberOfLines={1}>
                       {meta}

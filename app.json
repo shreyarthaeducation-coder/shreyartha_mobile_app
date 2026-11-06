@@ -2,7 +2,7 @@
   "expo": {
     "name": "Shreyartha",
     "slug": "shreyartha-mobile-app",
-    "version": "2.1.4",
+    "version": "2.1.5",
     "scheme": "shreyartha",
     "orientation": "portrait",
     "icon": "./assets/images/The3CEdge.png",
@@ -25,7 +25,7 @@
     },
     "android": {
       "package": "com.the3cedgeai.app",
-      "versionCode": 20,
+      "versionCode": 21,
       "softwareKeyboardLayoutMode": "pan",
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/The3CEdge.png",

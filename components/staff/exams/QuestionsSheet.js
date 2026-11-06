@@ -391,7 +391,7 @@ export default function QuestionsSheet({ visible, exam, sectionSubjectId, onClos
         </View>
       ) : null}
       <View style={styles.metaRow}>
-        {[q.chapterName, q.topicName, q.bloomsTaxonomy, q.skillSet].filter(Boolean).map((meta) => (
+        {[q.chapterName, q.topicName, q.bloomsTaxonomy, q.skillSet].filter((v, i, all) => v && all.indexOf(v) === i).map((meta) => (
           <View key={meta} style={styles.metaChip}>
             <Text style={styles.metaText} numberOfLines={1}>
               {meta}

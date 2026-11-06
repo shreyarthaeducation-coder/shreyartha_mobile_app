@@ -20,6 +20,7 @@
 
 import { Platform } from 'react-native';
 import Constants from 'expo-constants';
+import { isRunningInExpoGo, requireOptionalNativeModule } from 'expo';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { registerParentPushToken, unregisterParentPushToken } from './notificationService';
 
@@ -28,10 +29,51 @@ export const PARENT_PUSH_CHANNEL = 'school-events';
 
 const TOKEN_KEY = 'parentPushToken';
 
+/**
+ * The native modules `expo-notifications` (and expo-device) look up the moment they are imported.
+ * Importing the package where any is missing throws while it loads — and even inside a try, a
+ * module that throws on load shows as a red ERROR in development (6 Nov 2026, Expo Go SDK 58:
+ * "Cannot find native module 'ExpoTopicSubscriptionModule'"). So each is probed first with
+ * requireOptionalNativeModule, which returns null instead of throwing, and the package is only
+ * required when every one is there.
+ */
+const NATIVE_MODULES = [
+  'ExpoPushTokenManager',
+  'ExpoNotificationPermissionsModule',
+  'ExpoNotificationsEmitter',
+  'ExpoNotificationsHandlerModule',
+  'ExpoNotificationPresenter',
+  'ExpoNotificationScheduler',
+  'ExpoNotificationChannelManager',
+  'ExpoNotificationChannelGroupManager',
+  'ExpoNotificationCategoriesModule',
+  'ExpoBadgeModule',
+  'ExpoBackgroundNotificationTasksModule',
+  'NotificationsServerRegistrationModule',
+  'ExpoDevice',
+  ...(Platform.OS === 'android' ? ['ExpoTopicSubscriptionModule'] : []),
+];
+
+let nativeCache;
+
 /** The native modules, or null when this build or runtime cannot do push. */
 function loadNative() {
-  // Expo Go: remote push is not available there (SDK 53+).
+  if (nativeCache !== undefined) return nativeCache;
+  nativeCache = null;
+  if (Platform.OS === 'web') return null;
+  // Expo Go: remote push is not available there (SDK 53+). appOwnership is gone in newer SDKs, so
+  // Expo's own check comes first; the old fields stay for older runtimes.
+  try {
+    if (isRunningInExpoGo()) return null;
+  } catch {
+    // fall through to the older signals
+  }
   if (Constants.appOwnership === 'expo' || Constants.executionEnvironment === 'storeClient') {
+    return null;
+  }
+  try {
+    if (NATIVE_MODULES.some((name) => !requireOptionalNativeModule(name))) return null;
+  } catch {
     return null;
   }
   try {
@@ -39,7 +81,8 @@ function loadNative() {
     const Notifications = require('expo-notifications');
     // eslint-disable-next-line global-require
     const Device = require('expo-device');
-    return Notifications && Device ? { Notifications, Device } : null;
+    nativeCache = Notifications && Device ? { Notifications, Device } : null;
+    return nativeCache;
   } catch {
     return null;
   }

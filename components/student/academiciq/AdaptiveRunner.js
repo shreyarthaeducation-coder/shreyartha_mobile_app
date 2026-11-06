@@ -6,6 +6,7 @@ import { makeStyles } from '../../../utils/makeStyles';
 import RichText from '../../RichText';
 import { StudentCard, StudentCardTitle } from '../StudentCard';
 import AdaptiveReportBody from '../../shared/AdaptiveReportBody';
+import WebReport from '../../shared/WebReport';
 
 /**
  * The UI for an adaptive attempt, driven entirely by a `useAdaptiveSession` instance.
@@ -65,37 +66,81 @@ export default function AdaptiveRunner({ session, title, subtitle, onExit, onFin
   if (phase === 'summary' && summary) {
     return (
       <>
-        <StudentCard>
-          <StudentCardTitle>{title} — result</StudentCardTitle>
-          <View style={styles.statRow}>
-            <View style={styles.stat}>
-              <Text style={styles.statValue}>{summary.correctCount ?? 0}</Text>
-              <Text style={styles.statLabel}>Correct</Text>
-            </View>
-            <View style={styles.stat}>
-              <Text style={styles.statValue}>{summary.wrongCount ?? 0}</Text>
-              <Text style={styles.statLabel}>Wrong</Text>
-            </View>
-            <View style={styles.stat}>
-              <Text style={styles.statValue}>{summary.accuracyPercentage ?? 0}%</Text>
-              <Text style={styles.statLabel}>Accuracy</Text>
-            </View>
-          </View>
-          {summary.finalLevel ? (
-            <Text style={styles.level}>Final level: {summary.finalLevel}</Text>
-          ) : null}
-        </StudentCard>
+        {/* With a full report, the website's own result (6 Nov 2026): score card, figures, charts
+            and question review, as Universal Adaptive Assessment draws it. The native cards are
+            what shows without one, or without the website. */}
+        {report ? (
+          <WebReport
+            kind="adaptive"
+            portal="student"
+            payload={{ view: 'full', report }}
+            fallback={
+              <>
+                <StudentCard>
+                  <StudentCardTitle>{title} — result</StudentCardTitle>
+                  <View style={styles.statRow}>
+                    <View style={styles.stat}>
+                      <Text style={styles.statValue}>{summary.correctCount ?? 0}</Text>
+                      <Text style={styles.statLabel}>Correct</Text>
+                    </View>
+                    <View style={styles.stat}>
+                      <Text style={styles.statValue}>{summary.wrongCount ?? 0}</Text>
+                      <Text style={styles.statLabel}>Wrong</Text>
+                    </View>
+                    <View style={styles.stat}>
+                      <Text style={styles.statValue}>{summary.accuracyPercentage ?? 0}%</Text>
+                      <Text style={styles.statLabel}>Accuracy</Text>
+                    </View>
+                  </View>
+                  {summary.finalLevel ? <Text style={styles.level}>Final level: {summary.finalLevel}</Text> : null}
+                </StudentCard>
 
-        {/* The full analysis — rank, the six-metric performance profile, timing and the Bloom's /
+                {/* The full analysis — rank, the six-metric performance profile, timing and the Bloom's /
             skills breakdown. Only a 'server'-protocol engine produces one; the other two return
             counters and nothing else, so this is absent for them by design, not by omission.
             Same renderer the teacher sees, over the same DTO. */}
-        {report ? (
-          <StudentCard>
-            <StudentCardTitle>Your analysis</StudentCardTitle>
-            <AdaptiveReportBody report={report} />
-          </StudentCard>
-        ) : null}
+                {report ? (
+                  <StudentCard>
+                    <StudentCardTitle>Your analysis</StudentCardTitle>
+                    <AdaptiveReportBody report={report} />
+                  </StudentCard>
+                ) : null}
+              </>
+            }
+          />
+        ) : (
+          <>
+            <StudentCard>
+              <StudentCardTitle>{title} — result</StudentCardTitle>
+              <View style={styles.statRow}>
+                <View style={styles.stat}>
+                  <Text style={styles.statValue}>{summary.correctCount ?? 0}</Text>
+                  <Text style={styles.statLabel}>Correct</Text>
+                </View>
+                <View style={styles.stat}>
+                  <Text style={styles.statValue}>{summary.wrongCount ?? 0}</Text>
+                  <Text style={styles.statLabel}>Wrong</Text>
+                </View>
+                <View style={styles.stat}>
+                  <Text style={styles.statValue}>{summary.accuracyPercentage ?? 0}%</Text>
+                  <Text style={styles.statLabel}>Accuracy</Text>
+                </View>
+              </View>
+              {summary.finalLevel ? <Text style={styles.level}>Final level: {summary.finalLevel}</Text> : null}
+            </StudentCard>
+
+            {/* The full analysis — rank, the six-metric performance profile, timing and the Bloom's /
+            skills breakdown. Only a 'server'-protocol engine produces one; the other two return
+            counters and nothing else, so this is absent for them by design, not by omission.
+            Same renderer the teacher sees, over the same DTO. */}
+            {report ? (
+              <StudentCard>
+                <StudentCardTitle>Your analysis</StudentCardTitle>
+                <AdaptiveReportBody report={report} />
+              </StudentCard>
+            ) : null}
+          </>
+        )}
 
         {footer}
 
@@ -158,10 +203,7 @@ export default function AdaptiveRunner({ session, title, subtitle, onExit, onFin
         {uncapped ? null : (
           <View style={styles.track}>
             <View
-              style={[
-                styles.fill,
-                { width: `${effectiveTotal ? (questionNumber / effectiveTotal) * 100 : 0}%` },
-              ]}
+              style={[styles.fill, { width: `${effectiveTotal ? (questionNumber / effectiveTotal) * 100 : 0}%` }]}
             />
           </View>
         )}

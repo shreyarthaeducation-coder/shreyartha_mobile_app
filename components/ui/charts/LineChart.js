@@ -92,9 +92,11 @@ export default function LineChart({
             strokeLinecap="round"
           />
 
+          {/* Keyed by position: labels repeat (two attempts on "6 Nov" — 6 Nov 2026, a wall of
+              duplicate-key errors on My Adaptive Performance). The points never reorder. */}
           {data.map((d, i) => (
             <Circle
-              key={d.label ?? i}
+              key={`p${i}`}
               cx={stepFor(i)}
               cy={yFor(d.value)}
               r={4.5}
@@ -106,7 +108,7 @@ export default function LineChart({
 
           {data.map((d, i) => (
             <SvgText
-              key={`x${d.label ?? i}`}
+              key={`x${i}`}
               x={stepFor(i)}
               y={height - 9}
               fill={SLATE[500]}

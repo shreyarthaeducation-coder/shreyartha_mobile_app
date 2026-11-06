@@ -23,6 +23,10 @@ export const PARENT_AREA_HUE = Object.freeze({
   // The report: tests, report card and counselling.
   'view-report': 'violet',
   tests: 'violet',
+  'test-analysis': 'violet',
+  'counselling-report': 'rose',
+  // The family (6 Nov 2026).
+  children: 'rose',
   // Learning.
   'academic-progress': 'blue',
   academic: 'blue',
@@ -38,6 +42,7 @@ export const PARENT_AREA_HUE = Object.freeze({
   // Money.
   fees: 'green',
   history: 'blue',
+  'payment-history': 'blue',
 });
 
 /** The hue for an area, the parent violet for anything unlisted. */

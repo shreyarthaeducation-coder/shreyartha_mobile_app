@@ -7,6 +7,7 @@ import { usePalette } from '../../ui/PaletteContext';
 import StudentScaffold from '../StudentScaffold';
 import { StudentCard, StudentCardTitle, StudentNote } from '../StudentCard';
 import AdaptiveReportBody from '../../shared/AdaptiveReportBody';
+import WebReport from '../../shared/WebReport';
 import { fetchMyAdaptiveAttempts, fetchUniversalReport } from '../../../services/student/academicIqService';
 
 /**
@@ -196,7 +197,13 @@ export default function MyAdaptivePerformanceScreen() {
         fullHeight
       >
         {open?.report ? (
-          <AdaptiveReportBody report={open.report} />
+          // The website's own charts (6 Nov 2026), as My Adaptive Performance draws them there.
+          <WebReport
+            kind="adaptive"
+            portal="student"
+            payload={{ view: 'charts', report: open.report }}
+            fallback={<AdaptiveReportBody report={open.report} />}
+          />
         ) : open?.error ? (
           <Text style={styles.meta}>{open.error}</Text>
         ) : (

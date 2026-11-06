@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import {
   AuthScreen,
@@ -11,6 +11,7 @@ import {
 } from '../../components/auth';
 import { PORTALS, SLATE, SPACING, TYPE, leading } from '../../constants/theme';
 import { LOGIN_GROUPS } from '../../constants/authPortals';
+import SignupTiles from '../../components/auth/SignupTiles';
 import { requestResetAny, signIn } from '../../services/authService';
 import { applyPortalSession, portalLabel } from '../../services/portalSession';
 import { useAuth } from '../../context/AuthContext';
@@ -160,24 +161,8 @@ export default function SignInScreen() {
 
       <View style={styles.register}>
         <Text style={styles.registerTitle}>New here? Register as</Text>
-        <View style={styles.registerGrid}>
-          {registerOptions.map((opt) => (
-            <Pressable
-              key={opt.route}
-              style={({ pressed }) => [styles.registerCard, pressed && styles.pressed]}
-              onPress={() => router.push(`${opt.route}?tab=signup`)}
-              accessibilityRole="button"
-              accessibilityLabel={`Register as ${opt.label}`}
-            >
-              {/* LOGIN_GROUPS carries emoji, not Ionicons names — rendering it as a glyph is
-                  why this Text has no TYPE token (checkdesign exempts glyphs). */}
-              <Text style={styles.registerIcon}>{opt.icon}</Text>
-              <Text style={styles.registerLabel} numberOfLines={1}>
-                {opt.label}
-              </Text>
-            </Pressable>
-          ))}
-        </View>
+        {/* Two layers of tiles (6 Nov 2026), as on the website: the organisation, then the role. */}
+        <SignupTiles options={registerOptions} onPick={(opt) => router.push(`${opt.route}?tab=signup`)} />
       </View>
     </AuthScreen>
   );
@@ -210,27 +195,5 @@ const styles = StyleSheet.create({
     color: SLATE[700],
     marginBottom: SPACING.sm,
   },
-  registerGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  registerCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingVertical: 9,
-    paddingHorizontal: 12,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: SLATE[200],
-    backgroundColor: '#ffffff',
-  },
-  registerLabel: {
-    fontSize: TYPE.label,
-    fontWeight: '600',
-    color: SLATE[800],
-  },
-  registerIcon: { fontSize: 16, lineHeight: 20 },
   pressed: { opacity: 0.75 },
 });

@@ -27,6 +27,8 @@ import { unregisterParentPush } from '../../services/parent/pushService';
 import ShreyaChatSheet from '../staff/ShreyaChatSheet';
 import { PARENT_CHATBOT_CONFIG } from '../../constants/parentChatbotConfig';
 import ChangePasswordRow from '../shared/home/ChangePasswordRow';
+import { ParentLinkBox } from './MyChildrenScreen';
+import { fetchChildren, rememberActiveChild, selectChild } from '../../services/parent/childrenService';
 
 /**
  * The parent dashboard.
@@ -78,8 +80,8 @@ const STRINGS = {
 
   payFees: 'Pay Fees',
   payFeesBody: 'Secure and quick fee payments',
-  history: 'Payment History',
-  historyBody: 'View all your transactions',
+  children: 'My Children',
+  childrenBody: 'Switch between or link your children',
   notifications: 'Notifications',
   notificationsBody: 'Stay updated with important alerts',
   reports: 'View Report',
@@ -110,6 +112,9 @@ const STRINGS = {
   viewAnalytics: 'View Detailed Analytics',
 
   allSections: 'All sections',
+  showingChild: 'Showing',
+  noChildPrompt:
+    "No child is linked to your account yet. Enter the parent code from your child's school, or your child's mobile number or email.",
   forSupport: 'For Support',
   shreyaRole: 'AI Support',
   shreyaBlurb: 'Get instant help, answers to your queries and 24/7 support.',
@@ -155,6 +160,9 @@ export default function ParentMenuScreen() {
   const [figures, setFigures] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
+  // The family (6 Nov 2026): the switcher shows only for a parent with more than one child.
+  const [family, setFamily] = useState(null);
+  const [switching, setSwitching] = useState(null);
 
   const load = useCallback(async () => {
     // Only written when the server gave a definite answer and it differs from what is stored, so a
@@ -220,6 +228,13 @@ export default function ParentMenuScreen() {
     // The Notifications tile's count. Never throws; a failure is simply no count.
     setUnread(await fetchParentUnreadCount());
 
+    // Best-effort, like the count: no family simply means no switcher.
+    try {
+      setFamily(await fetchChildren());
+    } catch {
+      setFamily(null);
+    }
+
     setRefreshing(false);
   }, []);
 
@@ -251,6 +266,24 @@ export default function ParentMenuScreen() {
     });
   };
 
+  // Another child: the server remembers the choice, so reloading the home shows them everywhere.
+  const switchChild = async (child) => {
+    if (switching || child.studentId === family?.activeStudentId) return;
+    setSwitching(child.studentId);
+    try {
+      await rememberActiveChild(await selectChild(child.studentId));
+      await load();
+    } catch {
+      // The home simply stays on the child it was showing.
+    } finally {
+      setSwitching(null);
+    }
+  };
+
+  const siblings = family?.children || [];
+  // A verified parent with no child gets an empty record, not an error — the website's case too.
+  const noChildLinked = !!student && !student.studentId && !siblings.length;
+
   if (verified === null) return <View style={styles.blank} />;
   if (verified === false) return <Redirect href="/parent/pending-verification" />;
 
@@ -262,12 +295,14 @@ export default function ParentMenuScreen() {
       icon: 'wallet-outline',
       route: '/parent/fees',
     },
+    // My Children (6 Nov 2026), in Payment History's place — which is still a section below and a
+    // tab of School Fees. Which child the dashboard shows, and linking another with the school's code.
     {
-      key: 'history',
-      label: t.history,
-      description: t.historyBody,
-      icon: 'document-text-outline',
-      route: '/parent/fees?tab=history',
+      key: 'children',
+      label: t.children,
+      description: t.childrenBody,
+      icon: 'people-outline',
+      route: '/parent/children',
     },
     // Live since the parent inbox (/api/parent/notifications): every school event aimed at the
     // child's class — scheduled, rescheduled, cancelled — and the evening-before reminder, also
@@ -364,6 +399,46 @@ export default function ParentMenuScreen() {
             { key: 'school', icon: 'business-outline', label: t.rowSchool, value: student?.schoolName, tint: 'violet' },
           ]}
         />
+
+        {siblings.length > 1 ? (
+          <View style={styles.family}>
+            <Text style={styles.familyTitle}>{t.showingChild}</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.familyRow}>
+              {siblings.map((child) => {
+                const active = child.studentId === family.activeStudentId;
+                return (
+                  <Pressable
+                    key={child.studentId}
+                    onPress={() => switchChild(child)}
+                    style={({ pressed }) => [
+                      styles.childChip,
+                      active && { backgroundColor: palette.primary, borderColor: palette.primary },
+                      pressed && styles.pressed,
+                    ]}
+                    accessibilityRole="button"
+                    accessibilityState={{ selected: active, busy: switching === child.studentId }}
+                    accessibilityLabel={active ? `${child.fullName}, showing now` : `Show ${child.fullName}`}
+                  >
+                    <Ionicons name={active ? 'eye' : 'person-outline'} size={15} color={active ? '#fff' : SLATE[600]} />
+                    <Text style={[styles.childChipText, active && styles.childChipActive]} numberOfLines={1}>
+                      {child.fullName}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </ScrollView>
+          </View>
+        ) : null}
+
+        {noChildLinked ? (
+          <ParentLinkBox
+            prompt={t.noChildPrompt}
+            onLinked={() => {
+              setRefreshing(true);
+              load();
+            }}
+          />
+        ) : null}
 
         <QuickActions actions={QUICK_ACTIONS} onPress={(a) => router.push(a.route)} />
 
@@ -513,6 +588,31 @@ const useStyles = makeStyles((p) => ({
     borderColor: FEEDBACK.errorBorder,
     marginTop: SPACING.md,
   },
+
+  family: { marginBottom: SPACING.md },
+  familyTitle: {
+    fontSize: TYPE.caption,
+    fontWeight: '800',
+    letterSpacing: 0.6,
+    textTransform: 'uppercase',
+    color: SLATE[500],
+    marginBottom: SPACING.xs,
+  },
+  familyRow: { gap: SPACING.xs },
+  childChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    minHeight: TOUCH.min,
+    paddingHorizontal: SPACING.md,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: SLATE[200],
+    backgroundColor: '#ffffff',
+    maxWidth: 220,
+  },
+  childChipText: { fontSize: TYPE.label, fontWeight: '700', color: SLATE[700] },
+  childChipActive: { color: '#ffffff' },
 
   pressed: { opacity: 0.8 },
 }));

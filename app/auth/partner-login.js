@@ -125,7 +125,6 @@ export default function PartnerLoginScreen() {
               style={styles.logo}
               resizeMode="contain"
             />
-            <Text style={styles.appName}>Shreyartha</Text>
             <Text style={styles.tagline}>Partner Portal</Text>
           </View>
 
@@ -266,8 +265,7 @@ const styles = StyleSheet.create({
   backText: { color: '#fff', fontWeight: '700', fontSize: TYPE.heading },
   logoContainer: { alignItems: 'center', marginVertical: 28 },
   logo: { width: 190, height: 122, borderRadius: 18 },
-  appName: { color: '#fff', fontSize: TYPE.headline, fontWeight: '800', marginTop: 12 },
-  tagline: { color: 'rgba(255,255,255,0.6)', fontSize: TYPE.body, marginTop: 2 },
+  tagline: { marginTop: 12, color: 'rgba(255,255,255,0.6)', fontSize: TYPE.body },
   card: {
     backgroundColor: '#fff',
     borderRadius: 20,

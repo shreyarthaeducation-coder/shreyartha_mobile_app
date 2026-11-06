@@ -73,7 +73,6 @@ export default function ForgotPasswordScreen() {
               style={styles.logo}
               resizeMode="contain"
             />
-            <Text style={styles.appName}>Shreyartha</Text>
           </View>
 
           <View style={styles.card}>
@@ -154,7 +153,6 @@ const styles = StyleSheet.create({
   backText: { color: '#fff', fontWeight: '700', fontSize: TYPE.heading },
   logoContainer: { alignItems: 'center', marginVertical: 28 },
   logo: { width: 190, height: 122, borderRadius: 18 },
-  appName: { color: '#fff', fontSize: TYPE.headline, fontWeight: '800', marginTop: 12 },
   card: {
     backgroundColor: '#fff',
     borderRadius: 20,

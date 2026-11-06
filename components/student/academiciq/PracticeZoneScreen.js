@@ -8,6 +8,7 @@ import { EmptyState, GroupedBars, useToast } from '../../ui';
 import RichText from '../../RichText';
 import StudentScaffold from '../StudentScaffold';
 import { StudentCard, StudentCardTitle, StudentNote } from '../StudentCard';
+import WebReport from '../../shared/WebReport';
 import LimitedAccessNote from '../LimitedAccessNote';
 import AdaptiveRunner from './AdaptiveRunner';
 import ExamRunner from '../testrunner/ExamRunner';
@@ -236,6 +237,19 @@ export default function PracticeZoneScreen() {
     return (
       <>
         {score ? (
+          <>
+            {/* The website's own Practice Zone result (6 Nov 2026): Your Score, the Bloom's chart
+                coloured by band, the remarks. The native card is what shows without the website. */}
+            <WebReport
+              kind="practice"
+              portal="student"
+              payload={{
+                level,
+                score: { percentage: score.percentage, correct: score.correct, total: score.total },
+                analysis: { levels: score.blooms, percentages: score.percentages },
+                remark,
+              }}
+              fallback={
           <StudentCard>
             <StudentCardTitle>Your score</StudentCardTitle>
             <Text style={styles.scoreValue}>
@@ -277,6 +291,10 @@ export default function PracticeZoneScreen() {
                 <Text style={styles.bloomRemark}>{practiceBloomsRemark(l, score.percentages[l])}</Text>
               </View>
             ))}
+          </StudentCard>
+              }
+            />
+            <StudentCard>
             <Pressable
               onPress={() => {
                 setAnswers({});
@@ -288,7 +306,8 @@ export default function PracticeZoneScreen() {
             >
               <Text style={styles.secondaryText}>Try again</Text>
             </Pressable>
-          </StudentCard>
+            </StudentCard>
+          </>
         ) : null}
 
         {/* INDEXED shape: `options[]` graded by position, NOT the lettered columns the

@@ -3,6 +3,7 @@ import { ActivityIndicator, Modal, Pressable, ScrollView, StyleSheet, Text, View
 import { Ionicons } from '@expo/vector-icons';
 import { FEEDBACK, SLATE, SPACING, TYPE, leading } from '../../constants/theme';
 import { GroupedBars, ProgressBar, SegmentedDonut } from '../ui';
+import WebReport from '../shared/WebReport';
 import { fetchStudentInsights } from '../../services/staff/studentStatusService';
 import { STATES } from '../../utils/studentStatus';
 
@@ -141,6 +142,14 @@ export default function StudentInsightsSheet({ sectionId, student, onClose }) {
 
           {data ? (
             <ScrollView contentContainerStyle={styles.body} showsVerticalScrollIndicator={false}>
+              {/* The website's own insights (6 Nov 2026): its doughnut and bar charts, from the data
+                  fetched above. The native cards are what shows without the website. */}
+              <WebReport
+                kind="student-insights"
+                portal="staff"
+                payload={{ sectionId, student, data }}
+                fallback={
+                  <>
               <Card title="Across the platform" note="Where they have got to in each area, as in the Student Status table.">
                 <View style={styles.areas}>
                   {(data.areas || []).map((a) => (
@@ -192,6 +201,9 @@ export default function StudentInsightsSheet({ sectionId, student, onClose }) {
                   </View>
                 )}
               </Card>
+                  </>
+                }
+              />
             </ScrollView>
           ) : null}
         </View>

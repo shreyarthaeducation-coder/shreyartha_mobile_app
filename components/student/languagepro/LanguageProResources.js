@@ -239,6 +239,7 @@ export default function LanguageProResources({ source = 'school' }) {
         />
       ) : mode === 'test' ? (
         <UnderstandingTest
+          reportVariant="skills"
           key={`u-${topic.chapterId}`}
           // Keyed by CHAPTER, not topic — that is what this endpoint takes.
           moduleId={topic.chapterId}

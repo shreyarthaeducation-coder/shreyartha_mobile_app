@@ -255,7 +255,9 @@ const ASSERTIONS = [
     test: (s) =>
       s.screen.includes('const tests = psychometricTests(detail?.parts, detail?.answers, room.title).map((test) => {') &&
       s.screen.includes('const { questions, answers } = psychometricInput(test.rows);') &&
-      s.screen.includes('return { ...test, results: processAssessmentResults(questions, answers, test.title) };') &&
+      s.screen.includes('return { ...test, questions, answers, results: processAssessmentResults(questions, answers, test.title) };') &&
+      // Each test goes to the website's report page as its own topic (6 Nov 2026).
+      s.screen.includes('topics: report.tests.map((test) => ({') &&
       s.screen.includes('topicType={getTopicType(test.title)}') &&
       s.screen.includes('{report.tests.length > 1 ? <Text style={styles.section}>{test.title}</Text> : null}'),
   },

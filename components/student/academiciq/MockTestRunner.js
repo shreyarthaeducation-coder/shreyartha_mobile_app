@@ -149,7 +149,13 @@ export default function MockTestRunner({ paper, onBack, showToast }) {
           footer={
             result ? (
               <>
-                <MockTestResult result={result} paperName={paper.name || paper.title} />
+                <MockTestResult
+                  result={result}
+                  paperName={paper.name || paper.title}
+                  // The website's count, for its summary card: lettered answers, as graded.
+                  correct={questions.filter((q) => answers[q.id] != null && answers[q.id] === q.correctAnswer).length}
+                  total={questions.length}
+                />
                 <Pressable
                   onPress={load}
                   style={({ pressed }) => [styles.primary, pressed && styles.pressed]}

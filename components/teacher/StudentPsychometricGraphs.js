@@ -5,7 +5,8 @@ import { FEEDBACK, SLATE, SPACING, TYPE } from '../../constants/theme';
 import { SegmentedTabs } from '../ui';
 import { usePalette } from '../ui/PaletteContext';
 import PsychometricReport from '../student/psychometric/PsychometricReport';
-import { fetchStudentReports } from '../../services/shared/psychometricReportService';
+import { fetchStudentBatch } from '../../services/shared/psychometricReportService';
+import WebReport from '../shared/WebReport';
 
 /** The teacher's psychometric endpoint family (own school only): the batch print endpoint. */
 const REPORTS_API = '/api/teacher/psychometric-reports';
@@ -22,6 +23,8 @@ export default function StudentPsychometricGraphs({ studentId }) {
   const palette = usePalette();
   const [open, setOpen] = useState(false);
   const [items, setItems] = useState(null);
+  // The server's batch as it came, for the website's own graphs (6 Nov 2026).
+  const [batch, setBatch] = useState(null);
   const [error, setError] = useState('');
   const [tab, setTab] = useState('0');
 
@@ -31,8 +34,11 @@ export default function StudentPsychometricGraphs({ studentId }) {
     setTab('0');
     if (!open || !studentId) return undefined;
     const controller = new AbortController();
-    fetchStudentReports(REPORTS_API, studentId, controller.signal)
-      .then((list) => setItems(list))
+    fetchStudentBatch(REPORTS_API, studentId, controller.signal)
+      .then((res) => {
+        setBatch(res.batch);
+        setItems(res.items);
+      })
       .catch((e) => {
         if (e?.name !== 'AbortError') setError(e?.message || 'Could not load the graphs.');
       });
@@ -61,26 +67,36 @@ export default function StudentPsychometricGraphs({ studentId }) {
         ) : items.length === 0 ? (
           <Text style={styles.empty}>No answered assessment to show yet.</Text>
         ) : (
-          <>
-            {items.length > 1 ? (
-              <SegmentedTabs
-                scrollable
-                options={items.map((it, i) => ({ value: String(i), label: it.topicName || `Report ${i + 1}` }))}
-                value={tab}
-                onChange={setTab}
-                style={styles.tabs}
-              />
-            ) : null}
-            {current ? (
-              <PsychometricReport
-                key={`${current.topicName}-${tab}`}
-                results={current.results}
-                topicType={current.topicType}
-                topicName={current.topicName}
-                studentInfo={current.studentInfo}
-              />
-            ) : null}
-          </>
+          <WebReport
+            kind="psychometric"
+            portal="staff"
+            payload={{ mode: 'graphs', download: false, students: batch }}
+            fallback={
+              <>
+                {items.length > 1 ? (
+                  <SegmentedTabs
+                    scrollable
+                    options={items.map((it, i) => ({
+                      value: String(i),
+                      label: it.topicName || `Report ${i + 1}`,
+                    }))}
+                    value={tab}
+                    onChange={setTab}
+                    style={styles.tabs}
+                  />
+                ) : null}
+                {current ? (
+                  <PsychometricReport
+                    key={`${current.topicName}-${tab}`}
+                    results={current.results}
+                    topicType={current.topicType}
+                    topicName={current.topicName}
+                    studentInfo={current.studentInfo}
+                  />
+                ) : null}
+              </>
+            }
+          />
         )
       ) : null}
     </View>

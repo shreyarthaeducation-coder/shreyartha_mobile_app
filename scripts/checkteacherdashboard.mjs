@@ -82,6 +82,8 @@ const ORIGINAL_KEYS = [
   'profile', 'myCalendar', 'upskill',
   'selfAttendance', 'leave', 'payroll',
   'schoolResources', 'classAnalysis',
+  // 6 Nov 2026: Parent Management, the class teacher's parent verification and link codes.
+  'parentManagement',
 ].sort();
 
 let failures = 0;

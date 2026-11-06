@@ -9,6 +9,7 @@ import { buildQuestionReadAloudText } from '../../../utils/readAloudText';
 import { questionContextFromLettered } from '../../../services/student/jyoraService';
 import RichText from '../../RichText';
 import { StudentCard, StudentCardTitle, StudentNote } from '../StudentCard';
+import WebReport from '../../shared/WebReport';
 import {
   BLOOMS_LEVELS,
   bloomsRemark,
@@ -61,6 +62,11 @@ export default function UnderstandingTest({
   // Shreya Speak and "More like this" call student endpoints, so a teacher's Upskill test (which
   // reuses this component, 18 Oct 2026) turns them off rather than showing buttons that 403.
   aiTools = true,
+  // The website's result page draws the result (6 Nov 2026): `reportVariant` is which website copy
+  // it matches — "academic" (Academic IQ), "skills" (Skills Edge, Coding Pro) — and `reportPortal`
+  // whose session the page gets (a teacher's Upskill test is "staff").
+  reportVariant = 'academic',
+  reportPortal = 'student',
 }) {
   const styles = useStyles();
   const palette = usePalette();
@@ -124,59 +130,66 @@ export default function UnderstandingTest({
   const runnerQuestions = questions.map(fromLettered);
   // Only levels that actually carry questions — showing six bars when the module tests two would
   // read as four zero scores rather than four absences.
-  const usedLevels = submitted
-    ? BLOOMS_LEVELS.filter((l) => result.blooms.levels[l].total > 0)
-    : [];
+  const usedLevels = submitted ? BLOOMS_LEVELS.filter((l) => result.blooms.levels[l].total > 0) : [];
 
   return (
     <>
       {submitted ? (
-        <>
-          <StudentCard>
-            <StudentCardTitle>Performance Summary</StudentCardTitle>
-            <View style={styles.summary}>
-              <View style={styles.stat}>
-                <Text style={styles.statValue}>
-                  {result.score.correct}/{result.score.total}
-                </Text>
-                <Text style={styles.statLabel}>Correct</Text>
-              </View>
-              <View style={styles.stat}>
-                <Text style={styles.statValue}>
-                  {result.score.marks}/{result.score.maxMarks}
-                </Text>
-                <Text style={styles.statLabel}>Marks</Text>
-              </View>
-              <View style={styles.stat}>
-                <Text style={styles.statValue}>{result.score.percentage}%</Text>
-                <Text style={styles.statLabel}>Score</Text>
-              </View>
-            </View>
-          </StudentCard>
-
-          <StudentCard>
-            <StudentCardTitle>Bloom’s Breakdown</StudentCardTitle>
-            {usedLevels.map((level) => {
-              const pct = result.blooms.percentages[level];
-              const cell = result.blooms.levels[level];
-              return (
-                <View key={level} style={styles.bloom}>
-                  <View style={styles.bloomHead}>
-                    <Text style={styles.bloomName}>{level}</Text>
-                    <Text style={styles.bloomPct}>
-                      {cell.correct}/{cell.total} · {pct}%
+        // The website's own Performance Summary, Bloom's chart and remarks (6 Nov 2026); the native
+        // cards are what shows without the website.
+        <WebReport
+          kind="blooms"
+          portal={reportPortal}
+          payload={{ variant: reportVariant, score: result.score, analysis: result.blooms }}
+          fallback={
+            <>
+              <StudentCard>
+                <StudentCardTitle>Performance Summary</StudentCardTitle>
+                <View style={styles.summary}>
+                  <View style={styles.stat}>
+                    <Text style={styles.statValue}>
+                      {result.score.correct}/{result.score.total}
                     </Text>
+                    <Text style={styles.statLabel}>Correct</Text>
                   </View>
-                  <View style={styles.track}>
-                    <View style={[styles.fill, { width: `${pct}%` }]} />
+                  <View style={styles.stat}>
+                    <Text style={styles.statValue}>
+                      {result.score.marks}/{result.score.maxMarks}
+                    </Text>
+                    <Text style={styles.statLabel}>Marks</Text>
                   </View>
-                  <Text style={styles.bloomStatus}>{masteryStatus(pct)}</Text>
-                  <Text style={styles.bloomRemark}>{bloomsRemark(level, pct)}</Text>
+                  <View style={styles.stat}>
+                    <Text style={styles.statValue}>{result.score.percentage}%</Text>
+                    <Text style={styles.statLabel}>Score</Text>
+                  </View>
                 </View>
-              );
-            })}
-          </StudentCard>
-        </>
+              </StudentCard>
+
+              <StudentCard>
+                <StudentCardTitle>Bloom’s Breakdown</StudentCardTitle>
+                {usedLevels.map((level) => {
+                  const pct = result.blooms.percentages[level];
+                  const cell = result.blooms.levels[level];
+                  return (
+                    <View key={level} style={styles.bloom}>
+                      <View style={styles.bloomHead}>
+                        <Text style={styles.bloomName}>{level}</Text>
+                        <Text style={styles.bloomPct}>
+                          {cell.correct}/{cell.total} · {pct}%
+                        </Text>
+                      </View>
+                      <View style={styles.track}>
+                        <View style={[styles.fill, { width: `${pct}%` }]} />
+                      </View>
+                      <Text style={styles.bloomStatus}>{masteryStatus(pct)}</Text>
+                      <Text style={styles.bloomRemark}>{bloomsRemark(level, pct)}</Text>
+                    </View>
+                  );
+                })}
+              </StudentCard>
+            </>
+          }
+        />
       ) : null}
 
       <ExamRunner
@@ -194,28 +207,32 @@ export default function UnderstandingTest({
         }
         submitted={submitted}
         onSubmit={submit}
-        renderQuestionSlot={aiTools ? (question) => (
-          <View style={styles.qActions}>
-            <ShreyaSpeakButton
-              compact
-              // The RAW four-element array, NOT optionsOf(q). The web passes
-              // [optionA, optionB, optionC, optionD] so a blank option still consumes its letter
-              // — matching the on-screen lettering. optionsOf pre-filters and would re-letter.
-              text={buildQuestionReadAloudText(question.raw.questionText, [
-                question.raw.optionA,
-                question.raw.optionB,
-                question.raw.optionC,
-                question.raw.optionD,
-              ])}
-            />
-            <MoreLikeThisButton
-              questionContext={questionContextFromLettered(question.raw)}
-              topicName={topicName}
-              subjectName={subjectName}
-              chapterName={chapterName}
-            />
-          </View>
-        ) : undefined}
+        renderQuestionSlot={
+          aiTools
+            ? (question) => (
+                <View style={styles.qActions}>
+                  <ShreyaSpeakButton
+                    compact
+                    // The RAW four-element array, NOT optionsOf(q). The web passes
+                    // [optionA, optionB, optionC, optionD] so a blank option still consumes its letter
+                    // — matching the on-screen lettering. optionsOf pre-filters and would re-letter.
+                    text={buildQuestionReadAloudText(question.raw.questionText, [
+                      question.raw.optionA,
+                      question.raw.optionB,
+                      question.raw.optionC,
+                      question.raw.optionD,
+                    ])}
+                  />
+                  <MoreLikeThisButton
+                    questionContext={questionContextFromLettered(question.raw)}
+                    topicName={topicName}
+                    subjectName={subjectName}
+                    chapterName={chapterName}
+                  />
+                </View>
+              )
+            : undefined
+        }
       />
 
       {submitted ? (

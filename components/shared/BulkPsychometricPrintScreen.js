@@ -8,8 +8,10 @@ import { makeStyles } from '../../utils/makeStyles';
 import {
   fetchPrintRoster,
   fetchPrintStudents,
+  fetchStudentsBatch,
   printStudentsReports,
 } from '../../services/shared/psychometricReportService';
+import WebReport from './WebReport';
 
 /**
  * Print psychometric reports — choose a class (and section), tick students, and get one PDF: the
@@ -82,12 +84,36 @@ export default function BulkPsychometricPrintScreen({ apiBase, homeRoute }) {
       return next;
     });
 
+  // The chosen students' batch, for the website's own batch print (6 Nov 2026): the PDF the
+  // website prints, framework pages first. `nativePrint` is the app's own, for when the website
+  // cannot be reached.
+  const [webBatch, setWebBatch] = useState(null);
+  const selectionKey = [...selected].sort().join(',');
+  useEffect(() => setWebBatch(null), [selectionKey]);
+
   const print = async () => {
     if (!selected.size) return;
     if (selected.size > max) {
       setMessage({ tone: 'error', text: `Print at most ${max} students at a time.` });
       return;
     }
+    setBusy(true);
+    setMessage(null);
+    try {
+      const batch = await fetchStudentsBatch(apiBase, [...selected]);
+      if (!batch.some((s) => (s.topics || []).length)) {
+        setMessage({ tone: 'error', text: 'None of these students has completed an assessment yet.' });
+      } else {
+        setWebBatch(batch);
+      }
+    } catch (e) {
+      setMessage({ tone: 'error', text: e?.message || 'The reports could not be prepared.' });
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const nativePrint = async () => {
     setBusy(true);
     setMessage(null);
     try {
@@ -233,12 +259,34 @@ export default function BulkPsychometricPrintScreen({ apiBase, homeRoute }) {
           </>
         )}
       </Pressable>
+
+      {webBatch ? (
+        <View style={styles.webPrint}>
+          <WebReport
+            kind="psychometric"
+            portal="staff"
+            payload={{ mode: 'print', students: webBatch }}
+            fallback={
+              <Pressable
+                style={[styles.printBtn, { backgroundColor: palette.primary }, busy && styles.printOff]}
+                onPress={nativePrint}
+                disabled={busy}
+                accessibilityRole="button"
+              >
+                <Ionicons name="download-outline" size={20} color="#ffffff" />
+                <Text style={styles.printText}>Prepare the PDF</Text>
+              </Pressable>
+            }
+          />
+        </View>
+      ) : null}
     </ScreenScaffold>
   );
 }
 
 const useStyles = makeStyles(() => ({
   intro: { fontSize: TYPE.label, color: SLATE[600], marginBottom: SPACING.md },
+  webPrint: { marginTop: SPACING.md },
   pickers: { gap: SPACING.sm, marginBottom: SPACING.md },
   message: { fontSize: TYPE.label, marginBottom: SPACING.md },
   loader: { marginTop: SPACING.xl },

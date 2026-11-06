@@ -68,7 +68,7 @@ export default function SegmentedDonut({
           />
           {arcs.map((a, i) => (
             <Circle
-              key={a.key ?? a.label ?? i}
+              key={`${a.key ?? a.label ?? ''}-${i}`}
               cx={centre}
               cy={centre}
               r={radius}

@@ -5,6 +5,7 @@ import { FormSheet, GaugeChart, GroupedBars } from '../../ui';
 import { fetchExamAnalysis } from '../../../services/teacher/examService';
 import { captureAndShare } from '../../../utils/shareCapture';
 import { htmlToText } from '../../../utils/htmlToText';
+import WebReport from '../../shared/WebReport';
 
 /**
  * One student's breakdown for one exam.
@@ -35,10 +36,24 @@ function StatTile({ label, value, highlight, palette = PALETTE }) {
  * them it is the teacher's sheet, as before. A parent's copy names the parts the teacher shared
  * (`shownParts`); the sheet draws only those, the teacher's copy has every part.
  */
-export default function ExamAnalysisSheet({ visible, target, onClose, showToast, load, palette = PALETTE }) {
+// `portal`, `schoolName`, `schoolLogo` (6 Nov 2026): the website's own Detailed Analysis is drawn
+// in the sheet — its letterhead, charts, gauges and Download PDF; the native one is the fallback.
+export default function ExamAnalysisSheet({
+  visible,
+  target,
+  onClose,
+  showToast,
+  load,
+  palette = PALETTE,
+  portal = 'staff',
+  schoolName = '',
+  schoolLogo = '',
+}) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [sharing, setSharing] = useState(false);
+  // Whether the website's report is the one on screen (6 Nov 2026) — see WebReport.
+  const [webState, setWebState] = useState('loading');
   const captureRef = useRef(null);
 
   // Held in a ref, and deliberately NOT in the effect's deps. The parent passes an inline arrow,
@@ -101,12 +116,26 @@ export default function ExamAnalysisSheet({ visible, target, onClose, showToast,
       title={target?.examName || 'Detailed analysis'}
       subtitle={data?.studentName}
       onClose={onClose}
-      headerAction={data ? { icon: 'share-outline', label: 'Share', onPress: share, busy: sharing } : undefined}
+      // The website's report has its own Download PDF; Share is for the native one.
+      headerAction={
+        data && webState === 'failed' ? { icon: 'share-outline', label: 'Share', onPress: share, busy: sharing } : undefined
+      }
       fullHeight
     >
       {loading ? (
         <ActivityIndicator size="large" color={palette.primary} style={styles.loader} />
       ) : !data ? null : (
+        <WebReport
+          kind="exam-analysis"
+          onStateChange={setWebState}
+          portal={portal}
+          payload={{
+            data,
+            schoolName: schoolName || data.schoolName || '',
+            schoolLogo: schoolLogo || data.schoolLogo || '',
+            filename: `Detailed_Analysis_${target?.examName || 'Exam'}.pdf`,
+          }}
+          fallback={
         <View ref={captureRef} collapsable={false} style={styles.capture}>
           {shows('MARKS') || shows('CLASS_FIGURES') ? (
             <View style={styles.tiles}>
@@ -182,10 +211,11 @@ export default function ExamAnalysisSheet({ visible, target, onClose, showToast,
                         an image to share, which a maths WebView would come out blank in. */}
                     <Text style={styles.qText}>{htmlToText(q.questionStatement || '')}</Text>
                     <View style={styles.qMeta}>
-                      {[q.chapterName, q.topicName, q.bloomsTaxonomy, q.skillSet]
-                        .filter(Boolean)
-                        .map((meta) => (
-                          <View key={meta} style={styles.qChip}>
+                      {/* Once each, keyed by position (6 Nov 2026): a chapter and its topic often
+                          share a name, and the repeat was a duplicate key and a doubled chip. */}
+                      {[...new Set([q.chapterName, q.topicName, q.bloomsTaxonomy, q.skillSet].filter(Boolean))]
+                        .map((meta, j) => (
+                          <View key={`m${j}`} style={styles.qChip}>
                             <Text style={styles.qChipText} numberOfLines={1}>
                               {meta}
                             </Text>
@@ -198,6 +228,8 @@ export default function ExamAnalysisSheet({ visible, target, onClose, showToast,
             </>
           ) : null}
         </View>
+          }
+        />
       )}
     </FormSheet>
   );

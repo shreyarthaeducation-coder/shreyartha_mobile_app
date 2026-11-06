@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { SLATE, SPACING, TYPE, leading } from '../../constants/theme';
 import { usePalette } from '../ui/PaletteContext';
@@ -11,6 +12,7 @@ import { StudentCard } from './StudentCard';
 import LimitedAccessNote from './LimitedAccessNote';
 import useStudentAccess from '../../hooks/useStudentAccess';
 import { fetchStudentClass } from '../../services/student/languageProService';
+import { TAB_BAR_HEIGHT } from '../shared/home/PortalTabBar';
 
 /**
  * School (or College) Resources and Personalised Resources are hidden from students while their
@@ -41,6 +43,7 @@ export const LANGUAGE_PRO_RESOURCES_VISIBLE = false;
  */
 
 export default function LanguageProScreen() {
+  const insets = useSafeAreaInsets();
   const styles = useStyles();
   const palette = usePalette();
   const router = useRouter();
@@ -129,6 +132,8 @@ export default function LanguageProScreen() {
           </StudentCard>
         </Pressable>
       ))}
+      {/* A footer tab since 6 Nov 2026: room for the bar, as Profile and Support leave. */}
+      <View style={{ height: TAB_BAR_HEIGHT + (insets.bottom || SPACING.sm) }} />
     </StudentScaffold>
   );
 }

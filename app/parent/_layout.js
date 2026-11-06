@@ -52,6 +52,8 @@ const UNVERIFIED_OK = new Set([
   '/parent',
   '/parent/pending-verification',
   '/parent/change-password',
+  // My Children (6 Nov 2026): a code from the school links AND verifies, so it must open before.
+  '/parent/children',
 ]);
 
 export default function ParentLayout() {
@@ -96,7 +98,10 @@ export default function ParentLayout() {
     return () => {
       alive = false;
     };
-  }, []);
+    // Re-read on every navigation (6 Nov 2026): a parent can now verify themselves mid-session, by
+    // entering the school's code on the pending screen or My Children, which writes the flag. Read
+    // once, the gate kept sending them back to the pending screen until the app restarted.
+  }, [pathname]);
 
   if (state.checking) {
     return (
@@ -135,6 +140,8 @@ export default function ParentLayout() {
         <Stack.Screen name="report-card" />
         <Stack.Screen name="attendance-schedule" />
         <Stack.Screen name="plans" />
+        {/* My Children (6 Nov 2026): switch between children, link another with the school's code. */}
+        <Stack.Screen name="children" />
       </Stack>
     </PaletteProvider>
   );

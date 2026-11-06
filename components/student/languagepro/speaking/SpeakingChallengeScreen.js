@@ -13,7 +13,7 @@ import TranslationPanel from './TranslationPanel';
 const TABS = [
   { value: 'speaking', label: 'Speak', icon: 'people-outline' },
   { value: 'vocabulary', label: 'Words', icon: 'book-outline' },
-  { value: 'understand', label: 'Meaning', icon: 'language-outline' },
+  { value: 'understand', label: 'Learn with your mother tongue', icon: 'language-outline' },
 ];
 
 /**
@@ -80,6 +80,9 @@ export default function SpeakingChallengeScreen({ chapterId, showToast }) {
           setTab(next);
         }}
         style={styles.tabs}
+        // Scrollable since the third tab became "Learn with your mother tongue" (6 Nov 2026):
+        // three equal tabs would cut it to "Learn wi…".
+        scrollable
       />
       {tab === 'speaking' ? (
         <SpeakingPanel data={data} castByKey={castByKey} say={say} stopVoice={stopVoice} showToast={showToast} />

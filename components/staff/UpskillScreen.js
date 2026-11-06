@@ -344,6 +344,8 @@ export default function UpskillScreen({ homeRoute = '/teacher' }) {
         {subSkill && subSkillTab === 'assessment' ? (
           // Keyed on the sub-skill so switching starts a fresh attempt.
           <UnderstandingTest
+            reportVariant="skills"
+            reportPortal="staff"
             key={`assessment-${subSkill.id}`}
             moduleId={subSkill.id}
             loadQuestions={fetchSubSkillAssessment}
@@ -444,6 +446,8 @@ export default function UpskillScreen({ homeRoute = '/teacher' }) {
         {moduleTarget && moduleTab === 'understanding' ? (
           // Keyed on the module so switching modules restarts the test.
           <UnderstandingTest
+            reportVariant="skills"
+            reportPortal="staff"
             key={`tyu-${moduleTarget.id}`}
             moduleId={moduleTarget.id}
             loadQuestions={fetchUpskillQuestions}

@@ -35,6 +35,8 @@ export default function CharacterCard({
   order = 0,
   talk = null,
   onTap,
+  // Twice the size (6 Nov 2026): the line's own speaker, above the line, where the student looks.
+  large = false,
 }) {
   const styles = useStyles();
   const { mouth, blinking } = useTalkingFace(talk);
@@ -158,12 +160,13 @@ export default function CharacterCard({
   const label = `${character.name}, ${character.role}${speaking ? ', speaking' : listening ? ', listening' : ''}`;
 
   const portrait = (
-    <Animated.View style={[styles.holder, { transform: [{ translateY: lift }] }]}>
+    <Animated.View style={[styles.holder, large && styles.holderL, { transform: [{ translateY: lift }] }]}>
       {speaking ? (
         <Animated.View
           pointerEvents="none"
           style={[
             styles.glow,
+            large && styles.glowL,
             { backgroundColor: colour },
             reduceMotion ? styles.glowStill : { opacity: ringOpacity, transform: [{ scale: ringScale }] },
           ]}
@@ -172,12 +175,13 @@ export default function CharacterCard({
       {listening && !speaking ? (
         <Animated.View
           pointerEvents="none"
-          style={[styles.listen, { borderColor: colour }, !reduceMotion && { transform: [{ rotate }] }]}
+          style={[styles.listen, large && styles.listenL, { borderColor: colour }, !reduceMotion && { transform: [{ rotate }] }]}
         />
       ) : null}
       <Animated.View
         style={[
           styles.portrait,
+          large && styles.portraitL,
           { borderColor: colour },
           speaking && {
             transform: reduceMotion ? [{ scale: 1.04 }] : face ? [{ scale: 1.04 }, { rotate: nod }] : [{ scale: bob }],
@@ -205,7 +209,7 @@ export default function CharacterCard({
   );
 
   return (
-    <View style={styles.card} accessibilityLabel={label}>
+    <View style={[styles.card, large && styles.cardL]} accessibilityLabel={label}>
       {bubble ? (
         <View style={[styles.bubble, { borderColor: colour }]}>
           <Text style={styles.bubbleText} numberOfLines={3}>
@@ -241,7 +245,7 @@ export default function CharacterCard({
           />
         ))}
       </View>
-      <View style={[styles.badge, { backgroundColor: colour }]}>
+      <View style={[styles.badge, large && styles.badgeL, { backgroundColor: colour }]}>
         <Text style={styles.badgeText} numberOfLines={1}>
           {character.name}
         </Text>
@@ -322,4 +326,11 @@ const useStyles = makeStyles(() => ({
     zIndex: 2,
   },
   bubbleText: { fontSize: TYPE.caption, color: SLATE[700] },
+  // `large`: the face is drawn in percentages, so it scales with the portrait.
+  cardL: { width: 128 },
+  holderL: { width: 112, height: 112 },
+  glowL: { width: 112, height: 112, borderRadius: 56 },
+  listenL: { width: 126, height: 126, borderRadius: 63 },
+  portraitL: { width: 112, height: 112, borderRadius: 56, borderWidth: 4 },
+  badgeL: { maxWidth: 128 },
 }));

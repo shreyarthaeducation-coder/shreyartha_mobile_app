@@ -48,6 +48,8 @@ export const TEACHER_WORKSPACE_GROUPS = [
       { key: 'studentManagement', label: 'Student Management', icon: 'id-card-outline', native: '/teacher/student-management' },
       // The class teacher's marks sheet across subjects (29 Oct 2026), its own entry as on the web.
       { key: 'classAnalysis', label: 'Class Analysis', icon: 'grid-outline', native: '/teacher/class-analysis' },
+      // The class teacher's parents waiting to be verified, and parent and student codes (6 Nov 2026).
+      { key: 'parentManagement', label: 'Parent Management', icon: 'people-circle-outline', native: '/teacher/parent-management' },
       { key: 'attendance', label: 'Mark Attendance', icon: 'checkbox-outline', native: '/teacher/attendance' },
       { key: 'schoolResources', label: 'School Resources', icon: 'library-outline', native: '/teacher/school-resources' },
       { key: 'resources', label: 'My Teaching Resources', icon: 'folder-open-outline', native: '/teacher/resources' },

@@ -74,7 +74,19 @@ const SRC = {
  * of the sections), Attendance & Schedule is one section with two tabs (as on the website), and
  * Notifications stays.
  */
-const APP_SECTIONS = ['academic-progress', 'learning-activities', 'attendance-schedule', 'notifications', 'fees'];
+// Every feature of the parent login (6 Nov 2026): "all sections should hold all the features".
+const APP_SECTIONS = [
+  'children',
+  'view-report',
+  'test-analysis',
+  'counselling-report',
+  'academic-progress',
+  'learning-activities',
+  'attendance-schedule',
+  'notifications',
+  'fees',
+  'payment-history',
+];
 
 let failures = 0;
 const fail = (msg) => {
@@ -266,8 +278,11 @@ function assertions(menu, calendar, layoutSrc, src, fee, chatbot, routeNames, ta
   if (gotKeys !== APP_SECTIONS.join(',')) {
     bad(`the home's sections drifted.\n      app:  ${gotKeys}\n      want: ${APP_SECTIONS.join(',')}`);
   }
-  if (PARENT_MENU.some((i) => /counsel/.test(i.key))) {
-    bad('Counselling Report is back among the sections — the parent asked for it inside View Report');
+  // Counselling Report and Test & Exam Analysis are sections AND View Report's tabs (6 Nov 2026):
+  // each must open View Report on its own tab, not somewhere of its own.
+  for (const [key, tab] of [['counselling-report', 'counselling'], ['test-analysis', 'tests']]) {
+    const item = PARENT_MENU.find((i) => i.key === key);
+    if (item && item.native !== `/parent/view-report?tab=${tab}`) bad(`${key} does not open View Report on its ${tab} tab`);
   }
   // The same words as the website wherever the two have the same item.
   const web = webSidebarItems();
@@ -318,7 +333,8 @@ function assertions(menu, calendar, layoutSrc, src, fee, chatbot, routeNames, ta
   const shellRoutes = ['index', 'pending-verification', 'change-password', 'feature'];
   const nativeNames = [...PARENT_MENU, ...PARENT_HEADER_ACTIONS]
     .filter((i) => i.native)
-    .map((i) => i.native.split('/').pop());
+    // A section may open a screen on one of its tabs (`?tab=`): the route is the part before it.
+    .map((i) => i.native.split('?')[0].split('/').pop());
 
   for (const name of [...nativeNames, ...shellRoutes]) {
     if (!fs.existsSync(path.join(ROUTES, `${name}.js`))) {
@@ -815,7 +831,7 @@ const MUTATIONS = [
   },
   {
     name: 'Plans for my child opened to unverified parents again',
-    src: (k, s) => (k === 'parentLayout' ? s.replace("  '/parent/change-password',\n]);", "  '/parent/change-password',\n  '/parent/plans',\n]);") : s),
+    src: (k, s) => (k === 'parentLayout' ? s.replace("  '/parent/change-password',\n", "  '/parent/change-password',\n  '/parent/plans',\n") : s),
   },
   {
     name: 'Plans for my child added as a home tile',

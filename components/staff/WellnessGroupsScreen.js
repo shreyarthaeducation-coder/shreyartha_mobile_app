@@ -34,6 +34,7 @@ import { useRouter } from 'expo-router';
 import { PsychometricPrintLink } from '../shared/BulkPsychometricPrintScreen';
 import StudentSearchBar from './shared/StudentSearchBar';
 import { useStudentSearch } from '../../utils/studentSearch';
+import WebReport from '../shared/WebReport';
 
 /**
  * Wellness Groups — the counsellor's wellbeing-survey screen, both portals.
@@ -243,12 +244,26 @@ export default function WellnessGroupsScreen({
             : undefined
         }
       >
-        {chart.length > 0 ? (
-          <LineChart
-            data={chart}
-            style={styles.chart}
-            // Each point keeps its own risk colour, which the web's single-colour line loses.
-            pointColor={(point) => riskMeta(point.level).color}
+        {openStudent && categoryList.length > 0 ? (
+          // The website's own Wellness Index graph (6 Nov 2026); the native line is what shows
+          // without the website.
+          <WebReport
+            kind="wellness"
+            portal="staff"
+            payload={{
+              categories: categoryList.map((c) => ({ shortCode: c.shortCode })),
+              student: { studentName: openStudent.studentName, indices: openStudent.indices || {} },
+            }}
+            fallback={
+              chart.length > 0 ? (
+                <LineChart
+                  data={chart}
+                  style={styles.chart}
+                  // Each point keeps its own risk colour, which the web's single-colour line loses.
+                  pointColor={(point) => riskMeta(point.level).color}
+                />
+              ) : null
+            }
           />
         ) : null}
 
