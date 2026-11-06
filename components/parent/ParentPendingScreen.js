@@ -53,19 +53,6 @@ export default function ParentPendingScreen() {
           </View>
         ))}
 
-        {/* Buying a plan for the child does not wait for verification (24 Oct 2026). */}
-        <Pressable
-          onPress={() => router.push('/parent/plans')}
-          style={({ pressed }) => [
-            styles.primaryBtn,
-            { backgroundColor: palette.primary },
-            pressed && styles.pressed,
-          ]}
-          accessibilityRole="button"
-        >
-          <Text style={styles.primaryText}>Buy a plan for your child</Text>
-        </Pressable>
-
         <Pressable
           onPress={() => router.push('/parent/change-password')}
           style={({ pressed }) => [styles.outlineBtn, { borderColor: palette.primary }, pressed && styles.pressed]}
@@ -116,13 +103,6 @@ const useStyles = makeStyles((p) => ({
   },
   listRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 8, marginBottom: 6 },
   listText: { flex: 1, fontSize: TYPE.body, color: SLATE[600], lineHeight: leading(TYPE.body) },
-  primaryBtn: {
-    marginTop: SPACING.lg,
-    borderRadius: 10,
-    paddingVertical: 13,
-    alignItems: 'center',
-  },
-  primaryText: { color: '#ffffff', fontWeight: '700', fontSize: TYPE.heading },
   outlineBtn: {
     marginTop: SPACING.sm,
     borderRadius: 10,

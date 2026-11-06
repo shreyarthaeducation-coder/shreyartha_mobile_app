@@ -262,7 +262,7 @@ const withJsonBody = (method) => (endpoint, body, options = {}) =>
  * @param {object} [parts]
  * @param {object} [parts.json]   name -> object, sent as an application/json part
  * @param {object} [parts.fields] name -> scalar, sent as a plain form field
- * @param {object} [parts.files]  name -> { uri, name, type }
+ * @param {object} [parts.files]  name -> { uri, name, type }, or an array of them for repeated parts
  */
 const multipart = (endpoint, { json, fields, files } = {}, options = {}) => {
   const form = new FormData();
@@ -274,8 +274,12 @@ const multipart = (endpoint, { json, fields, files } = {}, options = {}) => {
     if (value === undefined || value === null) return;
     form.append(key, String(value));
   });
+  // An array sends several parts under one name — the CRM email's `files`, as the website's
+  // FormData.append('files', …) loop does.
   Object.entries(files || {}).forEach(([key, file]) => {
-    if (file?.uri) form.append(key, file);
+    (Array.isArray(file) ? file : [file]).forEach((f) => {
+      if (f?.uri) form.append(key, f);
+    });
   });
 
   return request(endpoint, {

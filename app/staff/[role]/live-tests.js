@@ -6,8 +6,10 @@ import { LiveTestRoomsScreen } from '../../../components/staff';
  * and section of their school. The principal and vice principal also follow every room of the
  * school, read-only. The server decides both (StaffScopeService, LiveTestRoomService.teacher).
  */
-const HOSTS = ['principal', 'vice_principal', 'counselor'];
-const OVERSIGHT = ['principal', 'vice_principal'];
+// `admin` (5 Nov 2026): the website's SchoolAdminDashboard mounts Live Test Rooms with oversight, as
+// the Principal's does.
+const HOSTS = ['principal', 'admin', 'vice_principal', 'counselor'];
+const OVERSIGHT = ['principal', 'admin', 'vice_principal'];
 
 export default function StaffLiveTests() {
   const { role } = useLocalSearchParams();

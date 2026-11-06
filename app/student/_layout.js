@@ -84,6 +84,8 @@ export default function StudentLayout() {
         >
           <Stack.Screen name="index" />
           <Stack.Screen name="profile" />
+          <Stack.Screen name="company-assessments" />
+          <Stack.Screen name="my-bookings" />
           <Stack.Screen name="analytics" />
           <Stack.Screen name="events" />
           <Stack.Screen name="subject-career" />

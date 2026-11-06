@@ -150,9 +150,9 @@ export async function fetchCounsellorReports(studentId, signal, endpoint = TEACH
  * hasCompletedAssessment, …) plus `personalStatement`. Portal A only — any student in the
  * teacher's school; another school's is a 403.
  */
-export async function fetchStudentPsychometric(studentId, signal) {
+export async function fetchStudentPsychometric(studentId, signal, apiBase = TEACHER_COUNSELLING_BASE) {
   return staffApi.get(
-    `${TEACHER_COUNSELLING_BASE}/students/${encodeURIComponent(studentId)}/psychometric`,
+    `${apiBase}/students/${encodeURIComponent(studentId)}/psychometric`,
     { signal },
   );
 }

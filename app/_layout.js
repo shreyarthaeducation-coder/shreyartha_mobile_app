@@ -87,6 +87,12 @@ export default function RootLayout() {
                 name="auth/forgot-password"
                 options={{ headerShown: false }}
               />
+              {/* Sign-up for the five portals that joined on 6 Nov 2026; all sign in at the gate. */}
+              <Stack.Screen name="auth/alumni-login" options={{ headerShown: false }} />
+              <Stack.Screen name="auth/university-login" options={{ headerShown: false }} />
+              <Stack.Screen name="auth/university-staff-login" options={{ headerShown: false }} />
+              <Stack.Screen name="auth/industry-login" options={{ headerShown: false }} />
+              <Stack.Screen name="auth/investor-login" options={{ headerShown: false }} />
 
               {/* Individual service pages */}
               <Stack.Screen
@@ -105,6 +111,12 @@ export default function RootLayout() {
                   — so this child is named "staff/[role]". Plain "staff" names nothing and Expo Router
                   warns "No route named staff exists". */}
               <Stack.Screen name="staff/[role]" options={{ headerShown: false }} />
+              {/* The portals carried over from the website (5 Nov 2026). */}
+              <Stack.Screen name="alumni" options={{ headerShown: false }} />
+              <Stack.Screen name="university" options={{ headerShown: false }} />
+              <Stack.Screen name="unistaff" options={{ headerShown: false }} />
+              <Stack.Screen name="industry" options={{ headerShown: false }} />
+              <Stack.Screen name="investor" options={{ headerShown: false }} />
 
               {/* Legacy dashboard redirect screens */}
               <Stack.Screen

@@ -1,6 +1,7 @@
 import { useLocalSearchParams } from 'expo-router';
 import { ClassManagementScreen } from '../../../components/staff';
 import { getAdminPortal } from '../../../constants/schoolAdminPortals';
+import { Shreya01ClassManagementScreen } from '../../../components/staff/shreyartha/ShreyarthaAdminScreens';
 
 /**
  * Class Management — Academic Year → Class → Section → Subject.
@@ -16,6 +17,9 @@ export default function ClassManagement() {
   // vice_principal entry that carries HR only, so `portal` alone is truthy for a role that
   // has no classes base — and an undefined apiBase produces requests to "undefined/...".
   if (!portal?.classes) return null;
+  // The Shreyartha Admin's classes are per SHREYA01 school, on /api/shreya01/admin — the website
+  // hands its dashboard Shreya01ClassManagement for this slot.
+  if (portal.shreya01Classes) return <Shreya01ClassManagementScreen homeRoute={`/staff/${roleKey}`} />;
 
   return (
     <ClassManagementScreen

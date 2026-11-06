@@ -1,11 +1,6 @@
-import { ParentCalendarScreen } from '../../components/parent';
+import { Redirect } from 'expo-router';
 
-/**
- * Schedule — the same month grid, leading with the event feed instead of the attendance summary.
- * The web's Schedule page is strictly weaker than its Attendance page (no month picker, no event
- * badges, no holiday styling, and it fetches every event ever rather than the month's); sharing
- * one component gives it all of those.
- */
+/** Schedule is a tab of Attendance & Schedule now (4 Nov 2026); old links land on it. */
 export default function ParentSchedule() {
-  return <ParentCalendarScreen mode="schedule" />;
+  return <Redirect href="/parent/attendance-schedule?tab=schedule" />;
 }

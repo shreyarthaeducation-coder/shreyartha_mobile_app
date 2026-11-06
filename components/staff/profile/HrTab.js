@@ -99,7 +99,23 @@ const toAmount = (v) => {
   return Number.isFinite(n) ? n : null;
 };
 
-export default function HrTab({ showToast }) {
+/**
+ * `api` (6 Nov 2026) points the same form at another person's record store — the Professor's
+ * `/api/college-faculty/professor/personal-details`, as the website hands StaffHrProfileSection a
+ * different adapter: `{ fetchProfile, saveProfile, uploadPhoto, fetchPtStates }`. `payroll={false}`
+ * leaves out the income-tax card and the declaration (school payroll, which a professor is not on).
+ * Omitted, both behave exactly as before.
+ */
+export default function HrTab({ showToast, api, payroll = true }) {
+  const calls = useMemo(
+    () => ({
+      fetchProfile: api?.fetchProfile || fetchHrProfile,
+      fetchPtStates: api?.fetchPtStates || fetchPtStates,
+      uploadPhoto: api?.uploadPhoto || uploadHrPhoto,
+      saveProfile: api?.saveProfile,
+    }),
+    [api],
+  );
   const styles = useStyles();
   const PALETTE = usePalette();
   const financialYear = useMemo(() => currentLeaveYear(), []);
@@ -123,9 +139,9 @@ export default function HrTab({ showToast }) {
     setError('');
     try {
       const [p, d, states] = await Promise.all([
-        fetchHrProfile(),
-        fetchTaxDeclaration(financialYear),
-        fetchPtStates(),
+        calls.fetchProfile(),
+        payroll ? fetchTaxDeclaration(financialYear) : Promise.resolve({}),
+        calls.fetchPtStates(),
       ]);
       setProfile(p || {});
       setDeclaration(d || {});
@@ -135,7 +151,7 @@ export default function HrTab({ showToast }) {
     } finally {
       setLoading(false);
     }
-  }, [financialYear]);
+  }, [financialYear, calls, payroll]);
 
   useEffect(() => {
     load();
@@ -163,7 +179,7 @@ export default function HrTab({ showToast }) {
     }
     setUploadingPhoto(true);
     try {
-      const res = await uploadHrPhoto(picked);
+      const res = await calls.uploadPhoto(picked);
       // The response carries the new URL; patch locally rather than re-reading the whole record.
       if (res?.url) patchProfile('profilePictureUrl', res.url);
       showToast?.('Profile picture updated.', 'success');
@@ -186,6 +202,12 @@ export default function HrTab({ showToast }) {
         DEDUCTIONS.forEach(([key]) => {
           declPayload[key] = toAmount(declaration?.[key]);
         });
+      }
+      if (!payroll && calls.saveProfile) {
+        await calls.saveProfile({ ...profile, totalExperienceYears: toAmount(profile?.totalExperienceYears) });
+        showToast?.('Details saved.', 'success');
+        await load();
+        return;
       }
       // Sequential and order-dependent — see saveHrTab. The declaration lands last and rewrites
       // the profile's copy of the regime.
@@ -338,6 +360,7 @@ export default function HrTab({ showToast }) {
         </Card>
       ))}
 
+      {payroll ? (
       <Card>
         <CardTitle>Income tax — FY {financialYear}</CardTitle>
         <Select
@@ -403,6 +426,7 @@ export default function HrTab({ showToast }) {
           </Text>
         )}
       </Card>
+      ) : null}
       </SensitiveGate>
 
       <Pressable

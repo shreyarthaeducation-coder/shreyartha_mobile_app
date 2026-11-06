@@ -18,8 +18,11 @@ import { counsellingReportTab } from '../../constants/counsellingReport';
  *
  * `tabs` is `[{ value, label, render }]` — SegmentedTabs' option shape plus what to show.
  */
-export default function CounsellingReportTabs({ title, fallbackRoute, tabs }) {
-  const { tab: requestedTab } = useLocalSearchParams();
+export default function CounsellingReportTabs({ title, fallbackRoute, tabs, embedded = false, initialTab }) {
+  const { tab: routeTab } = useLocalSearchParams();
+  // Embedded (4 Nov 2026): the parent's View Report shows the whole Counselling Report as one of its
+  // own tabs. Its `?tab=` names View Report's tab, so the inner tab comes in as `initialTab`.
+  const requestedTab = embedded ? initialTab : routeTab;
   // Only this screen's own tabs count: the staff report has two, the parent's three.
   const requested = counsellingReportTab(requestedTab, tabs.map((t) => t.value));
 
@@ -36,7 +39,7 @@ export default function CounsellingReportTabs({ title, fallbackRoute, tabs }) {
   }, [tab]);
 
   return (
-    <ScreenScaffold title={title} fallbackRoute={fallbackRoute} scroll={false}>
+    <ScreenScaffold title={title} fallbackRoute={fallbackRoute} scroll={false} embedded={embedded}>
       {/* Scrollable: three long labels in equal thirds would truncate on a 360dp phone. */}
       <SegmentedTabs scrollable options={tabs} value={tab} onChange={setTab} style={styles.tabs} />
       {tabs.map((t) =>

@@ -167,7 +167,7 @@ function BalanceCard({ row, onAdjust, styles }) {
   );
 }
 
-export default function AdminLeaveScreen({ homeRoute = '/staff/principal' }) {
+export default function AdminLeaveScreen({ homeRoute = '/staff/principal', apiBase }) {
   const styles = useStyles();
   const palette = usePalette();
   const { toast, showToast } = useToast();
@@ -199,13 +199,13 @@ export default function AdminLeaveScreen({ homeRoute = '/staff/principal' }) {
         if (tab === 'pending' || tab === 'all') {
           // 'ALL' is a literal sentinel — the controller defaults an omitted status to PENDING, so
           // the All tab must say so explicitly. See services/admin/hrAdminService.
-          const data = await fetchLeaveRequests(tab === 'pending' ? 'PENDING' : 'ALL');
+          const data = await fetchLeaveRequests(tab === 'pending' ? 'PENDING' : 'ALL', undefined, apiBase);
           setRequests(Array.isArray(data) ? data : []);
         } else if (tab === 'balances') {
-          const data = await fetchAllBalances(leaveYear);
+          const data = await fetchAllBalances(leaveYear, undefined, apiBase);
           setBalances(Array.isArray(data) ? data : []);
         } else {
-          const data = await fetchLeaveTypes();
+          const data = await fetchLeaveTypes(undefined, apiBase);
           setTypes(Array.isArray(data) ? data : []);
         }
       } catch (e) {
@@ -215,7 +215,7 @@ export default function AdminLeaveScreen({ homeRoute = '/staff/principal' }) {
         setRefreshing(false);
       }
     },
-    [tab, leaveYear],
+    [tab, leaveYear, apiBase],
   );
 
   useEffect(() => {
@@ -233,7 +233,7 @@ export default function AdminLeaveScreen({ homeRoute = '/staff/principal' }) {
     setSaving(true);
     setSheetError('');
     try {
-      await decideLeave(deciding.request.id, deciding.action, remarks.trim());
+      await decideLeave(deciding.request.id, deciding.action, remarks.trim(), apiBase);
       const verb = deciding.action === 'APPROVE' ? 'approved' : 'rejected';
       setDeciding(null);
       showToast(`Leave ${verb}.`);
@@ -274,7 +274,7 @@ export default function AdminLeaveScreen({ homeRoute = '/staff/principal' }) {
         leaveTypeCode: adjustForm.leaveTypeCode,
         days,
         reason: adjustForm.reason.trim(),
-      });
+      }, apiBase);
       setAdjusting(null);
       showToast('Balance adjusted.');
       load();

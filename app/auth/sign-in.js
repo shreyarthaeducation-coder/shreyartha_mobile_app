@@ -95,7 +95,7 @@ export default function SignInScreen() {
     <AuthScreen
       palette={PALETTE}
       title="Welcome back"
-      subtitle="One sign-in for students, parents, school staff and partners."
+      subtitle="One sign-in for students, parents, staff, alumni, universities, partners, industry and investors."
       onBack={() => (router.canGoBack() ? router.back() : router.replace('/'))}
     >
       <Banner message={error} variant="error" />

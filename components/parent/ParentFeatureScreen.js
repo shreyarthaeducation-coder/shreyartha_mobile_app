@@ -46,7 +46,9 @@ const getInjectedJS = (values) => `
 true;
 `;
 
-export default function ParentFeatureScreen({ title, path, homeRoute = '/parent' }) {
+// `sessionKeys` (5 Nov 2026): another portal's session to carry into the website instead of the
+// parent's — the alumni contribution checkout uses it. Those keys are injected exactly as stored.
+export default function ParentFeatureScreen({ title, path, homeRoute = '/parent', sessionKeys }) {
   const styles = useStyles();
   const palette = usePalette();
   const router = useRouter();
@@ -57,6 +59,11 @@ export default function ParentFeatureScreen({ title, path, homeRoute = '/parent'
 
   useEffect(() => {
     (async () => {
+      if (sessionKeys) {
+        const own = Object.fromEntries(await AsyncStorage.multiGet(sessionKeys));
+        setInjectValues(Object.fromEntries(sessionKeys.map((k) => [k, own[k] || ''])));
+        return;
+      }
       const entries = await AsyncStorage.multiGet([
         'parentUserToken',
         'parentLoggedIn',
@@ -80,6 +87,8 @@ export default function ParentFeatureScreen({ title, path, homeRoute = '/parent'
         linkedStudentEmail: values.linkedStudentEmail || '',
       });
     })();
+    // sessionKeys is a constant per screen.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Android hardware back walks the web history first, then leaves the screen. This matters more

@@ -132,8 +132,10 @@ const styles = StyleSheet.create({
   // A horizontal ScrollView in a column parent must not stretch vertically.
   scroller: { flexGrow: 0 },
   wrapScroll: { flexGrow: 1 },
-  // Scrollable rows size to their label instead of sharing the width equally.
-  tabAuto: { flex: 0, paddingHorizontal: 14 },
+  // Scrollable rows size to their label instead of sharing the width equally. Spelled out rather
+  // than `flex: 0`: Yoga reads that as "size to content", but react-native-web as a zero basis, which
+  // collapsed every tab to its padding (28px, no label) — the same thing on a phone, right on both.
+  tabAuto: { flexGrow: 0, flexShrink: 0, flexBasis: 'auto', paddingHorizontal: 14 },
   // The active tab is a raised white pill on the grey track — the standard iOS/Android segmented
   // control, rather than the web's underline, which reads as a link on touch.
   tabActive: {

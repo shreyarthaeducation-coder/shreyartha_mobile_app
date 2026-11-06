@@ -14,6 +14,17 @@ import { resolveFeatureScope } from '../../../constants/staffScope';
 export default function StaffCounsellingReport() {
   const { role } = useLocalSearchParams();
   const roleKey = String(role || '').toLowerCase();
+  // The School Admin (6 Nov 2026): the same screen on the website's ADMIN_SUPPORT_ENDPOINTS.
+  if (roleKey === 'admin') {
+    return (
+      <TeacherCounsellingReportScreen
+        homeRoute="/staff/admin"
+        notesRoute="/staff/admin/counselling"
+        apiBase="/api/school-admin/student-support/counselling"
+        reportsEndpoint="/api/school-admin/student-support/counsellor-report/reports"
+      />
+    );
+  }
   if (!resolveFeatureScope(roleKey, 'counsellingReport')) return null; // the layout guard has already redirected
 
   return (

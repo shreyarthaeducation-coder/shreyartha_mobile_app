@@ -1,9 +1,8 @@
 /**
  * The parent dashboard menu.
  *
- * Labels and order mirror the web sidebar verbatim
- * (frontendmain/src/Parent/platform/ParentLayout.js → SIDEBAR_ITEMS) so a parent sees the same
- * vocabulary on both platforms.
+ * Labels use the website's words (frontendmain/src/Parent/platform/ParentLayout.js) so a parent
+ * sees the same vocabulary on both platforms; the arrangement is the app's own (see below).
  *
  * Item shape matches constants/studentMenu.js and constants/teacherMenu.js:
  *   { key, label, icon, native?, path? }
@@ -23,24 +22,19 @@
 const PARENT_BASE = '/parent/platform/dashboard';
 
 /**
- * ── THE WEB'S "HOME" ITEM IS NOT HERE, AND THAT IS DELIBERATE ────────────────
- * `ParentHome` renders exactly one thing: the linked child's profile card — avatar, name, class,
- * stream, school. On mobile the tile grid IS the home screen, and its Welcome header already shows
- * that card. A "Home" tile sitting on the home screen, navigating to information visible directly
- * above it, is noise. Seven tiles here + the header equals the web's eight sidebar items.
- *
- * Counselling Report is one tile for what were three (Assessment Results, Counselor Notes,
- * Counsellor Report) — they are its three tabs, on the web and here.
- *
- * Notifications joined both lists with the parent inbox — every school event aimed at the child's
- * class. It sits after Schedule because it is about the same events.
+ * ── WHAT THE HOME'S "ALL SECTIONS" GRID HOLDS (4 Nov 2026) ───────────────────
+ * The app's own arrangement, no longer a copy of the web sidebar:
+ * - **Counselling Report is not a section.** It is the second tab of View Report (the home's quick
+ *   action), beside Test & Analysis — what the parent asked for. Search still finds it.
+ * - **Attendance and Schedule are one section** with two tabs, as on the website since 3 Nov 2026.
+ * - Home is not a tile: the tile grid IS home.
+ * - Plans for my child is hidden from parents, here and on the website.
+ * Each tile wears its area's hue (constants/parentColours).
  */
 export const PARENT_MENU = [
   { key: 'academic-progress', label: 'Academic Progress', icon: 'stats-chart-outline', native: '/parent/academic-progress' },
   { key: 'learning-activities', label: 'Learning Activities', icon: 'library-outline', native: '/parent/learning-activities' },
-  { key: 'counselling-report', label: 'Counselling Report', icon: 'reader-outline', native: '/parent/counselling-report' },
-  { key: 'attendance', label: 'Attendance', icon: 'calendar-outline', native: '/parent/attendance' },
-  { key: 'schedule', label: 'Schedule', icon: 'today-outline', native: '/parent/schedule' },
+  { key: 'attendance-schedule', label: 'Attendance & Schedule', icon: 'calendar-outline', native: '/parent/attendance-schedule' },
   { key: 'notifications', label: 'Notifications', icon: 'notifications-outline', native: '/parent/notifications' },
   { key: 'fees', label: 'School Fees', icon: 'cash-outline', native: '/parent/fees' },
 ];

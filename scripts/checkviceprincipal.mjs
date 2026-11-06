@@ -630,10 +630,11 @@ console.log('\nRegression:');
     else ok(`${role} still fully native`);
   }
   {
+    // Native since 6 Nov 2026 — the last web-view panel — so held to the same rule now.
     const c = staffRoles.STAFF_ROLE_CONFIG.shreyartha_admin;
-    if (c.menu.every((i) => i.path === undefined)) {
-      fail('shreyartha_admin unexpectedly has no WebView items — it is not ported yet');
-    } else ok('shreyartha_admin still WebView (the last panel)');
+    const strays = [...c.menu, ...c.headerActions].filter((i) => i.path !== undefined);
+    if (strays.length) fail(`shreyartha_admin regressed: ${strays.map((i) => i.key).join(', ')} back on WebView`);
+    else ok('shreyartha_admin fully native');
   }
 
   const screen = read(path.join(APP, 'components', 'staff', 'TeacherResourcesScreen.js'));

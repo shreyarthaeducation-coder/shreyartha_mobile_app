@@ -69,7 +69,7 @@ export const PARENT_SECTIONS = [
   {
     label: "Psychometric & Career",
     sectionKey: "psychometric",
-    routeSuffix: "/counselling-report?tab=psychometric",
+    routeSuffix: "/view-report?tab=counselling&sub=psychometric",
     overview:
       "**Psychometric & Career** shows your child's progress through the scientifically designed career assessments.",
     functionality:
@@ -84,7 +84,7 @@ export const PARENT_SECTIONS = [
   {
     label: "Career Interests",
     sectionKey: "subject-career",
-    routeSuffix: "/counselling-report?tab=psychometric",
+    routeSuffix: "/view-report?tab=counselling&sub=psychometric",
     overview:
       "**Career Interests** covers the subjects and career paths your child has been exploring.",
     functionality:
@@ -112,7 +112,7 @@ export const PARENT_SECTIONS = [
   {
     label: "Counselling & Wellbeing",
     sectionKey: "counselling",
-    routeSuffix: "/counselling-report?tab=report",
+    routeSuffix: "/view-report?tab=counselling&sub=report",
     overview:
       "**Counselling & Wellbeing** brings together the school counsellor's notes and reports about your child.",
     functionality:
@@ -126,7 +126,7 @@ export const PARENT_SECTIONS = [
   {
     label: "Attendance",
     sectionKey: "attendance",
-    routeSuffix: "/attendance",
+    routeSuffix: "/attendance-schedule?tab=attendance",
     overview:
       "**Attendance** shows your child's school attendance as recorded on the platform.",
     functionality:
@@ -217,9 +217,44 @@ export function buildParentSectionExplanation(section) {
  */
 export const WEB_DASHBOARD_PREFIX = '/parent/platform/dashboard';
 
+/**
+ * Where each of the website's parent pages is in the app (4 Nov 2026). The website restructured its
+ * dashboard on 3 Nov (Home's sections, Test & Exam Analysis with its report card, Attendance &
+ * Schedule, the Counselling Report's tabs as paths) and the app has its own arrangement (View
+ * Report), so a web path is translated, not just shortened. Checked in order; first match wins.
+ */
+const WEB_TO_APP = [
+  [/^#academic-progress$/, '/academic-progress'],
+  [/^#learning-activities$/, '/learning-activities'],
+  [/^\/test-analysis\/report-card\/?$/, '/report-card'],
+  [/^\/test-analysis\/?$/, '/view-report?tab=tests'],
+  [/^\/report-card\/?$/, '/report-card'],
+  [/^\/counselling-report\/(psychometric|notes|report)\/?$/, (m) => `/view-report?tab=counselling&sub=${m[1]}`],
+  [/^\/counselling-report\/?(\?tab=(\w+))?$/, (m) => `/view-report?tab=counselling${m[2] ? `&sub=${m[2]}` : ''}`],
+  [/^\/attendance-schedule\/(attendance|schedule)\/?$/, (m) => `/attendance-schedule?tab=${m[1]}`],
+  [/^\/attendance-schedule\/?$/, '/attendance-schedule'],
+  [/^\/(attendance|schedule)\/?$/, (m) => `/attendance-schedule?tab=${m[1]}`],
+  // The Counselling Report's tabs as they were once pages of their own; Shreya's backend still
+  // links "Open Counsellor Report" to /counsellor-report.
+  [/^\/counsellor-report\/?$/, '/view-report?tab=counselling&sub=report'],
+  [/^\/counselor-notes\/?$/, '/view-report?tab=counselling&sub=notes'],
+  [/^\/assessment-results\/?$/, '/view-report?tab=counselling&sub=psychometric'],
+  [/^\/academic-progress\/?$/, '/academic-progress'],
+  [/^\/learning-activities\/?$/, '/learning-activities'],
+  [/^\/notifications\/?$/, '/notifications'],
+  [/^\/fees\/?$/, '/fees'],
+  [/^\/change-password\/?$/, '/change-password'],
+  [/^\/?$/, ''],
+];
+
 /** @returns {string|null} the suffix to append to '/parent', or null if this app cannot open it. */
 export function resolveParentLink(route) {
   if (typeof route !== 'string') return null;
   if (!route.startsWith(WEB_DASHBOARD_PREFIX)) return null;
-  return route.slice(WEB_DASHBOARD_PREFIX.length);
+  const rest = route.slice(WEB_DASHBOARD_PREFIX.length);
+  for (const [pattern, to] of WEB_TO_APP) {
+    const m = rest.match(pattern);
+    if (m) return typeof to === 'function' ? to(m) : to;
+  }
+  return null;
 }

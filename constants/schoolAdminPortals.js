@@ -98,6 +98,40 @@ export const SCHOOL_ADMIN_PORTALS = {
 };
 
 /**
+ * The school's own admin (userType ADMIN, ROLE_SCHOOL_ADMIN), on the app since 5 Nov 2026.
+ *
+ * The website gives this role every Principal page — the Principal panel began as a fork of
+ * SchoolAdminDashboard — and the same `/api/school-admin` namespace, so it is the Principal's
+ * descriptor under its own key. What it adds is the Admissions & Outreach group (admission and job
+ * enquiries, alumni approval), on `/api/school-admin` too and `hasRole('SCHOOL_ADMIN')`.
+ */
+SCHOOL_ADMIN_PORTALS.admin = {
+  ...SCHOOL_ADMIN_PORTALS.principal,
+  key: 'admin',
+  label: 'School Admin',
+  outreach: SCHOOL_ADMIN,
+};
+
+/**
+ * The Shreyartha Admin (6 Nov 2026, until then a web view). The website renders the School Admin's
+ * dashboard for it with its own Class Management, Queries, Counsellor Management, My Team and an HR
+ * Portal link; SHREYARTHA_ADMIN implies SCHOOL_ADMIN, so every `/api/school-admin` page is the
+ * same call. Only the flags below differ, and the three pages behind them have screens of their own
+ * (components/staff/shreyartha/ShreyarthaAdminScreens.js).
+ */
+SCHOOL_ADMIN_PORTALS.shreyartha_admin = {
+  ...SCHOOL_ADMIN_PORTALS.principal,
+  key: 'shreyartha_admin',
+  label: 'Shreyartha Admin',
+  outreach: SCHOOL_ADMIN,
+  /** Class Management is `/api/shreya01/admin/**`, bulk per school — not the school-admin tree. */
+  shreya01Classes: true,
+  /** Queries on `/api/shreyartha/admin/**`; Counsellor Management on `/api/admin/counsellors/**`. */
+  shreyarthaQueries: true,
+  counsellorManagement: true,
+};
+
+/**
  * The three alias managers differ in ONE way: how deep the tree is.
  *
  *   Academic IQ   class → subject → chapter → topic

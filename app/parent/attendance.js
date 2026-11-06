@@ -1,9 +1,6 @@
-import { ParentCalendarScreen } from '../../components/parent';
+import { Redirect } from 'expo-router';
 
-/**
- * Attendance — the month grid with presence dots, leading with the present/absent summary.
- * Same component as Schedule; see ParentCalendarScreen for why the web's two pages became one.
- */
+/** Attendance is a tab of Attendance & Schedule now (4 Nov 2026); old links land on it. */
 export default function ParentAttendance() {
-  return <ParentCalendarScreen mode="attendance" />;
+  return <Redirect href="/parent/attendance-schedule?tab=attendance" />;
 }

@@ -83,7 +83,8 @@ export const STUDENT_SEARCH_INDEX_KEY = 'studentSearchIndexV1';
  * tree and their assigned work, so leaving it behind on a shared device would show one parent
  * another family's syllabus and homework titles. In ALL_AUTH_KEYS below.
  */
-export const PARENT_SEARCH_INDEX_KEY = 'parentSearchIndexV1';
+// V2 (4 Nov 2026): View Report and Attendance & Schedule replaced sections a V1 index still names.
+export const PARENT_SEARCH_INDEX_KEY = 'parentSearchIndexV2';
 
 /**
  * The partner's cached search index.
@@ -145,6 +146,16 @@ export const ALL_AUTH_KEYS = [
   SALES_VISIT_QUEUE_KEY,
   STUDENT_SEARCH_INDEX_KEY,
   PARENT_SEARCH_INDEX_KEY,
+  // The V1 index an earlier version of the app may have left behind: cleared on logout all the same.
+  'parentSearchIndexV1',
+  // The portals carried over from the website (5 Nov 2026): Investor, University, University
+  // Staff, Industry and Alumni — the keys services/portalSession.js writes for each.
+  'investorUserToken', 'investorLoggedIn', 'investorUserVerified', 'investorUserName',
+  'universityUserToken', 'universityLoggedIn', 'universityUserApproved', 'universityUserName',
+  'universityStaffToken', 'universityStaffLoggedIn', 'universityStaffUserType', 'universityStaffVerified',
+  'universityStaffName', 'universityStaffEmail', 'universityCode',
+  'industryUserToken', 'industryLoggedIn', 'industryUserApproved', 'industryUserName',
+  'alumniUserToken', 'alumniLoggedIn', 'alumniUserName',
   PARTNER_SEARCH_INDEX_KEY,
   TEACHER_SEARCH_INDEX_KEY,
   STAFF_SEARCH_INDEX_KEY,

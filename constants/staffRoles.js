@@ -4,8 +4,8 @@
  * One entry per backend role, keyed by the EXACT lowercased `schoolUserType` string the login
  * response carries (constants/authPortals.js). Two spellings are deliberate and must never be
  * "corrected": `counselor` (single l) and `shreyartha_councellor` (the backend enum is
- * SHREYARTHA_COUNCELLOR). `teacher` is not here — it has its own group at app/teacher — and
- * `admin` is blocked on mobile at the login screen.
+ * SHREYARTHA_COUNCELLOR). `teacher` is not here — it has its own group at app/teacher. `admin`,
+ * `hr` and `reporting_manager` joined on 5 Nov 2026 and are defined after the object, below.
  *
  * Menu item shape matches constants/teacherMenu.js:
  *   { key, label, icon, native? , path? }
@@ -142,9 +142,9 @@ export const STAFF_ROLE_CONFIG = {
       // The roster. Sits on /api/school-admin and names PRINCIPAL in its own guard, so it does not
       // lean on the role hierarchy — as does Grade Management, now a group further down.
       { key: 'manageStudents', label: 'Manage Students', icon: 'person-add-outline', native: '/staff/principal/manage-students' },
-      { key: 'studentStatus', label: 'Student Status', icon: 'podium-outline', native: '/staff/principal/student-status' },
       { key: 'classes', label: 'Class Management', icon: 'school-outline', native: '/staff/principal/classes' },
       { key: 'linkedColleges', label: 'Linked Colleges', icon: 'business-outline', native: '/staff/principal/linked-colleges' },
+      { key: 'studentStatus', label: 'Student Status', icon: 'podium-outline', native: '/staff/principal/student-status' },
       // "… Management", not "… Aliases": the web renamed all three when it grouped the sidebar, and
       // a label the user reads is the one thing this mirror will not let drift.
       { key: 'academicIqAliases', label: 'Academic IQ Management', icon: 'pricetag-outline', native: '/staff/principal/academic-iq-aliases' },
@@ -160,6 +160,9 @@ export const STAFF_ROLE_CONFIG = {
       // section at once, and — read-only — what the teachers have graded.
       { key: 'reportCardAreas', label: 'Report Card Areas', icon: 'grid-outline', native: '/staff/principal/report-card-areas' },
       { key: 'reportCardGrades', label: 'Report Card Grades', icon: 'checkmark-done-outline', native: '/staff/principal/report-card-grades' },
+      // Read-only, one section and term at a time (5 Nov 2026). Web label verbatim.
+      { key: 'performanceReport', label: 'Student Performance & Report', icon: 'analytics-outline', native: '/staff/principal/performance-report' },
+      { key: 'finalReport', label: 'Final Report', icon: 'ribbon-outline', native: '/staff/principal/final-report' },
       { key: 'staff', label: 'Staff Management', icon: 'people-circle-outline', native: '/staff/principal/staff' },
       { key: 'staffAttendance', label: 'Staff Attendance', icon: 'timer-outline', native: '/staff/principal/staff-attendance' },
       { key: 'staffEvaluation', label: 'Staff Evaluation', icon: 'trending-up-outline', native: '/staff/principal/staff-evaluation' },
@@ -266,25 +269,44 @@ export const STAFF_ROLE_CONFIG = {
       'Review and assign incoming queries',
       'Verify counsellors and teachers',
     ],
+    // NATIVE since 6 Nov 2026 (was the last web-view panel). The website's SchoolAdminSidebar for this
+    // role, in its order: the School Admin's ALWAYS keys plus queries, counsellor-management, myTeam
+    // and hrPortal — and none of liveTests, studentStatus or liveMeeting, which it does not pass.
+    // Labels verbatim from schoolNavGroups. "My Leave" / "My Payslips" as on every other panel:
+    // StaffHrController names SHREYARTHA_ADMIN.
     menu: [
-      { key: 'overview', label: 'Dashboard Overview', icon: 'stats-chart-outline', path: '' },
-      { key: 'selfAttendance', label: 'Self Attendance', icon: 'time-outline', path: '/self-attendance' },
-      { key: 'staff', label: 'Staff Management', icon: 'people-circle-outline', path: '/staff' },
-      { key: 'classes', label: 'Class Management', icon: 'school-outline', path: '/classes' },
-      { key: 'reports', label: 'Test and Examination', icon: 'clipboard-outline', path: '/reports' },
-      { key: 'students', label: 'Student Management', icon: 'people-outline', path: '/students' },
-      { key: 'linkedColleges', label: 'Linked Colleges', icon: 'business-outline', path: '/linked-colleges' },
-      { key: 'staffAttendance', label: 'Staff Attendance', icon: 'timer-outline', path: '/staff-attendance' },
-      { key: 'events', label: 'Events', icon: 'megaphone-outline', path: '/events' },
-      { key: 'staffEvaluation', label: 'Staff Evaluation', icon: 'trending-up-outline', path: '/staff-evaluation' },
-      { key: 'academicIqAliases', label: 'Academic IQ Aliases', icon: 'pricetag-outline', path: '/academic-iq-aliases' },
-      { key: 'languageProAliases', label: 'Language Pro Aliases', icon: 'language-outline', path: '/language-pro-aliases' },
-      { key: 'codingProAliases', label: 'Coding Pro Aliases', icon: 'code-slash-outline', path: '/coding-pro-aliases' },
-      { key: 'fees', label: 'Fee Management', icon: 'cash-outline', path: '/fees' },
-      { key: 'queries', label: 'Queries', icon: 'help-circle-outline', path: '/queries' },
-      // The web sidebar shows this as a second "Staff Management"; disambiguated here.
-      { key: 'counsellorManagement', label: 'Counsellor & Teacher Management', icon: 'id-card-outline', path: '/counsellor-management' },
-      { key: 'myCalendar', label: 'My Calendar', icon: 'calendar-outline', path: '/my-calendar' },
+      { key: 'overview', label: 'Dashboard Overview', icon: 'stats-chart-outline', native: '/staff/shreyartha_admin/overview' },
+      { key: 'selfAttendance', label: 'Self Attendance', icon: 'time-outline', native: '/staff/shreyartha_admin/self-attendance' },
+      { key: 'myCalendar', label: 'My Calendar', icon: 'calendar-outline', native: '/staff/shreyartha_admin/my-calendar' },
+      { key: 'leaveManagement', label: 'Leave Management', icon: 'calendar-number-outline', native: '/staff/shreyartha_admin/leave-management' },
+      { key: 'students', label: 'Student Management', icon: 'people-outline', native: '/staff/shreyartha_admin/students' },
+      { key: 'manageStudents', label: 'Manage Students', icon: 'person-add-outline', native: '/staff/shreyartha_admin/manage-students' },
+      { key: 'classes', label: 'Class Management', icon: 'school-outline', native: '/staff/shreyartha_admin/classes' },
+      { key: 'linkedColleges', label: 'Linked Colleges', icon: 'business-outline', native: '/staff/shreyartha_admin/linked-colleges' },
+      { key: 'academicIqAliases', label: 'Academic IQ Management', icon: 'pricetag-outline', native: '/staff/shreyartha_admin/academic-iq-aliases' },
+      { key: 'languageProAliases', label: 'Language Pro Management', icon: 'language-outline', native: '/staff/shreyartha_admin/language-pro-aliases' },
+      { key: 'codingProAliases', label: 'Coding Pro Management', icon: 'code-slash-outline', native: '/staff/shreyartha_admin/coding-pro-aliases' },
+      { key: 'reports', label: 'Test & Examination', icon: 'clipboard-outline', native: '/staff/shreyartha_admin/admin-reports' },
+      { key: 'gradeManagement', label: 'Grade Management', icon: 'ribbon-outline', native: '/staff/shreyartha_admin/grade-management' },
+      { key: 'reportCardAreas', label: 'Report Card Areas', icon: 'grid-outline', native: '/staff/shreyartha_admin/report-card-areas' },
+      { key: 'reportCardGrades', label: 'Report Card Grades', icon: 'checkmark-done-outline', native: '/staff/shreyartha_admin/report-card-grades' },
+      { key: 'performanceReport', label: 'Student Performance & Report', icon: 'analytics-outline', native: '/staff/shreyartha_admin/performance-report' },
+      { key: 'finalReport', label: 'Final Report', icon: 'ribbon-outline', native: '/staff/shreyartha_admin/final-report' },
+      { key: 'staff', label: 'Staff Management', icon: 'people-circle-outline', native: '/staff/shreyartha_admin/staff' },
+      { key: 'staffAttendance', label: 'Staff Attendance', icon: 'timer-outline', native: '/staff/shreyartha_admin/staff-attendance' },
+      { key: 'staffEvaluation', label: 'Staff Evaluation', icon: 'trending-up-outline', native: '/staff/shreyartha_admin/staff-evaluation' },
+      { key: 'payrollManagement', label: 'Payroll Management', icon: 'wallet-outline', native: '/staff/shreyartha_admin/payroll-management' },
+      { key: 'counsellorManagement', label: 'Counsellor Management', icon: 'id-card-outline', native: '/staff/shreyartha_admin/counsellor-management' },
+      { key: 'myTeam', label: 'My Team', icon: 'git-network-outline', native: '/staff/shreyartha_admin/my-team', managersOnly: true },
+      { key: 'hrPortal', label: 'HR Portal', icon: 'briefcase-outline', native: '/staff/shreyartha_admin/hr-dashboard' },
+      { key: 'fees', label: 'Fee Management', icon: 'cash-outline', native: '/staff/shreyartha_admin/fees' },
+      { key: 'events', label: 'Events', icon: 'megaphone-outline', native: '/staff/shreyartha_admin/events' },
+      { key: 'queries', label: 'Queries', icon: 'help-circle-outline', native: '/staff/shreyartha_admin/queries' },
+      { key: 'admissionEnquiries', label: 'Admission Enquiries', icon: 'school-outline', native: '/staff/shreyartha_admin/admission-enquiries' },
+      { key: 'jobEnquiries', label: 'Job Enquiries', icon: 'briefcase-outline', native: '/staff/shreyartha_admin/job-enquiries' },
+      { key: 'alumniManagement', label: 'Alumni Management', icon: 'people-outline', native: '/staff/shreyartha_admin/alumni-management' },
+      { key: 'leave', label: 'My Leave', icon: 'today-outline', native: '/staff/shreyartha_admin/leave' },
+      { key: 'payroll', label: 'My Payslips', icon: 'cash-outline', native: '/staff/shreyartha_admin/payroll' },
     ],
     headerActions: [],
   },
@@ -337,6 +359,9 @@ export const STAFF_ROLE_CONFIG = {
       // three clauses. The request is still filed and still decidable — it just arrives silently.
       { key: 'leave', label: 'My Leave', icon: 'today-outline', native: '/staff/shreyartha_councellor/leave' },
       { key: 'payroll', label: 'My Payslips', icon: 'cash-outline', native: '/staff/shreyartha_councellor/payroll' },
+      // Only to someone who manages people — the website's `managersOnly` (useIsManager). The hub
+      // that lists it asks /api/staff/hr/my-team/summary and leaves it out otherwise.
+      { key: 'myTeam', label: 'My Team', icon: 'git-network-outline', native: '/staff/shreyartha_councellor/my-team', managersOnly: true },
     ],
     headerActions: [],
   },
@@ -375,6 +400,9 @@ export const STAFF_ROLE_CONFIG = {
       { key: 'visits', label: 'Visits', icon: 'location-outline', native: '/staff/sales/sales-visits' },
       { key: 'schools', label: 'My Schools', icon: 'business-outline', native: '/staff/sales/sales-schools' },
       { key: 'deals', label: 'Sales', icon: 'cash-outline', native: '/staff/sales/sales-deals' },
+      // The web sidebar's Email & Communication and Proformas (5 Nov 2026), labels verbatim.
+      { key: 'communication', label: 'Email & Communication', icon: 'mail-outline', native: '/staff/sales/sales-communication' },
+      { key: 'invoices', label: 'Proformas', icon: 'receipt-outline', native: '/staff/sales/sales-proformas' },
       { key: 'dashboard', label: 'My Dashboard', icon: 'pie-chart-outline', native: '/staff/sales/sales-dashboard' },
       { key: 'incentive', label: 'My Incentive', icon: 'trophy-outline', native: '/staff/sales/sales-incentive' },
       { key: 'reports', label: 'Reports', icon: 'bar-chart-outline', native: '/staff/sales/sales-reports' },
@@ -385,6 +413,9 @@ export const STAFF_ROLE_CONFIG = {
       // "My", not "Management" — a rep only ever sees their own, as on every other panel.
       { key: 'leave', label: 'My Leave', icon: 'today-outline', native: '/staff/sales/leave' },
       { key: 'payroll', label: 'My Payslips', icon: 'wallet-outline', native: '/staff/sales/payroll' },
+      // Only to someone who manages people — the website's `managersOnly` (useIsManager). The hub
+      // that lists it asks /api/staff/hr/my-team/summary and leaves it out otherwise.
+      { key: 'myTeam', label: 'My Team', icon: 'git-network-outline', native: '/staff/sales/my-team', managersOnly: true },
     ],
     headerActions: [],
   },
@@ -432,6 +463,9 @@ export const STAFF_ROLE_CONFIG = {
       // panel to be worth anything.
       { key: 'leave', label: 'My Leave', icon: 'today-outline', native: '/staff/shreyartha_teacher/leave' },
       { key: 'payroll', label: 'My Payslips', icon: 'cash-outline', native: '/staff/shreyartha_teacher/payroll' },
+      // Only to someone who manages people — the website's `managersOnly` (useIsManager). The hub
+      // that lists it asks /api/staff/hr/my-team/summary and leaves it out otherwise.
+      { key: 'myTeam', label: 'My Team', icon: 'git-network-outline', native: '/staff/shreyartha_teacher/my-team', managersOnly: true },
     ],
     headerActions: [
       { key: 'studentAnalytics', label: 'My Students Analytics', icon: 'bar-chart-outline', native: '/staff/shreyartha_teacher/student-analytics' },
@@ -441,6 +475,99 @@ export const STAFF_ROLE_CONFIG = {
     // the mainPortalOnly sections via teacherChatbotData's sectionsForPortal().
     chatbot: { basePath: '/staff/shreyartha_teacher', isShreya01: true },
   },
+};
+
+// ── THE THREE ROLES THAT JOINED ON 5 NOV 2026 ─────────────────────────────────
+// Until then `admin` was refused at sign-in ("School Admin accounts sign in on the website") and HR
+// and Reporting Manager were not offered at all.
+
+/** A menu copied from another role's, every native route moved to this role's own group. */
+const retarget = (menu, from, to) =>
+  menu.map((item) => (item.native ? { ...item, native: item.native.replace(`/staff/${from}/`, `/staff/${to}/`) } : item));
+
+/**
+ * School Admin — userType ADMIN. The website renders the same dashboard for it as the Principal's
+ * (the Principal panel began as a fork of SchoolAdminDashboard), on the same `/api/school-admin`,
+ * so its menu IS the Principal's, plus the Admissions & Outreach group only this panel mounts.
+ * PRINCIPAL implies SCHOOL_ADMIN, never the other way round, so nothing here leans on a role the
+ * admin lacks. The unlocks are the website's own card, which is word for word the Principal's.
+ */
+STAFF_ROLE_CONFIG.admin = {
+  userType: 'ADMIN',
+  label: 'School Admin',
+  schoolBound: true,
+  schoolLogoSource: 'dashboardStats',
+  basePath: `${PLATFORM_BASE}/admin/dashboard`,
+  profileEndpoints: [],
+  unlocks: STAFF_ROLE_CONFIG.principal.unlocks,
+  menu: [
+    ...retarget(STAFF_ROLE_CONFIG.principal.menu, 'principal', 'admin'),
+    // Student Support's other two pages, which the website's School Admin dashboard mounts beside
+    // Student Status — every class of the school, read only (ADMIN_SUPPORT_ENDPOINTS).
+    { key: 'counselling', label: 'Counselling Needs & Notes', icon: 'chatbubbles-outline', native: '/staff/admin/counselling' },
+    { key: 'counsellingReport', label: 'Counselling Report', icon: 'reader-outline', native: '/staff/admin/counselling-report' },
+    // Admissions & Outreach — web schoolNavGroups, labels verbatim.
+    { key: 'admissionEnquiries', label: 'Admission Enquiries', icon: 'school-outline', native: '/staff/admin/admission-enquiries' },
+    { key: 'jobEnquiries', label: 'Job Enquiries', icon: 'briefcase-outline', native: '/staff/admin/job-enquiries' },
+    { key: 'alumniManagement', label: 'Alumni Management', icon: 'people-outline', native: '/staff/admin/alumni-management' },
+  ],
+  headerActions: [],
+};
+
+/**
+ * HR Executive — userType HR, a Shreyartha employee (SHREYA01). The website's HR portal
+ * (Hr/platform), on `/api/staff/hr-portal`: everyone's records, probation, leave, payroll and offer
+ * letters. Leave is the approver screen the principal uses, pointed at the HR portal's namespace —
+ * the website hands it the same page for the same reason, the verbs being identical.
+ *
+ * My Team shows only to an HR executive with direct reports (`managersOnly`), as on the website.
+ */
+STAFF_ROLE_CONFIG.hr = {
+  userType: 'HR',
+  label: 'HR Executive',
+  basePath: '/hr/platform/dashboard',
+  profileEndpoints: [],
+  unlocks: [
+    "Keep every Shreyartha employee's record, salary and probation",
+    'Write and send offer letters, and onboard accepted candidates',
+    'Approve leave and run the monthly payroll',
+  ],
+  menu: [
+    { key: 'hrDashboard', label: 'Dashboard', icon: 'stats-chart-outline', native: '/staff/hr/hr-dashboard' },
+    { key: 'hrEmployees', label: 'Employees', icon: 'people-outline', native: '/staff/hr/hr-employees' },
+    { key: 'hrOffers', label: 'Offer Letters', icon: 'mail-outline', native: '/staff/hr/hr-offers' },
+    { key: 'hrPayroll', label: 'Payroll', icon: 'wallet-outline', native: '/staff/hr/hr-payroll' },
+    { key: 'leaveManagement', label: 'Leave', icon: 'calendar-number-outline', native: '/staff/hr/leave-management' },
+    { key: 'hrProbation', label: 'Probation', icon: 'hourglass-outline', native: '/staff/hr/hr-probation' },
+    // managersOnly, as the website's HR sidebar has it.
+    { key: 'myTeam', label: 'My Team', icon: 'git-network-outline', native: '/staff/hr/my-team', managersOnly: true },
+    // "My Leave & Pay" on the website is one page with these two tabs.
+    { key: 'leave', label: 'My Leave', icon: 'today-outline', native: '/staff/hr/leave' },
+    { key: 'payroll', label: 'My Payslips', icon: 'cash-outline', native: '/staff/hr/payroll' },
+  ],
+  headerActions: [],
+};
+
+/**
+ * Reporting Manager — userType REPORTING_MANAGER, a Shreyartha employee whose job is their team.
+ * The website's Manager portal is exactly two pages: My Team, and My Leave & Pay.
+ */
+STAFF_ROLE_CONFIG.reporting_manager = {
+  userType: 'REPORTING_MANAGER',
+  label: 'Reporting Manager',
+  basePath: '/manager/platform/dashboard',
+  profileEndpoints: [],
+  unlocks: [
+    "Approve your team's leave",
+    'Extend a probation before its end date',
+    'Your own leave and payslips',
+  ],
+  menu: [
+    { key: 'myTeam', label: 'My Team', icon: 'git-network-outline', native: '/staff/reporting_manager/my-team' },
+    { key: 'leave', label: 'My Leave', icon: 'today-outline', native: '/staff/reporting_manager/leave' },
+    { key: 'payroll', label: 'My Payslips', icon: 'cash-outline', native: '/staff/reporting_manager/payroll' },
+  ],
+  headerActions: [],
 };
 
 /** Resolve a role config, or null for unknown/blocked roles. */

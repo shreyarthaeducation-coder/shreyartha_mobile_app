@@ -402,7 +402,8 @@ async function assertions(mods, src) {
   // one school's crest. Before `schoolBound` existed, sales was safe ONLY because its profile DTO
   // happens to omit `schoolLogo`; adding that field server-side would have silently changed a
   // header. Evaluated, not grepped: a regex's idea of the descriptor is not what the app reads.
-  const SCHOOL_BOUND = ['counselor', 'principal', 'vice_principal'];
+  // `admin` (5 Nov 2026) is the school's own admin — as school-bound as its Principal.
+  const SCHOOL_BOUND = ['counselor', 'principal', 'admin', 'vice_principal'];
   for (const role of roles) {
     const config = resolveStaffMenus(role);
     if (!config) continue;
@@ -649,8 +650,8 @@ const MUTATIONS = [
   {
     name: 'a workspace tile flipped back to a WebView',
     mutate: (f, s) => (f === 'constants/staffRoles.js'
-      ? s.replace("{ key: 'queries', label: 'Queries', icon: 'help-circle-outline', native:",
-        "{ key: 'queries', label: 'Queries', icon: 'help-circle-outline', path:")
+      // Anchored on the route: the Shreyartha Admin (no redesigned home) has a Queries tile too.
+      ? s.replace("native: '/staff/shreyartha_councellor/queries'", "path: '/staff/shreyartha_councellor/queries'")
       : s),
   },
   {

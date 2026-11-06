@@ -75,7 +75,8 @@ export async function readSchoolSession() {
  *
  * Teacher keeps its dedicated group; every other known role gets the config-driven native shell
  * at /staff/[role] (constants/staffRoles.js). Returns null for a role with no shell — the login
- * screen shows an error instead of navigating (ADMIN is already blocked before this point).
+ * screen shows an error instead of navigating. (School Admin, HR and Reporting Manager have shells since
+ * Nov 2026; every staff role the website has is now served.)
  */
 export function resolveDashboardRoute(userType, verified) {
   const role = String(userType || '').toLowerCase();

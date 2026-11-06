@@ -754,8 +754,8 @@ const MUTATIONS = [
         + s
           .slice(at)
           .replace(
-            "attendanceItemKeys: ['selfAttendance', 'leave', 'payroll'],",
-            "attendanceItemKeys: ['selfAttendance', 'leave', 'payroll', 'myCalendar'],",
+            "attendanceItemKeys: ['selfAttendance', 'leave', 'payroll', 'myTeam'],",
+            "attendanceItemKeys: ['selfAttendance', 'leave', 'payroll', 'myTeam', 'myCalendar'],",
           )
       );
     },

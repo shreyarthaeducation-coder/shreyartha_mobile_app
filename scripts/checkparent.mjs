@@ -60,16 +60,21 @@ const SRC = {
   plansRoute: 'app/parent/plans.js',
   parentLayout: 'app/parent/_layout.js',
   pendingScreen: 'components/parent/ParentPendingScreen.js',
+  // View Report and the home without "Coming soon" (4 Nov 2026).
+  viewReport: 'components/parent/ViewReportScreen.js',
+  quickActions: 'components/parent/home/QuickActions.js',
+  childCard: 'components/parent/home/ChildReportCard.js',
+  reportCardService: 'services/parent/reportCardService.js',
+  searchService: 'services/parent/searchService.js',
 };
 
 /**
- * Web sidebar items that are deliberately NOT home tiles in the app. Home screens keep their design
- * (the user's rule, 30 Sep 2026): a web feature with no app tile gets an entry one level in. Each one
- * listed here is asserted below to be reachable where it says.
+ * The home's "All sections", in order (4 Nov 2026). The app's own arrangement, no longer a copy of
+ * the website sidebar: Counselling Report is View Report's second tab (the parent asked for it out
+ * of the sections), Attendance & Schedule is one section with two tabs (as on the website), and
+ * Notifications stays.
  */
-const NOT_A_HOME_TILE = {
-  plans: 'inside School Fees, and on the pending-verification screen',
-};
+const APP_SECTIONS = ['academic-progress', 'learning-activities', 'attendance-schedule', 'notifications', 'fees'];
 
 let failures = 0;
 const fail = (msg) => {
@@ -99,14 +104,6 @@ function webCounsellingTabs() {
   const block = src.slice(start, src.indexOf('});', start));
   return [...block.matchAll(/[A-Z]+:\s*"([^"]+)"/g)].map((m) => m[1]);
 }
-
-/**
- * A web dashboard suffix in the app's form. The one difference: a Counselling Report tab is a path
- * segment on the web (`/counselling-report/notes`) and a query in the app
- * (`/counselling-report?tab=notes`), because the app's tabs live inside one native screen.
- */
-const toAppSuffix = (webSuffix) =>
-  webSuffix.replace(/^\/counselling-report\/([^/?#]+)$/, '/counselling-report?tab=$1');
 
 /** Stage the import-free constants as .mjs so they can be evaluated, not grepped. */
 async function loadMenu(mutate) {
@@ -175,16 +172,32 @@ async function loadChatbot(mutate) {
   }
 }
 
-/** The 11 sections as the WEB declares them — the source of truth for keys and link targets. */
+/**
+ * The 11 sections as the WEB declares them — keys, and each route as the web path it evaluates to.
+ * Since the website's 3 Nov restructure a route can be an expression (`homeSection(...)`,
+ * `attendanceScheduleTab(...)`) as well as a string; both are read here.
+ */
 function webChatbotSections() {
   const src = read(
     path.join(WEB, 'src', 'Parent', 'platform', 'components', 'ParentChatbot', 'parentChatbotData.js'),
   );
   const out = [];
-  for (const m of src.matchAll(/sectionKey:\s*"([^"]+)",\s*route:\s*"([^"]+)"/g)) {
-    out.push({ sectionKey: m[1], route: m[2] });
+  for (const m of src.matchAll(/sectionKey:\s*"([^"]+)",\s*route:\s*([^\n]+?),?\n/g)) {
+    out.push({ sectionKey: m[1], route: webRouteOf(m[2].trim().replace(/,$/, '')) });
   }
   return out;
+}
+
+/** A web route expression as the path it makes (frontendmain Parent/platform/parentPaths.js). */
+function webRouteOf(expr) {
+  const dashboard = '/parent/platform/dashboard';
+  const literal = expr.match(/^"([^"]*)"$/);
+  if (literal) return literal[1];
+  const home = expr.match(/^homeSection\(HOME_SECTION\.([A-Z_]+)\)$/);
+  if (home) return `${dashboard}#${home[1].toLowerCase().replace(/_/g, '-')}`;
+  const tab = expr.match(/^attendanceScheduleTab\(ATTENDANCE_SCHEDULE_TAB\.([A-Z_]+)\)$/);
+  if (tab) return `${dashboard}/attendance-schedule/${tab[1].toLowerCase()}`;
+  return `UNREADABLE(${expr})`;
 }
 
 /** Every route the parent backend can put in a ChapterLink, read out of the Java service. */
@@ -248,43 +261,54 @@ function assertions(menu, calendar, layoutSrc, src, fee, chatbot, routeNames, ta
   const bad = (m) => out.push(m);
   const { PARENT_MENU, PARENT_HEADER_ACTIONS } = menu;
 
-  // ── 1. the menu still mirrors the web sidebar ─────────────────────────────
-  const web = webSidebarItems();
-  // Eight since Assessment Results, Counselor Notes and Counsellor Report became the three tabs of
-  // one Counselling Report item (29 Sep 2026); ten before that, with Notifications. Report Card
-  // (web, 15 Oct 2026) and Plans for my child (24 Oct 2026) made it ten again.
-  if (web.length !== 10) bad(`web sidebar extractor found ${web.length} items, expected 10`);
-
-  // "home" is deliberately absent: the tile grid IS home, and its header already shows the child
-  // card that page renders. So is everything in NOT_A_HOME_TILE. Everything else must be present,
-  // in order.
-  const expected = web.filter((i) => i.key !== 'home' && !NOT_A_HOME_TILE[i.key]);
+  // ── 1. the home's sections: the app's own arrangement (4 Nov 2026) ────────
   const gotKeys = PARENT_MENU.map((i) => i.key).join(',');
-  const wantKeys = expected.map((i) => i.key).join(',');
-  if (gotKeys !== wantKeys) {
-    bad(`menu keys/order differ.\n      app: ${gotKeys}\n      web: ${wantKeys}`);
+  if (gotKeys !== APP_SECTIONS.join(',')) {
+    bad(`the home's sections drifted.\n      app:  ${gotKeys}\n      want: ${APP_SECTIONS.join(',')}`);
   }
-  // ── 1b. Plans for my child: reachable one level in, even before verification ─
-  for (const key of Object.keys(NOT_A_HOME_TILE)) {
-    if (PARENT_MENU.some((i) => i.key === key)) bad(`"${key}" became a home tile — it belongs ${NOT_A_HOME_TILE[key]}`);
+  if (PARENT_MENU.some((i) => /counsel/.test(i.key))) {
+    bad('Counselling Report is back among the sections — the parent asked for it inside View Report');
   }
-  if (!/path=\{`\$\{PARENT_BASE\}\/plans`\}/.test(src.plansRoute)) {
-    bad('app/parent/plans.js no longer opens the website\'s parent plans page');
+  // The same words as the website wherever the two have the same item.
+  const web = webSidebarItems();
+  for (const item of PARENT_MENU) {
+    const twin = web.find((w) => w.key === item.key);
+    if (twin && twin.label !== item.label) {
+      bad(`label drift on "${item.key}": app "${item.label}" vs web "${twin.label}"`);
+    }
   }
-  if (!/UNVERIFIED_OK = new Set\(\[[\s\S]*'\/parent\/plans'[\s\S]*\]\)/.test(src.parentLayout)) {
-    bad('/parent/plans is gated behind verification — an unverified parent may buy a plan (as on the web)');
+
+  // ── 1b. Plans for my child: hidden from parents, in the app and on the website ──
+  if (web.some((i) => i.key === 'plans')) bad('Plans for my child is back in the website parent sidebar');
+  if (PARENT_MENU.some((i) => i.key === 'plans')) bad('Plans for my child is a home tile again');
+  if (!/<Redirect href="\/parent" \/>/.test(codeOnly(src.plansRoute))) {
+    bad('app/parent/plans.js no longer sends parents home — the hidden plans page is reachable');
   }
-  if (!/router\.push\('\/parent\/plans'\)/.test(src.feesScreen)) bad('School Fees lost its way in to Plans for my child');
-  if (!/router\.push\('\/parent\/plans'\)/.test(src.pendingScreen)) bad('the pending screen lost its Buy a plan button');
+  for (const key of ['feesScreen', 'pendingScreen', 'parentMenuScreen', 'searchService']) {
+    if (/\/parent\/plans/.test(codeOnly(src[key]))) bad(`${SRC[key]} links to Plans for my child again`);
+  }
+  if (/'\/parent\/plans'/.test(codeOnly(src.parentLayout))) {
+    bad('/parent/plans is open to unverified parents again');
+  }
+
+  // ── 1c. View Report, and nothing says "Coming soon" ──────────────────────
+  const homeCode = codeOnly(src.parentMenuScreen);
+  if (!/key: 'view-report',[\s\S]*?route: '\/parent\/view-report'/.test(homeCode)) {
+    bad('the View Report quick action is gone from the parent home');
+  }
+  for (const key of ['parentMenuScreen', 'quickActions', 'childCard', 'reportCardService']) {
+    if (/ComingSoon|soon:\s*true|Coming soon/i.test(codeOnly(src[key]))) bad(`${SRC[key]} shows "Coming soon" again`);
+  }
+  const viewReport = codeOnly(src.viewReport);
+  if (!/value: VIEW_REPORT_TABS\.TESTS[\s\S]*value: VIEW_REPORT_TABS\.COUNSELLING/.test(viewReport)) {
+    bad('View Report lost its Test & Analysis and Counselling Report tabs, or their order');
+  }
+  if (!/<TestAnalysisPanel \/>/.test(viewReport) || !/<CounsellingReportBody initialTab=\{sub\} \/>/.test(viewReport)) {
+    bad('View Report does not render its two tabs');
+  }
 
   if (PARENT_MENU.some((i) => i.key === 'home')) {
     bad('a "home" tile is back on the home screen — it navigates to the card already above it');
-  }
-  for (const item of expected) {
-    const mine = PARENT_MENU.find((i) => i.key === item.key);
-    if (mine && mine.label !== item.label) {
-      bad(`label drift on "${item.key}": app "${mine.label}" vs web "${item.label}"`);
-    }
   }
   if (!PARENT_HEADER_ACTIONS.some((a) => a.key === 'changePassword')) {
     bad('Change Password is missing from the header actions');
@@ -577,15 +601,17 @@ function assertions(menu, calendar, layoutSrc, src, fee, chatbot, routeNames, ta
     bad(`chatbot sectionKeys drifted from the web\n      got:  ${gotSectionKeys}\n      want: ${wantSectionKeys}`);
   }
 
-  // Each web `route` becomes a suffix against /parent, and every one must be a real native screen —
-  // with a Counselling Report tab moved from the path into `?tab=` (toAppSuffix), naming a real tab.
+  // Each section opens what the website's own link for it translates to (resolveParentLink), and that
+  // must be a real screen, on a tab it has.
   for (let i = 0; i < PARENT_SECTIONS.length; i += 1) {
     const section = PARENT_SECTIONS[i];
-    const web = webSections[i];
-    if (!web) continue;
-    const wantSuffix = toAppSuffix(web.route.replace('/parent/platform/dashboard', ''));
-    if (section.routeSuffix !== wantSuffix) {
-      bad(`chatbot section "${section.sectionKey}" has routeSuffix "${section.routeSuffix}", web says "${wantSuffix}"`);
+    const webSection = webSections[i];
+    if (!webSection) continue;
+    const wantSuffix = chatbot.resolveParentLink(webSection.route);
+    if (wantSuffix === null) {
+      bad(`the web's "${webSection.sectionKey}" link ${webSection.route} has no place in the app`);
+    } else if (section.routeSuffix !== wantSuffix) {
+      bad(`chatbot section "${section.sectionKey}" opens "${section.routeSuffix}", the web's link resolves to "${wantSuffix}"`);
     }
     const [suffixPath, query] = (section.routeSuffix || '').split('?');
     const screen = suffixPath ? suffixPath.replace(/^\//, '') : 'index';
@@ -593,9 +619,15 @@ function assertions(menu, calendar, layoutSrc, src, fee, chatbot, routeNames, ta
       bad(`chatbot section "${section.sectionKey}" points at /parent${section.routeSuffix} — no such screen`);
     }
     if (query) {
-      const tab = new URLSearchParams(query).get('tab');
-      if (!tabs.COUNSELLING_REPORT_TAB_ORDER.includes(tab)) {
-        bad(`chatbot section "${section.sectionKey}" opens tab "${tab}", which the Counselling Report does not have`);
+      const q = new URLSearchParams(query);
+      if (screen === 'view-report') {
+        if (!['tests', 'counselling'].includes(q.get('tab'))) bad(`chatbot section "${section.sectionKey}" opens a View Report tab that does not exist`);
+        if (q.get('sub') && !tabs.COUNSELLING_REPORT_TAB_ORDER.includes(q.get('sub'))) {
+          bad(`chatbot section "${section.sectionKey}" opens Counselling Report tab "${q.get('sub')}", which does not exist`);
+        }
+      }
+      if (screen === 'attendance-schedule' && !['attendance', 'schedule'].includes(q.get('tab'))) {
+        bad(`chatbot section "${section.sectionKey}" opens an Attendance & Schedule tab that does not exist`);
       }
     }
   }
@@ -608,20 +640,25 @@ function assertions(menu, calendar, layoutSrc, src, fee, chatbot, routeNames, ta
   if (prefix !== '/parent/platform/dashboard') {
     bad(`PARENT_DASHBOARD_ROUTE is now "${prefix}" — the resolver's prefix is stale`);
   }
-  if (routes.length !== 4) {
-    bad(`expected 4 parentPageLink() call sites in the Java service, found ${routes.length}`);
-  }
+  if (routes.length < 1) bad('found no parentPageLink() call sites in the Java service — the extractor is stale');
+  // Every page Shreya's backend can link must open a real screen in the app.
   for (const r of routes) {
     const resolved = chatbot.resolveParentLink(r.full);
-    if (resolved !== r.suffix) {
-      bad(`resolveParentLink("${r.full}") = ${JSON.stringify(resolved)}, expected "${r.suffix}"`);
+    if (resolved === null) {
+      bad(`ChapterLink route ${r.full} has no place in the app — its "Open …" button would do nothing`);
+      continue;
     }
-    const screen = r.suffix ? r.suffix.replace(/^\//, '') : 'index';
-    if (!routeNames.has(screen)) bad(`ChapterLink route ${r.full} has no native screen`);
+    const screen = resolved.split('?')[0].replace(/^\//, '') || 'index';
+    if (!routeNames.has(screen)) bad(`ChapterLink route ${r.full} resolves to /parent${resolved} — no such screen`);
   }
   // A student/web route the parent app cannot open must be dropped, not navigated to.
   if (chatbot.resolveParentLink('/student/platform/skillsedge') !== null) {
     bad('resolveParentLink accepts a non-parent route — the "Open …" button would go nowhere');
+  }
+  // The school panel's dashboard prefix is exactly as long as the parent's, so without the prefix
+  // check its /fees would read as the parent's School Fees.
+  if (chatbot.resolveParentLink('/school/platform/dashboard/fees') !== null) {
+    bad('resolveParentLink accepts a school-panel route of the same shape as a parent one');
   }
 
   // ── transport ─────────────────────────────────────────────────────────────
@@ -748,7 +785,7 @@ function assertions(menu, calendar, layoutSrc, src, fee, chatbot, routeNames, ta
     }
   }
   // The free-chat shortcuts open tabs too (the config imports AsyncStorage, so it is read, not run).
-  for (const m of codeOnly(src.chatbotConfig).matchAll(/suffix: '\/counselling-report\?tab=([^']*)'/g)) {
+  for (const m of codeOnly(src.chatbotConfig).matchAll(/suffix: '\/view-report\?tab=counselling&sub=([^']*)'/g)) {
     if (!order.includes(m[1])) bad(`a parent chat shortcut opens tab "${m[1]}", which the Counselling Report does not have`);
   }
   for (const [key, tab] of [
@@ -756,8 +793,8 @@ function assertions(menu, calendar, layoutSrc, src, fee, chatbot, routeNames, ta
     ['redirectNotes', 'notes'],
     ['redirectReport', 'report'],
   ]) {
-    if (!new RegExp(`<Redirect href="/parent/counselling-report\\?tab=${tab}" />`).test(codeOnly(src[key]))) {
-      bad(`${SRC[key]} no longer redirects to the Counselling Report's ${tab} tab`);
+    if (!new RegExp(`<Redirect href="/parent/view-report\\?tab=counselling&sub=${tab}" />`).test(codeOnly(src[key]))) {
+      bad(`${SRC[key]} no longer redirects to View Report's Counselling Report, ${tab} tab`);
     }
   }
 
@@ -766,16 +803,19 @@ function assertions(menu, calendar, layoutSrc, src, fee, chatbot, routeNames, ta
 
 const MUTATIONS = [
   {
-    name: 'Plans for my child gated behind verification',
-    src: (k, s) => (k === 'parentLayout' ? s.replace("  '/parent/plans',\n", '') : s),
+    name: 'Plans for my child linked from School Fees again',
+    src: (k, s) =>
+      k === 'feesScreen'
+        ? s.replace('    </ScreenScaffold>', "      <Pressable onPress={() => router.push('/parent/plans')} />\n    </ScreenScaffold>")
+        : s,
   },
   {
-    name: 'School Fees loses the way in to Plans for my child',
-    src: (k, s) => (k === 'feesScreen' ? s.replace("router.push('/parent/plans')", "router.push('/parent/fees')") : s),
+    name: 'the plans route opening the website page again',
+    src: (k, s) => (k === 'plansRoute' ? s.replace('<Redirect href="/parent" />', '<ParentFeatureScreen path="/plans" />') : s),
   },
   {
-    name: 'the pending screen loses its Buy a plan button',
-    src: (k, s) => (k === 'pendingScreen' ? s.replace("router.push('/parent/plans')", "router.push('/parent')") : s),
+    name: 'Plans for my child opened to unverified parents again',
+    src: (k, s) => (k === 'parentLayout' ? s.replace("  '/parent/change-password',\n]);", "  '/parent/change-password',\n  '/parent/plans',\n]);") : s),
   },
   {
     name: 'Plans for my child added as a home tile',
@@ -787,14 +827,14 @@ const MUTATIONS = [
   },
   {
     name: 'a tile pointed at a route file that does not exist',
-    menu: (s) => s.replace("native: '/parent/counselling-report'", "native: '/parent/nowhere'"),
+    menu: (s) => s.replace("native: '/parent/attendance-schedule'", "native: '/parent/nowhere'"),
   },
   {
-    name: 'the Counselling Report tile split back out of the menu (drifts from the web sidebar)',
+    name: 'Counselling Report added back to the sections',
     menu: (s) =>
       s.replace(
-        "{ key: 'counselling-report',",
-        "{ key: 'counselor-notes', label: 'Counselor Notes', icon: 'chatbubbles-outline', native: '/parent/counselor-notes' },\n  { key: 'counselling-report',",
+        "  { key: 'fees',",
+        "  { key: 'counselling-report', label: 'Counselling Report', icon: 'reader-outline', native: '/parent/view-report' },\n  { key: 'fees',",
       ),
   },
   {
@@ -827,22 +867,22 @@ const MUTATIONS = [
   },
   {
     name: "an old tile's route redirecting to the wrong tab",
-    src: (k, s) => (k === 'redirectNotes' ? s.replace('?tab=notes', '?tab=report') : s),
+    src: (k, s) => (k === 'redirectNotes' ? s.replace('sub=notes', 'sub=report') : s),
   },
   {
     name: 'a chatbot link naming a Counselling Report tab that does not exist',
     chatbot: (s) =>
-      s.replace('routeSuffix: "/counselling-report?tab=report"', 'routeSuffix: "/counselling-report?tab=reports"'),
+      s.replace('routeSuffix: "/view-report?tab=counselling&sub=report"', 'routeSuffix: "/view-report?tab=counselling&sub=reports"'),
   },
   {
     name: 'a chat shortcut naming a Counselling Report tab that does not exist',
     src: (k, s) =>
-      k === 'chatbotConfig' ? s.replace("suffix: '/counselling-report?tab=notes'", "suffix: '/counselling-report?tab=note'") : s,
+      k === 'chatbotConfig' ? s.replace("sub=notes'", "sub=note'") : s,
   },
   {
     name: 'a chatbot link still using the web path form of a tab (no such screen)',
     chatbot: (s) =>
-      s.replace('routeSuffix: "/counselling-report?tab=report"', 'routeSuffix: "/counselling-report/report"'),
+      s.replace('routeSuffix: "/view-report?tab=counselling&sub=report"', 'routeSuffix: "/counselling-report/report"'),
   },
   {
     name: 'a tile reverted to WebView',
@@ -851,7 +891,7 @@ const MUTATIONS = [
   },
   {
     name: 'a menu item dropped',
-    menu: (s) => s.replace(/^.*key: 'attendance'.*$/m, ''),
+    menu: (s) => s.replace(/^.*key: 'attendance-schedule'.*$/m, ''),
   },
   {
     name: 'a label reworded away from the web sidebar',
@@ -995,6 +1035,32 @@ const MUTATIONS = [
     src: (k, s) => (k === 'parentLogin' ? s.replace('  signInRow: {', '  signInRowGone: {') : s),
   },
 
+  /* ── 4 Nov 2026: View Report, no Coming soon, the website's restructure ─── */
+  {
+    name: 'a "Coming soon" badge back on a quick action',
+    src: (k, s) => (k === 'quickActions' ? s.replace('export default function QuickActions', "const SOON = 'Coming soon';\nexport default function QuickActions") : s),
+  },
+  {
+    name: 'a headline figure marked soon again',
+    src: (k, s) => (k === 'reportCardService' ? s.replace("stats.push(dash('homework', homeworkLabel, unread));", "stats.push({ key: 'homework', soon: true });") : s),
+  },
+  {
+    name: 'the View Report quick action pointed elsewhere',
+    src: (k, s) => (k === 'parentMenuScreen' ? s.replace("route: '/parent/view-report',", "route: '/parent/fees',") : s),
+  },
+  {
+    name: 'View Report losing its Counselling Report tab',
+    src: (k, s) => (k === 'viewReport' ? s.replace('<CounsellingReportBody initialTab={sub} />', '<TestAnalysisPanel />') : s),
+  },
+  {
+    name: "the resolver forgetting the website's Attendance & Schedule paths",
+    chatbot: (s) => s.replace('[/^\\/attendance-schedule\\/(attendance|schedule)\\/?$/,', '[/^NEVER$/,'),
+  },
+  {
+    name: "the resolver forgetting the old /counsellor-report link Shreya's backend still sends",
+    chatbot: (s) => s.replace("[/^\\/counsellor-report\\/?$/, '/view-report?tab=counselling&sub=report'],", ''),
+  },
+
   /* ── P7, the Shreya chatbot ─────────────────────────────────────────────── */
   {
     name: 'a chatbot sectionKey renamed (the server silently grounds on the wrong section)',
@@ -1006,12 +1072,12 @@ const MUTATIONS = [
   },
   {
     name: 'a chatbot routeSuffix silently disagreeing with the web',
-    chatbot: (s) => s.replace('routeSuffix: "/attendance"', 'routeSuffix: "/schedule"'),
+    chatbot: (s) => s.replace('routeSuffix: "/attendance-schedule?tab=attendance"', 'routeSuffix: "/attendance-schedule?tab=schedule"'),
   },
   {
     name: 'resolveParentLink returning the raw route (the /parent/parent/... double prefix)',
     chatbot: (s) =>
-      s.replace('return route.slice(WEB_DASHBOARD_PREFIX.length);', 'return route;'),
+      s.replace('const rest = route.slice(WEB_DASHBOARD_PREFIX.length);', 'const rest = route;'),
   },
   {
     name: 'resolveParentLink accepting a route from another portal',

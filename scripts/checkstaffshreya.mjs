@@ -66,6 +66,13 @@ const EXPECTED = {
     controller: 'infrastructure/shreya/PrincipalShreyaController.java',
     config: 'principal',
   },
+  // The school's own admin (5 Nov 2026): the same school-leadership Shreya — the controller is
+  // hasRole('SCHOOL_ADMIN') and the service admits PRINCIPAL and ADMIN by userType.
+  admin: {
+    base: '/api/principal/shreya',
+    controller: 'infrastructure/shreya/PrincipalShreyaController.java',
+    config: 'principal',
+  },
 };
 
 async function loadConstants() {

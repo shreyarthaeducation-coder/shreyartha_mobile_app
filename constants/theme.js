@@ -455,6 +455,44 @@ export const PORTALS = {
 };
 
 /**
+ * The portals carried over from the website on 5 Nov 2026 (Alumni, University, University Staff,
+ * Industry, Investor) and the three staff panels joining the app (School Admin, HR, Reporting
+ * Manager). Each is the full parent palette — every token the shared components read — with its
+ * own website colours on top, so no token can come up `undefined` (see the note on `sales`).
+ */
+function derivedPalette(key, primary, primaryDark, accent, tintRgb) {
+  return {
+    ...PORTALS.parent,
+    key,
+    gradient: [primaryDark, primary, accent],
+    primary,
+    primaryDark,
+    accent,
+    link: primaryDark,
+    headerBg: primaryDark,
+    tint: `rgba(${tintRgb}, 0.12)`,
+    inputFocus: primary,
+    deep: primaryDark,
+    glass: `rgba(${tintRgb}, 0.10)`,
+    glassBorder: `rgba(${tintRgb}, 0.22)`,
+  };
+}
+// Alumni/platform/AlumniPlatform.css — amber and brown.
+PORTALS.alumni = derivedPalette('alumni', '#b45309', '#92400e', '#f59e0b', '180, 83, 9');
+// University/platform/UniversityPlatform.css — green.
+PORTALS.university = derivedPalette('university', '#059669', '#065f46', '#34d399', '5, 150, 105');
+// University/staff — the college staff panels' navy and blue.
+PORTALS.universityStaff = derivedPalette('universityStaff', '#2563eb', '#1e3a8a', '#60a5fa', '37, 99, 235');
+// Industry/platform — teal.
+PORTALS.industry = derivedPalette('industry', '#0d9488', '#115e59', '#2dd4bf', '13, 148, 136');
+// Investor/platform/Investor.css — teal on navy.
+PORTALS.investor = derivedPalette('investor', '#0f766e', '#1a3a5c', '#14b8a6', '15, 118, 110');
+// School/Admin/SchoolAdminDashboard.css — green on slate.
+PORTALS.schoolAdmin = derivedPalette('schoolAdmin', '#059669', '#1e293b', '#34d399', '5, 150, 105');
+PORTALS.hr = derivedPalette('hr', '#be185d', '#831843', '#f472b6', '190, 24, 93');
+PORTALS.reportingManager = derivedPalette('reportingManager', '#4f46e5', '#3730a3', '#818cf8', '79, 70, 229');
+
+/**
  * Which palette each school-staff shell wears, keyed by the lowercased `[role]` route segment.
  *
  * Mirrors the web, where every staff panel owns an accent in its own dashboard CSS. Roles absent
@@ -477,6 +515,10 @@ export const STAFF_ROLE_PALETTES = {
   vice_principal: PORTALS.vicePrincipal,
   shreyartha_teacher: PORTALS.shreyarthaTeacher,
   sales: PORTALS.sales,
+  // Joined the app on 5 Nov 2026.
+  admin: PORTALS.schoolAdmin,
+  hr: PORTALS.hr,
+  reporting_manager: PORTALS.reportingManager,
 };
 
 /** Palette for a staff shell, defaulting to the school teal. */

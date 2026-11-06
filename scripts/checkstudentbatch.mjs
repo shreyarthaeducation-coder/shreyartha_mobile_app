@@ -78,8 +78,9 @@ async function assertions(s) {
       && /if \(activePaper\) setActivePaper\(null\);\s*else back\(\);/.test(s.exam));
   check('Coding Pro counts project, topic and curriculum',
     () => s.coding.includes('useDrillBack([projectPanel, topic, curriculum].filter(Boolean).length, back);'));
-  check('Learn with Shreya counts chapter, day and level',
-    () => s.shreya.includes("useDrillBack(view === 'chapter' ? 3 : view === 'level' ? (activeDayId ? 2 : 1) : 0, back);"));
+  // The Speaking Challenge (Nov 2026) is a chapter-deep view too.
+  check('Learn with Shreya counts chapter, speaking, day and level',
+    () => s.shreya.includes("useDrillBack(view === 'chapter' || view === 'speaking' ? 3 : view === 'level' ? (activeDayId ? 2 : 1) : 0, back);"));
   check('Psychometric counts report and test',
     () => s.psy.includes('useDrillBack([results, topic].filter(Boolean).length, back);'));
 

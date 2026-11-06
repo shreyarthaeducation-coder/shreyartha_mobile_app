@@ -131,7 +131,11 @@ export default function AnalyticsBody({
   openExam,
   onToggleExam,
   mockTests = {},
+  // 'parent' (4 Nov 2026): the parent's Academic Progress shows this same body, and "My Progress"
+  // in a parent's app read as the parent's own. For a parent the headings drop the "My".
+  audience = 'student',
 }) {
+  const mine = (label) => (audience === 'parent' ? label.replace(/^My /, '') : label);
   const styles = useStyles();
   const palette = usePalette();
 
@@ -319,7 +323,7 @@ export default function AnalyticsBody({
 
       {analytics?.personalStatement ? (
         <Card>
-          <CardTitle>My Personal Statement</CardTitle>
+          <CardTitle>{mine('My Personal Statement')}</CardTitle>
           {/* The web renders this unclamped. An SOP runs to several hundred words and would push
               every section below it off a phone screen, so it collapses — the full text is one tap
               away, which keeps this chrome rather than a data divergence. */}
@@ -399,7 +403,7 @@ export default function AnalyticsBody({
                 it; until now neither rendered it. */}
             <Expander
               styles={styles}
-              label="My Personalized Resources"
+              label={mine('My Personalized Resources')}
               open={section === 'history'}
               onPress={() => toggle(setSection, section)('history')}
             >
@@ -434,7 +438,7 @@ export default function AnalyticsBody({
             {/* My Progress — stars 80/60/40/20. A DIFFERENT ladder from the syllabus one. */}
             <Expander
               styles={styles}
-              label="My Progress"
+              label={mine('My Progress')}
               open={section === 'progress'}
               onPress={() => toggle(setSection, section)('progress')}
               right={
@@ -466,7 +470,7 @@ export default function AnalyticsBody({
 
       {/* ── My Learning Gaps ────────────────────────────────────────────── */}
       <Card>
-        <CardTitle>My Learning Gaps</CardTitle>
+        <CardTitle>{mine('My Learning Gaps')}</CardTitle>
         <View style={styles.gapRow}>
           {GAP_LEVELS.map((g) => (
             <Pressable
@@ -557,7 +561,7 @@ export default function AnalyticsBody({
             <ProgressBar value={cePct} label="Completed" showValue style={styles.bar} />
             <ProgressBar
               value={clampPercent(ceProgress)}
-              label="My Progress"
+              label={mine('My Progress')}
               showValue={ceProgress != null}
               style={styles.bar}
             />
@@ -694,9 +698,16 @@ export default function AnalyticsBody({
               </View>
             ) : null}
 
+            {/* Only the skills the student chose (4 Nov 2026), as the website lists them: a server
+                from before the parent endpoint narrowed its answer still sends every skill. */}
             {skillsProgress && typeof skillsProgress === 'object'
               ? Object.entries(skillsProgress)
                   .filter(([, v]) => v && typeof v === 'object')
+                  .filter(([name]) =>
+                    (skillsProfile?.importantSkills || []).some(
+                      (chosen) => String(chosen).trim().toLowerCase() === String(name).trim().toLowerCase(),
+                    ),
+                  )
                   .map(([name, v]) => (
                     <View key={name} style={styles.stream}>
                       <Expander

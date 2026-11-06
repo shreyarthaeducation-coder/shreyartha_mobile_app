@@ -1,9 +1,11 @@
-import { CounsellingReportScreen } from '../../components/parent';
+import { Redirect, useLocalSearchParams } from 'expo-router';
 
 /**
- * Counselling Report — Psychometric Result, Counsellor Notes and Counsellor Report as three tabs.
- * `?tab=psychometric|notes|report` opens one directly; the three old tiles' routes redirect here.
+ * Counselling Report is View Report's second tab now (4 Nov 2026), not a section of its own. Old
+ * links — notifications, Shreya, search — land on that tab, on the inner tab they named.
  */
 export default function ParentCounsellingReport() {
-  return <CounsellingReportScreen />;
+  const { tab } = useLocalSearchParams();
+  const sub = typeof tab === 'string' && tab ? `&sub=${tab}` : '';
+  return <Redirect href={`/parent/view-report?tab=counselling${sub}`} />;
 }

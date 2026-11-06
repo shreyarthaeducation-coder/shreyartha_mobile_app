@@ -29,7 +29,9 @@ import { useStudentSearch } from '../../utils/studentSearch';
  *
  * `embedded` — rendered inside the Counselling Report's tabs, which draw the header.
  */
-export default function StudentPsychometricScreen({ embedded = false, printRoute }) {
+// `apiBase` (6 Nov 2026): the School Admin reads the same three calls under
+// /api/school-admin/student-support/counselling, for every class of the school.
+export default function StudentPsychometricScreen({ embedded = false, printRoute, apiBase }) {
   const styles = useStyles();
   const palette = usePalette();
   const router = useRouter();
@@ -38,7 +40,7 @@ export default function StudentPsychometricScreen({ embedded = false, printRoute
   const [section, setSection] = useState(null);
   const [student, setStudent] = useState(null);
 
-  const classesFetcher = useCallback((signal) => fetchCounsellingClasses(undefined, signal), []);
+  const classesFetcher = useCallback((signal) => fetchCounsellingClasses(undefined, signal, apiBase), [apiBase]);
   const { data: classes, loading: classesLoading, error: classesError, reload } =
     useStaffResource(classesFetcher, { initialData: [] });
 
@@ -55,11 +57,12 @@ export default function StudentPsychometricScreen({ embedded = false, printRoute
           // The endpoint requires a month; this screen doesn't use the session index it returns.
           year: now.getFullYear(),
           month: now.getMonth() + 1,
+          apiBase,
         },
         signal,
       );
     },
-    [klass?.className, section?.sectionName],
+    [klass?.className, section?.sectionName, apiBase],
   );
   const { data: roster, loading: rosterLoading } = useStaffResource(studentsFetcher, {
     enabled: rosterReady,
@@ -69,8 +72,8 @@ export default function StudentPsychometricScreen({ embedded = false, printRoute
   const studentSearch = useStudentSearch(students);
 
   const resultFetcher = useCallback(
-    (signal) => fetchStudentPsychometric(student.studentId, signal),
-    [student?.studentId],
+    (signal) => fetchStudentPsychometric(student.studentId, signal, apiBase),
+    [student?.studentId, apiBase],
   );
   // `result` still holds the previous student's card while the next one loads or if it fails, so
   // loading and error are checked before it is shown.

@@ -214,7 +214,7 @@ const SHREYARTHA_TEACHER = {
    * All three self-service on /api/staff/hr — this role has no approver side at all, so unlike the
    * Vice Principal there is no pair of similarly-named screens to keep apart here.
    */
-  attendanceItemKeys: ['selfAttendance', 'leave', 'payroll'],
+  attendanceItemKeys: ['selfAttendance', 'leave', 'payroll', 'myTeam'],
 
   profileItemKey: 'profile',
 
@@ -473,7 +473,7 @@ const SHREYARTHA_COUNCELLOR = {
     },
   ],
 
-  attendanceItemKeys: ['selfAttendance', 'leave', 'payroll'],
+  attendanceItemKeys: ['selfAttendance', 'leave', 'payroll', 'myTeam'],
 
   profileItemKey: 'profile',
 
@@ -632,7 +632,7 @@ const PRINCIPAL = {
       icon: 'school-outline',
       // Grading scales belong next to Test and Examination: they are what the marks recorded there
       // are turned into.
-      itemKeys: ['liveTests', 'reports', 'gradeManagement', 'reportCardAreas', 'reportCardGrades', 'academicIqAliases', 'languageProAliases', 'codingProAliases'],
+      itemKeys: ['liveTests', 'reports', 'gradeManagement', 'reportCardAreas', 'reportCardGrades', 'performanceReport', 'finalReport', 'academicIqAliases', 'languageProAliases', 'codingProAliases'],
     },
     {
       key: 'staffOps',
@@ -757,7 +757,7 @@ const SALES = {
       key: 'business',
       label: 'Business',
       icon: 'briefcase-outline',
-      itemKeys: ['schools', 'deals'],
+      itemKeys: ['schools', 'deals', 'communication', 'invoices'],
     },
     {
       key: 'performance',
@@ -775,7 +775,7 @@ const SALES = {
     },
   ],
 
-  attendanceItemKeys: ['selfAttendance', 'leave', 'payroll'],
+  attendanceItemKeys: ['selfAttendance', 'leave', 'payroll', 'myTeam'],
 
   profileItemKey: 'profile',
 
@@ -824,8 +824,34 @@ const SALES = {
   search: true,
 };
 
+/**
+ * The School Admin's home (5 Nov 2026): the Principal's, plus the Admissions & Outreach group only
+ * this panel carries. Its Shreya is the same school-leadership chatbot — `PrincipalShreyaChatbotService`
+ * admits PRINCIPAL and ADMIN by userType.
+ */
+const SCHOOL_ADMIN = {
+  ...PRINCIPAL,
+  role: 'admin',
+  workspaceGroups: [
+    ...PRINCIPAL.workspaceGroups,
+    {
+      key: 'support',
+      label: 'Student Support',
+      icon: 'heart-outline',
+      itemKeys: ['counselling', 'counsellingReport'],
+    },
+    {
+      key: 'outreach',
+      label: 'Admissions & Outreach',
+      icon: 'megaphone-outline',
+      itemKeys: ['admissionEnquiries', 'jobEnquiries', 'alumniManagement'],
+    },
+  ],
+};
+
 const STAFF_HOME = {
   principal: PRINCIPAL,
+  admin: SCHOOL_ADMIN,
   vice_principal: VICE_PRINCIPAL,
   shreyartha_teacher: SHREYARTHA_TEACHER,
   counselor: COUNSELOR,

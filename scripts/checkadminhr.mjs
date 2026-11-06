@@ -255,7 +255,9 @@ function assertions(roles, portals, src) {
   if (!hr.includes("'/api/school-admin/hr'")) {
     bad('the admin HR service does not target /api/school-admin/hr');
   }
-  if (hr.includes('/api/staff/hr')) {
+  // `/api/staff/hr-portal` (the HR portal, whose leave verbs the service also serves since 5 Nov
+  // 2026) is a different namespace; only the bare self-service prefix is the mistake.
+  if (/\/api\/staff\/hr(?![-\w])/.test(hr)) {
     bad('the ADMIN HR service reaches /api/staff/hr — that is the self-service namespace');
   }
   if (!fee.includes("'/api/school-admin/fees'")) {

@@ -17,6 +17,7 @@ import SearchEntry from '../shared/home/SearchEntry';
 import QuickActions from './home/QuickActions';
 import ChildReportCard from './home/ChildReportCard';
 import { PARENT_MENU } from '../../constants/parentMenu';
+import { hueOf } from '../../constants/parentColours';
 import { fetchLinkedStudent } from '../../services/parent/dashboardService';
 import { loadReportFigures, reportStats } from '../../services/parent/reportCardService';
 import { defaultAcademicYear } from '../../services/parent/feeService';
@@ -81,11 +82,19 @@ const STRINGS = {
   historyBody: 'View all your transactions',
   notifications: 'Notifications',
   notificationsBody: 'Stay updated with important alerts',
-  reports: 'Download Reports',
-  reportsBody: 'Student reports & documents',
+  reports: 'View Report',
+  reportsBody: 'Tests, report card & counselling',
 
   reportTitle: "My Child's Report",
-  statOverall: 'Overall',
+  statTests: 'Tests',
+  averageOf: 'Average of',
+  testsWord: 'tests',
+  oneTest: 'Average of 1 test',
+  noTestsYet: 'No tests shared yet',
+  notInClass: 'Not in a class this year',
+  notMarked: 'Not marked this month',
+  notStarted: 'Not started',
+  couldNotLoad: "Couldn't load",
   statAttendance: 'Attendance',
   statHomework: 'Homework',
   statPsychometric: 'Psychometric',
@@ -251,8 +260,6 @@ export default function ParentMenuScreen() {
       label: t.payFees,
       description: t.payFeesBody,
       icon: 'wallet-outline',
-      tint: 'green',
-      color: '#059669',
       route: '/parent/fees',
     },
     {
@@ -260,8 +267,6 @@ export default function ParentMenuScreen() {
       label: t.history,
       description: t.historyBody,
       icon: 'document-text-outline',
-      tint: 'blue',
-      color: '#2563eb',
       route: '/parent/fees?tab=history',
     },
     // Live since the parent inbox (/api/parent/notifications): every school event aimed at the
@@ -272,24 +277,16 @@ export default function ParentMenuScreen() {
       label: t.notifications,
       description: unread > 0 ? `${unread} unread` : t.notificationsBody,
       icon: 'notifications-outline',
-      tint: 'amber',
-      color: '#d97706',
       route: '/parent/notifications',
     },
-    // Zero file or PDF endpoints exist for a parent anywhere in the backend.
-    //
-    // Written without a path wildcard on purpose. A slash-star sequence inside a LINE comment opens
-    // a block comment as far as every comment-stripping tool in scripts/ is concerned, and the
-    // earlier wording of this note silently ate all the JSX below it — the Shreya card included —
-    // so checkparent reported a component that was plainly there as missing.
+    // View Report (4 Nov 2026): the child's tests and report card, and the counselling report, as
+    // two tabs. It replaced an inert "Download Reports" tile that only ever said "Coming soon".
     {
-      key: 'reports',
+      key: 'view-report',
       label: t.reports,
       description: t.reportsBody,
-      icon: 'download-outline',
-      tint: 'violet',
-      color: palette.primary,
-      soon: true,
+      icon: 'document-text-outline',
+      route: '/parent/view-report',
     },
   ];
 
@@ -391,8 +388,8 @@ export default function ParentMenuScreen() {
               accessibilityRole="button"
               accessibilityLabel={item.label}
             >
-              <View style={styles.tileIcon}>
-                <Ionicons name={item.icon} size={19} color={palette.primaryDark} />
+              <View style={[styles.tileIcon, { backgroundColor: hueOf(item.key).bg }]}>
+                <Ionicons name={item.icon} size={19} color={hueOf(item.key).fg} />
               </View>
               <Text style={styles.tileLabel} numberOfLines={2}>
                 {item.label}

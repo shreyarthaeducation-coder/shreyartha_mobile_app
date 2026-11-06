@@ -707,7 +707,9 @@ const MUTATIONS = [
   },
   {
     name: 'the Personalized Resources card losing its college guard',
-    src: (k, s) => (k === 'langLanding' ? s.replace('hidden: isCollege,', 'hidden: false,') : s),
+    // Both resource cards are also hidden for everyone while their content is written (5 Nov 2026,
+    // LANGUAGE_PRO_RESOURCES_VISIBLE), so the guard reads `isCollege || !…VISIBLE`.
+    src: (k, s) => (k === 'langLanding' ? s.replace('hidden: isCollege || !LANGUAGE_PRO_RESOURCES_VISIBLE,', 'hidden: !LANGUAGE_PRO_RESOURCES_VISIBLE,') : s),
   },
   {
     name: 'the College Resources relabel dropped',

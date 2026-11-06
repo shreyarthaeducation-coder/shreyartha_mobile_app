@@ -2,38 +2,24 @@
 //
 // The four headline figures on the parent dashboard's "My Child's Report" card.
 //
-// ══ THE DESIGN ASKS FOR FOUR PERCENTAGES. THREE OF THEM DO NOT EXIST. ═══════
-// Every one of these was checked against the backend before it was written, and this file is where
-// the findings live so nobody has to re-derive them:
+// Each was checked against the backend before it was written:
 //
-//   Overall Performance   The design shows a letter grade ("A / Excellent"). **`letterGrade` has
-//                         ZERO hits across the entire backend** — no A/B/C grading is computed
-//                         anywhere. The nearest field, `StudentAnalyticsResponse.readinessIndex`,
-//                         is a HARDCODED PLACEHOLDER: its own DTO javadoc records that every
-//                         student in the system reads Academic "High" / Competitive "Medium".
-//                         `StudentAnalyticsSummary` deliberately excludes it for that reason, and
-//                         so does this. It is returned as `{ soon: true }`.
+//   Tests          REAL (4 Nov 2026). `/api/parent/test-analysis` lists the tests the child's
+//                  subject teachers shared with parents, with the child's marks. Shown as the
+//                  average percentage of those the child sat and has marks for. It replaced an
+//                  "Overall" tile that could only ever say "Coming soon": no letter grade is
+//                  computed anywhere, and `readinessIndex` is a hardcoded placeholder.
 //
-//   Attendance            REAL, but **one month only**. `/attendance/calendar` requires a year and
-//                         a month and returns raw per-day statuses; there is no aggregate endpoint,
-//                         and no term concept to aggregate over. Reported with an explicit
-//                         "This month" note so it is never mistaken for an all-time figure, and
-//                         omitted entirely when the month has no marked days — 0 % because nobody
-//                         has taken a register yet is a different statement from 0 % attended.
+//   Attendance     REAL, but **one month only**. `/attendance/calendar` needs a year and a month and
+//                  returns per-day statuses; there is no term aggregate. Labelled "This month", and a
+//                  month with no register taken is a dash, not 0 %.
 //
-//   Assignments           REAL as a **COUNT, never a percentage**. `/learning-activities` returns
-//                         the assigned homework; a parent cannot see submission state at all
-//                         (`HomeworkSubmission` is exposed only through the STUDENT controller), so
-//                         any "% complete" would be invented. "12 set" is true; "85 % done" is not.
+//   Homework       REAL as a **COUNT, never a percentage**. A parent cannot see submission state
+//                  (`HomeworkSubmission` is exposed only to the student), so "85 % done" would be
+//                  invented. "12 set" is true.
 //
-//   Assessments           REAL. `/psychometric` gives `completedCount` / `totalTopics`. Shown as
-//                         "8 of 10" rather than converted to a percentage — it is a questionnaire
-//                         completion count, not a score, and a percent sign would imply marks.
-//
-// Real exam marks (`ExamResult.marksObtained`) exist but live behind `/api/school-admin/reports`
-// and `/api/teacher/reports`. `Exam.visibleToParents` is set by admins and **read by no parent code
-// path anywhere** — the feature is scaffolded and its parent half was never built. Do not reach for
-// it here.
+//   Psychometric   REAL. `/psychometric` gives `completedCount` / `totalTopics`, shown as "3/6", not a
+//                  percentage of a score it isn't.
 
 import { parentApi } from '../parentApi';
 import { summariseAttendance } from './calendarService';
@@ -51,6 +37,9 @@ export async function loadReportFigures(now = new Date()) {
   const month = now.getMonth() + 1;
 
   return parentApi.settleAll({
+    // The tests the child's teachers shared with parents (4 Nov 2026) — the real marks behind the
+    // first tile, which used to say "Coming soon".
+    tests: parentApi.get('/api/parent/test-analysis'),
     attendance: parentApi.get('/api/parent/dashboard/attendance/calendar', {
       params: { year, month },
     }),
@@ -63,59 +52,93 @@ export async function loadReportFigures(now = new Date()) {
 const part = (parts, key) => parts?.[key] || { data: null, error: null, forbidden: false };
 
 /**
- * The four stat tiles, in the design's order.
+ * The average percentage of the shared tests the child sat and has marks for, and how many.
+ * Absent, not-yet-marked and zero-mark-total tests are left out rather than counted as 0 %.
+ */
+export function testAverage(tests) {
+  const marked = (Array.isArray(tests) ? tests : []).filter(
+    (t) => t && t.status !== 'ABSENT' && Number.isFinite(Number(t.marksObtained)) && Number(t.totalMarks) > 0
+      && t.marksObtained !== null,
+  );
+  if (marked.length === 0) return null;
+  const sum = marked.reduce((acc, t) => acc + (Number(t.marksObtained) / Number(t.totalMarks)) * 100, 0);
+  return { percent: Math.round(sum / marked.length), count: marked.length };
+}
+
+/**
+ * The four stat tiles. Nothing here ever says "Coming soon" (4 Nov 2026): a figure is real, or it
+ * is a dash with the plain reason — nothing to show yet, or the call failed. "We could not read
+ * this" and "this is zero" are different claims, so neither is ever shown as a 0.
  *
- * A figure whose call FAILED is returned as `{ soon: true }` rather than as a zero — "we could not
- * read this" and "this is zero" are different claims, and showing the second when the first is true
- * tells a parent something false about their child.
- *
- * @returns {Array<{key,label,value?,note?,soon?}>}
+ * @returns {Array<{key,label,value,note,empty?}>}
  */
 export function reportStats(parts, strings = {}) {
   const stats = [];
+  const unread = strings.couldNotLoad || "Couldn't load";
+  const dash = (key, label, note) => ({ key, label, value: '—', note, empty: true });
 
-  // 1. Overall Performance — permanently absent. See the header.
-  stats.push({ key: 'overall', label: strings.statOverall || 'Overall', soon: true });
+  // 1. Tests — the average of the tests teachers shared with parents.
+  const tests = part(parts, 'tests');
+  const avg = tests.data ? testAverage(tests.data.tests) : null;
+  const testsLabel = strings.statTests || 'Tests';
+  if (avg) {
+    stats.push({
+      key: 'tests',
+      label: testsLabel,
+      value: `${avg.percent}%`,
+      note: avg.count === 1 ? strings.oneTest || 'Average of 1 test' : `${strings.averageOf || 'Average of'} ${avg.count} ${strings.testsWord || 'tests'}`,
+    });
+  } else if (tests.data) {
+    stats.push(dash('tests', testsLabel, strings.noTestsYet || 'No tests shared yet'));
+  } else if (/not enrolled|no child is linked/i.test(String(tests.error || ''))) {
+    // The server's own answer for an ordinary state (a 400 with these words), not a failure.
+    stats.push(dash('tests', testsLabel, strings.notInClass || 'Not in a class this year'));
+  } else {
+    stats.push(dash('tests', testsLabel, unread));
+  }
 
   // 2. Attendance — this month, from real per-day statuses.
-  const attendance = part(parts, 'attendance').data;
-  const summary = attendance ? summariseAttendance(attendance) : null;
+  const attendance = part(parts, 'attendance');
+  const summary = attendance.data ? summariseAttendance(attendance.data) : null;
+  const attendanceLabel = strings.statAttendance || 'Attendance';
   if (summary && summary.marked > 0) {
     stats.push({
       key: 'attendance',
-      label: strings.statAttendance || 'Attendance',
+      label: attendanceLabel,
       value: `${Math.round((summary.present / summary.marked) * 100)}%`,
       note: strings.thisMonth || 'This month',
     });
   } else {
-    stats.push({ key: 'attendance', label: strings.statAttendance || 'Attendance', soon: true });
+    stats.push(dash('attendance', attendanceLabel, attendance.data ? strings.notMarked || 'Not marked this month' : unread));
   }
 
   // 3. Homework — a COUNT. There is no submission state for a parent to turn into a percentage.
   const activities = part(parts, 'activities').data;
   const homework = Array.isArray(activities?.homework) ? activities.homework : null;
+  const homeworkLabel = strings.statHomework || 'Homework';
   if (homework) {
     stats.push({
       key: 'homework',
-      label: strings.statHomework || 'Homework',
+      label: homeworkLabel,
       value: String(homework.length),
       note: strings.setSoFar || 'Set so far',
     });
   } else {
-    stats.push({ key: 'homework', label: strings.statHomework || 'Homework', soon: true });
+    stats.push(dash('homework', homeworkLabel, unread));
   }
 
   // 4. Psychometric — completion, not a score.
   const psych = part(parts, 'psychometric').data;
+  const psychLabel = strings.statPsychometric || 'Psychometric';
   if (psych && Number.isFinite(Number(psych.totalTopics)) && Number(psych.totalTopics) > 0) {
     stats.push({
       key: 'psychometric',
-      label: strings.statPsychometric || 'Psychometric',
+      label: psychLabel,
       value: `${Number(psych.completedCount) || 0}/${Number(psych.totalTopics)}`,
       note: strings.completed || 'Completed',
     });
   } else {
-    stats.push({ key: 'psychometric', label: strings.statPsychometric || 'Psychometric', soon: true });
+    stats.push(dash('psychometric', psychLabel, psych ? strings.notStarted || 'Not started' : unread));
   }
 
   return stats;

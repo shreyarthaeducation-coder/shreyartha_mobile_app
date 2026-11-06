@@ -129,4 +129,29 @@ export const STUDENT_TEACHER_LINKS = [
   },
 ];
 
+/**
+ * The website's student pages that had no app screen until 5 Nov 2026: assessments companies set
+ * for college students (college students only — `collegeOnly`), and the student's counselling
+ * bookings. Same labels as the website.
+ */
+export const STUDENT_MORE_LINKS = [
+  {
+    key: 'companyAssessments',
+    label: 'Company Assessments',
+    description: 'Tests companies have set for you, and your results.',
+    icon: 'business-outline',
+    native: '/student/company-assessments',
+    // The controller is hasAnyRole('COLLEGE_STUDENT','FREE_COLLEGE_STUDENT'); a school student is
+    // refused, so the tile is not offered to one.
+    collegeOnly: true,
+  },
+  {
+    key: 'myBookings',
+    label: 'My Bookings',
+    description: 'Your counselling sessions — upcoming, past and cancelled.',
+    icon: 'calendar-outline',
+    native: '/student/my-bookings',
+  },
+];
+
 export { STUDENT_BASE };

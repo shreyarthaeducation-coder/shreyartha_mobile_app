@@ -12,6 +12,8 @@ export const PSYCHOMETRIC_PRINT_API = Object.freeze({
   // Across the counsellor's linked schools — the screen offers a school picker for them.
   shreyartha_councellor: '/api/counselor/psychometric-reports',
   principal: '/api/school-admin/psychometric-reports',
+  // The school's own admin (6 Nov 2026): the website's ADMIN_SUPPORT_ENDPOINTS name this family.
+  admin: '/api/school-admin/psychometric-reports',
 });
 
 export function psychometricPrintApiBase(role) {

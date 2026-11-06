@@ -2,11 +2,11 @@ import { useLocalSearchParams } from 'expo-router';
 import { StudentStatusScreen } from '../../../components/staff';
 
 /**
- * Student Status (10 Oct 2026) for the principal, vice principal, both counsellors and the
+ * Student Status (10 Oct 2026) for the principal, the school admin (5 Nov 2026), vice principal, both counsellors and the
  * Shreyartha teacher — their whole school (a Shreyartha counsellor: their linked schools). The server
  * decides which sections each may open (StaffScopeService), by account type.
  */
-const ROLES = ['principal', 'vice_principal', 'counselor', 'shreyartha_councellor', 'shreyartha_teacher'];
+const ROLES = ['principal', 'admin', 'vice_principal', 'counselor', 'shreyartha_councellor', 'shreyartha_teacher'];
 
 export default function StaffStudentStatus() {
   const { role } = useLocalSearchParams();

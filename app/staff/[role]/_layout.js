@@ -220,6 +220,8 @@ export default function StaffRoleLayout() {
       {/* The report card's graded areas: set up for the school, and what teachers have graded. */}
       <Stack.Screen name="report-card-areas" />
       <Stack.Screen name="report-card-grades" />
+      <Stack.Screen name="performance-report" />
+      <Stack.Screen name="final-report" />
       {/* `reports` is the VP's teacher exam screen; the principal's admin one is separate. */}
       <Stack.Screen name="admin-reports" />
       <Stack.Screen name="live-meeting" />
@@ -248,6 +250,27 @@ export default function StaffRoleLayout() {
       <Stack.Screen name="sales-incentive" />
       <Stack.Screen name="sales-reports" />
       <Stack.Screen name="sales-tutorial" />
+      {/* Email & Communication and Proformas (5 Nov 2026). */}
+      <Stack.Screen name="sales-communication" />
+      <Stack.Screen name="sales-customer" />
+      <Stack.Screen name="sales-proformas" />
+      <Stack.Screen name="sales-proforma" />
+      {/* 5 Nov 2026. School Admin's Admissions & Outreach (each returns null without `outreach` on
+          the role's admin descriptor); My Team for the Manager login and HR; and the HR portal,
+          whose screens return null for every role but `hr`. */}
+      <Stack.Screen name="admission-enquiries" />
+      <Stack.Screen name="job-enquiries" />
+      <Stack.Screen name="alumni-management" />
+      <Stack.Screen name="my-team" />
+      <Stack.Screen name="hr-dashboard" />
+      <Stack.Screen name="hr-employees" />
+      <Stack.Screen name="hr-employee" />
+      <Stack.Screen name="hr-offers" />
+      <Stack.Screen name="hr-offer" />
+      <Stack.Screen name="hr-payroll" />
+      <Stack.Screen name="hr-payroll-run" />
+      <Stack.Screen name="hr-probation" />
+      <Stack.Screen name="counsellor-management" />
       <Stack.Screen name="pending-verification" />
       <Stack.Screen name="change-password" />
       <Stack.Screen name="feature" />

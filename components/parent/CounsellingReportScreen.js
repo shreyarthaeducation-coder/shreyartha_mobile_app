@@ -30,3 +30,11 @@ const TABS = [
 export default function CounsellingReportScreen() {
   return <CounsellingReportTabs title="Counselling Report" fallbackRoute="/parent" tabs={TABS} />;
 }
+
+/**
+ * The same three tabs inside View Report's Counselling Report tab (4 Nov 2026), opening on
+ * `initialTab` (psychometric | notes | report).
+ */
+export function CounsellingReportBody({ initialTab }) {
+  return <CounsellingReportTabs embedded initialTab={initialTab} tabs={TABS} />;
+}

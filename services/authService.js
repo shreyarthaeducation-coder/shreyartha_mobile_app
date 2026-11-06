@@ -203,6 +203,28 @@ export const lookupInstitutionCode = async (code, studentType = 'SCHOOL') => {
 /** The school-only form of the lookup, kept for the school-staff signup that already uses it. */
 export const lookupSchoolCode = (code) => lookupInstitutionCode(code, 'SCHOOL');
 
+/** A University Code → the university's name, or null — what University Staff and Alumni type. */
+export const lookupUniversityCode = (code) => lookupInstitutionCode(code, 'COLLEGE');
+
+// ── The portals that joined the app on 6 Nov 2026 ─────────────────────────────────────────────
+// Each answers `{ success, message }` and no token: every one of these accounts waits for an
+// approval, and signing in is the single gate. Bodies are the website's own (Alumni/, University/,
+// University/staff/, Industry/, Investor/ *Auth.js).
+
+export const signupAlumni = (body) => postJson('/api/alumni/auth/signup', body);
+
+export const signupUniversity = ({ fullName, mobile, email, universityName, password }) =>
+  postJson('/api/university/auth/signup', { fullName, mobile, email, universityName, password, termsAccepted: true });
+
+export const signupUniversityStaff = ({ fullName, email, mobile, userType, password, universityCode }) =>
+  postJson('/api/university-staff/auth/signup', { fullName, email, mobile, userType, password, universityCode });
+
+export const signupIndustry = ({ fullName, mobile, email, companyName, industrySector, password }) =>
+  postJson('/api/industry/auth/signup', { fullName, mobile, email, companyName, industrySector, password, termsAccepted: true });
+
+export const signupInvestor = ({ fullName, email, mobile, password }) =>
+  postJson('/api/investor/auth/signup', { fullName, email, mobile, password, termsAccepted: true });
+
 const FORGOT_ENDPOINTS = {
   student: '/api/auth/forgot-password',
   school: '/api/school/auth/forgot-password',

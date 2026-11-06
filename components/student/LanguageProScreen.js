@@ -13,6 +13,14 @@ import useStudentAccess from '../../hooks/useStudentAccess';
 import { fetchStudentClass } from '../../services/student/languageProService';
 
 /**
+ * School (or College) Resources and Personalised Resources are hidden from students while their
+ * content is being added (5 Nov 2026) — only Communicative English (Learn with Shreya) shows, as on
+ * the website (LANGUAGE_PRO_RESOURCES_VISIBLE in frontendmain LanguagePro.js). Their route sends a
+ * student back here. Set this to true to bring both back.
+ */
+export const LANGUAGE_PRO_RESOURCES_VISIBLE = false;
+
+/**
  * Language Pro — the landing page.
  *
  * ── THREE CARDS, MATCHING THE WEBSITE ────────────────────────────────────────
@@ -68,7 +76,7 @@ export default function LanguageProScreen() {
       note: 'Chosen for the skills you are still building.',
       // The web guards this with `!isCollegeStudent()` — a college student has no class to step
       // down from, so the level-matched set is meaningless for them.
-      hidden: isCollege,
+      hidden: isCollege || !LANGUAGE_PRO_RESOURCES_VISIBLE,
       to: '/student/language-pro-resources?source=personalized',
     },
     {
@@ -77,6 +85,7 @@ export default function LanguageProScreen() {
       title: isCollege ? 'College Resources' : 'School Resources',
       subtitle: 'Your full syllabus',
       note: 'Listen, Read & Speak, Write and Grammar activities for every chapter.',
+      hidden: !LANGUAGE_PRO_RESOURCES_VISIBLE,
       to: '/student/language-pro-resources?source=school',
     },
     {

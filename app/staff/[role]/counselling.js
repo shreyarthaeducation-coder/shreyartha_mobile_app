@@ -4,6 +4,9 @@ import { resolveFeatureScope } from '../../../constants/staffScope';
 import { SHREYA01_TEACHER } from '../../../constants/shreya01TeacherPortal';
 import { isVicePrincipal } from '../../../constants/vicePrincipalPortal';
 
+/** The School Admin's Student Support: every class of the school, read only (web ADMIN_SUPPORT_ENDPOINTS). */
+const ADMIN_SUPPORT_BASE = '/api/school-admin/student-support/counselling';
+
 /**
  * Counselling Needs and Notes.
  *
@@ -21,6 +24,9 @@ import { isVicePrincipal } from '../../../constants/vicePrincipalPortal';
 export default function StaffCounselling() {
   const { role } = useLocalSearchParams();
   const roleKey = String(role || '').toLowerCase();
+  if (roleKey === 'admin') {
+    return <CounsellingNotesScreen homeRoute="/staff/admin" role="counselor" apiBase={ADMIN_SUPPORT_BASE} readOnly />;
+  }
   const scope = resolveFeatureScope(roleKey, 'counselling');
   if (!scope) return null; // the layout guard has already redirected
 

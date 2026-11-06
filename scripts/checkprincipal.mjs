@@ -909,10 +909,12 @@ console.log('\nRegression — the finished panels:');
     if (strays.length) fail(`${role} regressed: ${strays.map((i) => i.key).join(', ')} back on WebView`);
     else ok(`${role} still fully native`);
   }
+  // The Shreyartha Admin was the last web-view panel; it went native on 6 Nov 2026, so now it is
+  // held to the same rule as the others.
   const admin = staffRoles.STAFF_ROLE_CONFIG.shreyartha_admin;
-  if (admin.menu.every((i) => i.path === undefined)) {
-    fail('shreyartha_admin unexpectedly has no WebView items — it is not ported yet');
-  } else ok('shreyartha_admin still WebView (the last panel)');
+  const adminStrays = [...admin.menu, ...admin.headerActions].filter((i) => i.path !== undefined);
+  if (adminStrays.length) fail(`shreyartha_admin regressed: ${adminStrays.map((i) => i.key).join(', ')} back on WebView`);
+  else ok('shreyartha_admin fully native');
 }
 
 console.log(failures === 0 ? '\nPASS' : `\nFAIL — ${failures} problem(s)`);

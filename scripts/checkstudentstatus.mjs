@@ -34,7 +34,8 @@ const FILES = {
   staffRoles: 'constants/staffRoles.js',
   staffHome: 'constants/staffHome.js',
 };
-const ROLES = ['principal', 'vice_principal', 'counselor', 'shreyartha_councellor', 'shreyartha_teacher'];
+// `admin` — the school's own admin, on the app since 5 Nov 2026 (its web dashboard mounts Student Status).
+const ROLES = ['principal', 'admin', 'vice_principal', 'counselor', 'shreyartha_councellor', 'shreyartha_teacher'];
 
 function loadSources(mutate) {
   const out = {};
@@ -115,12 +116,18 @@ async function assertions(s, web) {
     () => s.teacherRoute.includes('<StudentStatusScreen homeRoute="/teacher" />')
       && s.teacherLayout.includes('<Stack.Screen name="student-status" />')
       && s.teacherMenu.includes("{ key: 'studentStatus', label: 'Student Status', icon: 'podium-outline', native: '/teacher/student-status' }"));
-  check('the staff route serves exactly the five roles with classes',
+  check('the staff route serves exactly the six roles with classes',
     () => s.staffRoute.includes(`const ROLES = ${JSON.stringify(ROLES).replace(/"/g, "'").replace(/,/g, ', ')};`)
       && s.staffRoute.includes('if (!ROLES.includes(roleKey)) return null;')
       && s.staffLayout.includes('<Stack.Screen name="student-status" />'));
   for (const role of ROLES) {
-    check(`${role} has the menu entry`, () => s.staffRoles.includes(`native: '/staff/${role}/student-status' }`));
+    // The School Admin's menu is the Principal's, retargeted (constants/staffRoles.js), so its entry
+    // is the Principal's one plus that derivation.
+    check(`${role} has the menu entry`, () =>
+      role === 'admin'
+        ? s.staffRoles.includes("retarget(STAFF_ROLE_CONFIG.principal.menu, 'principal', 'admin')")
+          && s.staffRoles.includes("native: '/staff/principal/student-status' }")
+        : s.staffRoles.includes(`native: '/staff/${role}/student-status' }`));
   }
   check('the sales and Shreyartha admin menus do not', () => !/shreyartha_admin\/student-status|sales\/student-status/.test(s.staffRoles));
   check('every staff home places it (four in Student Support, the principal\'s in School)',

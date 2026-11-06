@@ -209,6 +209,7 @@ export default function AcademicProgressScreen() {
         Card={Card}
         CardTitle={CardTitle}
         showPsychometric={false}
+        audience="parent"
         // AnalyticsBody now renders subject → chapter → topic trees of its own (Syllabus
         // Completion and My Progress). This screen filters hidden nodes for Part A above, but that
         // filtering stops at this boundary — without threading it in, those trees would show a

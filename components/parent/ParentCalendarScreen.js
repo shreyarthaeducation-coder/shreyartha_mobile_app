@@ -45,7 +45,8 @@ const bannerUri = (event) => {
   return encodeURI(path.startsWith('http') ? path : `${BASE_URL}${path}`);
 };
 
-export default function ParentCalendarScreen({ mode = 'attendance' }) {
+// `embedded` (4 Nov 2026): a tab of Attendance & Schedule, which draws the header.
+export default function ParentCalendarScreen({ mode = 'attendance', embedded = false }) {
   const styles = useStyles();
   const palette = usePalette();
   const now = new Date();
@@ -114,6 +115,7 @@ export default function ParentCalendarScreen({ mode = 'attendance' }) {
       onRetry={reload}
       refreshing={refreshing}
       onRefresh={refresh}
+      embedded={embedded}
     >
       <MonthNavigator year={period.year} month={period.month} onChange={changePeriod} />
 

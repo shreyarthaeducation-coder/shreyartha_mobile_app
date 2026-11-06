@@ -18,6 +18,10 @@ import { psychometricPrintRoute } from '../../constants/psychometricPrint';
 export default function TeacherCounsellingReportScreen({
   homeRoute = '/teacher',
   notesRoute = '/teacher/counselling',
+  // The School Admin's endpoints (6 Nov 2026) — the website's ADMIN_SUPPORT_ENDPOINTS. Omitted, the
+  // screens use the teacher's own.
+  apiBase,
+  reportsEndpoint,
 }) {
   const { tab } = useLocalSearchParams();
   if (tab === COUNSELLING_REPORT_TABS.NOTES) return <Redirect href={notesRoute} />;
@@ -26,12 +30,12 @@ export default function TeacherCounsellingReportScreen({
     {
       value: COUNSELLING_REPORT_TABS.PSYCHOMETRIC,
       label: 'Psychometric Result',
-      render: () => <StudentPsychometricScreen embedded printRoute={psychometricPrintRoute(homeRoute)} />,
+      render: () => <StudentPsychometricScreen embedded printRoute={psychometricPrintRoute(homeRoute)} apiBase={apiBase} />,
     },
     {
       value: COUNSELLING_REPORT_TABS.REPORT,
       label: 'Counsellor Report',
-      render: () => <CounsellorReportScreen homeRoute={homeRoute} embedded />,
+      render: () => <CounsellorReportScreen homeRoute={homeRoute} embedded apiBase={apiBase} reportsEndpoint={reportsEndpoint} />,
     },
   ];
 

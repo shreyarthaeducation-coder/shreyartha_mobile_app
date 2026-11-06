@@ -16,6 +16,7 @@ import { SHADOWS, SLATE, SPACING, TYPE, leading } from '../../constants/theme';
 import { usePalette } from '../../components/ui/PaletteContext';
 import WelcomeHeader from '../ui/WelcomeHeader';
 import useStaffLogout from '../../hooks/useStaffLogout';
+import useIsManager from '../../hooks/useIsManager';
 import { STAFF_PHOTO_KEY } from '../../constants/storageKeys';
 import { fetchHrProfile } from '../../services/teacher/hrService';
 import ShreyaLauncher from './ShreyaLauncher';
@@ -51,6 +52,8 @@ import { makeStyles } from '../../utils/makeStyles';
 
 export default function StaffMenuScreen({ config }) {
   const styles = useStyles();
+  // A managers-only tile (My Team) shows only to someone with direct reports, as on the website.
+  const isManager = useIsManager(!!config?.menu?.some((item) => item.managersOnly));
   const PALETTE = usePalette();
   const router = useRouter();
   const { confirmLogout } = useStaffLogout();
@@ -255,7 +258,7 @@ export default function StaffMenuScreen({ config }) {
             );
           })
         ) : (
-          <View style={styles.grid}>{config.menu.map(renderTile)}</View>
+          <View style={styles.grid}>{config.menu.filter((item) => !item.managersOnly || isManager).map(renderTile)}</View>
         )}
       </ScrollView>
 

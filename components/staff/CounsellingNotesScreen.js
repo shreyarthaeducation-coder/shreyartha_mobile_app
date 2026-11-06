@@ -93,6 +93,9 @@ export default function CounsellingNotesScreen({
   // Rendered as a tab of the teacher's Counselling Report, which draws the header. Every other
   // role omits it.
   embedded = false,
+  // The School Admin's Student Support (6 Nov 2026): every class of the school, read only — the
+  // website's CounsellingNotes with `readOnly`. Recorded sessions still open; nothing can be added.
+  readOnly = false,
 }) {
   const styles = useStyles();
   const PALETTE = usePalette();
@@ -419,7 +422,7 @@ export default function CounsellingNotesScreen({
         title={sheetDate ? formatLongDate(sheetDate) : 'Session'}
         subtitle={student?.studentName}
         onClose={() => setSheetDate(null)}
-        onSubmit={selectedType ? submit : undefined}
+        onSubmit={selectedType && !readOnly ? submit : undefined}
         submitting={saving}
         submitLabel="Save session"
         fullHeight
@@ -438,7 +441,11 @@ export default function CounsellingNotesScreen({
           </View>
         ) : null}
 
-        {!selectedType ? (
+        {readOnly ? (
+          existing.length === 0 && !existingLoading ? (
+            <Text style={styles.pickPrompt}>No session was recorded on this day.</Text>
+          ) : null
+        ) : !selectedType ? (
           <>
             <Text style={styles.pickPrompt}>What kind of session was this?</Text>
             {TYPES.map((type) => (

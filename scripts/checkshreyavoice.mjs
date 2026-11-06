@@ -300,7 +300,7 @@ const MUTATIONS = [
   },
   {
     name: 'a parent shortcut to a screen the parent app does not have',
-    src: (k, s) => (k === 'parentConfig' ? s.replace("suffix: '/counselling-report?tab=report'", "suffix: '/homework'") : s),
+    src: (k, s) => (k === 'parentConfig' ? s.replace("suffix: '/view-report?tab=counselling&sub=report'", "suffix: '/homework'") : s),
   },
   {
     name: 'the student config falling back to the teacher shortcuts',

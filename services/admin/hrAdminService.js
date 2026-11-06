@@ -23,6 +23,13 @@ import { staffApi } from '../staffApi';
 
 const ADMIN = '/api/school-admin/hr';
 
+/**
+ * The HR portal's own namespace (5 Nov 2026). Its leave calls have exactly these verbs — the website
+ * hands the same leave page `hrPortalApi` for that reason — so the leave functions below take it as
+ * their last argument. Guarded `hasAnyRole('SHREYARTHA_HR','SHREYARTHA_ADMIN')`, never SCHOOL_ADMIN.
+ */
+export const HR_PORTAL = '/api/staff/hr-portal';
+
 /* ── Leave ─────────────────────────────────────────────────────────────────────────────────── */
 
 /**
@@ -40,9 +47,9 @@ export const LEAVE_STATUS_ALL = 'ALL';
  *
  * @param {'PENDING'|'APPROVED'|'REJECTED'|'WITHDRAWN'|'ALL'} status
  */
-export function fetchLeaveRequests(status = 'PENDING', signal) {
+export function fetchLeaveRequests(status = 'PENDING', signal, base = ADMIN) {
   const value = status && String(status).trim() ? String(status).trim() : LEAVE_STATUS_ALL;
-  return staffApi.get(`${ADMIN}/leave/requests`, { params: { status: value }, signal });
+  return staffApi.get(`${base}/leave/requests`, { params: { status: value }, signal });
 }
 
 /**
@@ -52,13 +59,13 @@ export function fetchLeaveRequests(status = 'PENDING', signal) {
  * @param {'APPROVE'|'REJECT'} action
  * @param {string} remarks visible to the requester
  */
-export function decideLeave(id, action, remarks) {
-  return staffApi.post(`${ADMIN}/leave/requests/${id}/decision`, { action, remarks });
+export function decideLeave(id, action, remarks, base = ADMIN) {
+  return staffApi.post(`${base}/leave/requests/${id}/decision`, { action, remarks });
 }
 
 /** The school's leave policy — the types and their annual entitlements. Read-only on this screen. */
-export function fetchLeaveTypes(signal) {
-  return staffApi.get(`${ADMIN}/leave/types`, { signal });
+export function fetchLeaveTypes(signal, base = ADMIN) {
+  return staffApi.get(`${base}/leave/types`, { signal });
 }
 
 /**
@@ -67,16 +74,16 @@ export function fetchLeaveTypes(signal) {
  * `leaveYear` is optional; omitted, the server picks the current one. The HR year runs **April to
  * March** and unused leave lapses at the boundary, so the year is never a calendar year.
  */
-export function fetchAllBalances(leaveYear, signal) {
-  return staffApi.get(`${ADMIN}/leave/balances`, {
+export function fetchAllBalances(leaveYear, signal, base = ADMIN) {
+  return staffApi.get(`${base}/leave/balances`, {
     params: leaveYear ? { leaveYear } : undefined,
     signal,
   });
 }
 
 /** Manually credit or debit one person's balance, with a reason. */
-export function adjustBalance(schoolUserId, payload) {
-  return staffApi.post(`${ADMIN}/leave/balances/${schoolUserId}/adjust`, payload);
+export function adjustBalance(schoolUserId, payload, base = ADMIN) {
+  return staffApi.post(`${base}/leave/balances/${schoolUserId}/adjust`, payload);
 }
 
 /* ── Employees and salary ──────────────────────────────────────────────────────────────────── */

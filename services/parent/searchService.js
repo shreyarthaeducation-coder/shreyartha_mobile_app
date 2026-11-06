@@ -60,6 +60,18 @@ function destinations() {
   }));
 
   rows.push(
+    // View Report and what it holds (4 Nov 2026). Counselling Report left the sections grid for
+    // View Report's second tab, so it is listed here by name, or a parent searching for it would
+    // find nothing.
+    { module: 'Sections', name: 'View Report', route: '/parent/view-report' },
+    { module: 'View Report', name: 'Test & Analysis', route: '/parent/view-report?tab=tests' },
+    { module: 'View Report', name: 'Report Card', route: '/parent/report-card' },
+    { module: 'View Report', name: 'Counselling Report', route: '/parent/view-report?tab=counselling' },
+    { module: 'Counselling Report', name: 'Psychometric Result', route: '/parent/view-report?tab=counselling&sub=psychometric' },
+    { module: 'Counselling Report', name: 'Counsellor Notes', route: '/parent/view-report?tab=counselling&sub=notes' },
+    { module: 'Counselling Report', name: 'Counsellor Report', route: '/parent/view-report?tab=counselling&sub=report' },
+    { module: 'Attendance & Schedule', name: 'Attendance', route: '/parent/attendance-schedule?tab=attendance' },
+    { module: 'Attendance & Schedule', name: 'Schedule', route: '/parent/attendance-schedule?tab=schedule' },
     { module: 'Sections', name: 'Pay Fees', route: '/parent/fees' },
     { module: 'Sections', name: 'Payment History', route: '/parent/fees?tab=history' },
     { module: 'Your account', name: 'Change Password', route: '/parent/change-password' },

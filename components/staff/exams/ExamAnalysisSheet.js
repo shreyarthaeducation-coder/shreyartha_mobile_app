@@ -19,16 +19,23 @@ import { htmlToText } from '../../../utils/htmlToText';
 
 const PALETTE = PORTALS.school;
 
-function StatTile({ label, value, highlight }) {
+function StatTile({ label, value, highlight, palette = PALETTE }) {
   return (
-    <View style={[styles.tile, highlight && styles.tileHighlight]}>
-      <Text style={[styles.tileValue, highlight && { color: PALETTE.primaryDark }]}>{value}</Text>
+    <View style={[styles.tile, highlight && { backgroundColor: palette.tint, borderColor: palette.primary }]}>
+      <Text style={[styles.tileValue, highlight && { color: palette.primaryDark }]}>{value}</Text>
       <Text style={styles.tileLabel}>{label}</Text>
     </View>
   );
 }
 
-export default function ExamAnalysisSheet({ visible, target, onClose, showToast }) {
+/**
+ * `load` and `palette` (4 Nov 2026) let the parent's View Report show the same analysis: the parent
+ * asks its own endpoint (`/api/parent/test-analysis/exams/{id}`, which answers only about their own
+ * child and removes what the teacher kept back), and the sheet wears the parent's colours. Without
+ * them it is the teacher's sheet, as before. A parent's copy names the parts the teacher shared
+ * (`shownParts`); the sheet draws only those, the teacher's copy has every part.
+ */
+export default function ExamAnalysisSheet({ visible, target, onClose, showToast, load, palette = PALETTE }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [sharing, setSharing] = useState(false);
@@ -44,14 +51,14 @@ export default function ExamAnalysisSheet({ visible, target, onClose, showToast 
   const studentId = target?.studentId;
 
   useEffect(() => {
-    if (!visible || !examId || !studentId) return undefined;
+    if (!visible || !examId || (!studentId && !load)) return undefined;
     let alive = true;
     setLoading(true);
     setData(null);
 
     (async () => {
       try {
-        const res = await fetchExamAnalysis({ examId, studentId });
+        const res = load ? await load(target) : await fetchExamAnalysis({ examId, studentId });
         if (alive) setData(res);
       } catch (e) {
         if (alive) {
@@ -67,6 +74,8 @@ export default function ExamAnalysisSheet({ visible, target, onClose, showToast 
     return () => {
       alive = false;
     };
+    // `load` and `target` are read once per exam, like onClose; examId stands in for both.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [visible, examId, studentId, showToast]);
 
   const share = async () => {
@@ -83,6 +92,8 @@ export default function ExamAnalysisSheet({ visible, target, onClose, showToast 
 
   const marks =
     data?.studentStatus === 'PRESENT' ? (data?.studentMarks ?? '—') : (data?.studentStatus || '—');
+  // The parts a parent's copy carries; the teacher's copy has no list and shows everything.
+  const shows = (part) => !Array.isArray(data?.shownParts) || data.shownParts.includes(part);
 
   return (
     <FormSheet
@@ -94,37 +105,45 @@ export default function ExamAnalysisSheet({ visible, target, onClose, showToast 
       fullHeight
     >
       {loading ? (
-        <ActivityIndicator size="large" color={PALETTE.primary} style={styles.loader} />
+        <ActivityIndicator size="large" color={palette.primary} style={styles.loader} />
       ) : !data ? null : (
         <View ref={captureRef} collapsable={false} style={styles.capture}>
-          <View style={styles.tiles}>
-            <StatTile label="Full marks" value={data.fullMarks ?? '—'} />
-            <StatTile label={`${data.studentName || 'Student'}'s marks`} value={marks} highlight />
-            <StatTile label="Highest" value={data.highestMarks ?? '—'} />
-            <StatTile label="Lowest" value={data.lowestMarks ?? '—'} />
-            <StatTile label="Took exam" value={data.studentsTookExam ?? '—'} />
-          </View>
+          {shows('MARKS') || shows('CLASS_FIGURES') ? (
+            <View style={styles.tiles}>
+              {shows('MARKS') ? <StatTile label="Full marks" value={data.fullMarks ?? '—'} /> : null}
+              {shows('MARKS') ? (
+                <StatTile label={`${data.studentName || 'Student'}'s marks`} value={marks} highlight palette={palette} />
+              ) : null}
+              {shows('CLASS_FIGURES') ? <StatTile label="Highest" value={data.highestMarks ?? '—'} /> : null}
+              {shows('CLASS_FIGURES') ? <StatTile label="Lowest" value={data.lowestMarks ?? '—'} /> : null}
+              {shows('CLASS_FIGURES') ? <StatTile label="Took exam" value={data.studentsTookExam ?? '—'} /> : null}
+            </View>
+          ) : null}
 
-          {data.studentRemarks ? (
+          {shows('REMARKS') && data.studentRemarks ? (
             <View style={styles.remarks}>
               <Text style={styles.remarksLabel}>Teacher remarks</Text>
               <Text style={styles.remarksText}>{data.studentRemarks}</Text>
             </View>
           ) : null}
 
-          <Text style={styles.heading}>Bloom&apos;s taxonomy</Text>
-          <GroupedBars
-            rows={data.bloomsBreakdown || []}
-            emptyMessage="No Bloom's breakdown for this exam."
-          />
+          {shows('CHARTS') ? (
+            <>
+              <Text style={styles.heading}>Bloom&apos;s taxonomy</Text>
+              <GroupedBars
+                rows={data.bloomsBreakdown || []}
+                emptyMessage="No Bloom's breakdown for this exam."
+              />
 
-          <Text style={styles.heading}>Skill set</Text>
-          <GroupedBars
-            rows={data.skillBreakdown || []}
-            emptyMessage="No skill breakdown for this exam."
-          />
+              <Text style={styles.heading}>Skill set</Text>
+              <GroupedBars
+                rows={data.skillBreakdown || []}
+                emptyMessage="No skill breakdown for this exam."
+              />
+            </>
+          ) : null}
 
-          {(data.skillBreakdown || []).length > 0 ? (
+          {shows('SKILL_GAUGES') && (data.skillBreakdown || []).length > 0 ? (
             <>
               <Text style={styles.heading}>Skill gauges</Text>
               <ScrollView
@@ -139,7 +158,7 @@ export default function ExamAnalysisSheet({ visible, target, onClose, showToast 
             </>
           ) : null}
 
-          {(data.questionScores || []).length > 0 ? (
+          {shows('QUESTIONS') && (data.questionScores || []).length > 0 ? (
             <>
               <Text style={styles.heading}>Question-wise score</Text>
               {data.questionScores.map((q, i) => {
@@ -152,7 +171,7 @@ export default function ExamAnalysisSheet({ visible, target, onClose, showToast 
                   // part numbers from 1 within its parent).
                   <View key={`${i}-${q.questionOrder}`} style={styles.qCard}>
                     <View style={styles.qHead}>
-                      <Text style={styles.qIndex}>Q{q.questionOrder}</Text>
+                      <Text style={[styles.qIndex, { color: palette.primaryDark }]}>Q{q.questionOrder}</Text>
                       <Text style={styles.qScore}>
                         {outOf == null
                           ? `${q.marksObtained ?? 0}/—`
@@ -198,7 +217,6 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     alignItems: 'center',
   },
-  tileHighlight: { backgroundColor: PALETTE.tint, borderColor: PALETTE.primary },
   tileValue: { fontSize: TYPE.headline, fontWeight: '800', color: SLATE[800] },
   tileLabel: { fontSize: TYPE.micro, color: SLATE[500], fontWeight: '600', marginTop: 2, textAlign: 'center' },
 

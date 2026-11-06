@@ -178,6 +178,9 @@ export const SALES_TABS = [
 /** Every redesigned staff shell's tab list, by role. Absent = no footer, which is the default. */
 export const STAFF_TABS = {
   principal: PRINCIPAL_TABS,
+  // The School Admin's footer is the Principal's, in its own group (5 Nov 2026) — same panel, same
+  // four destinations, one of them the school-leadership Shreya the backend serves to both.
+  admin: PRINCIPAL_TABS.map((tab) => ({ ...tab, route: tab.route.replace('/staff/principal', '/staff/admin') })),
   vice_principal: VICE_PRINCIPAL_TABS,
   shreyartha_teacher: SHREYARTHA_TEACHER_TABS,
   counselor: COUNSELOR_TABS,

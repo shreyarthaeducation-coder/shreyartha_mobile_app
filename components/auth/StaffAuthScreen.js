@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, BackHandler, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, BackHandler, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import AuthScreen from './AuthScreen';
 import Banner from './Banner';
@@ -146,15 +146,9 @@ export default function StaffAuthScreen({ variant = 'school' }) {
         throw new Error('Login failed: No authentication token received.');
       }
 
-      // Mobile-only policy: the admin console is desktop-scale and not usable on a phone.
-      if (String(data.userType || '').toLowerCase() === 'admin') {
-        Alert.alert(
-          'Access Not Available',
-          'Admin access is not available on the mobile app. Please use the web portal at shreyartha.com.',
-          [{ text: 'OK' }],
-        );
-        return; // nothing stored, no attendance ping — the user stays on the login screen
-      }
+      // School Admin (userType ADMIN) used to be refused here as "not available on the mobile app".
+      // It has had its own native panel at /staff/admin since 5 Nov 2026, so it goes through the
+      // same checks as every other school role below.
 
       // THE WRONG-DOOR GUARD. The server authenticates every staff role through one endpoint, so
       // this cannot be checked before the password is — but it must be checked before anything is

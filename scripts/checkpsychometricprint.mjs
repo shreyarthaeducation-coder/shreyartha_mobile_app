@@ -44,6 +44,9 @@ const FILES = {
   studentsRoute: 'app/staff/[role]/students.js',
   students: 'components/staff/admin/StudentManagementScreen.js',
   parent: 'components/parent/AssessmentResultsScreen.js',
+  // View graphs and Download in the parent's psychometric card (2 Nov 2026), in place of the
+  // separate "Print all reports" link.
+  parentActions: 'components/parent/ParentReportActions.js',
   service: 'services/shared/psychometricReportService.js',
   pdf: 'utils/psychometricPdf.js',
 };
@@ -115,7 +118,7 @@ async function assertions(s) {
   if (!/@GetMapping\("\/api\/parent\/psychometric-reports"\)\s*\n\s*@PreAuthorize\("hasRole\('PARENT'\)"\)/.test(s.controller)) {
     bad('the parent endpoint is missing or not guarded to PARENT');
   }
-  if (!strip(s.service).includes("parentApi.get('/api/parent/psychometric-reports')")) {
+  if (!strip(s.service).includes("parentApi.get('/api/parent/psychometric-reports'")) {
     bad('the parent print does not call the parent endpoint through the parent client');
   }
   if (!strip(s.teacherRoute).includes('apiBase="/api/teacher/psychometric-reports"')) {
@@ -134,7 +137,12 @@ async function assertions(s) {
   if (!/\{printRoute \? <PsychometricPrintLink/.test(strip(s.wellness))) bad('WellnessGroupsScreen does not render the print link');
   if (!strip(s.studentsRoute).includes('printRoute={psychometricPrintApiBase(roleKey) ?')) bad('Student Management is not given the print route');
   if (!/\{printRoute \? <PsychometricPrintLink/.test(strip(s.students))) bad('StudentManagementScreen does not render the print link');
-  if (!/<PsychometricPrintLink[\s\S]*?onPress=\{printAll\}/.test(strip(s.parent))) bad('the parent tab lost its print-all button');
+  // The parent's card carries View graphs and Download (ParentReportActions): the reports fetched
+  // through the parent endpoint, and Download making the PDF from them.
+  if (!/<ParentReportActions \/>/.test(strip(s.parent))) bad('the parent psychometric card lost View graphs and Download');
+  if (!/fetchChildReportItems\(/.test(strip(s.parentActions)) || !/printPsychometricBatch\(items\)/.test(strip(s.parentActions))) {
+    bad("the parent's Download no longer makes the PDF from the child's reports");
+  }
 
   // 4. The batch document: one report per section, each after the first on a new page, one cover.
   const pdf = strip(s.pdf);
@@ -156,7 +164,8 @@ const MUTATIONS = [
   { name: 'the psychometric tab stops passing printRoute', src: (k, s) => (k === 'report' ? s.replace(' printRoute={psychometricPrintRoute(homeRoute)}', '') : s) },
   { name: 'Wellness Groups stops rendering the link', src: (k, s) => (k === 'wellness' ? s.replace('{printRoute ? <PsychometricPrintLink', '{false ? <PsychometricPrintLink') : s) },
   { name: 'the principal roster loses its route', src: (k, s) => (k === 'studentsRoute' ? s.replace('printRoute={psychometricPrintApiBase(roleKey) ?', 'printRoute={false ?') : s) },
-  { name: 'the parent button removed', src: (k, s) => (k === 'parent' ? s.replace('onPress={printAll}', 'onPress={() => {}}') : s) },
+  { name: 'the parent Download no longer making the PDF', src: (k, s) => (k === 'parentActions' ? s.replace('printPsychometricBatch(items)', 'Promise.resolve(null)') : s) },
+  { name: 'View graphs and Download dropped from the parent card', src: (k, s) => (k === 'parent' ? s.replace('<ParentReportActions />', 'null') : s) },
   { name: 'batch page breaks removed', src: (k, s) => (k === 'pdf' ? s.replace(' style="page-break-before: always; break-before: page;"', '') : s) },
   { name: 'the cover merged per report', src: (k, s) => (k === 'pdf' ? s.replace('function reportBodyHtml({ results, topicType, topicName, studentInfo }) {', 'function reportBodyHtml({ results, topicType, topicName, studentInfo }) {\n  mergeWithFramework(null);') : s) },
 ];

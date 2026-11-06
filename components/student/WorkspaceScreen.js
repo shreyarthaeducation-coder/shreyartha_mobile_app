@@ -7,7 +7,8 @@ import { usePalette } from '../ui/PaletteContext';
 import { makeStyles } from '../../utils/makeStyles';
 import { useTranslations } from '../../hooks/useTranslations';
 import StudentScaffold from './StudentScaffold';
-import { STUDENT_MENU, STUDENT_TEACHER_LINKS } from '../../constants/studentMenu';
+import { STUDENT_MENU, STUDENT_MORE_LINKS, STUDENT_TEACHER_LINKS } from '../../constants/studentMenu';
+import { isCollegeStudent } from '../../utils/studentType';
 import {
   fetchEntitlements,
   fetchSchoolInfo,
@@ -38,6 +39,7 @@ const STRINGS = {
   intro: 'Your learning resources, tools, courses and practice zone.',
   learning: 'Learning',
   fromTeacher: 'From your teacher',
+  moreForYou: 'More for you',
   upgradeTitle: 'Unlock more of the platform',
   upgradeBody: 'See what your plan includes and what you can add.',
   upgradeCta: 'View plans',
@@ -50,6 +52,7 @@ export default function WorkspaceScreen() {
   const t = useTranslations(STRINGS);
 
   const [school, setSchool] = useState(null);
+  const [isCollege, setIsCollege] = useState(false);
   const [entitlements, setEntitlements] = useState(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -63,6 +66,7 @@ export default function WorkspaceScreen() {
     ]);
 
     const me = profileRes.status === 'fulfilled' ? profileRes.value : null;
+    setIsCollege(isCollegeStudent(me));
     setEntitlements(entRes.status === 'fulfilled' ? entRes.value : null);
 
     if (me?.schoolId) {
@@ -142,6 +146,26 @@ export default function WorkspaceScreen() {
 
       <Text style={styles.group}>{t.fromTeacher}</Text>
       {STUDENT_TEACHER_LINKS.map((link) => (
+        <Pressable
+          key={link.key}
+          onPress={() => router.push(link.native)}
+          style={({ pressed }) => [styles.link, pressed && styles.pressed]}
+          accessibilityRole="button"
+          accessibilityLabel={link.label}
+        >
+          <View style={styles.linkIcon}>
+            <Ionicons name={link.icon} size={19} color={palette.primary} />
+          </View>
+          <View style={styles.linkText}>
+            <Text style={styles.linkLabel}>{link.label}</Text>
+            <Text style={styles.linkDesc}>{link.description}</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={18} color={palette.primary} />
+        </Pressable>
+      ))}
+
+      <Text style={styles.group}>{t.moreForYou}</Text>
+      {STUDENT_MORE_LINKS.filter((link) => !link.collegeOnly || isCollege).map((link) => (
         <Pressable
           key={link.key}
           onPress={() => router.push(link.native)}

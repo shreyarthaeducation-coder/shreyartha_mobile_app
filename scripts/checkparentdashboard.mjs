@@ -123,6 +123,14 @@ function assertions(svc, src) {
   // Behaviour, not shape. A full month of real statuses must produce the real percentage…
   const full = svc.reportStats(
     {
+      // Two marked tests (80 %, 60 %), one absence and one not yet marked: the average is of the
+      // two the child sat and has marks for.
+      tests: okPart({ tests: [
+        { marksObtained: 8, totalMarks: 10, status: 'PRESENT' },
+        { marksObtained: 6, totalMarks: 10, status: 'PRESENT' },
+        { marksObtained: 0, totalMarks: 10, status: 'ABSENT' },
+        { marksObtained: null, totalMarks: 10, status: null },
+      ] }),
       attendance: okPart({ '2026-08-03': 'PRESENT', '2026-08-04': 'PRESENT', '2026-08-05': 'ABSENT', '2026-08-06': null }),
       activities: okPart({ homework: [{ id: 1 }, { id: 2 }, { id: 3 }] }),
       psychometric: okPart({ completedCount: 8, totalTopics: 10 }),
@@ -131,9 +139,14 @@ function assertions(svc, src) {
   );
   const byKey = Object.fromEntries(full.map((s) => [s.key, s]));
 
-  if (byKey.overall?.soon !== true) {
-    bad('Overall Performance is not marked coming soon — no letter grading exists anywhere');
+  // Tests (4 Nov 2026) replaced the Overall tile that could only say "Coming soon": the average of
+  // the shared tests the child sat and has marks for — never counting an absence as 0 %.
+  if (byKey.overall) bad('an "Overall" figure is back — no overall grade is computed anywhere');
+  if (byKey.tests?.value !== '70%') {
+    bad(`tests = ${byKey.tests?.value}, expected 70% (80 % and 60 %, the absent and unmarked left out)`);
   }
+  if (!/2 tests/.test(byKey.tests?.note || '')) bad('the tests figure does not say how many tests it averages');
+  if (full.some((st) => st.soon)) bad('a headline figure is marked "soon" — the parent asked for no Coming soon');
   if (byKey.attendance?.value !== '67%') {
     bad(`attendance = ${byKey.attendance?.value}, expected 67% (2 present of 3 MARKED, ignoring the unmarked day)`);
   }
@@ -152,48 +165,39 @@ function assertions(svc, src) {
 
   // …and a FAILED call must be omitted, never zeroed.
   const failed = svc.reportStats(
-    { attendance: failedPart(), activities: failedPart(), psychometric: failedPart() },
+    { tests: failedPart(), attendance: failedPart(), activities: failedPart(), psychometric: failedPart() },
     {},
   );
-  if (!failed.every((s) => s.soon === true)) {
+  if (!failed.every((st) => st.value === '—' && st.empty === true && /load/i.test(st.note || ''))) {
     bad('a figure whose call FAILED is rendered as a number — "we could not read this" is not "this is zero"');
   }
+  if (failed.some((st) => st.soon)) bad('a failed figure says "Coming soon" — it should say it could not load');
 
   // A month with no register taken is not 0 % attendance.
   const unmarked = svc.reportStats({ attendance: okPart({ '2026-08-03': null }) }, {});
   const att = unmarked.find((s) => s.key === 'attendance');
-  if (att?.soon !== true) {
+  if (att?.value !== '—' || !/not marked/i.test(att?.note || '')) {
     bad(`an unmarked month reported attendance as ${att?.value} — nobody has taken a register yet`);
   }
 
-  /* ── 2. THE COMING-SOON SURFACES ARE INERT ───────────────────────────────── */
+  /* ── 2. NO "COMING SOON" ANYWHERE; EVERY QUICK ACTION OPENS SOMETHING REAL ─ */
 
   const quick = codeOnly(src.quick);
-  if (!/action\.soon/.test(quick)) bad('the quick actions have no coming-soon branch');
-  // The soon branch must render a View, never a Pressable.
-  //
-  // Anchored on the `if` block's own closing brace at eight spaces. An earlier version stopped at
-  // the first `\n{8 spaces});`, which the branch's own `return (…)` does not match — it closes at
-  // ten — so the match ran on into the Pressable return below it and reported a false positive.
-  const soonBlock = quick.match(/if \(action\.soon\) \{[\s\S]*?\n {8}\}/);
-  if (!soonBlock) bad('could not locate the coming-soon branch — check this assertion');
-  else if (/Pressable/.test(soonBlock[0])) {
-    bad('a coming-soon tile is a Pressable — a greyed tile that still navigates promises twice');
+  if (/action\.soon|ComingSoon|Coming soon/i.test(quick)) {
+    bad('the quick actions have a "Coming soon" branch again — every tile opens something real');
+  }
+  if (/<View\s+key=\{action\.key\}/.test(quick)) {
+    bad('a quick action renders as a plain View — a tile that cannot be tapped');
   }
 
   const home = codeOnly(src.home);
-  // Reports still has no parent endpoint, so it stays inert. Notifications LEFT this list when the
-  // parent inbox (/api/parent/notifications) was built — it is asserted live just below instead,
-  // never simply dropped, so neither state can drift back unnoticed.
-  for (const key of ['reports']) {
-    const entry = home.match(new RegExp(`key: '${key}',[\\s\\S]*?\\n    \\}`));
-    if (!entry) bad(`the ${key} quick action is gone`);
-    else if (!/soon: true/.test(entry[0])) {
-      bad(`the ${key} tile is not marked coming soon — no parent endpoint exists for it`);
-    }
-    else if (/route:/.test(entry[0])) {
-      bad(`the ${key} tile carries a route despite having no backing endpoint`);
-    }
+  if (/soon: true|ComingSoon/.test(home)) bad('the parent home marks something "Coming soon" again');
+  // View Report (4 Nov 2026) replaced the inert Download Reports tile: the child's tests, report
+  // card and counselling report.
+  const viewReport = home.match(/key: 'view-report',[\s\S]*?\n    \}/);
+  if (!viewReport) bad('the View Report quick action is gone');
+  else if (!/route: '\/parent\/view-report'/.test(viewReport[0])) {
+    bad('the View Report tile does not open /parent/view-report');
   }
   const notifTile = home.match(/key: 'notifications',[\s\S]*?\n    \}/);
   if (!notifTile) bad('the notifications quick action is gone');
@@ -308,16 +312,20 @@ const MUTATIONS = [
       k === 'reportService' ? s.replace('const stats = [];', 'const stats = []; const readinessIndex = 1;') : s,
   },
   {
-    name: 'a letter grade invented for Overall Performance',
-    svc: (s) =>
-      s.replace(
-        "stats.push({ key: 'overall', label: strings.statOverall || 'Overall', soon: true });",
-        "stats.push({ key: 'overall', label: 'Overall', value: 'A' });",
-      ),
+    name: 'a letter grade invented for the tests figure',
+    src: (k, s) => (k === 'reportService' ? s.replace('value: `${avg.percent}%`,', "value: 'A',") : s),
+  },
+  {
+    name: 'an absent test counted as 0 % in the average',
+    svc: (s) => s.replace("t && t.status !== 'ABSENT' && ", 't && '),
+  },
+  {
+    name: 'the Overall tile put back, marked coming soon',
+    svc: (s) => s.replace('  // 1. Tests', "  stats.push({ key: 'overall', label: 'Overall', soon: true });\n  // 1. Tests"),
   },
   {
     name: 'attendance counting every day rather than the MARKED ones',
-    svc: (s) => s.replace('summary.present / summary.marked', 'summary.present / Object.keys(attendance).length'),
+    svc: (s) => s.replace('summary.present / summary.marked', 'summary.present / Object.keys(attendance.data).length'),
   },
   {
     name: 'an unmarked month reported as 0% attendance',
@@ -337,18 +345,13 @@ const MUTATIONS = [
     svc: (s) => s.replace("note: strings.thisMonth || 'This month',", "note: '',"),
   },
   {
-    name: 'a coming-soon tile made tappable',
+    name: 'a coming-soon branch put back in the quick actions',
     src: (k, s) =>
-      k === 'quick'
-        ? s.replace('            <View\n              key={action.key}', '            <Pressable\n              key={action.key}')
-        : s,
+      k === 'quick' ? s.replace('const hue = hueOf(action.key);', 'if (action.soon) return null;\n        const hue = hueOf(action.key);') : s,
   },
   {
-    // Retargeted from Notifications, which is live now: Reports is the tile that still has nothing
-    // behind it, so it is the one a planted route must be caught on.
-    name: 'the Reports tile given a route it cannot serve',
-    src: (k, s) =>
-      k === 'home' ? s.replace("      icon: 'download-outline',", "      route: '/parent/nowhere',\n      icon: 'download-outline',") : s,
+    name: 'the View Report tile pointed at a screen that does not exist',
+    src: (k, s) => (k === 'home' ? s.replace("route: '/parent/view-report',", "route: '/parent/nowhere',") : s),
   },
   {
     name: 'the Notifications tile put back to coming soon',

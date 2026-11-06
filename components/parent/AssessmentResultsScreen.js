@@ -48,6 +48,7 @@ export default function AssessmentResultsScreen({ embedded = false }) {
         psych={data?.psychometric?.data}
         psychFailed={!!data?.psychometric?.error}
         showStatus={false}
+        statementTitle="Personal Statement"
       >
         {/* Preview and Download in the card itself (2 Nov 2026), once a test is done. */}
         {data?.psychometric?.data?.completedCount > 0 ? <ParentReportActions /> : null}

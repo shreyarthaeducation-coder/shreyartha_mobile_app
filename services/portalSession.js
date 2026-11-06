@@ -2,6 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ALL_AUTH_KEYS } from '../constants/storageKeys';
 import { resolveDashboardRoute, storeSchoolSession } from './schoolSession';
 import { startStaffAttendanceSession } from './staffAttendanceService';
+import { UNIVERSITY_STAFF_HOME } from './portalClients';
 
 /**
  * Turns a sign-in response into a stored session and a destination.
@@ -106,8 +107,80 @@ export async function applyPortalSession(portal, data) {
       return { route: '/dashboard/partner', userType: 'partner' };
     }
 
-    // INVESTOR, UNIVERSITY and ALUMNI authenticate fine — the server serves all seven — but this
-    // app has no screens for them. Saying so is better than storing a session that opens nothing.
+    // The five portals carried over from the website (5 Nov 2026). Each stores the same keys the
+    // website's auth/portalSession.js does, so the two never disagree about a session's shape.
+    case 'INVESTOR': {
+      if (!data?.token) throw new Error('Login failed. Please try again.');
+      await AsyncStorage.multiRemove(ALL_AUTH_KEYS);
+      const verified = data.verified === true;
+      await AsyncStorage.multiSet([
+        ['investorUserToken', data.token],
+        ['investorLoggedIn', 'true'],
+        ['investorUserVerified', String(verified)],
+        ['investorUserName', data.fullName || 'Investor'],
+        ['userType', 'investor'],
+      ]);
+      return { route: verified ? '/investor' : '/investor/pending-verification', userType: 'investor' };
+    }
+
+    case 'UNIVERSITY': {
+      if (!data?.token) throw new Error('Login failed. Please try again.');
+      await AsyncStorage.multiRemove(ALL_AUTH_KEYS);
+      await AsyncStorage.multiSet([
+        ['universityUserToken', data.token],
+        ['universityLoggedIn', 'true'],
+        ['universityUserApproved', String(data.approved === true)],
+        ['universityUserName', data.universityName || 'University'],
+        ['userType', 'university'],
+      ]);
+      return { route: '/university', userType: 'university' };
+    }
+
+    case 'UNIVERSITY_STAFF': {
+      if (!data?.token) throw new Error('Login failed. Please try again.');
+      const role = String(data.userType || '').toUpperCase();
+      const home = UNIVERSITY_STAFF_HOME[role];
+      if (!home) return { route: null, userType: 'universityStaff', unsupported: true };
+      await AsyncStorage.multiRemove(ALL_AUTH_KEYS);
+      const verified = data.verified === true;
+      await AsyncStorage.multiSet([
+        ['universityStaffToken', data.token],
+        ['universityStaffLoggedIn', 'true'],
+        ['universityStaffUserType', role],
+        ['universityStaffVerified', String(verified)],
+        ['universityStaffName', data.fullName || 'User'],
+        ['universityStaffEmail', data.email || ''],
+        ['universityCode', data.universityCode || ''],
+        ['userType', 'universityStaff'],
+      ]);
+      return { route: verified ? home : '/unistaff/pending-verification', userType: 'universityStaff' };
+    }
+
+    case 'INDUSTRY': {
+      if (!data?.token) throw new Error('Login failed. Please try again.');
+      await AsyncStorage.multiRemove(ALL_AUTH_KEYS);
+      await AsyncStorage.multiSet([
+        ['industryUserToken', data.token],
+        ['industryLoggedIn', 'true'],
+        ['industryUserApproved', String(data.approved === true)],
+        ['industryUserName', data.companyName || 'Industry'],
+        ['userType', 'industry'],
+      ]);
+      return { route: '/industry', userType: 'industry' };
+    }
+
+    case 'ALUMNI': {
+      if (!data?.token) throw new Error('Login failed. Please try again.');
+      await AsyncStorage.multiRemove(ALL_AUTH_KEYS);
+      await AsyncStorage.multiSet([
+        ['alumniUserToken', data.token],
+        ['alumniLoggedIn', 'true'],
+        ['alumniUserName', data.fullName || 'Alumni'],
+        ['userType', 'alumni'],
+      ]);
+      return { route: '/alumni', userType: 'alumni' };
+    }
+
     default:
       return { route: null, userType: null, unsupported: true };
   }

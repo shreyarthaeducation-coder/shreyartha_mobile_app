@@ -24,7 +24,13 @@ import { makeStyles } from '../../utils/makeStyles';
 
 const MIN_PASSWORD_LENGTH = 6;
 
-export default function ParentChangePasswordScreen() {
+// `api`, `endpoint` and `fallbackRoute` (5 Nov 2026): University Staff uses this same screen against
+// /api/university-staff/auth/change-password, which takes the same { oldPassword, newPassword }.
+export default function ParentChangePasswordScreen({
+  api = parentApi,
+  endpoint = '/api/parent/change-password',
+  fallbackRoute = '/parent',
+} = {}) {
   const styles = useStyles();
   const palette = usePalette();
   const [oldPassword, setOldPassword] = useState('');
@@ -55,7 +61,7 @@ export default function ParentChangePasswordScreen() {
 
     setSubmitting(true);
     try {
-      const res = await parentApi.post('/api/parent/change-password', {
+      const res = await api.post(endpoint, {
         oldPassword,
         newPassword,
       });
@@ -77,7 +83,7 @@ export default function ParentChangePasswordScreen() {
   };
 
   return (
-    <ScreenScaffold title="Change Password" fallbackRoute="/parent">
+    <ScreenScaffold title="Change Password" fallbackRoute={fallbackRoute}>
       <Card>
         <Banner variant="error" message={error} />
         <Banner variant="success" message={success} />

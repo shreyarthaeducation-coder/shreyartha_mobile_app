@@ -391,13 +391,15 @@ const ASSERTIONS = [
     },
   },
   {
-    name: 'the principal, vice principal and school counsellor reach Live Test Rooms; nobody else on that route',
+    name: 'the principal, school admin, vice principal and school counsellor reach Live Test Rooms; nobody else on that route',
     test: (s) =>
-      s.staffRoute.includes("const HOSTS = ['principal', 'vice_principal', 'counselor'];") &&
+      s.staffRoute.includes("const HOSTS = ['principal', 'admin', 'vice_principal', 'counselor'];") &&
       s.staffRoute.includes('if (!HOSTS.includes(roleKey)) return null;') &&
       s.staffLayout.includes('<Stack.Screen name="live-tests" />') &&
       ['principal', 'vice_principal', 'counselor'].every((role) =>
         s.staffMenu.includes(`{ key: 'liveTests', label: 'Live Test Rooms', icon: 'easel-outline', native: '/staff/${role}/live-tests' },`)) &&
+      // The School Admin's menu is the Principal's, retargeted.
+      s.staffMenu.includes("retarget(STAFF_ROLE_CONFIG.principal.menu, 'principal', 'admin')") &&
       !s.staffMenu.includes("native: '/staff/shreyartha_councellor/live-tests'"),
   },
   {
@@ -408,9 +410,9 @@ const ASSERTIONS = [
       s.staffHome.includes("itemKeys: ['liveTests', 'reports', 'gradeManagement',"),
   },
   {
-    name: 'only the principal and vice principal follow every room of the school',
+    name: 'only the principal, school admin and vice principal follow every room of the school',
     test: (s) =>
-      s.staffRoute.includes("const OVERSIGHT = ['principal', 'vice_principal'];") &&
+      s.staffRoute.includes("const OVERSIGHT = ['principal', 'admin', 'vice_principal'];") &&
       s.staffRoute.includes('oversight={OVERSIGHT.includes(roleKey)}') &&
       s.service.includes('export const fetchSchoolLiveTestRooms = (signal) => staffApi.get(`${BASE}/school-rooms`, { signal });') &&
       s.service.includes('export const fetchSchoolLiveTestRoom = (roomId, signal) => staffApi.get(`${BASE}/school-rooms/${roomId}`, { signal });'),
@@ -457,9 +459,9 @@ const MUTATIONS = [
   ['a child with a problem can still be merged', 'screen', '{r.matchedStudentId && !r.attention ? (', '{r.matchedStudentId ? ('],
   ['merging offered while the test runs', 'screen', '{ended && !readOnly ? (\n        <MergePanel roomId={roomId}', '{!readOnly ? (\n        <MergePanel roomId={roomId}'],
   ['merging offered on a followed room', 'screen', '{ended && !readOnly ? (\n        <MergePanel roomId={roomId}', '{ended ? (\n        <MergePanel roomId={roomId}'],
-  ['a Shreyartha counsellor reaches the route', 'staffRoute', "const HOSTS = ['principal', 'vice_principal', 'counselor'];", "const HOSTS = ['principal', 'vice_principal', 'counselor', 'shreyartha_councellor'];"],
+  ['a Shreyartha counsellor reaches the route', 'staffRoute', "const HOSTS = ['principal', 'admin', 'vice_principal', 'counselor'];", "const HOSTS = ['principal', 'admin', 'vice_principal', 'counselor', 'shreyartha_councellor'];"],
   ['any role reaches the route', 'staffRoute', '  if (!HOSTS.includes(roleKey)) return null; // the Shreyartha roles do not host rooms\n', ''],
-  ['the counsellor follows the whole school', 'staffRoute', "const OVERSIGHT = ['principal', 'vice_principal'];", "const OVERSIGHT = ['principal', 'vice_principal', 'counselor'];"],
+  ['the counsellor follows the whole school', 'staffRoute', "const OVERSIGHT = ['principal', 'admin', 'vice_principal'];", "const OVERSIGHT = ['principal', 'admin', 'vice_principal', 'counselor'];"],
   ['the stack entry is missing for staff', 'staffLayout', '      <Stack.Screen name="live-tests" />\n', ''],
   ['the principal has no tile', 'staffMenu', "      { key: 'liveTests', label: 'Live Test Rooms', icon: 'easel-outline', native: '/staff/principal/live-tests' },\n", ''],
   ['the counsellor home leaves it out', 'staffHome', "      itemKeys: ['liveTests'],\n", "      itemKeys: [],\n"],

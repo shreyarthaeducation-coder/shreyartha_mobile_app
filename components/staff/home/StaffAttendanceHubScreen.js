@@ -1,3 +1,4 @@
+import useIsManager from '../../../hooks/useIsManager';
 import { Pressable, Text, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -35,6 +36,7 @@ const STRINGS = {
  * so the copy is shared; a role that adds a fourth adds a line here.
  */
 const DESCRIPTIONS = {
+  myTeam: "The people who report to you: their probation and leave.",
   selfAttendance: 'Your month-by-month present and absent record.',
   leave: 'Balances, requests and applying for leave.',
   payroll: 'Published payslips and their PDFs.',
@@ -62,6 +64,10 @@ export default function StaffAttendanceHubScreen({ heroKey } = {}) {
   const roleKey = String(role || '').toLowerCase();
   const config = resolveStaffMenus(roleKey);
   const home = getStaffHome(roleKey);
+  // Asked only when this panel has a managers-only tile, and before the early return below so the
+  // hook order never changes.
+  const hasManagerTile = !!config?.menu.some((item) => item.managersOnly);
+  const isManager = useIsManager(hasManagerTile);
 
   if (!config || !home) return null;
 
@@ -69,7 +75,9 @@ export default function StaffAttendanceHubScreen({ heroKey } = {}) {
   // tapped and the page they land on cannot describe different things. Falls back to My Attendance
   // whole, which is what every caller but admin-hub.js wants.
   const hero = heroKey ? (home.heroes || []).find((h) => h.key === heroKey) : null;
-  const items = itemsFor(config.menu, hero ? hero.itemKeys || [] : home.attendanceItemKeys);
+  const items = itemsFor(config.menu, hero ? hero.itemKeys || [] : home.attendanceItemKeys).filter(
+    (item) => !item.managersOnly || isManager,
+  );
   const title = hero ? hero.title : t.title;
   const intro = hero ? hero.subtitle : t.intro;
 

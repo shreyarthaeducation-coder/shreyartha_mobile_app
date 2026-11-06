@@ -29,20 +29,24 @@ export const SCHOOL_ROLES = [
 ];
 
 /**
- * The four Shreyartha (SHREYA01) roles. Door: /auth/employee-login.
+ * The six Shreyartha (SHREYA01) roles. Door: /auth/employee-login. Same six, same labels, as the
+ * website's EMPLOYEE_ROLES (School/SchoolAuth.js).
  *
  * Field sales registers here like anyone else — with the shared Shreyartha code, and active on
  * submission since 18 Sept 2026 — even though its backend role is ROLE_SHREYARTHA_SALES and its
  * stored `userType` is the short `SALES`.
  *
- * HR is deliberately absent: it is a website-only portal today, so an HR account created here would
- * log in to nothing. Add it to this list the day the HR portal has app screens.
+ * HR and Reporting Manager joined on 5 Nov 2026, the day both got app screens (the HR portal and
+ * My Team, at /staff/hr and /staff/reporting_manager). Until then an account made here would have
+ * logged in to nothing, which is why they were held back.
  */
 export const EMPLOYEE_ROLES = [
   { value: 'SHREYARTHA_ADMIN', label: 'Shreyartha Admin' },
   { value: 'SHREYARTHA_COUNCELLOR', label: 'Shreyartha Councellor' },
   { value: 'SHREYARTHA_TEACHER', label: 'Shreyartha Teacher' },
   { value: 'SALES', label: 'Sales Employee' },
+  { value: 'HR', label: 'HR Executive' },
+  { value: 'REPORTING_MANAGER', label: 'Reporting Manager' },
 ];
 
 /**
@@ -136,7 +140,7 @@ export function variantAdmits(variantKey, userType) {
  */
 export const isShreyarthaRole = (userType) => {
   const value = String(userType || '').toUpperCase();
-  return value.startsWith('SHREYARTHA_') || value === 'SALES';
+  return value.startsWith('SHREYARTHA_') || value === 'SALES' || value === 'HR' || value === 'REPORTING_MANAGER';
 };
 
 /** The school code every Shreyartha role is pinned to. */
@@ -164,7 +168,8 @@ export const requiresSignupCode = (userType) => {
     value === 'SHREYARTHA_COUNSELLOR' ||
     value === 'SHREYARTHA_TEACHER' ||
     value === 'SALES' ||
-    value === 'HR'
+    value === 'HR' ||
+    value === 'REPORTING_MANAGER'
   );
 };
 
@@ -177,11 +182,12 @@ export const requiresSignupCode = (userType) => {
  * drifted (login-select advertised Sales under School Staff; the modal did not), and the whole
  * point of this change is that the doors are stated once.
  *
- * ── WHY MOBILE'S "GET STARTED" GROUP IS FOUR AND THE WEB'S IS SIX ───────────
- * The web's GENERAL_LOGINS also carries Alumni and University. Neither has a mobile screen: there
- * is no app/auth/alumni-login or university-login, and no native panel behind either. Investor and
- * the platform Admin console are likewise web-only. Listing them here would produce a card that
- * navigates nowhere, so they are absent rather than broken.
+ * ── "GET STARTED" IS THE WEBSITE'S EIGHT, PLUS INVESTOR ──────────────────────
+ * Until 6 Nov 2026 this was four: Alumni, University, University Staff and Industry had no app
+ * screens, so a card would have navigated nowhere. They all have native panels and sign-up screens
+ * now, in the website's GENERAL_LOGINS order. Investor is here too — the website keeps it in the
+ * footer, which the app does not have, and an investor must still be able to register. Only the
+ * platform Admin console stays web-only.
  *
  * `color`/`iconColor` are only read by the full-screen picker; the compact modal uses `icon` and
  * `label` alone.
@@ -205,7 +211,7 @@ export const LOGIN_GROUPS = [
         icon: '🏫',
         label: 'School Staff',
         // No longer "& Sales": sales moved to the employee door with the other Shreyartha roles.
-        sublabel: 'Teacher, Counselor, Principal & Vice Principal',
+        sublabel: 'Teacher, Counselor, Principal, Vice Principal & School Admin',
         route: '/auth/school-login',
         color: '#E8F5E9',
         iconColor: '#2E7D32',
@@ -220,6 +226,33 @@ export const LOGIN_GROUPS = [
         iconColor: '#E65100',
       },
       {
+        key: 'alumni',
+        icon: '🧑‍🎓',
+        label: 'Alumni',
+        sublabel: 'Stay connected with your school',
+        route: '/auth/alumni-login',
+        color: '#FEF3C7',
+        iconColor: '#B45309',
+      },
+      {
+        key: 'university',
+        icon: '🏛️',
+        label: 'University',
+        sublabel: "Your institution's own account",
+        route: '/auth/university-login',
+        color: '#DCFCE7',
+        iconColor: '#047857',
+      },
+      {
+        key: 'universityStaff',
+        icon: '🧑‍🏫',
+        label: 'University Staff',
+        sublabel: 'Vice Chancellor, Dean, Professor & Placement Head',
+        route: '/auth/university-staff-login',
+        color: '#E0F2FE',
+        iconColor: '#0369A1',
+      },
+      {
         key: 'partner',
         icon: '🤝',
         label: 'Partner',
@@ -227,6 +260,24 @@ export const LOGIN_GROUPS = [
         route: '/auth/partner-login',
         color: '#FCE4EC',
         iconColor: '#C2185B',
+      },
+      {
+        key: 'industry',
+        icon: '🏭',
+        label: 'Industry',
+        sublabel: 'Hire and train students',
+        route: '/auth/industry-login',
+        color: '#CCFBF1',
+        iconColor: '#0F766E',
+      },
+      {
+        key: 'investor',
+        icon: '📈',
+        label: 'Investor',
+        sublabel: 'Investor relations',
+        route: '/auth/investor-login',
+        color: '#ECFDF5',
+        iconColor: '#047857',
       },
     ],
   },
@@ -238,7 +289,7 @@ export const LOGIN_GROUPS = [
         key: 'employee',
         icon: '🏢',
         label: 'Employee',
-        sublabel: 'Shreyartha Admin, Councellor, Teacher & Sales',
+        sublabel: 'Shreyartha Admin, Councellor, Teacher, Sales, HR & Reporting Manager',
         route: '/auth/employee-login',
         color: '#EDE9FE',
         iconColor: '#4338CA',

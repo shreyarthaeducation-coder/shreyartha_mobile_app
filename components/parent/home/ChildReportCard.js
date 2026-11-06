@@ -1,10 +1,10 @@
 import { Image, Pressable, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { BAND, SLATE, SPACING, TOUCH, TYPE } from '../../../constants/theme';
+import { SLATE, SPACING, TOUCH, TYPE } from '../../../constants/theme';
 import { usePalette } from '../../ui/PaletteContext';
 import { makeStyles } from '../../../utils/makeStyles';
 import { initialsOf } from '../../staff/helpers';
-import ComingSoon from '../../shared/ComingSoon';
+import { hueOf } from '../../../constants/parentColours';
 
 /**
  * "My Child's Report" — the centre of the parent dashboard.
@@ -35,6 +35,10 @@ import ComingSoon from '../../shared/ComingSoon';
  * ── THE TERM CHIP DOES NOT FILTER ───────────────────────────────────────────
  * No parent endpoint accepts a term and `ExamType` has no TERM value, so the chip shows the real
  * current academic year and is inert. It is a `View`, not a `Pressable`.
+ *
+ * ── NOTHING SAYS "COMING SOON" (4 Nov 2026) ─────────────────────────────────
+ * Every stat is a real figure or a dash with its reason (services/parent/reportCardService). Each
+ * stat tile and row icon wears its area's hue (constants/parentColours), as it does elsewhere.
  */
 
 export default function ChildReportCard({
@@ -55,10 +59,11 @@ export default function ChildReportCard({
       <View style={styles.head}>
         <Text style={styles.title}>{strings.reportTitle || "My Child's Report"}</Text>
         {/* Inert: there is nothing to filter by. Real value, no dropdown affordance. */}
-        <View style={styles.term}>
-          <Text style={styles.termText}>{academicYear}</Text>
-          <ComingSoon label="soon" style={styles.termSoon} />
-        </View>
+        {academicYear ? (
+          <View style={styles.term}>
+            <Text style={styles.termText}>{academicYear}</Text>
+          </View>
+        ) : null}
       </View>
 
       <View style={styles.body}>
@@ -71,25 +76,20 @@ export default function ChildReportCard({
         </View>
 
         <View style={styles.stats}>
-          {stats.map((stat) => (
-            <View key={stat.key} style={[styles.stat, stat.soon && styles.statSoon]}>
-              <Text style={styles.statLabel} numberOfLines={1}>
-                {stat.label}
-              </Text>
-              {stat.soon ? (
-                <ComingSoon style={styles.statBadge} />
-              ) : (
-                <>
-                  <Text style={[styles.statValue, stat.tone && { color: stat.tone }]}>
-                    {stat.value}
-                  </Text>
-                  <Text style={styles.statNote} numberOfLines={1}>
-                    {stat.note}
-                  </Text>
-                </>
-              )}
-            </View>
-          ))}
+          {stats.map((stat) => {
+            const hue = hueOf(stat.key);
+            return (
+              <View key={stat.key} style={[styles.stat, { backgroundColor: hue.bg, borderColor: hue.border }]}>
+                <Text style={[styles.statLabel, { color: hue.fg }]} numberOfLines={1}>
+                  {stat.label}
+                </Text>
+                <Text style={[styles.statValue, { color: stat.empty ? SLATE[400] : hue.fg }]}>{stat.value}</Text>
+                <Text style={styles.statNote} numberOfLines={2}>
+                  {stat.note}
+                </Text>
+              </View>
+            );
+          })}
         </View>
       </View>
 
@@ -101,8 +101,8 @@ export default function ChildReportCard({
           accessibilityRole="button"
           accessibilityLabel={`${row.label}. ${row.description}`}
         >
-          <View style={styles.rowIcon}>
-            <Ionicons name={row.icon} size={19} color={palette.primary} />
+          <View style={[styles.rowIcon, { backgroundColor: hueOf(row.key).bg }]}>
+            <Ionicons name={row.icon} size={19} color={hueOf(row.key).fg} />
           </View>
           <View style={styles.rowText}>
             <Text style={styles.rowLabel}>{row.label}</Text>
@@ -157,12 +157,9 @@ const useStyles = makeStyles((p) => ({
     paddingHorizontal: 10,
     paddingVertical: 5,
     borderRadius: 999,
-    backgroundColor: SLATE[50],
-    borderWidth: 1,
-    borderColor: SLATE[200],
+    backgroundColor: p.tint,
   },
-  termText: { fontSize: TYPE.caption, fontWeight: '700', color: SLATE[600] },
-  termSoon: { paddingHorizontal: 6, paddingVertical: 1 },
+  termText: { fontSize: TYPE.caption, fontWeight: '700', color: p.primaryDark },
 
   body: { flexDirection: 'row', alignItems: 'center', gap: SPACING.md, marginBottom: SPACING.md },
   avatar: {
@@ -186,15 +183,11 @@ const useStyles = makeStyles((p) => ({
     paddingVertical: 8,
     paddingHorizontal: 10,
     borderRadius: 12,
-    backgroundColor: SLATE[50],
     borderWidth: 1,
-    borderColor: SLATE[200],
   },
-  statSoon: { opacity: 0.7 },
-  statLabel: { fontSize: TYPE.micro, fontWeight: '700', color: SLATE[500], textTransform: 'uppercase' },
-  statValue: { fontSize: TYPE.headline, fontWeight: '800', color: BAND.good, marginTop: 1 },
-  statNote: { fontSize: TYPE.micro, color: SLATE[500] },
-  statBadge: { marginTop: 4 },
+  statLabel: { fontSize: TYPE.micro, fontWeight: '800', textTransform: 'uppercase' },
+  statValue: { fontSize: TYPE.headline, fontWeight: '800', marginTop: 1 },
+  statNote: { fontSize: TYPE.micro, color: SLATE[600] },
 
   row: {
     flexDirection: 'row',
