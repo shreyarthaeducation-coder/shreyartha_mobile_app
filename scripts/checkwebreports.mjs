@@ -47,6 +47,9 @@ function sources() {
     webSegments: read('frontendmain/src/components/SignupPicker/signupSegments.js'),
     webDropdown: read('frontendmain/src/components/LoginDropdown/LoginDropdown.js'),
     speaking: read('backendmain/src/main/java/com/shreyartha/backend/shreyaenglish/service/ShreyaSpeakingService.java'),
+    insights: read('backendmain/src/main/java/com/shreyartha/backend/studentstatus/service/StudentInsightsService.java'),
+    statusQueries: read('backendmain/src/main/java/com/shreyartha/backend/studentstatus/service/StudentStatusQueries.java'),
+    webInsights: read('frontendmain/src/School/shared/StudentStatus/StudentInsights.js'),
   };
 }
 
@@ -163,6 +166,26 @@ function audit(s) {
   const studentTabs = (/export const STUDENT_TABS = \[([\s\S]*?)\];/.exec(tabBar)?.[1] || '');
   const order = [...studentTabs.matchAll(/key: '(\w+)'/g)].map((m) => m[1]).join(',');
   if (order !== 'home,support,languagePro,profile') bad(`the student footer reads ${order}, not Home, Support, Language Pro, Profile`);
+
+  // Student Status → View insights (7 Nov 2026): the areas in the user's order; one chart per exam,
+  // its subjects along the bottom; one average per exam below, not each paper again.
+  const ORDER = 'profile,wellness,psychometric,academiciq,competitive,skills,language,coding,career,exams';
+  const orderList = /static final List<String> ORDER = List\.of\(([\s\S]*?)\);/.exec(s.insights)?.[1] || '';
+  const insightsOrder = [...orderList.matchAll(/"(\w+)"/g)].map((m) => m[1]).join(',');
+  if (insightsOrder !== ORDER) bad(`View insights lists its areas as ${insightsOrder || 'nothing'}, not ${ORDER}`);
+  if (!/ORDER BY p\.priority, p\.id/.test(s.statusQueries)) bad('careers are not read first choice first (Subject & Career top 3)');
+  if (!/\.limit\(TOP_CAREERS\)/.test(s.insights)) bad('Subject & Career is not cut to the top three');
+  if (!/getSkillsEdgeProgress\(\s*student\.getId\(\), chosen, profile\.getSelectedTopics\(\)\)/.test(s.insights)) {
+    bad('View insights Skills Edge is not narrowed to the chosen skills and picked topics');
+  }
+  if (!/examGroups\.map\(\(g\) => \(\s*<ExamChart /.test(s.webInsights)) bad('the website insights do not draw one chart per exam');
+  if (/sectionAverage|e\.marks/.test(s.webInsights)) bad('the website insights list each paper again under the charts');
+  if (!/const sections = sectionsOf\(data\);/.test(s.webInsights) || !/sections\.map\(\(s\) => \(\s*<Section /.test(s.webInsights)) bad('the website insights do not follow the server\'s section order');
+  const sheet = APP_FILE(s, 'components/staff/StudentInsightsSheet.js');
+  if (!/sectionsOf\(data\)\.map/.test(sheet) || !/exams\.map\(\(g\) => \(\s*<ExamChart /.test(sheet)) {
+    bad("the app's insights fallback is not the website's order and one chart per exam");
+  }
+  if (/GroupedBars/.test(sheet)) bad("the app's insights fallback still draws every paper in one chart");
   return problems;
 }
 
@@ -245,6 +268,21 @@ const MUTATIONS = [
   ['the Language Pro tab removed', (s) => {
     const f = 'shreyartha_mobile_app/components/shared/home/PortalTabBar.js';
     s.app[f] = s.app[f].replace("key: 'languagePro'", "key: 'lp'");
+  }],
+  ['View insights back in the table order', (s) => { s.insights = s.insights.replace('"profile", "wellness", "psychometric"', '"psychometric", "profile", "wellness"'); }],
+  ['careers read by id again', (s) => { s.statusQueries = s.statusQueries.replace('ORDER BY p.priority, p.id', 'ORDER BY p.id'); }],
+  ['every career shown', (s) => { s.insights = s.insights.replace('.limit(TOP_CAREERS)', ''); }],
+  ['every skill shown in insights', (s) => { s.insights = s.insights.replace('student.getId(), chosen, profile.getSelectedTopics())', 'student.getId())'); }],
+  ['one chart of every paper again on the website', (s) => { s.webInsights = s.webInsights.replace('<ExamChart key=', '<OneChart key='); }],
+  ['each paper listed again on the website', (s) => { s.webInsights = `${s.webInsights}\nconst x = e.marks;`; }],
+  ['the website ignores the section order', (s) => { s.webInsights = s.webInsights.replace('const sections = sectionsOf(data);', 'const sections = data?.areas || [];'); }],
+  ['the app fallback back to the table areas', (s) => {
+    const f = 'shreyartha_mobile_app/components/staff/StudentInsightsSheet.js';
+    s.app[f] = s.app[f].replace('sectionsOf(data).map', '(data.areas || []).map');
+  }],
+  ['the app fallback back to one chart', (s) => {
+    const f = 'shreyartha_mobile_app/components/staff/StudentInsightsSheet.js';
+    s.app[f] = `${s.app[f]}\n<GroupedBars rows={rows} />`;
   }],
 ];
 

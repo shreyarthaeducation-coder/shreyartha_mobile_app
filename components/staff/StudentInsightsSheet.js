@@ -2,18 +2,20 @@ import { useEffect, useState } from 'react';
 import { ActivityIndicator, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { FEEDBACK, SLATE, SPACING, TYPE, leading } from '../../constants/theme';
-import { GroupedBars, ProgressBar, SegmentedDonut } from '../ui';
+import { LineChart, ProgressBar, SegmentedDonut } from '../ui';
 import WebReport from '../shared/WebReport';
 import { fetchStudentInsights } from '../../services/staff/studentStatusService';
+import { indexChartData, riskMeta } from '../../services/counsellor/surveyService';
 import { STATES } from '../../utils/studentStatus';
 
 /**
  * "View insights" — one student of a Student Status section, as charts, on frosted glass
  * (14 Oct 2026). The website's StudentInsights pop-up, for the app.
  *
- * Shows where the student has got to in each area, their school exam marks beside the section's
- * average, syllabus covered and their own reflections subject by subject, and how they rated their
- * understanding. The server only answers for a section this member of staff may open and a student
+ * Shows (7 Nov 2026) each area in the report's order, each opening into its details; their school
+ * exams, one chart per exam with its subjects side by side, and each exam's average; syllabus
+ * covered and their own reflections subject by subject; and how they rated their understanding.
+ * This native drawing is the fallback — the website's own page (WebReport below) is what shows. The server only answers for a section this member of staff may open and a student
  * on its roster (StudentInsightsService), so nothing here decides who may see what.
  *
  * ── THE BLUR IS OPTIONAL ─────────────────────────────────────────────────────
@@ -44,15 +46,126 @@ const AREA_EDGE = { DONE: '#16a34a', PARTIAL: '#f59e0b', NONE: '#ef4444', LOCKED
 /** "7" → "Class 7"; a name that already says so ("Class 6") is left as it is. */
 export const classLabel = (name) => (/^class\b/i.test(String(name).trim()) ? String(name).trim() : `Class ${name}`);
 
-/** The exams worth a bar: those the student or anyone in the section has a mark for. */
-export function examRows(exams = []) {
-  return exams
-    .filter((e) => e.percent != null || e.sectionAverage != null)
-    .map((e) => ({
-      tag: e.percent == null ? `${e.name} (${e.text || 'no mark'})` : `${e.name}${e.marks ? ` · ${e.marks}` : ''}`,
-      percentage: e.percent ?? 0,
-      classAveragePercentage: e.sectionAverage,
-    }));
+/**
+ * The areas in the report's order (7 Nov 2026): Profile completeness, Wellness Groups,
+ * Psychometric, Academic IQ, Competitive Exam, Skills Edge, Language Pro, Coding Pro, Subject &
+ * Career, School exams — the server's `sections`. A server from before then sends only `areas`, in
+ * the table's order and without details.
+ */
+export function sectionsOf(data) {
+  if (Array.isArray(data?.sections)) return data.sections;
+  return (data?.areas || []).map((a) => ({ ...a, details: null }));
+}
+
+/** The exams worth a chart: one per exam, with its subjects (7 Nov 2026). */
+export function examGroupsOf(data) {
+  return (data?.examGroups || []).filter((g) => (g.subjects || []).length > 0);
+}
+
+/** "38 / 50", "Absent", or "Not entered" — what one subject's bar says. */
+export function paperText(s) {
+  if (s.absent) return 'Absent';
+  if (s.marks == null) return 'Not entered';
+  return `${s.marks} / ${s.maxMarks}`;
+}
+
+const hasDetails = (d) =>
+  !!d && ((d.items || []).length > 0 || (d.facts || []).length > 0 || (d.groups || []).length > 0 || !!d.wellness);
+
+function DetailItems({ items }) {
+  if (!items?.length) return null;
+  return (
+    <View style={styles.items}>
+      {items.map((it, i) => (
+        <View key={`${it.label}-${i}`} style={[styles.item, { borderLeftColor: AREA_EDGE[it.state] || SLATE[300] }]}>
+          <Text style={styles.areaLabel}>{it.label}</Text>
+          <Text style={styles.itemText}>{it.text}</Text>
+          {it.sub ? <Text style={styles.areaSub}>{it.sub}</Text> : null}
+          {it.remark ? <Text style={styles.remark}>{it.remark}</Text> : null}
+        </View>
+      ))}
+    </View>
+  );
+}
+
+function Details({ details }) {
+  const wellness = details.wellness;
+  const chart = wellness ? indexChartData(wellness.student, wellness.categories || []) : [];
+  return (
+    <View style={styles.details}>
+      {(details.facts || []).map((f) => (
+        <View key={f.label} style={styles.fact}>
+          <Text style={styles.factLabel}>{f.label}</Text>
+          <Text style={styles.factValue}>{f.value}</Text>
+        </View>
+      ))}
+      {chart.length > 0 ? <LineChart data={chart} height={170} pointColor={(p) => riskMeta(p.level).color} /> : null}
+      <DetailItems items={details.items} />
+      {(details.groups || []).map((g) => (
+        <View key={g.title} style={styles.group}>
+          <Text style={styles.groupTitle}>{g.title}</Text>
+          {(g.items || []).length ? <DetailItems items={g.items} /> : <Text style={styles.empty}>Nothing here yet.</Text>}
+        </View>
+      ))}
+    </View>
+  );
+}
+
+/** One area — what it says, opening into its details. */
+function Section({ section }) {
+  const [open, setOpen] = useState(false);
+  const can = hasDetails(section.details);
+  const label = `${section.label}: ${section.text}${section.sub ? `, ${section.sub}` : ''}, ${STATES[section.state] || ''}`;
+  const head = (
+    <>
+      <View style={styles.sectionHeadText}>
+        <Text style={styles.areaLabel}>{section.label}</Text>
+        <Text style={styles.areaText}>{section.text}</Text>
+        {section.sub ? <Text style={styles.areaSub}>{section.sub}</Text> : null}
+      </View>
+      {can ? <Ionicons name={open ? 'chevron-up' : 'chevron-down'} size={18} color={SLATE[500]} /> : null}
+    </>
+  );
+  return (
+    <View style={[styles.section, { borderLeftColor: AREA_EDGE[section.state] || SLATE[300] }]}>
+      {can ? (
+        <Pressable style={styles.sectionHead} onPress={() => setOpen((v) => !v)} accessibilityRole="button"
+          accessibilityState={{ expanded: open }} accessibilityLabel={label}>
+          {head}
+        </Pressable>
+      ) : (
+        <View style={styles.sectionHead} accessibilityLabel={label}>{head}</View>
+      )}
+      {can && open ? <Details details={section.details} /> : null}
+    </View>
+  );
+}
+
+const COLUMN_HEIGHT = 120;
+
+/** One exam: its subjects side by side, each column the student's marks out of that paper's. */
+function ExamChart({ exam }) {
+  const subjects = exam.subjects || [];
+  const top = Math.max(1, ...subjects.map((s) => Number(s.maxMarks) || 0));
+  return (
+    <View style={styles.exam} accessibilityLabel={`${exam.name}: ${subjects.map((s) => `${s.subject} ${paperText(s)}`).join(', ')}`}>
+      <Text style={styles.groupTitle}>{exam.name}</Text>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.columns}>
+        {subjects.map((s, i) => {
+          const h = s.absent || s.marks == null ? 0 : Math.max(2, Math.round((Number(s.marks) / top) * COLUMN_HEIGHT));
+          return (
+            <View key={`${s.subject}-${i}`} style={styles.column}>
+              <Text style={styles.columnValue}>{paperText(s)}</Text>
+              <View style={styles.columnTrack}>
+                <View style={[styles.columnFill, { height: h }]} />
+              </View>
+              <Text style={styles.columnLabel} numberOfLines={2}>{s.subject}</Text>
+            </View>
+          );
+        })}
+      </ScrollView>
+    </View>
+  );
 }
 
 /** Frosted where the build has expo-blur; a dimmed wash where it has not. Outside the sheet, so it
@@ -109,7 +222,7 @@ export default function StudentInsightsSheet({ sectionId, student, onClose }) {
 
   if (!student) return null;
 
-  const rows = examRows(data?.exams);
+  const exams = examGroupsOf(data);
   const levels = LEVELS.map((l) => ({ ...l, label: l.key, value: Number(data?.understanding?.levels?.[l.key] || 0) }));
   const rated = levels.reduce((sum, l) => sum + l.value, 0);
   const className = data?.student?.className;
@@ -150,22 +263,30 @@ export default function StudentInsightsSheet({ sectionId, student, onClose }) {
                 payload={{ sectionId, student, data }}
                 fallback={
                   <>
-              <Card title="Across the platform" note="Where they have got to in each area, as in the Student Status table.">
-                <View style={styles.areas}>
-                  {(data.areas || []).map((a) => (
-                    <View key={a.key} style={[styles.area, { borderLeftColor: AREA_EDGE[a.state] || SLATE[300] }]}
-                      accessibilityLabel={`${a.label}: ${a.text}${a.sub ? `, ${a.sub}` : ''}, ${STATES[a.state] || ''}`}>
-                      <Text style={styles.areaLabel}>{a.label}</Text>
-                      <Text style={styles.areaText}>{a.text}</Text>
-                      {a.sub ? <Text style={styles.areaSub}>{a.sub}</Text> : null}
-                    </View>
+              <Card title="Across the platform" note="Where they have got to in each area. Tap one to see its details.">
+                <View style={styles.sections}>
+                  {sectionsOf(data).map((s) => (
+                    <Section key={s.key} section={s} />
                   ))}
                 </View>
               </Card>
 
-              <Card title="School exams" note="Their percentage beside the section's average for each exam this year.">
-                <GroupedBars rows={rows} studentLabel={student.name} averageLabel="Section average"
-                  emptyMessage="No exam marks yet this year." />
+              <Card title="School exams" note="Each exam this year, subject by subject.">
+                {exams.length === 0 ? (
+                  <Text style={styles.empty}>No exam marks yet this year.</Text>
+                ) : (
+                  <>
+                    {exams.map((g) => (
+                      <ExamChart key={g.code || g.name} exam={g} />
+                    ))}
+                    {exams.map((g) => (
+                      <Text key={`avg-${g.code || g.name}`} style={styles.average}>
+                        • <Text style={styles.averageName}>{g.name}</Text>: average {g.average}%
+                        {g.marked ? ` across ${g.marked} subject${g.marked === 1 ? '' : 's'}` : ''}
+                      </Text>
+                    ))}
+                  </>
+                )}
               </Card>
 
               <Card title="Syllabus covered"
@@ -240,8 +361,31 @@ const styles = StyleSheet.create({
   empty: { fontSize: TYPE.label, color: SLATE[500], paddingVertical: SPACING.sm },
   error: { fontSize: TYPE.label, color: FEEDBACK.errorText, backgroundColor: FEEDBACK.errorBg, borderRadius: 10, padding: SPACING.sm },
   loading: { alignItems: 'center', gap: SPACING.sm, paddingVertical: SPACING.lg },
-  areas: { flexDirection: 'row', flexWrap: 'wrap', gap: SPACING.sm },
-  area: { width: '47%', flexGrow: 1, borderRadius: 10, padding: SPACING.sm, borderLeftWidth: 4, backgroundColor: 'rgba(248,250,252,0.95)' },
+  sections: { gap: SPACING.sm },
+  section: { borderRadius: 10, padding: SPACING.sm, borderLeftWidth: 4, backgroundColor: 'rgba(248,250,252,0.95)' },
+  sectionHead: { flexDirection: 'row', alignItems: 'center', gap: SPACING.sm },
+  sectionHeadText: { flex: 1 },
+  details: { marginTop: SPACING.sm, paddingTop: SPACING.sm, borderTopWidth: 1, borderTopColor: SLATE[200], gap: SPACING.sm },
+  fact: { flexDirection: 'row', justifyContent: 'space-between', gap: SPACING.sm },
+  factLabel: { fontSize: TYPE.caption, color: SLATE[500] },
+  factValue: { flexShrink: 1, fontSize: TYPE.label, fontWeight: '600', color: SLATE[800], textAlign: 'right' },
+  items: { gap: 6 },
+  item: { backgroundColor: '#fff', borderRadius: 8, padding: SPACING.sm, borderLeftWidth: 3 },
+  itemText: { fontSize: TYPE.label, fontWeight: '700', color: SLATE[900] },
+  remark: { fontSize: TYPE.caption, fontStyle: 'italic', color: SLATE[700] },
+  group: { gap: 6 },
+  groupTitle: { fontSize: TYPE.label, fontWeight: '700', color: SLATE[800] },
+  exam: { gap: 6, marginBottom: SPACING.sm, padding: SPACING.sm, borderRadius: 10, backgroundColor: 'rgba(248,250,252,0.95)' },
+  columns: { flexDirection: 'row', alignItems: 'flex-end', gap: SPACING.sm, paddingTop: 4 },
+  column: { width: 64, alignItems: 'center', gap: 4 },
+  columnValue: { fontSize: TYPE.caption, fontWeight: '700', color: SLATE[700], textAlign: 'center' },
+  // The bar stands on the track's floor (absolute, not flex-end: this sheet is centred, and the
+  // bottom-inset checker reads flex-end as a sheet pinned to the bottom of the screen).
+  columnTrack: { width: 28, height: COLUMN_HEIGHT, backgroundColor: SLATE[100], borderRadius: 4, overflow: 'hidden' },
+  columnFill: { position: 'absolute', left: 0, right: 0, bottom: 0, backgroundColor: '#4f46e5', borderRadius: 4 },
+  columnLabel: { fontSize: TYPE.caption, color: SLATE[600], textAlign: 'center' },
+  average: { fontSize: TYPE.label, lineHeight: leading(TYPE.label), color: SLATE[700], marginTop: 2 },
+  averageName: { fontWeight: '700', color: SLATE[900] },
   areaLabel: { fontSize: TYPE.caption, color: SLATE[600] },
   areaText: { fontSize: TYPE.body, fontWeight: '700', color: SLATE[900] },
   areaSub: { fontSize: TYPE.caption, color: SLATE[500] },
