@@ -239,6 +239,19 @@ export function fetchMyAdaptiveAttempts(signal) {
     .then((r) => (Array.isArray(r) ? r : []));
 }
 
+/** "Where I stand" (7 Nov 2026): the subjects the student has finished an adaptive assessment in. */
+export function fetchMyStandingSubjects(signal) {
+  return studentApi.get('/api/student/universal-adaptive/standing/subjects', { signal });
+}
+
+/** "Where I stand" (7 Nov 2026): the student's standing in a subject (one topic when given). */
+export function fetchMyStanding(subjectId, topicId, signal) {
+  return studentApi.get(
+    `/api/student/universal-adaptive/standing?subjectId=${subjectId}${topicId ? `&topicId=${topicId}` : ''}`,
+    { signal },
+  );
+}
+
 /** The finished analysis for an attempt, if the summary needs re-reading after the fact. */
 export function fetchUniversalReport(attemptId, signal) {
   return studentApi.get(`/api/student/universal-adaptive/attempt/${attemptId}/report`, { signal });

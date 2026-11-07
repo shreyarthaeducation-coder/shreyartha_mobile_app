@@ -1,14 +1,20 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import { FEEDBACK, SLATE, SPACING, TYPE } from '../../../constants/theme';
-import { FormSheet, Select, useToast } from '../../ui';
+import { FormSheet, SegmentedTabs, Select, useToast } from '../../ui';
+import AdaptiveStandingSection from '../../shared/AdaptiveStandingSection';
 import { LineChart } from '../../ui/charts';
 import { usePalette } from '../../ui/PaletteContext';
 import StudentScaffold from '../StudentScaffold';
 import { StudentCard, StudentCardTitle, StudentNote } from '../StudentCard';
 import AdaptiveReportBody from '../../shared/AdaptiveReportBody';
 import WebReport from '../../shared/WebReport';
-import { fetchMyAdaptiveAttempts, fetchUniversalReport } from '../../../services/student/academicIqService';
+import {
+  fetchMyAdaptiveAttempts,
+  fetchMyStanding,
+  fetchMyStandingSubjects,
+  fetchUniversalReport,
+} from '../../../services/student/academicIqService';
 
 /**
  * My Adaptive Performance — the website's page of the same name (22 Oct 2026): every adaptive test
@@ -54,6 +60,7 @@ export default function MyAdaptivePerformanceScreen() {
   const [subject, setSubject] = useState('');
   const [topic, setTopic] = useState('');
   const [open, setOpen] = useState(null); // { attempt, report?, error? }
+  const [view, setView] = useState('tests'); // tests | stand
 
   const load = useCallback(() => {
     setError('');
@@ -101,7 +108,19 @@ export default function MyAdaptivePerformanceScreen() {
       onRetry={load}
       toast={toast}
     >
-      {all.length === 0 ? (
+      {/* 7 Nov 2026: where the student stands in their class, and against the India mark. */}
+      <SegmentedTabs
+        options={[
+          { value: 'tests', label: 'My tests' },
+          { value: 'stand', label: 'Where I stand' },
+        ]}
+        value={view}
+        onChange={setView}
+        style={styles.viewTabs}
+      />
+      {view === 'stand' ? (
+        <AdaptiveStandingSection loadSubjects={fetchMyStandingSubjects} loadStanding={fetchMyStanding} viewer="student" portal="student" />
+      ) : all.length === 0 ? (
         <StudentCard>
           <StudentNote>
             No adaptive tests yet. Take one from Practice Zone or a topic in School Resources, and it appears here.
@@ -215,6 +234,7 @@ export default function MyAdaptivePerformanceScreen() {
 }
 
 const styles = StyleSheet.create({
+  viewTabs: { marginBottom: SPACING.sm },
   filters: { flexDirection: 'row', flexWrap: 'wrap', gap: SPACING.sm, marginBottom: SPACING.sm },
   tiles: { flexDirection: 'row', flexWrap: 'wrap', gap: SPACING.sm, marginBottom: SPACING.sm },
   tile: {

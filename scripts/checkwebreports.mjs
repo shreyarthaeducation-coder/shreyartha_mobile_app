@@ -50,6 +50,7 @@ function sources() {
     insights: read('backendmain/src/main/java/com/shreyartha/backend/studentstatus/service/StudentInsightsService.java'),
     statusQueries: read('backendmain/src/main/java/com/shreyartha/backend/studentstatus/service/StudentStatusQueries.java'),
     webInsights: read('frontendmain/src/School/shared/StudentStatus/StudentInsights.js'),
+    standing: read('backendmain/src/main/java/com/shreyartha/backend/universaladaptive/service/AdaptiveStandingService.java'),
   };
 }
 
@@ -186,6 +187,22 @@ function audit(s) {
     bad("the app's insights fallback is not the website's order and one chart per exam");
   }
   if (/GroupedBars/.test(sheet)) bad("the app's insights fallback still draws every paper in one chart");
+
+  // Adaptive Class Standing (7 Nov 2026): one fixed India mark, a student never sees the whole list,
+  // and the student's and parent's app screens show the website's own view.
+  if (!/public static final double INDIA_TOP_10K = 95\.6;/.test(s.standing)) bad('the India mark is not the one fixed 95.6');
+  if (!/out\.remove\("positions"\);/.test(s.standing)) bad("a student's or parent's standing carries every classmate's position");
+  if (!/"adaptive-standing": lazy\(/.test(s.host)) bad('the website does not draw the adaptive standing for the app');
+  const section = APP_FILE(s, 'components/shared/AdaptiveStandingSection.js');
+  if (!/kind="adaptive-standing"/.test(section) || !/fallback=\{<StandingLines/.test(section)) {
+    bad('the app does not show the website\'s adaptive standing, with its own lines as the fallback');
+  }
+  if (!/<AdaptiveStandingSection[\s\S]*?viewer="student"/.test(APP_FILE(s, 'components/student/academiciq/MyAdaptivePerformanceScreen.js'))) {
+    bad("the student's My Adaptive Performance has no Where I stand");
+  }
+  if (!/<AdaptiveStandingSection[\s\S]*?viewer="parent"/.test(APP_FILE(s, 'components/parent/ViewReportScreen.js'))) {
+    bad("the parent's View Report has no Where my child stands");
+  }
   return problems;
 }
 
@@ -279,6 +296,21 @@ const MUTATIONS = [
   ['the app fallback back to the table areas', (s) => {
     const f = 'shreyartha_mobile_app/components/staff/StudentInsightsSheet.js';
     s.app[f] = s.app[f].replace('sectionsOf(data).map', '(data.areas || []).map');
+  }],
+  ['the India mark changed', (s) => { s.standing = s.standing.replace('INDIA_TOP_10K = 95.6;', 'INDIA_TOP_10K = 90.0;'); }],
+  ['a student sees every classmate', (s) => { s.standing = s.standing.replace('out.remove("positions");', ''); }],
+  ['the adaptive standing kind dropped from the website', (s) => { s.host = s.host.replace('"adaptive-standing": lazy(', '"adaptive-standingX": lazy('); }],
+  ['the app standing without its fallback', (s) => {
+    const f = 'shreyartha_mobile_app/components/shared/AdaptiveStandingSection.js';
+    s.app[f] = s.app[f].replace('fallback={<StandingLines', 'other={<StandingLines');
+  }],
+  ['Where I stand gone from the student app', (s) => {
+    const f = 'shreyartha_mobile_app/components/student/academiciq/MyAdaptivePerformanceScreen.js';
+    s.app[f] = s.app[f].replace('<AdaptiveStandingSection', '<View');
+  }],
+  ['Where my child stands gone from View Report', (s) => {
+    const f = 'shreyartha_mobile_app/components/parent/ViewReportScreen.js';
+    s.app[f] = s.app[f].replace('<AdaptiveStandingSection', '<View');
   }],
   ['the app fallback back to one chart', (s) => {
     const f = 'shreyartha_mobile_app/components/staff/StudentInsightsSheet.js';
